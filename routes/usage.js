@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
-const { authenticateApiKey } = require('../middleware/auth');
+const { authenticateJwt } = require('../middleware/auth');
 
-router.get('/:client_id', authenticateApiKey, analyticsController.getUsage);
+router.get('/:client_id', authenticateJwt, analyticsController.getUsage);
 
 module.exports = router;

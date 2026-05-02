@@ -2,7 +2,19 @@ const twilio = require('twilio');
 
 class TwilioProvider {
     constructor() {
-        this.client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        this._client = null;
+    }
+
+    get client() {
+        if (!this._client) {
+            const sid = process.env.TWILIO_ACCOUNT_SID;
+            const token = process.env.TWILIO_AUTH_TOKEN;
+            if (!sid || !token || sid.startsWith('your_')) {
+                throw new Error('Twilio credentials not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env');
+            }
+            this._client = twilio(sid, token);
+        }
+        return this._client;
     }
 
     async buyNumber(country) {
@@ -21,7 +33,6 @@ class TwilioProvider {
     }
 
     async handleIncomingCall(req) {
-        // Parse the inbound webhook data from Twilio
         const body = req.body;
         return {
             providerCallId: body.CallSid,

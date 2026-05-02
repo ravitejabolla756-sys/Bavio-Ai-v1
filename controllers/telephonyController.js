@@ -1,6 +1,8 @@
 const db = require('../database/db');
 const providerFactory = require('../providers/index');
 const billingService = require('../services/billingService');
+const { incrementMinutesUsed } = require('../middleware/planEnforcement');
+const voiceOrchestrator = require('../services/voiceOrchestrator');
 
 async function handleIncoming(req, res) {
     try {
@@ -33,10 +35,58 @@ async function handleIncoming(req, res) {
             );
         }
 
-        // Respond based on provider
+        // Check if audio data is present in request (for voice processing)
+        if (body.RecordingUrl || body.MediaUrl0 || req.body.audio_base64) {
+            try {
+                // Get audio buffer from request
+                let audioBuffer;
+                if (req.body.audio_base64) {
+                    audioBuffer = Buffer.from(req.body.audio_base64, 'base64');
+                } else if (body.RecordingUrl) {
+                    const axios = require('axios');
+                    const audioResponse = await axios.get(body.RecordingUrl, { responseType: 'arraybuffer' });
+                    audioBuffer = Buffer.from(audioResponse.data);
+                } else {
+                    // For testing/demo: return welcome message
+                    const welcomeText = "Namaste! Main Bavio AI hoon. Aapki kya madad kar sakta hoon?";
+                    const welcomeAudio = await voiceOrchestrator.DEFAULT_SYSTEM_PROMPT ? 
+                        await require('../services/sarvamService').textToSpeech(welcomeText, 'hi-IN') : null;
+                }
+
+                if (audioBuffer && phoneNumberId) {
+                    // Get client_id from phone number record
+                    const numData = numResult.rows[0];
+                    const clientId = numData.client_id;
+                    
+                    // Process through Sarvam AI pipeline
+                    const result = await voiceOrchestrator.processVoiceCall(
+                        audioBuffer, 
+                        clientId, 
+                        providerCallId
+                    );
+
+                    // Return audio response
+                    if (providerName === 'twilio') {
+                        // For Twilio: return audio URL or play directly
+                        res.set('Content-Type', 'text/xml');
+                        const audioBase64 = result.audioBuffer.toString('base64');
+                        return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Play>${audioBase64}</Play></Response>`);
+                    }
+                    
+                    // For Exotel or direct response: return audio buffer
+                    res.set('Content-Type', 'audio/wav');
+                    return res.send(result.audioBuffer);
+                }
+            } catch (voiceError) {
+                console.error('Voice processing error:', voiceError);
+                // Fall through to default response
+            }
+        }
+
+        // Default welcome response (if no audio or error)
         if (providerName === 'twilio') {
             res.set('Content-Type', 'text/xml');
-            return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Welcome to Bavio AI. Connecting you to your assistant.</Say></Response>`);
+            return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Namaste! Bavio AI mein aapka swagat hai. Kripya apna sawal poochiye.</Say></Response>`);
         }
         res.status(200).send('OK');
     } catch (err) {
@@ -72,6 +122,16 @@ async function handleStatus(req, res) {
                 callerNumber: call.caller_number,
                 durationSeconds
             });
+
+            // Track minutes usage for client billing
+            const phoneResult = await db.query(
+                'SELECT client_id FROM phone_numbers WHERE id = $1',
+                [call.phone_number_id]
+            );
+            if (phoneResult.rows.length > 0) {
+                const clientId = phoneResult.rows[0].client_id;
+                await incrementMinutesUsed(clientId, Math.ceil(durationSeconds / 60));
+            }
         } else {
             // Update the status only
             await db.query(
