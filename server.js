@@ -87,8 +87,8 @@ app.get('/db-test', async (req, res) => {
 });
 
 // ------- Start Server -------
-app.listen(PORT, () => {
-    console.log(`Bavio AI Backend running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Bavio AI Backend running on port ${PORT}`);
 });
 
 module.exports = app;
