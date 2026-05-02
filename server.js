@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
 const { generalLimiter, apiLimiter } = require('./middleware/rateLimit');
 
 // Error handlers
@@ -41,6 +43,12 @@ const corsOptions = {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'bavio_secret',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
 app.use(generalLimiter);
 
 // ------- API Routes -------
@@ -54,8 +62,10 @@ const telephonyRoutes = require('./routes/telephony');
 const leadsRoutes = require('./routes/leads');
 const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
+const googleAuthRoutes = require('./routes/googleAuth');
 
 app.use('/auth', authRoutes);
+app.use('/auth', googleAuthRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
