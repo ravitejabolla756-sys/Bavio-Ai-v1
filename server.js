@@ -41,7 +41,7 @@ const corsOptions = {
 
 // ------- Global Middleware -------
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bavio_secret',
@@ -50,6 +50,14 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(generalLimiter);
+
+// ------- Audio Static Route (MUST be before other routes) -------
+app.use('/audio', express.static('/tmp/bavio-audio', {
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'audio/wav');
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 
 // ------- API Routes -------
 const authRoutes = require('./routes/auth');
@@ -63,9 +71,11 @@ const leadsRoutes = require('./routes/leads');
 const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
 const googleAuthRoutes = require('./routes/googleAuth');
+const twilioRoutes = require('./routes/twilioRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/auth', googleAuthRoutes);
+app.use('/calls/twilio', twilioRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
