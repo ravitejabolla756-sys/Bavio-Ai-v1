@@ -1,7 +1,7 @@
 const db = require('../database/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 10;
@@ -15,7 +15,7 @@ async function signup(req, res) {
         }
 
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const apiKey = uuidv4().replace(/-/g, '');
+        const apiKey = randomUUID().replace(/-/g, '');
         
         const result = await db.query(
             `INSERT INTO clients (email, password_hash, api_key, subscription_plan, country, status)

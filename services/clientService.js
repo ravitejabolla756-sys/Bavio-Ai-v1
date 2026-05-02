@@ -1,8 +1,8 @@
 const db = require('../database/db');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 async function createClient({ email, subscription_plan, country }) {
-    const apiKey = uuidv4().replace(/-/g, '');
+    const apiKey = randomUUID().replace(/-/g, '');
     const result = await db.query(
         `INSERT INTO clients (email, api_key, subscription_plan, country, status)
          VALUES ($1, $2, $3, $4, 'active') RETURNING *`,
