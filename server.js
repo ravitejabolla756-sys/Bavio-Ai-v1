@@ -72,18 +72,29 @@ app.get('/health', (req, res) => {
 });
 
 // ------- Database Connectivity Test -------
-const db = require('./database/db');
+let db;
+try {
+  db = require('./database/db');
+  console.log('Database module loaded successfully');
+} catch (err) {
+  console.error('Failed to load database module:', err.message);
+  db = null;
+}
+
 app.get('/db-test', async (req, res) => {
-    try {
-        const result = await db.query('SELECT NOW()');
-        res.status(200).json({
-            status: 'connected',
-            database: 'Supabase PostgreSQL',
-            server_time: result.rows[0].now
-        });
-    } catch (err) {
-        res.status(500).json({ status: 'error', message: err.message });
-    }
+  if (!db) {
+    return res.status(503).json({ status: 'error', message: 'Database not available' });
+  }
+  try {
+    const result = await db.query('SELECT NOW()');
+    res.status(200).json({
+      status: 'connected',
+      database: 'Supabase PostgreSQL',
+      server_time: result.rows[0].now
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
 });
 
 // ------- Start Server -------
