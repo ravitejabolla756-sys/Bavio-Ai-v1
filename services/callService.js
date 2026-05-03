@@ -24,10 +24,10 @@ async function getUsageForClient(client_id) {
 
     const summary = await db.query(
         `SELECT usage_minutes, SUM(ul.cost) AS total_cost
-         FROM clients cl
-         LEFT JOIN usage_logs ul ON ul.client_id = cl.id
-         WHERE cl.id = $1
-         GROUP BY cl.usage_minutes`,
+         FROM businesses b
+         LEFT JOIN usage_logs ul ON ul.client_id = b.id
+         WHERE b.id = $1
+         GROUP BY b.usage_minutes`,
         [client_id]
     );
 

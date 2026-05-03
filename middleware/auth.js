@@ -10,7 +10,7 @@ const authenticateApiKey = async (req, res, next) => {
             return res.status(401).json({ error: 'Authentication failed: Missing x-api-key header' });
         }
 
-        const result = await db.query('SELECT * FROM clients WHERE api_key = $1 AND status = $2', [apiKey, 'active']);
+        const result = await db.query('SELECT * FROM businesses WHERE api_key = $1 AND status = $2', [apiKey, 'active']);
 
         if (result.rows.length === 0) {
             return res.status(403).json({ error: 'Authentication failed: Invalid or inactive API key' });
@@ -36,10 +36,10 @@ const authenticateJwt = async (req, res, next) => {
         
         const decoded = jwt.verify(token, JWT_SECRET);
         
-        const result = await db.query('SELECT * FROM clients WHERE id = $1 AND status = $2', [decoded.clientId, 'active']);
+        const result = await db.query('SELECT * FROM businesses WHERE id = $1 AND status = $2', [decoded.clientId, 'active']);
         
         if (result.rows.length === 0) {
-            return res.status(403).json({ error: 'Authentication failed: Client not found or inactive' });
+            return res.status(403).json({ error: 'Authentication failed: Business not found or inactive' });
         }
         
         req.client = result.rows[0];

@@ -248,7 +248,7 @@ async function handleRecording(req, res) {
     if (session.business_id) {
       try {
         const [bizRes, astRes] = await Promise.all([
-          db.query('SELECT * FROM clients WHERE id = $1', [session.business_id]),
+          db.query('SELECT * FROM businesses WHERE id = $1', [session.business_id]),
           db.query('SELECT * FROM assistants WHERE id = $1', [session.assistant_id])
         ]);
         business = bizRes.rows[0];
@@ -430,7 +430,7 @@ async function handleCallStatus(req, res) {
     if (callData.client_id) {
       try {
         await db.query(
-          'UPDATE clients SET minutes_used = minutes_used + $1 WHERE id = $2',
+          'UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2',
           [Math.ceil(mins), callData.client_id]
         );
       } catch (minErr) {

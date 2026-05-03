@@ -28,9 +28,9 @@ async function processCallEnd({ providerCallId, phoneNumberId, callerNumber, dur
             [clientId, call.id, durationMinutes, cost]
         );
 
-        // Update client usage_minutes
+        // Update business usage_minutes
         await db.query(
-            `UPDATE clients SET usage_minutes = usage_minutes + $1 WHERE id = $2`,
+            `UPDATE businesses SET usage_minutes = usage_minutes + $1 WHERE id = $2`,
             [durationMinutes, clientId]
         );
     }

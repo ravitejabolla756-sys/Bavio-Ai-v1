@@ -14,7 +14,7 @@ async function saveStep(req, res) {
 
     // Update onboarding step progress
     await db.query(
-      'UPDATE clients SET onboarding_step = $1 WHERE id = $2',
+      'UPDATE businesses SET onboarding_step = $1 WHERE id = $2',
       [step, clientId]
     );
 
@@ -23,7 +23,7 @@ async function saveStep(req, res) {
       case 1:
         // Personal & Business Info
         await db.query(
-          `UPDATE clients SET
+          `UPDATE businesses SET
             full_name = $1,
             email = COALESCE($2, email),
             city = $3,
@@ -48,7 +48,7 @@ async function saveStep(req, res) {
       case 2:
         // Industry & Language
         await db.query(
-          `UPDATE clients SET
+          `UPDATE businesses SET
             industry = $1,
             language = $2,
             intents = $3::jsonb
@@ -58,9 +58,9 @@ async function saveStep(req, res) {
         break;
 
       case 3:
-        // Configure AI Agent - Update both clients and assistants
+        // Configure AI Agent - Update both businesses and assistants
         await db.query(
-          `UPDATE clients SET
+          `UPDATE businesses SET
             industry = COALESCE($1, industry),
             language = COALESCE($2, language)
           WHERE id = $3`,
@@ -129,7 +129,7 @@ async function saveStep(req, res) {
         // Plan selection - handled by billing/subscribe
         // Just mark step as complete
         await db.query(
-          'UPDATE clients SET onboarding_status = $1 WHERE id = $2',
+          'UPDATE businesses SET onboarding_status = $1 WHERE id = $2',
           ['payment_pending', clientId]
         );
         break;
@@ -175,35 +175,35 @@ async function getStatus(req, res) {
         onboarding_status,
         onboarding_step,
         created_at
-      FROM clients WHERE id = $1`,
+      FROM businesses WHERE id = $1`,
       [client_id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found' });
+      return res.status(404).json({ error: 'Business not found' });
     }
 
-    const client = result.rows[0];
+    const business = result.rows[0];
 
     // Map status to step for frontend
-    let step = client.onboarding_step || 0;
-    if (client.onboarding_status === 'payment_pending') step = 4;
-    if (client.onboarding_status === 'processing') step = 5;
-    if (client.onboarding_status === 'ready') step = 5;
+    let step = business.onboarding_step || 0;
+    if (business.onboarding_status === 'payment_pending') step = 4;
+    if (business.onboarding_status === 'processing') step = 5;
+    if (business.onboarding_status === 'ready') step = 5;
 
     res.status(200).json({
-      status: client.onboarding_status || 'pending',
+      status: business.onboarding_status || 'pending',
       step,
-      twilio_number: client.twilio_number,
+      twilio_number: business.twilio_number,
       business: {
-        id: client.id,
-        full_name: client.full_name,
-        email: client.email,
-        city: client.city,
-        whatsapp_number: client.whatsapp_number,
-        industry: client.industry,
-        language: client.language,
-        plan: client.plan
+        id: business.id,
+        full_name: business.full_name,
+        email: business.email,
+        city: business.city,
+        whatsapp_number: business.whatsapp_number,
+        industry: business.industry,
+        language: business.language,
+        plan: business.plan
       }
     });
 

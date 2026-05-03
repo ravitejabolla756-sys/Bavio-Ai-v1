@@ -18,7 +18,7 @@ async function signup(req, res) {
         const apiKey = randomUUID().replace(/-/g, '');
         
         const result = await db.query(
-            `INSERT INTO clients (email, password_hash, api_key, subscription_plan, country, status)
+            `INSERT INTO businesses (email, password_hash, api_key, subscription_plan, country, status)
              VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
             [email, hashedPassword, apiKey, subscription_plan || 'free', country || 'US']
         );
@@ -43,7 +43,7 @@ async function signup(req, res) {
         });
     } catch (err) {
         if (err.code === '23505') {
-            return res.status(409).json({ error: 'A client with that email already exists' });
+            return res.status(409).json({ error: 'A business with that email already exists' });
         }
         res.status(500).json({ error: err.message });
     }
@@ -58,7 +58,7 @@ async function login(req, res) {
         }
 
         const result = await db.query(
-            'SELECT * FROM clients WHERE email = $1 AND status = $2',
+            'SELECT * FROM businesses WHERE email = $1 AND status = $2',
             [email, 'active']
         );
         

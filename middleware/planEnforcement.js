@@ -14,12 +14,12 @@ async function checkMinutesLimit(req, res, next) {
 
         // Refresh client data to get latest minutes
         const result = await db.query(
-            'SELECT minutes_limit, minutes_used, plan FROM clients WHERE id = $1',
+            'SELECT minutes_limit, minutes_used, plan FROM businesses WHERE id = $1',
             [client.id]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Client not found' });
+            return res.status(404).json({ error: 'Business not found' });
         }
 
         const { minutes_limit, minutes_used, plan } = result.rows[0];
@@ -59,7 +59,7 @@ async function checkMinutesLimit(req, res, next) {
 async function incrementMinutesUsed(clientId, durationMinutes) {
     try {
         await db.query(
-            'UPDATE clients SET minutes_used = minutes_used + $1 WHERE id = $2',
+            'UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2',
             [Math.ceil(durationMinutes), clientId]
         );
         console.log(`Incremented minutes for client ${clientId}: +${durationMinutes}`);
@@ -75,9 +75,9 @@ async function incrementMinutesUsed(clientId, durationMinutes) {
 async function resetMonthlyMinutes() {
     try {
         await db.query(
-            "UPDATE clients SET minutes_used = 0 WHERE plan != 'free'"
+            "UPDATE businesses SET minutes_used = 0 WHERE plan != 'free'"
         );
-        console.log('Reset monthly minutes for all paid clients');
+        console.log('Reset monthly minutes for all paid businesses');
     } catch (err) {
         console.error('resetMonthlyMinutes error:', err);
     }

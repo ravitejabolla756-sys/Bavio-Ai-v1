@@ -22,7 +22,7 @@ async function subscribe(req, res) {
         // Update client record with subscription info
         const minutesLimit = dodoService.getPlanMinutes(plan);
         await db.query(
-            `UPDATE clients 
+            `UPDATE businesses 
              SET dodo_subscription_id = $1,
                  dodo_customer_id = $2,
                  plan = $3,
@@ -58,12 +58,12 @@ async function getStatus(req, res) {
         const result = await db.query(
             `SELECT id, email, plan, plan_expires_at, minutes_limit, minutes_used, 
                     dodo_subscription_id, dodo_customer_id, subscription_plan, status
-             FROM clients WHERE id = $1`,
+             FROM businesses WHERE id = $1`,
             [client_id]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Client not found' });
+            return res.status(404).json({ error: 'Business not found' });
         }
 
         const client = result.rows[0];
@@ -106,7 +106,7 @@ async function cancel(req, res) {
 
         // Get client's subscription
         const result = await db.query(
-            'SELECT dodo_subscription_id, plan FROM clients WHERE id = $1',
+            'SELECT dodo_subscription_id, plan FROM businesses WHERE id = $1',
             [clientId]
         );
 
@@ -121,7 +121,7 @@ async function cancel(req, res) {
 
         // Update client record - downgrade to free
         await db.query(
-            `UPDATE clients 
+            `UPDATE businesses 
              SET plan = 'free',
                  minutes_limit = $1,
                  dodo_subscription_id = NULL
@@ -170,7 +170,7 @@ async function handleWebhook(req, res) {
                     const minutesLimit = dodoService.getPlanMinutes(plan);
                     
                     await db.query(
-                        `UPDATE clients 
+                        `UPDATE businesses 
                          SET plan = $1,
                              plan_expires_at = $2,
                              minutes_limit = $3,
@@ -192,7 +192,7 @@ async function handleWebhook(req, res) {
                 if (clientId) {
                     const freeMinutes = dodoService.getPlanMinutes('free');
                     await db.query(
-                        `UPDATE clients 
+                        `UPDATE businesses 
                          SET plan = 'free',
                              plan_expires_at = NULL,
                              minutes_limit = $1,
@@ -261,20 +261,20 @@ async function autoProvisionBusiness(clientId) {
         console.log(`[AUTO-PROVISION] Step 1: Getting business data for client ${clientId}`);
         
         // Get business data
-        const clientResult = await db.query(
+        const businessResult = await db.query(
             `SELECT 
                 id, full_name, email, city, whatsapp_number,
                 industry, language, intents, working_hours_from, working_hours_to,
                 business_description
-            FROM clients WHERE id = $1`,
+            FROM businesses WHERE id = $1`,
             [clientId]
         );
         
-        if (clientResult.rows.length === 0) {
-            throw new Error(`Client ${clientId} not found`);
+        if (businessResult.rows.length === 0) {
+            throw new Error(`Business ${clientId} not found`);
         }
         
-        const business = clientResult.rows[0];
+        const business = businessResult.rows[0];
         
         // Get assistant config
         const assistantResult = await db.query(
@@ -286,7 +286,7 @@ async function autoProvisionBusiness(clientId) {
         
         // Update onboarding status to processing
         await db.query(
-            `UPDATE clients SET onboarding_status = $1 WHERE id = $2`,
+            `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,
             ['processing', clientId]
         );
         
@@ -370,7 +370,7 @@ async function autoProvisionBusiness(clientId) {
         console.log(`[AUTO-PROVISION] Step 4: Saving to database`);
         
         await db.query(
-            `UPDATE clients SET
+            `UPDATE businesses SET
                 twilio_number = $1,
                 twilio_number_sid = $2,
                 number_assigned_at = NOW(),
@@ -466,7 +466,7 @@ _Bavio AI - Never Miss a Call!_`;
         // Update status to failed
         try {
             await db.query(
-                `UPDATE clients SET onboarding_status = $1 WHERE id = $2`,
+                `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,
                 ['failed', clientId]
             );
         } catch (dbErr) {

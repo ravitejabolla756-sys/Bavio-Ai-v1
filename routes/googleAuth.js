@@ -17,7 +17,7 @@ passport.use(new GoogleStrategy({
     console.log('Google OAuth: Processing user', email);
     
     let result = await db.query(
-      'SELECT * FROM clients WHERE email = $1', [email]
+      'SELECT * FROM businesses WHERE email = $1', [email]
     );
     
     let client = result.rows[0];
@@ -26,7 +26,7 @@ passport.use(new GoogleStrategy({
       console.log('Google OAuth: Creating new client for', email);
       const apiKey = randomUUID().replace(/-/g, '');
       const newClient = await db.query(
-        `INSERT INTO clients (email, api_key, subscription_plan, status, country, plan, minutes_limit)
+        `INSERT INTO businesses (email, api_key, subscription_plan, status, country, plan, minutes_limit)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
         [email, apiKey, 'free', 'active', 'IN', 'free', 100]
       );
