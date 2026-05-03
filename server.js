@@ -72,10 +72,12 @@ const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
 const googleAuthRoutes = require('./routes/googleAuth');
 const twilioRoutes = require('./routes/twilioRoutes');
+const onboardingRoutes = require('./routes/onboarding');
 
 app.use('/auth', authRoutes);
 app.use('/auth', googleAuthRoutes);
 app.use('/calls/twilio', twilioRoutes);
+app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
