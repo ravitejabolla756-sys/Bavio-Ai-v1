@@ -101,14 +101,14 @@ async function resetMonthlyMinutes() {
              RETURNING id`
         );
         
-        // Reset free plan users — ensure limit stays at 100
+        // Reset free plan users — ensure limit stays at 30
         const freeResult = await db.query(
             `UPDATE businesses 
              SET minutes_used = 0,
-                 minutes_limit = 100,
+                 minutes_limit = 30,
                  billing_cycle_start = NOW()
-             WHERE plan = 'free' AND status = 'active'
-             RETURNING id`
+              WHERE plan = 'free' AND status = 'active'
+              RETURNING id`
         );
         
         const paidCount = paidResult.rows.length;

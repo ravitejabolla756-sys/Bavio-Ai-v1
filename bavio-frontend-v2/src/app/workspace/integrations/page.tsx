@@ -95,7 +95,7 @@ export default function IntegrationsPage() {
 
   // Twilio state
   const [twilioFlowType, setTwilioFlowType] = useState<"oauth" | "manual">("oauth");
-  const [twilioSid, setTwilioSid] = useState("MOCK_TWILIO_SID_FOR_UI_DEMO");
+  const [twilioSid, setTwilioSid] = useState("AC_MOCK_TWILIO_ACCOUNT_SID_VALUE");
   const [twilioToken, setTwilioToken] = useState("");
   const [twilioNumber, setTwilioNumber] = useState("+1 (800) 555-0199");
 
@@ -269,7 +269,7 @@ export default function IntegrationsPage() {
     // Prep variables
     if (id === "twilio") {
       setTwilioFlowType("oauth");
-      setTwilioSid("MOCK_TWILIO_SID_FOR_UI_DEMO");
+      setTwilioSid("AC_MOCK_TWILIO_ACCOUNT_SID_VALUE");
       setTwilioToken("");
       setTwilioNumber("+1 (800) 555-0199");
     } else if (id === "google-calendar") {

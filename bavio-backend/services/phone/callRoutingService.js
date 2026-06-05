@@ -4,88 +4,121 @@
  * Resolves an incoming Exotel call to the correct business.
  * Called at the START of every incoming call webhook.
  *
- * Priority:
- *  1. call_routing table  — direct lookup (fastest, indexed)
- *  2. phone_numbers table — dedicated or single-forwarding row
- *  3. pool_assignments    — pool number shared by many users
+ * Strategies:
+ *  1. Provider-Specific Call Forwarding Metadata (e.g. SIP Diversion header)
+ *  2. Caller Whitelist Lookup (queries caller_whitelist to match caller number)
+ *  3. Default Fallback (checks business_phone_mapping for active Exotel number)
+ *  4. Legacy Fallback (queries phone_numbers table)
  */
 
 const { supabase } = require('../../database/db');
 
-async function resolveBusinessFromCall(toNumber, fromNumber) {
+async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
   try {
-    console.log(`[ROUTING] ${fromNumber} → ${toNumber}`);
+    console.log(`[ROUTING] Incoming call: ${fromNumber} → ${toNumber}`);
 
-    // Priority 1: Direct call_routing table (fastest)
-    const { data: directRoute } = await supabase
-      .from('call_routing')
-      .select('business_id, routing_method, user_original_number')
-      .eq('bavio_number', toNumber)
-      .eq('is_active', true)
+    // Strategy 1: Provider-Specific Call Forwarding Metadata
+    let providerOriginalNumber = null;
+    if (req) {
+      providerOriginalNumber = 
+        req.body?.ForwardedFrom || 
+        req.query?.ForwardedFrom || 
+        req.body?.OriginalCalledNumber || 
+        req.query?.OriginalCalledNumber || 
+        req.headers?.['diversion'] || 
+        req.headers?.['x-diversion'];
+    }
+
+    if (providerOriginalNumber) {
+      console.log(`[ROUTING] Provider-specific routing metadata found: ${providerOriginalNumber}`);
+      const { data: mapping } = await supabase
+        .from('business_phone_mapping')
+        .select('business_id, business_number')
+        .eq('exotel_number', toNumber)
+        .eq('business_number', providerOriginalNumber)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (mapping) {
+        console.log(`[ROUTING] Resolved via provider metadata to business ID: ${mapping.business_id}`);
+        return {
+          business_id: mapping.business_id,
+          business_number: mapping.business_number,
+          routing_method: 'provider_metadata'
+        };
+      }
+    }
+
+    // Strategy 2: Caller Whitelist Lookup (Diagram Method A)
+    console.log(`[ROUTING] Performing Caller Whitelist Lookup for ${fromNumber} on Exotel number ${toNumber}`);
+    const { data: whitelistMatch } = await supabase
+      .from('caller_whitelist')
+      .select('business_id')
+      .eq('caller_phone', fromNumber)
       .limit(1)
       .maybeSingle();
 
-    if (directRoute) {
-      console.log(`[ROUTING] Direct route → ${directRoute.business_id}`);
+    if (whitelistMatch) {
+      // Check if this business is mapped to this Exotel number
+      const { data: mapping } = await supabase
+        .from('business_phone_mapping')
+        .select('business_id, business_number')
+        .eq('business_id', whitelistMatch.business_id)
+        .eq('exotel_number', toNumber)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (mapping) {
+        console.log(`[ROUTING] Resolved via Caller Whitelist to business ID: ${mapping.business_id}`);
+        return {
+          business_id: mapping.business_id,
+          business_number: mapping.business_number,
+          routing_method: 'caller_whitelist'
+        };
+      }
+    }
+
+    // Strategy 3: Default Fallback Mapped Tenant
+    console.log(`[ROUTING] Whitelist/metadata resolution failed. Checking default fallback mapping for Exotel number ${toNumber}`);
+    const { data: defaultMapping } = await supabase
+      .from('business_phone_mapping')
+      .select('business_id, business_number')
+      .eq('exotel_number', toNumber)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+
+    if (defaultMapping) {
+      console.log(`[ROUTING] Resolved via Default Fallback to business ID: ${defaultMapping.business_id}`);
       return {
-        business_id: directRoute.business_id,
-        routing_method: directRoute.routing_method,
-        user_original_number: directRoute.user_original_number
+        business_id: defaultMapping.business_id,
+        business_number: defaultMapping.business_number,
+        routing_method: 'default_fallback'
       };
     }
 
-    // Priority 2: phone_numbers table for dedicated numbers
+    // Strategy 4: Fallback to old phone_numbers table (for backward compatibility)
+    console.log(`[ROUTING] No business_phone_mapping found. Scanning legacy tables...`);
     const { data: phoneRecord } = await supabase
       .from('phone_numbers')
       .select('business_id, call_routing_method, user_original_number, type')
       .eq('phone_number', toNumber)
       .eq('status', 'active')
+      .limit(1)
       .maybeSingle();
 
-    if (phoneRecord && phoneRecord.type === 'dedicated') {
-      console.log(`[ROUTING] Dedicated → ${phoneRecord.business_id}`);
+    if (phoneRecord) {
+      console.log(`[ROUTING] Resolved via legacy phone_record to business ID: ${phoneRecord.business_id}`);
       return {
         business_id: phoneRecord.business_id,
-        routing_method: 'direct',
-        user_original_number: null
+        business_number: phoneRecord.user_original_number || toNumber,
+        routing_method: phoneRecord.call_routing_method || 'legacy'
       };
     }
 
-    if (phoneRecord && phoneRecord.type === 'forwarding') {
-      console.log(`[ROUTING] Forwarding → ${phoneRecord.business_id}`);
-      return {
-        business_id: phoneRecord.business_id,
-        routing_method: 'caller_id',
-        user_original_number: phoneRecord.user_original_number
-      };
-    }
-
-    // Priority 3: Pool assignments scan
-    const { data: poolAssignments } = await supabase
-      .from('pool_assignments')
-      .select(`
-        business_id,
-        user_original_number,
-        forwarding_status,
-        phone_numbers!pool_number_id (phone_number)
-      `)
-      .eq('forwarding_status', 'active');
-
-    if (poolAssignments) {
-      const match = poolAssignments.find(
-        a => a.phone_numbers?.phone_number === toNumber
-      );
-      if (match) {
-        console.log(`[ROUTING] Pool match → ${match.business_id}`);
-        return {
-          business_id: match.business_id,
-          routing_method: 'caller_id',
-          user_original_number: match.user_original_number
-        };
-      }
-    }
-
-    console.log(`[ROUTING] No route found for ${toNumber}`);
+    console.log(`[ROUTING] No route found for Exotel number: ${toNumber}, Caller: ${fromNumber}`);
     return null;
   } catch (err) {
     console.error('[ROUTING] Error:', err.message);
