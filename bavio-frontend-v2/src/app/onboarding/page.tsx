@@ -106,7 +106,7 @@ export default function OnboardingPage() {
     "Compiling AI Agent system parameters...",
     "Creating knowledge base indexing layers...",
     "Allocating active Twilio phone gateway...",
-    "Activating 14-day Free Trial (100 included minutes)...",
+    "Activating 14-day Free Trial (30 included minutes)...",
   ];
 
   // ── Auth guard: redirect to /login if no token ──────────────────────
@@ -915,7 +915,7 @@ export default function OnboardingPage() {
                       Your AI Agent is Ready. Free Trial Active.
                     </h3>
                     <p className="text-body-xs text-[#5A5A66] leading-relaxed">
-                      Start receiving calls and capturing leads immediately. Your 14-day free trial containing 100 free call minutes is active.
+                      Start receiving calls and capturing leads immediately. Your 14-day free trial containing 30 free call minutes is active.
                     </p>
                   </div>
 
@@ -927,7 +927,7 @@ export default function OnboardingPage() {
                     </div>
                     <div className="bg-[#FAF7F2] border border-[#E5E0D8] p-4 rounded-xl">
                       <span className="text-[10px] uppercase font-bold text-[#8A8A96] block mb-0.5">Included Balance</span>
-                      <span className="text-body-sm font-bold text-[#14141A] block">100 Minutes</span>
+                      <span className="text-body-sm font-bold text-[#14141A] block">30 Minutes</span>
                     </div>
                   </div>
 

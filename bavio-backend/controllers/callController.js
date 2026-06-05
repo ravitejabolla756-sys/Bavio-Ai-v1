@@ -27,7 +27,7 @@ async function handleIncomingExotel(req, res) {
     console.log(`[EXOTEL] Incoming: ${From} → ${To} | ${CallSid}`);
 
     // ── Route to business ─────────────────────────────────────────────
-    const route = await resolveBusinessFromCall(To, From);
+    const route = await resolveBusinessFromCall(To, From, req);
 
     if (!route) {
       console.log(`[EXOTEL] No route for ${To}`);
@@ -49,16 +49,16 @@ async function handleIncomingExotel(req, res) {
       .eq('business_id', businessId)
       .maybeSingle();
 
-    const firstMessage = assistant?.first_message
-      || 'Namaste! Main aapki kaise madad kar sakta hoon?';
-    const language = assistant?.language || 'hi-IN';
-
     // ── Get business info ─────────────────────────────────────────────
     const { data: business } = await supabase
       .from('businesses')
-      .select('name, phone, plan, minutes_limit, minutes_used')
+      .select('name, phone, plan, minutes_limit, minutes_used, business_name, industry, owner_name, owner_phone, owner_email, language, system_prompt, first_message, call_handling_type, subscription_plan')
       .eq('id', businessId)
       .maybeSingle();
+
+    const firstMessage = business?.first_message || assistant?.first_message
+      || 'Namaste! Main aapki kaise madad kar sakta hoon?';
+    const language = business?.language || assistant?.language || 'hi-IN';
 
     if (business && business.minutes_limit !== null && business.minutes_used !== null) {
       if (business.minutes_limit - business.minutes_used <= 0) {
@@ -73,8 +73,40 @@ async function handleIncomingExotel(req, res) {
       }
     }
 
-    // ── Create call record ────────────────────────────────────────────
-    const { data: call } = await supabase
+    // ── Create call session ───────────────────────────────────────────
+    const { data: callSession, error: sessionErr } = await supabase
+      .from('call_sessions')
+      .insert({
+        call_sid: CallSid,
+        business_id: businessId,
+        caller_phone: From,
+        exotel_number: To,
+        session_status: 'in-progress'
+      })
+      .select()
+      .single();
+
+    if (sessionErr) {
+      console.error('[EXOTEL] Call session insert error:', sessionErr.message);
+    }
+
+    // ── Create call log ───────────────────────────────────────────────
+    await supabase
+      .from('call_logs')
+      .insert({
+        call_sid: CallSid,
+        business_id: businessId,
+        duration: 0,
+        cost: 0,
+        status: 'started'
+      });
+
+    // ── Create call record (Legacy table for compatibility) ───────────
+    const legacyRoutingMethod =
+      route.routing_method === 'caller_whitelist' ? 'caller_id' :
+      route.routing_method === 'provider_metadata' ? 'sip' : 'direct';
+
+    const { data: call, error: callErr } = await supabase
       .from('calls')
       .insert({
         business_id: businessId,
@@ -83,30 +115,45 @@ async function handleIncomingExotel(req, res) {
         call_status: 'started',
         provider: 'exotel',
         bavio_number: To,
-        routing_method: route.routing_method,
-        user_original_number: route.user_original_number
+        routing_method: legacyRoutingMethod,
+        user_original_number: route.business_number
       })
       .select()
       .single();
 
+    if (callErr) {
+      console.error('[EXOTEL] Legacy call insert error:', callErr.message);
+    }
+
     // ── Create Redis session ──────────────────────────────────────────
-    await redisService.setSession('call:' + CallSid, {
+    const redisSession = {
       business_id: businessId,
+      business_number: route.business_number,
+      business_name: business?.business_name || business?.name || 'Bavio Customer',
+      exotel_number: To,
+      caller_phone: From,
+      industry: business?.industry || assistant?.industry || 'general',
+      language: language,
+      assistant_id: assistant?.id || null,
+      conversation_history: [],
+      lead_data: null,
+      session_state: 'greeting',
+      
+      // Legacy compatibility fields
       call_id: call?.id,
-      assistant_id: assistant?.id,
+      call_session_id: callSession?.id,
       caller_number: From,
       bavio_number: To,
-      business_phone: business?.phone,
-      language,
-      industry: assistant?.industry || 'general',
+      business_phone: business?.owner_phone || business?.phone,
       transcript: [],
       turn: 0,
       lead_captured: false,
-      lead_data: null,
       tts_chars_total: 0,
       routing_method: route.routing_method,
       started_at: Date.now()
-    });
+    };
+
+    await redisService.setSession('call:' + CallSid, redisSession);
 
     // ── Generate TTS greeting ─────────────────────────────────────────
     let greetingXml;
@@ -125,7 +172,6 @@ async function handleIncomingExotel(req, res) {
         );
         audioUrl = result?.audioUrl || null;
       } catch (storageErr) {
-        // Storage not available — fall back to Say
         console.log('[EXOTEL] Storage unavailable, using Say fallback');
       }
 
@@ -155,7 +201,6 @@ async function handleIncomingExotel(req, res) {
 
   } catch (err) {
     console.error('[EXOTEL] handleIncomingExotel error:', err.message);
-    // ALWAYS return 200 to Exotel — never let it fail silently
     return res.type('text/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say language="hi-IN">
@@ -179,7 +224,6 @@ async function handleRecording(req, res) {
 <Response><Hangup/></Response>`);
     }
 
-    // Skip if recording too short (silence)
     if (parseInt(RecordingDuration) < 1) {
       return res.type('text/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -253,14 +297,18 @@ async function handleRecording(req, res) {
 </Response>`);
     }
 
-    // Update transcript
-    session.transcript.push({ role: 'user', content: userText });
+    // Update transcript and conversation history
+    const chatTurn = { role: 'user', content: userText };
+    session.transcript.push(chatTurn);
+    if (!session.conversation_history) session.conversation_history = [];
+    session.conversation_history.push(chatTurn);
     session.turn += 1;
+    session.session_state = 'active';
 
-    // Get business + assistant
+    // Get business config
     const { data: business } = await supabase
       .from('businesses')
-      .select('name, plan')
+      .select('name, plan, system_prompt, first_message, call_handling_type')
       .eq('id', session.business_id)
       .maybeSingle();
 
@@ -276,9 +324,10 @@ async function handleRecording(req, res) {
     let llmResult;
     try {
       const llmService = require('../services/sarvam/llm');
-      const systemPrompt = llmService.buildSystemPrompt(assistant, business);
+      // Build dynamic prompt using business system_prompt if available, else assistant
+      const systemPrompt = business?.system_prompt || llmService.buildSystemPrompt(assistant, business);
       llmResult = await llmService.generateResponse(
-        session.transcript, systemPrompt
+        session.conversation_history, systemPrompt
       );
     } catch (llmErr) {
       console.error('[LLM] Failed:', llmErr.message);
@@ -289,40 +338,56 @@ async function handleRecording(req, res) {
       };
     }
 
-    // Update transcript
-    session.transcript.push({
-      role: 'assistant',
-      content: llmResult.response_text
-    });
-    session.tts_chars_total =
-      (session.tts_chars_total || 0) + llmResult.response_text.length;
+    // Update assistant responses
+    const assistantTurn = { role: 'assistant', content: llmResult.response_text };
+    session.transcript.push(assistantTurn);
+    session.conversation_history.push(assistantTurn);
+    session.tts_chars_total = (session.tts_chars_total || 0) + llmResult.response_text.length;
 
     // Save lead if detected
     if (llmResult.lead_data && !session.lead_captured) {
       session.lead_captured = true;
       session.lead_data = llmResult.lead_data;
       try {
-        await supabase.from('leads').insert({
+        // Save to leads table linking with call_sid
+        const { error: leadErr } = await supabase.from('leads').insert({
           business_id: session.business_id,
-          call_id: session.call_id,
+          call_id: session.call_id || null,
+          call_sid: CallSid,
           name: llmResult.lead_data.name || null,
-          phone: llmResult.lead_data.phone || session.caller_number,
+          phone: llmResult.lead_data.phone || session.caller_phone || session.caller_number,
           intent: llmResult.lead_data.intent || null,
           budget: llmResult.lead_data.budget || null,
           location: llmResult.lead_data.location || null,
           notes: JSON.stringify(llmResult.lead_data),
           status: 'new'
         });
-        console.log('[LEAD] Saved:', llmResult.lead_data);
+        if (leadErr) {
+          console.error('[LEAD] Save error:', leadErr.message);
+        } else {
+          console.log('[LEAD] Saved:', llmResult.lead_data);
+        }
 
-        // WhatsApp alert — non-blocking
+        // Queue Whatsapp/Email Notification in notifications table
+        const { error: notifErr } = await supabase.from('notifications').insert({
+          business_id: session.business_id,
+          type: 'whatsapp',
+          recipient: session.business_phone,
+          content: `New Lead: ${llmResult.lead_data.name || 'Unknown'} - ${llmResult.lead_data.intent || 'Inquiry'}`,
+          status: 'pending'
+        });
+        if (notifErr) {
+          console.error('[NOTIFICATION] Insert error:', notifErr.message);
+        }
+
+        // WhatsApp alert legacy service — non-blocking
         if (session.business_phone) {
           try {
             const whatsappService = require('../services/whatsapp/whatsappService');
             whatsappService.sendLeadAlert(
               session.business_phone,
               llmResult.lead_data,
-              { duration: RecordingDuration, caller_number: session.caller_number }
+              { duration: RecordingDuration, caller_number: session.caller_phone }
             ).catch(e => console.error('[WA]', e.message));
           } catch (waErr) {
             console.log('[WA] WhatsApp service not available');
@@ -412,7 +477,16 @@ async function handleCallStatus(req, res) {
     const duration = parseInt(Duration) || 0;
     const mins = duration / 60;
 
-    // Update call record
+    // Update call_sessions table
+    await supabase
+      .from('call_sessions')
+      .update({
+        session_status: 'completed',
+        ended_at: new Date().toISOString()
+      })
+      .eq('call_sid', CallSid);
+
+    // Update legacy call record
     await supabase
       .from('calls')
       .update({
@@ -427,6 +501,20 @@ async function handleCallStatus(req, res) {
     const cost_tts = ((session.tts_chars_total || 0) / 10000) * 15; // Sarvam TTS
     const cost_telephony = mins * 0.60;                          // Exotel India ~₹0.60/min
     const cost_total = cost_stt + cost_tts + cost_telephony;
+
+    // Update call_logs record
+    const { error: logErr } = await supabase
+      .from('call_logs')
+      .update({
+        duration,
+        cost: cost_total,
+        status: 'completed'
+      })
+      .eq('call_sid', CallSid);
+
+    if (logErr) {
+      console.error('[EXOTEL] call_logs update error:', logErr.message);
+    }
 
     // Check if business has remaining minutes and calculate overage
     let is_overage = false;
@@ -461,11 +549,12 @@ async function handleCallStatus(req, res) {
       console.log('[EXOTEL] Overage calculation look up failed:', e.message);
     }
 
-    // Save usage log
+    // Save usage log linked with call_sid
     try {
       await supabase.from('usage_logs').insert({
         business_id: session.business_id,
         call_id: session.call_id,
+        call_sid: CallSid,
         minutes_used: Math.ceil(mins),
         cost_stt,
         cost_tts,
@@ -478,8 +567,8 @@ async function handleCallStatus(req, res) {
       console.log('[USAGE] usage_logs insert error:', e.message);
     }
 
-    // Save transcript
-    const summary = `${session.transcript.length} turns. ` +
+    // Save transcript linked with call_sid
+    const summary = `${(session.conversation_history || session.transcript).length} turns. ` +
       (session.lead_captured
         ? `Lead: ${JSON.stringify(session.lead_data)}`
         : 'No lead captured.');
@@ -487,8 +576,9 @@ async function handleCallStatus(req, res) {
     try {
       await supabase.from('transcripts').insert({
         call_id: session.call_id,
+        call_sid: CallSid,
         business_id: session.business_id,
-        transcript: session.transcript,
+        transcript: session.conversation_history || session.transcript,
         summary
       });
     } catch (e) {

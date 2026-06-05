@@ -10,7 +10,7 @@ const PRODUCT_IDS = {
 };
 
 const PLAN_LIMITS = {
-    free: 100,
+    free: 30,
     starter: 200,
     growth: 500,
     scale: 1500

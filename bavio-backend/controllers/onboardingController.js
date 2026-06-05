@@ -353,7 +353,7 @@ async function completeTrial(req, res) {
         onboarding_step = 4,
         plan = 'free',
         plan_name = 'free_trial',
-        minutes_limit = 100,
+        minutes_limit = 30,
         minutes_used = 0,
         status = 'active',
         current_period_end = NOW() + INTERVAL '14 days',
@@ -445,7 +445,7 @@ async function completeTrial(req, res) {
       success: true,
       message: 'Guided onboarding completed. Free trial activated.',
       plan: 'free_trial',
-      minutesLimit: 100,
+      minutesLimit: 30,
       currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
     });
 

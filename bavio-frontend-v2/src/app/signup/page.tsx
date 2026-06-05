@@ -448,7 +448,7 @@ export default function SignUpPage() {
                   </div>
                   <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
                     <span>Trial Limit:</span>
-                    <span className="font-semibold text-[#10B981]">100 Free Minutes</span>
+                    <span className="font-semibold text-[#10B981]">30 Free Minutes</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
