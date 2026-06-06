@@ -14,7 +14,7 @@ function inferCountry(phone, country) {
 async function signup(req, res) {
     try {
         const { 
-            name, email, phone, password, country,
+            name, email, phone, password, country, country_code,
             business_description, industry, language,
             agent_name, greeting, faqs
         } = req.body;
@@ -50,7 +50,8 @@ async function signup(req, res) {
         // 3. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
         
-        const inferredCountry = inferCountry(phone, country);
+        const inferredCountry = inferCountry(phone, country || country_code);
+        const finalCountryCode = (country_code || inferredCountry || 'US').trim().toUpperCase().substring(0, 2);
 
         const hasReceptionistData = agent_name && greeting;
         const onboardingStep = hasReceptionistData ? 3 : 0;
@@ -60,15 +61,15 @@ async function signup(req, res) {
         const result = await db.query(
             `INSERT INTO businesses (
                 id, name, email, phone, password_hash, api_key, 
-                minutes_limit, minutes_used, status, country,
+                minutes_limit, minutes_used, status, country, country_code,
                 full_name, business_description, industry, language,
                 whatsapp_number, onboarding_step, onboarding_status
              )
-             VALUES ($1, $2, $3, $4, $5, $6, 100, 0, 'active', $7, $8, $9, $10, $11, $12, $13, $14)
+             VALUES ($1, $2, $3, $4, $5, $6, 100, 0, 'active', $7, $8, $9, $10, $11, $12, $13, $14, $15)
              RETURNING *`,
             [
                 supabaseUser.id, name, email, phone, 'supabase_auth_placeholder', apiKey, 
-                inferredCountry, name, business_description || null, 
+                inferredCountry, finalCountryCode, name, business_description || null, 
                 industry || null, language || 'hi-IN', phone, 
                 onboardingStep, onboardingStatus
             ]
@@ -133,6 +134,7 @@ async function signup(req, res) {
             onboarding_step: user.onboarding_step || 0,
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
+            country_code: user.country_code,
         });
     } catch (err) {
         if (err.code === '23505') {
@@ -191,6 +193,7 @@ async function login(req, res) {
             onboarding_step: user.onboarding_step || 0,
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
+            country_code: user.country_code,
         });
     } catch (err) {
         console.error('Login error:', err);
@@ -242,6 +245,7 @@ async function getProfile(req, res) {
             email: user.email,
             phone: user.phone,
             country: user.country,
+            country_code: user.country_code,
             api_key: user.api_key,
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
@@ -265,7 +269,7 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
     try {
-        const { name, phone, whatsapp_number, country } = req.body;
+        const { name, phone, whatsapp_number, country, country_code } = req.body;
         
         const result = await db.query(
             `UPDATE businesses 
@@ -273,10 +277,18 @@ async function updateProfile(req, res) {
                  phone = COALESCE($2, phone),
                  whatsapp_number = COALESCE($3, whatsapp_number),
                  country = COALESCE($4, country),
+                 country_code = COALESCE($5, country_code),
                  updated_at = NOW()
-             WHERE id = $5 AND status = 'active'
+             WHERE id = $6 AND status = 'active'
              RETURNING *`,
-            [name || null, phone || null, whatsapp_number || null, country || null, req.user.id]
+            [
+                name || null, 
+                phone || null, 
+                whatsapp_number || null, 
+                country || null, 
+                country_code ? country_code.trim().toUpperCase().substring(0, 2) : null,
+                req.user.id
+            ]
         );
         
         if (result.rows.length === 0) {
@@ -292,6 +304,7 @@ async function updateProfile(req, res) {
                 name: user.name,
                 phone: user.phone,
                 country: user.country,
+                country_code: user.country_code,
                 whatsapp_number: user.whatsapp_number,
                 api_key: user.api_key,
                 minutes_limit: user.minutes_limit,

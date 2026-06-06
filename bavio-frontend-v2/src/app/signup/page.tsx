@@ -20,9 +20,12 @@ import {
 import Logo from "@/components/Logo";
 import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
+import CountrySelector from "@/components/onboarding/CountrySelector";
+import { useCountry } from "@/context/CountryContext";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { country } = useCountry();
   
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -102,6 +105,7 @@ export default function SignUpPage() {
         email,
         password,
         phone: "pending_onboarding",  // Phone collected during onboarding
+        country_code: country.code,
       });
 
       if (result.success && result.token) {
@@ -394,6 +398,14 @@ export default function SignUpPage() {
                       </button>
                     </div>
                     {errors.confirmPassword && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.confirmPassword}</p>}
+                  </div>
+
+                  {/* Country Selector */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A8A96] mb-1.5 pl-1">
+                      Business Country
+                    </label>
+                    <CountrySelector />
                   </div>
 
                   {/* Submit CTA */}
