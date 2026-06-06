@@ -95,6 +95,7 @@ export interface SignupPayload {
   phone: string;
   password: string;
   country?: string;
+  country_code?: string;
 }
 
 export interface LoginPayload {

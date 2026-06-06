@@ -1,4 +1,6 @@
 const db = require('../database/db');
+const axios = require('axios');
+
 
 // Save onboarding step data
 async function saveStep(req, res) {
@@ -455,9 +457,125 @@ async function completeTrial(req, res) {
   }
 }
 
+// Detect user's country from GeoIP
+async function detectCountry(req, res) {
+  try {
+    let ip = req.headers['x-forwarded-for'] || 
+             req.headers['x-real-ip'] || 
+             req.connection.remoteAddress || 
+             req.ip;
+
+    if (ip && ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+
+    console.log(`[GEOIP] Client IP detected: ${ip}`);
+
+    // Try MaxMind if credentials exist
+    const maxmindUserId = process.env.MAXMIND_USER_ID;
+    const maxmindLicenseKey = process.env.MAXMIND_LICENSE_KEY;
+
+    if (maxmindUserId && maxmindLicenseKey) {
+      try {
+        const auth = Buffer.from(`${maxmindUserId}:${maxmindLicenseKey}`).toString('base64');
+        const response = await axios.get('https://geoip.maxmind.com/geoip/v2.1/country/' + (ip || 'me'), {
+          headers: { 'Authorization': `Basic ${auth}` },
+          timeout: 4000
+        });
+        if (response.data && response.data.country && response.data.country.iso_code) {
+          const countryCode = response.data.country.iso_code.toUpperCase();
+          console.log(`[GEOIP] MaxMind resolved IP ${ip} to country ${countryCode}`);
+          return res.status(200).json({ success: true, country_code: countryCode, method: 'maxmind' });
+        }
+      } catch (err) {
+        console.warn('[GEOIP] MaxMind lookup failed, falling back to free GeoIP APIs:', err.message);
+      }
+    }
+
+    // Try ipapi.co
+    try {
+      const response = await axios.get(`https://ipapi.co/${ip && ip !== '::1' && ip !== '127.0.0.1' ? ip : ''}/json/`, {
+        timeout: 3000
+      });
+      if (response.data && response.data.country_code) {
+        const countryCode = response.data.country_code.toUpperCase();
+        console.log(`[GEOIP] ipapi.co resolved IP to country ${countryCode}`);
+        return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback' });
+      }
+    } catch (err) {
+      console.warn('[GEOIP] ipapi.co fallback failed, trying next fallback:', err.message);
+    }
+
+    // Try country.is
+    try {
+      const response = await axios.get('https://api.country.is/' + (ip && ip !== '::1' && ip !== '127.0.0.1' ? ip : ''), {
+        timeout: 3000
+      });
+      if (response.data && response.data.country) {
+        const countryCode = response.data.country.toUpperCase();
+        console.log(`[GEOIP] country.is resolved IP to country ${countryCode}`);
+        return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback_secondary' });
+      }
+    } catch (err) {
+      console.warn('[GEOIP] All GeoIP fallbacks failed. Defaulting.');
+    }
+
+    // Try checking browser accept-language
+    const acceptLanguage = req.headers['accept-language'] || '';
+    const isIndia = acceptLanguage.includes('en-IN') || acceptLanguage.includes('hi-IN');
+    const defaultCountry = isIndia ? 'IN' : 'US';
+
+    res.status(200).json({ success: true, country_code: defaultCountry, method: 'default_fallback' });
+  } catch (err) {
+    console.error('[GEOIP] detectCountry endpoint error:', err);
+    res.status(200).json({ success: true, country_code: 'US', method: 'error_fallback' });
+  }
+}
+
+// Update country_code for authenticated user
+async function setCountry(req, res) {
+  try {
+    const { country_code } = req.body;
+    const clientId = req.client?.id || req.user?.id;
+
+    if (!country_code) {
+      return res.status(400).json({ error: 'country_code is required' });
+    }
+
+    if (!clientId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const cleanedCountryCode = country_code.trim().toUpperCase().substring(0, 2);
+
+    console.log(`[ONBOARDING] Setting country code to ${cleanedCountryCode} for client ${clientId}`);
+
+    await db.query(
+      `UPDATE businesses SET 
+        country_code = $1::varchar,
+        country = COALESCE(country, $1::text),
+        updated_at = NOW()
+       WHERE id = $2`,
+      [cleanedCountryCode, clientId]
+    );
+
+    res.status(200).json({
+      success: true,
+      country_code: cleanedCountryCode,
+      message: 'Country code updated successfully'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] setCountry error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   saveStep,
   getStatus,
   buildSystemPrompt,
-  completeTrial
+  completeTrial,
+  detectCountry,
+  setCountry
 };
+

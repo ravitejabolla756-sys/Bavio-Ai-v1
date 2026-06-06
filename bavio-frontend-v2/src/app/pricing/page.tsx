@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useCountry } from "@/context/CountryContext";
 import {
   ArrowRight,
   CheckCircle,
@@ -125,9 +126,21 @@ const faqs = [
 
 export default function PricingPage() {
   const ctaDestination = useCTADestination();
+  const { country } = useCountry();
   const [currency, setCurrency] = useState<"inr" | "usd">("inr");
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (country) {
+      if (country.currency === "inr") {
+        setCurrency("inr");
+      } else {
+        setCurrency("usd");
+      }
+    }
+  }, [country]);
+
   const symbol = currency === "inr" ? "Rs" : "$";
 
   return (

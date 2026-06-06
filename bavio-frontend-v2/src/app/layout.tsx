@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { instrumentSerif, jetbrainsMono, geistSans, geistMono } from "@/lib/fonts";
 import NavigationProgress from "@/components/NavigationProgress";
+import { CountryProvider } from "@/context/CountryContext";
 
 export const metadata: Metadata = {
   title: "Bavio AI - Autonomous Voice Agents for Business Calls",
@@ -40,10 +41,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
     >
       <body className="antialiased bg-canvas text-ink min-h-[100dvh] font-sans noise-overlay">
-        <NavigationProgress />
-        {children}
+        <CountryProvider>
+          <NavigationProgress />
+          {children}
+        </CountryProvider>
       </body>
     </html>
   );
 }
+
 

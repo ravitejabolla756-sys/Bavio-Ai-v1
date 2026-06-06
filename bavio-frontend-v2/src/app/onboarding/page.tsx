@@ -30,6 +30,7 @@ import {
 import Logo from "@/components/Logo";
 import { setCookie } from "@/lib/auth-utils";
 import { onboardingApi, getToken, getClientId } from "@/lib/api";
+import { useCountry } from "@/context/CountryContext";
 
 interface IntegrationState {
   id: string;
@@ -41,6 +42,8 @@ interface IntegrationState {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { country } = useCountry();
+  const [hasInitializedCountry, setHasInitializedCountry] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeStep, setActiveStep] = useState(1); // 1 = Business, 2 = AI setup, 3 = Integrations, 4 = Final loader
   const [direction, setDirection] = useState(1);
@@ -81,6 +84,24 @@ export default function OnboardingPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessName, agentName, businessRole, languages]);
+
+  // Sync state with detected country on mount
+  useEffect(() => {
+    if (country && !hasInitializedCountry) {
+      setCountryCode(country.dialCode);
+      if (country.code === "US") {
+        setLanguages(["en-US"]);
+        setAgentName("Sarah");
+      } else if (country.code === "GB") {
+        setLanguages(["en-US"]);
+        setAgentName("Emma");
+      } else {
+        setLanguages(["en-IN", "hinglish"]);
+        setAgentName("Meera");
+      }
+      setHasInitializedCountry(true);
+    }
+  }, [country, hasInitializedCountry]);
 
   // Step 3: Integrations
   const [integrations, setIntegrations] = useState<IntegrationState[]>([
