@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useCountry } from "../shared/CountryContext";
 
 export interface PricingPlan {
@@ -41,7 +41,7 @@ export const PRICING_DATA: Record<
   US: {
     currencySymbol: "$",
     currencyCode: "USD",
-    popularityBadge: "Most popular in USA / Canada",
+    popularityBadge: "Most popular in USA",
     plans: {
       starter: {
         price: 39,
@@ -77,7 +77,7 @@ export const PRICING_DATA: Record<
     },
   },
   AU: {
-    currencySymbol: "AUD ",
+    currencySymbol: "A$",
     currencyCode: "AUD",
     popularityBadge: "Most popular in Australia",
     plans: {
@@ -117,13 +117,19 @@ export const PRICING_DATA: Record<
 };
 
 interface PricingSelectorProps {
+  selectedPlan: string;
   onSelectPlan: (planName: string, billingCycle: "monthly" | "annual", price: number) => void;
-  selectedPlan?: string;
+  billingCycle: "monthly" | "annual";
+  setBillingCycle: (cycle: "monthly" | "annual") => void;
 }
 
-export function PricingSelector({ onSelectPlan, selectedPlan }: PricingSelectorProps) {
+export function PricingSelector({
+  selectedPlan,
+  onSelectPlan,
+  billingCycle,
+  setBillingCycle,
+}: PricingSelectorProps) {
   const { country, loading } = useCountry();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
 
   const resolvedCountry = country && PRICING_DATA[country] ? country : "US";
   const pricing = PRICING_DATA[resolvedCountry];
@@ -153,15 +159,15 @@ export function PricingSelector({ onSelectPlan, selectedPlan }: PricingSelectorP
   }
 
   return (
-    <div className="w-full flex flex-col items-center text-sans">
+    <div className="w-full flex flex-col items-center">
       {/* Billing Switcher */}
-      <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E5E0D8] rounded-2xl p-1 mb-10 shadow-inner">
+      <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E5E0D8] rounded-2xl p-1 mb-12 shadow-sm">
         <button
           type="button"
           onClick={() => setBillingCycle("monthly")}
-          className={`px-5 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 ${
+          className={`px-6 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 ${
             billingCycle === "monthly"
-              ? "bg-[#FF6B00] text-white shadow-sm"
+              ? "bg-[#14141A] text-white shadow-sm"
               : "text-[#8A8A96] hover:text-[#14141A]"
           }`}
         >
@@ -170,21 +176,21 @@ export function PricingSelector({ onSelectPlan, selectedPlan }: PricingSelectorP
         <button
           type="button"
           onClick={() => setBillingCycle("annual")}
-          className={`px-5 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 inline-flex items-center gap-1.5 ${
+          className={`px-6 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 inline-flex items-center gap-2 ${
             billingCycle === "annual"
-              ? "bg-[#FF6B00] text-white shadow-sm"
+              ? "bg-[#14141A] text-white shadow-sm"
               : "text-[#8A8A96] hover:text-[#14141A]"
           }`}
         >
           Annual Billing
-          <span className="text-[9px] font-black uppercase tracking-widest bg-[#FF6B00]/15 text-[#FF6B00] py-0.5 px-2 rounded-md group-hover:bg-[#FF6B00] group-hover:text-white transition-colors duration-200">
+          <span className="text-[9px] font-black uppercase tracking-widest bg-[#FF6B00]/15 text-[#FF6B00] py-0.5 px-2 rounded-md">
             Save 20%
           </span>
         </button>
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl items-stretch">
         {["starter", "growth", "scale"].map((planName) => {
           const planConfig = pricing.plans[planName];
           const isSelected = selectedPlan === planName;
@@ -195,29 +201,32 @@ export function PricingSelector({ onSelectPlan, selectedPlan }: PricingSelectorP
           return (
             <div
               key={planName}
-              className={`relative rounded-[24px] border transition-all duration-300 flex flex-col justify-between overflow-hidden bg-white ${
+              onClick={() => onSelectPlan(planName, billingCycle, finalPrice)}
+              className={`relative rounded-[28px] border-2 transition-all duration-300 flex flex-col justify-between overflow-hidden bg-white cursor-pointer ${
                 isSelected
-                  ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10 shadow-premium"
-                  : isGrowth
-                  ? "border-[#E5E0D8] shadow-sm hover:border-[#FF6B00]/50 hover:shadow-premium"
-                  : "border-[#E5E0D8] hover:border-[#FF6B00]/40 shadow-sm"
+                  ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10 shadow-[0_12px_32px_rgba(255,107,0,0.08)] scale-[1.02]"
+                  : "border-[#EBE6DD] shadow-sm hover:border-[#FF6B00]/50 hover:shadow-md hover:scale-[1.01]"
               }`}
             >
-              {/* Popularity Badge */}
-              {isGrowth && pricing.popularityBadge && (
+              {/* Top Status Badges */}
+              {isSelected ? (
                 <div className="absolute top-4 right-4 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm">
+                  Current Plan Selected
+                </div>
+              ) : isGrowth && pricing.popularityBadge ? (
+                <div className="absolute top-4 right-4 bg-[#14141A] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm">
                   {pricing.popularityBadge}
                 </div>
-              )}
+              ) : null}
 
               <div className="p-8 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-heading-sm font-bold text-[#14141A] capitalize mb-1">
+                  <h3 className="text-heading-sm font-bold text-[#14141A] capitalize mb-1 mt-2">
                     {planName}
                   </h3>
-                  <p className="text-body-xs text-[#8A8A96] mb-6 min-h-[32px]">
+                  <p className="text-body-xs text-[#8A8A96] mb-6 min-h-[40px] leading-relaxed">
                     {planName === "starter"
-                      ? "Perfect for micro businesses starting with voice AI."
+                      ? "Perfect for micro businesses starting with voice AI receptionist."
                       : planName === "growth"
                       ? "Most popular plan for expanding customer care outreach."
                       : "For high-volume operations requiring advanced CRM pipelines."}
@@ -251,17 +260,18 @@ export function PricingSelector({ onSelectPlan, selectedPlan }: PricingSelectorP
                   </ul>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onSelectPlan(planName, billingCycle, finalPrice)}
-                  className={`w-full py-4.5 rounded-button text-body-xs font-bold transition-all duration-300 inline-flex items-center justify-center gap-1.5 ${
-                    isSelected
-                      ? "bg-[#FF6B00] text-white shadow-saffron"
-                      : "border border-[#EBE6DD] hover:border-[#FF6B00] text-[#14141A] hover:text-[#FF6B00]"
-                  }`}
-                >
-                  {isSelected ? "Selected" : `Choose ${planName}`}
-                </button>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    className={`w-full h-12 rounded-xl text-body-xs font-bold transition-all duration-300 inline-flex items-center justify-center gap-1.5 border ${
+                      isSelected
+                        ? "bg-[#FF6B00] border-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.15)]"
+                        : "bg-white border-[#EBE6DD] hover:border-[#14141A] text-[#14141A] hover:bg-[#FAF9F6]"
+                    }`}
+                  >
+                    {isSelected ? "Selected" : `Choose ${planName}`}
+                  </button>
+                </div>
               </div>
             </div>
           );

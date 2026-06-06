@@ -17,6 +17,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { assistantsApi, getClientId, Assistant } from "@/lib/api";
+import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
 const VOICE_OPTIONS = [
   "Saffron-Female (Meera)",
@@ -37,6 +38,65 @@ const MODEL_OPTIONS = [
   "GPT-4o Engine",
   "Claude 3.5 Sonnet",
 ];
+
+const voiceOptions = VOICE_OPTIONS.map((v) => {
+  let icon = "🗣️";
+  let description = "AI synthesized natural voice";
+  if (v.includes("Meera")) {
+    icon = "👩";
+    description = "Warm Hindi & English female tone, perfect for support.";
+  } else if (v.includes("Arjun")) {
+    icon = "👨";
+    description = "Confident Hindi & English male tone, great for sales.";
+  } else if (v.includes("Priya")) {
+    icon = "👩";
+    description = "Formal, professional female voice for corporate inquiries.";
+  } else if (v.includes("Hinglish")) {
+    icon = "🎙️";
+    description = "Bilingual conversational blend, high fluid speed.";
+  }
+  return { value: v, label: v, icon, description };
+});
+
+const languageOptions = LANGUAGE_OPTIONS.map((l) => {
+  let icon = "🌐";
+  let label = l;
+  let description = "Supported communication dialect";
+  if (l === "hi-IN") {
+    icon = "🇮🇳";
+    label = "Hindi (India)";
+    description = "Standard Devanagari speech recognition & synthesis.";
+  } else if (l === "hinglish") {
+    icon = "🇮🇳";
+    label = "Hinglish";
+    description = "Bilingual blend of Hindi and English speech patterns.";
+  } else if (l === "en-IN") {
+    icon = "🇮🇳";
+    label = "English (India)";
+    description = "Indian accented English speech recognition.";
+  } else if (l === "en-US") {
+    icon = "🇺🇸";
+    label = "English (US)";
+    description = "American accent speech recognition & synthesis.";
+  }
+  return { value: l, label, icon, description };
+});
+
+const modelOptions = MODEL_OPTIONS.map((m) => {
+  let icon = "⚡";
+  let description = "System processing core";
+  if (m.includes("Local")) {
+    icon = "🔒";
+    description = "Ultra-low latency private model, runs locally (300ms response).";
+  } else if (m.includes("GPT-4o")) {
+    icon = "🤖";
+    description = "OpenAI's state-of-the-art conversational engine.";
+  } else if (m.includes("Claude")) {
+    icon = "🧠";
+    description = "Anthropic's smart analytical model, great for complex flows.";
+  }
+  return { value: m, label: m, icon, description };
+});
 
 export default function AgentsDirectory() {
   const [agents, setAgents] = useState<Assistant[]>([]);
@@ -272,13 +332,11 @@ export default function AgentsDirectory() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">Voice Preset</label>
-                    <select
+                    <SearchableDropdown
+                      options={voiceOptions}
                       value={formVoice}
-                      onChange={(e) => setFormVoice(e.target.value)}
-                      className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink font-sans"
-                    >
-                      {VOICE_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
+                      onChange={(val) => setFormVoice(val)}
+                    />
                   </div>
                 </div>
 
@@ -310,23 +368,19 @@ export default function AgentsDirectory() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">Language</label>
-                    <select
+                    <SearchableDropdown
+                      options={languageOptions}
                       value={formLanguage}
-                      onChange={(e) => setFormLanguage(e.target.value)}
-                      className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink font-sans"
-                    >
-                      {LANGUAGE_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
+                      onChange={(val) => setFormLanguage(val)}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">LLM Engine</label>
-                    <select
+                    <SearchableDropdown
+                      options={modelOptions}
                       value={formModel}
-                      onChange={(e) => setFormModel(e.target.value)}
-                      className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink font-sans"
-                    >
-                      {MODEL_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
+                      onChange={(val) => setFormModel(val)}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">Status</label>
