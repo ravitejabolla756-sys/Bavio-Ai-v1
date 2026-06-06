@@ -1,4 +1,4 @@
-import { supabase } from '../../database/supabase';
+import { query } from '../../db/db';
 import { ExotelService } from './ExotelService';
 import { TwilioService } from './TwilioService';
 
@@ -30,31 +30,34 @@ export class PhoneAssignmentService {
   }
 
   /**
-   * Auto-assign a virtual number based on user country, save it, and link it to business profile
+   * Auto-assign a virtual number based on user country, save it, and link it to user profile
    */
   public static async assignNumber(params: {
-    businessId: string;
+    userId?: string;
+    businessId?: string;
     countryCode: string;
     friendlyName: string;
     areaCode?: string;
   }): Promise<PurchasedNumber> {
-    const { businessId, countryCode, friendlyName, areaCode } = params;
+    const { userId, businessId, countryCode, friendlyName, areaCode } = params;
+    const targetId = userId || businessId;
+    if (!targetId) {
+      throw new Error('Either userId or businessId must be provided');
+    }
     const cleanCountry = countryCode.trim().toUpperCase().substring(0, 2);
 
-    // 1. Prevent duplicate assignments: check if business already has an active virtual number
-    const { data: existing, error: fetchErr } = await supabase
-      .from('virtual_numbers')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('status', 'active')
-      .maybeSingle();
+    // 1. Prevent duplicate assignments: check if user already has an active virtual number for this country
+    const existingRes = await query(
+      `SELECT phone_number, provider_sid, provider 
+       FROM virtual_numbers 
+       WHERE user_id = $1 AND country_code = $2 AND status = 'active' 
+       LIMIT 1`,
+      [targetId, cleanCountry]
+    );
 
-    if (fetchErr) {
-      console.error('[PHONE ASSIGNMENT] Error checking existing assignments:', fetchErr);
-    }
-
-    if (existing) {
-      console.log(`[PHONE ASSIGNMENT] Business ${businessId} already has active number: ${existing.phone_number}`);
+    if (existingRes.rows.length > 0) {
+      const existing = existingRes.rows[0];
+      console.log(`[PHONE ASSIGNMENT] User ${targetId} already has active number for ${cleanCountry}: ${existing.phone_number}`);
       return {
         phoneNumber: existing.phone_number,
         providerSid: existing.provider_sid,
@@ -69,7 +72,7 @@ export class PhoneAssignmentService {
     let purchased: PurchasedNumber;
     try {
       purchased = await provider.buyNumber({
-        businessId,
+        businessId: targetId,
         countryCode: cleanCountry,
         friendlyName,
         areaCode,
@@ -80,36 +83,31 @@ export class PhoneAssignmentService {
     }
 
     // 4. Save to virtual_numbers table
-    const { error: insertErr } = await supabase
-      .from('virtual_numbers')
-      .insert({
-        business_id: businessId,
-        country_code: cleanCountry,
-        provider: purchased.provider,
-        phone_number: purchased.phoneNumber,
-        provider_sid: purchased.providerSid,
-        status: 'active',
-      });
-
-    if (insertErr) {
+    try {
+      await query(
+        `INSERT INTO virtual_numbers (
+          user_id, country_code, provider, phone_number, provider_sid, status
+        ) VALUES ($1, $2, $3, $4, $5, 'active')`,
+        [targetId, cleanCountry, purchased.provider, purchased.phoneNumber, purchased.providerSid]
+      );
+    } catch (insertErr: any) {
       console.error('[PHONE ASSIGNMENT] Error saving virtual number to database:', insertErr);
       throw new Error(`Failed to log assigned virtual number to database: ${insertErr.message}`);
     }
 
-    // 5. Link to user account (update twilio_number column on businesses)
-    const { error: updateErr } = await supabase
-      .from('businesses')
-      .update({
-        twilio_number: purchased.phoneNumber,
-        number_assigned_at: new Date().toISOString(),
-      })
-      .eq('id', businessId);
-
-    if (updateErr) {
-      console.warn(`[PHONE ASSIGNMENT] Warning: Failed to update default twilio_number on businesses: ${updateErr.message}`);
+    // 5. Link to user account: Update business_phone as the virtual number on the user's profile
+    try {
+      await query(
+        `UPDATE users 
+         SET business_phone = $1 
+         WHERE id = $2`,
+        [purchased.phoneNumber, targetId]
+      );
+    } catch (updateErr: any) {
+      console.warn(`[PHONE ASSIGNMENT] Warning: Failed to update business_phone on users: ${updateErr.message}`);
     }
 
-    console.log(`[PHONE ASSIGNMENT] Successfully auto-assigned ${purchased.phoneNumber} (${purchased.provider}) to business ${businessId}`);
+    console.log(`[PHONE ASSIGNMENT] Successfully auto-assigned ${purchased.phoneNumber} (${purchased.provider}) to user ${targetId}`);
     return purchased;
   }
 }
