@@ -5,116 +5,149 @@ import { useRouter } from "next/navigation";
 import { CountryProvider, useCountry } from "@/components/shared/CountryContext";
 import { PricingSelector } from "@/components/pricing/PricingSelector";
 import { PhoneSetup } from "@/components/numbers/PhoneSetup";
+import { authApi, onboardingApi, billingApi } from "@/lib/api";
+import { PRICING_BY_COUNTRY } from "@/config/pricing";
+import Logo from "@/components/Logo";
+import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
+
+const countryOptions = [
+  { value: "IN", label: "India", icon: "🇮🇳" },
+  { value: "US", label: "United States", icon: "🇺🇸" },
+  { value: "CA", label: "Canada", icon: "🇨🇦" },
+  { value: "GB", label: "United Kingdom", icon: "🇬🇧" },
+  { value: "AU", label: "Australia", icon: "🇦🇺" },
+  { value: "AE", label: "United Arab Emirates", icon: "🇦🇪" },
+];
 
 function OnboardingContent() {
   const router = useRouter();
   const { country, setCountry, loading: countryLoading } = useCountry();
-  const [step, setStep] = useState<number>(1); // 1 = Pricing, 2 = Signup, 3 = Phone Setup, 4 = Success
-  
+  const [step, setStep] = useState<number>(1); // 1 = Pricing Selection, 2 = Phone Setup, 3 = Success
+
+  // User auth and profile states
+  const [userId, setUserId] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [profileLoading, setProfileLoading] = useState<boolean>(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
   // Selection states
   const [selectedPlan, setSelectedPlan] = useState<string>("starter");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [planPrice, setPlanPrice] = useState<number>(0);
-  const [userId, setUserId] = useState<string>("");
-  const [userEmail, setUserEmail] = useState<string>("");
-  const [userToken, setUserToken] = useState<string>("");
 
-  // Signup form states
-  const [signupForm, setSignupForm] = useState({
-    email: "",
-    password: "",
-    businessName: "",
-    businessPhone: "",
-    industry: "healthcare",
-  });
-  const [signupLoading, setSignupLoading] = useState<boolean>(false);
-  const [signupError, setSignupError] = useState<string | null>(null);
+  // Setup / Redirection loader states
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Auto-fill phone prefixes based on resolved country
+  // Fetch authenticated profile on mount
   useEffect(() => {
-    if (country) {
-      const dialCodes: Record<string, string> = {
-        IN: "+91 ",
-        US: "+1 ",
-        GB: "+44 ",
-        AU: "+61 ",
-        AE: "+971 ",
-        CA: "+1 ",
-      };
-      setSignupForm((prev) => ({
-        ...prev,
-        businessPhone: dialCodes[country] || "",
-      }));
-    }
-  }, [country]);
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const user = await authApi.getProfile();
+        setUserId(user.id);
+        setUserEmail(user.email);
+        if (user.country) {
+          setCountry(user.country);
+        }
+      } catch (err: any) {
+        console.error("Failed to load user profile in onboarding:", err);
+        setProfileError(err.message || "Failed to load account profile. Please log in.");
+      } finally {
+        setProfileLoading(false);
+      }
+    };
 
-  // Handle plan select in Step 1
+    fetchProfile();
+  }, [setCountry]);
+
+  // Handle plan select updates from selector component
   const handleSelectPlan = (planName: string, cycle: "monthly" | "annual", price: number) => {
     setSelectedPlan(planName);
     setBillingCycle(cycle);
     setPlanPrice(price);
-    setStep(2);
+    setActionError(null);
   };
 
-  // Handle signup submission in Step 2
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSignupLoading(true);
-    setSignupError(null);
-
-    if (!signupForm.email || !signupForm.password || !signupForm.businessName || !signupForm.businessPhone) {
-      setSignupError("Please fill in all mandatory fields.");
-      setSignupLoading(false);
-      return;
-    }
+  // Process selected plan setup action (Continue Setup)
+  const handleContinueSetup = async () => {
+    if (actionLoading) return;
+    setActionLoading(true);
+    setActionError(null);
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: signupForm.email,
-          password: signupForm.password,
-          business_name: signupForm.businessName,
-          business_phone: signupForm.businessPhone,
-          industry: signupForm.industry,
-          country_code: country || "US",
-        }),
-      });
-
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Account registration failed.");
+      if (selectedPlan === "starter") {
+        // Starter Plan: Create trial workspace with 100 free minutes
+        const result = await onboardingApi.completeTrial();
+        console.log("Starter trial workspace activated:", result);
+        setStep(2); // Advance to Phone Setup
+      } else {
+        // Growth or Scale: Create subscription and redirect to Dodo Payments checkout
+        console.log(`Initiating checkout for plan: ${selectedPlan}`);
+        const result = await billingApi.subscribe(selectedPlan);
+        if (result.checkoutUrl || result.url) {
+          window.location.href = result.checkoutUrl || result.url;
+        } else {
+          throw new Error("Billing API did not return a valid checkout redirect URL.");
+        }
       }
-
-      const { user_id, token } = resData.data;
-
-      // Persist auth details
-      localStorage.setItem("bavio_token", token);
-      localStorage.setItem("bavio_user_id", user_id);
-      localStorage.setItem("bavio_name", signupForm.businessName);
-
-      setUserId(user_id);
-      setUserEmail(signupForm.email);
-      setUserToken(token);
-
-      // Advance to number assignment
-      setStep(3);
     } catch (err: any) {
-      console.error("Signup error:", err);
-      setSignupError(err.message || "An unexpected error occurred during account creation.");
+      console.error("Continue Setup failed:", err);
+      setActionError(err.message || "A network or system error occurred. Please try again.");
     } finally {
-      setSignupLoading(false);
+      setActionLoading(false);
     }
   };
 
-  // Handle Phone allocation complete in Step 3
+  // Handle Phone allocation completion in Step 2
   const handlePhoneComplete = (num: string) => {
-    setStep(4);
+    setStep(3); // Advance to success activation screen
   };
 
+  // Loading indicator for initial profile fetch
+  if (profileLoading || countryLoading) {
+    return (
+      <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-center items-center">
+        <div className="w-12 h-12 border-4 border-[#FF6B00]/25 border-t-[#FF6B00] rounded-full animate-spin mb-4" />
+        <p className="text-body-sm text-[#8A8A96] font-medium animate-pulse">Initializing your onboarding workspace...</p>
+      </div>
+    );
+  }
+
+  // Profile loading error state
+  if (profileError) {
+    return (
+      <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-center items-center p-6 text-center">
+        <div className="w-16 h-16 bg-red-50 border border-red-200 text-red-600 rounded-full flex items-center justify-center mb-6">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="text-heading-sm font-bold mb-2">Session Authentication Error</h2>
+        <p className="text-body-xs text-[#8A8A96] max-w-sm mb-6 leading-relaxed">{profileError}</p>
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem("bavio_token");
+            window.location.href = "/login";
+          }}
+          className="px-6 py-2.5 bg-[#14141A] hover:bg-[#2A2A35] text-white rounded-xl text-body-xs font-bold transition-all duration-300"
+        >
+          Sign In Again
+        </button>
+      </div>
+    );
+  }
+
+  // Calculate configuration details for the sticky summary section
+  const activeCountry = country || "US";
+  const countryPricing = PRICING_BY_COUNTRY[activeCountry] || PRICING_BY_COUNTRY.DEFAULT;
+  const overageRate = countryPricing.overageRate;
+  const includedMinutes = selectedPlan === "starter" ? 100 : (selectedPlan === "growth" ? 500 : 1500);
+  const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
+
   return (
-    <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-between overflow-x-hidden">
+    <div className={`relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-between overflow-x-hidden ${step === 1 ? "pb-36" : ""}`}>
       {/* Background ambient lighting */}
       <div className="absolute w-[500px] h-[500px] bg-[#FF6B00]/3 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
       <div className="absolute w-[600px] h-[600px] bg-[#FF6B00]/2 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
@@ -122,23 +155,20 @@ function OnboardingContent() {
       {/* Header bar */}
       <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#EBE6DD]/60 relative z-20">
         <div className="flex items-center gap-3">
-          {/* Logo */}
-          <div className="w-8 h-8 bg-[#14141A] rounded-xl flex items-center justify-center font-bold text-white text-base">
-            B
-          </div>
-          <span className="font-display text-lg font-black tracking-tight text-[#14141A]">Bavio AI</span>
+          <Logo className="w-12 h-12 transition-transform duration-300 ease-premium hover:scale-105" color="text-saffron" />
+          <span className="font-display text-2xl font-black tracking-tight text-[#14141A]">Bavio AI</span>
         </div>
 
         {/* Stepper Progress bar */}
-        {step < 4 && (
+        {step < 3 && (
           <div className="flex items-center gap-4">
             <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider hidden sm:inline">
-              Step {step} of 3
+              Step {step} of 2
             </span>
             <div className="w-24 sm:w-40 h-1 bg-[#E5E0D8] rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#FF6B00] rounded-full transition-all duration-300"
-                style={{ width: `${(step / 3) * 100}%` }}
+                style={{ width: `${(step / 2) * 100}%` }}
               />
             </div>
           </div>
@@ -146,9 +176,9 @@ function OnboardingContent() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-6 relative z-10">
+      <main className="flex-grow flex items-center justify-center p-6 relative z-10 my-4">
         {step === 1 && (
-          <div className="w-full max-w-5xl text-center py-8">
+          <div className="w-full max-w-5xl text-center py-6">
             <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
               Simple, regional SaaS pricing
             </h1>
@@ -156,162 +186,43 @@ function OnboardingContent() {
               Answer customer phone calls instantly. Choose a subscription package adapted to your workspace.
             </p>
             
-            {/* Custom inline Country selector override */}
-            <div className="mb-8 inline-flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-2xl shadow-sm">
-              <span className="text-body-xs font-bold text-[#8A8A96] uppercase tracking-wider pl-1">
+            {/* Country selector override */}
+            <div className="mb-10 inline-flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-2xl shadow-sm min-w-[320px]">
+              <span className="text-body-xs font-bold text-[#8A8A96] uppercase tracking-wider pl-1 shrink-0">
                 Your country:
               </span>
-              <select
+              <SearchableDropdown
+                options={countryOptions}
                 value={country || "US"}
-                onChange={(e) => setCountry(e.target.value)}
-                className="bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-1.5 px-3.5 text-body-xs font-bold text-[#14141A] outline-none cursor-pointer"
-              >
-                <option value="IN">🇮🇳 India</option>
-                <option value="US">🇺🇸 United States</option>
-                <option value="GB">🇬🇧 United Kingdom</option>
-                <option value="AU">🇦🇺 Australia</option>
-                <option value="AE">🇦🇪 United Arab Emirates</option>
-              </select>
+                onChange={(val) => setCountry(val)}
+                className="w-56"
+              />
             </div>
 
-            <PricingSelector onSelectPlan={handleSelectPlan} selectedPlan={selectedPlan} />
+            {/* Pricing Selector Grid */}
+            <PricingSelector 
+              selectedPlan={selectedPlan} 
+              onSelectPlan={handleSelectPlan}
+              billingCycle={billingCycle}
+              setBillingCycle={setBillingCycle}
+            />
+
+            {/* Error messaging inside the selector view */}
+            {actionError && (
+              <div className="max-w-md mx-auto mt-8 p-4 bg-red-50 border border-red-200 rounded-xl text-body-xs text-red-600 font-semibold animate-fade-in">
+                {actionError}
+              </div>
+            )}
           </div>
         )}
 
         {step === 2 && (
-          <div className="w-full max-w-md bg-white border border-[#E5E0D8] rounded-[24px] p-8 shadow-premium animate-fade-in text-left">
-            <h2 className="text-heading-sm font-bold text-[#14141A] mb-2">Create Workspace Account</h2>
-            <p className="text-body-xs text-[#8A8A96] mb-6">
-              Create your administrative credentials to configure call routing.
-            </p>
-
-            {signupError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-100 rounded-xl text-body-xs text-red-600 font-semibold">
-                {signupError}
-              </div>
-            )}
-
-            <form onSubmit={handleSignupSubmit} className="space-y-4">
-              {/* Country selector field (read-only override link) */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Country Code</label>
-                <select
-                  value={country || "US"}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-body-xs font-bold text-[#14141A] outline-none"
-                >
-                  <option value="IN">India (INR)</option>
-                  <option value="US">United States (USD)</option>
-                  <option value="GB">United Kingdom (GBP)</option>
-                  <option value="AU">Australia (AUD)</option>
-                  <option value="AE">United Arab Emirates (AED)</option>
-                </select>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  placeholder="e.g. raj@realestate.com"
-                  value={signupForm.email}
-                  onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-body-xs text-[#14141A] outline-none"
-                  required
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Password</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={signupForm.password}
-                  onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-body-xs text-[#14141A] outline-none"
-                  required
-                />
-              </div>
-
-              {/* Business Name */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Business / Company Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Raj Properties"
-                  value={signupForm.businessName}
-                  onChange={(e) => setSignupForm({ ...signupForm, businessName: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-[#14141A] text-body-xs outline-none"
-                  required
-                />
-              </div>
-
-              {/* Business Phone */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Business Phone Number</label>
-                <input
-                  type="tel"
-                  placeholder={country === "IN" ? "7569960503" : "+1 234 567 890"}
-                  value={signupForm.businessPhone}
-                  onChange={(e) => setSignupForm({ ...signupForm, businessPhone: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-body-xs text-[#14141A] outline-none"
-                  required
-                />
-              </div>
-
-              {/* Industry Select */}
-              <div>
-                <label className="block text-body-xs font-bold text-[#14141A] mb-1.5">Industry Sector</label>
-                <select
-                  value={signupForm.industry}
-                  onChange={(e) => setSignupForm({ ...signupForm, industry: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-body-xs font-semibold text-[#14141A] outline-none cursor-pointer"
-                >
-                  <option value="real_estate">Real Estate</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="legal">Legal Services</option>
-                  <option value="finance">Finance & Banking</option>
-                  <option value="retail">Retail / E-commerce</option>
-                  <option value="other">Other Industry</option>
-                </select>
-              </div>
-
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={signupLoading}
-                  className="w-full bg-[#FF6B00] hover:bg-[#E05E00] disabled:bg-[#FAF7F2] disabled:text-[#8A8A96] text-white py-3.5 rounded-button text-body-xs font-bold transition-all duration-300 shadow-saffron disabled:shadow-none inline-flex items-center justify-center gap-2"
-                >
-                  {signupLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-[#8A8A96]/25 border-t-[#8A8A96] rounded-full animate-spin" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    "Create Workspace Account"
-                  )}
-                </button>
-              </div>
-            </form>
-            
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="w-full text-center text-body-xs font-bold text-[#8A8A96] hover:text-[#14141A] mt-4 transition-colors"
-            >
-              ← Back to Plans Selector
-            </button>
-          </div>
-        )}
-
-        {step === 3 && (
           <div className="w-full max-w-2xl py-4">
             <PhoneSetup onComplete={handlePhoneComplete} userId={userId} />
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="w-full max-w-lg bg-white border border-[#E5E0D8] rounded-[24px] p-8 md:p-10 shadow-premium animate-fade-in text-center">
             {/* Success icon */}
             <div className="w-16 h-16 bg-green-50 border border-green-200 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -355,8 +266,81 @@ function OnboardingContent() {
         )}
       </main>
 
+      {/* Sticky Bottom Plan Summary Section */}
+      {step === 1 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] z-30 transition-all duration-300">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* Metadata info */}
+            <div className="flex flex-wrap items-center justify-start gap-y-3 gap-x-6 text-left">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Selected Plan</span>
+                <span className="text-body-xs font-black text-[#14141A] capitalize">{selectedPlan}</span>
+              </div>
+              <div className="h-8 w-px bg-[#E5E0D8]/85 hidden md:block" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Billing Cycle</span>
+                <span className="text-body-xs font-black text-[#14141A] capitalize">{billingCycle} Billing</span>
+              </div>
+              <div className="h-8 w-px bg-[#E5E0D8]/85 hidden md:block" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Included Minutes</span>
+                <span className="text-body-xs font-black text-[#14141A]">{includedMinutes} mins</span>
+              </div>
+              <div className="h-8 w-px bg-[#E5E0D8]/85 hidden md:block" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Overage Rate</span>
+                <span className="text-body-xs font-black text-[#14141A]">{overageRate}</span>
+              </div>
+              <div className="h-8 w-px bg-[#E5E0D8]/85 hidden md:block" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Trial Status</span>
+                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
+                  selectedPlan === "starter"
+                    ? "bg-[#FF6B00]/15 text-[#FF6B00]"
+                    : "bg-[#14141A]/10 text-[#14141A]"
+                }`}>
+                  {trialStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* Primary Action Button */}
+            <div className="shrink-0 flex items-center">
+              <button
+                type="button"
+                onClick={handleContinueSetup}
+                disabled={actionLoading}
+                className="w-full md:w-auto min-w-[200px] h-12 bg-[#FF6B00] hover:bg-[#E05E00] disabled:bg-[#FAF7F2] text-white disabled:text-[#8A8A96] rounded-xl text-body-xs font-bold transition-all duration-300 shadow-saffron disabled:shadow-none inline-flex items-center justify-center gap-2"
+              >
+                {actionLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-[#8A8A96]/25 border-t-[#8A8A96] rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Continue Setup
+                    <svg className="w-4 h-4 translate-y-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen action loading overlay */}
+      {actionLoading && (
+        <div className="fixed inset-0 bg-[#FAF9F6]/60 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
+          <div className="w-12 h-12 border-4 border-[#FF6B00]/25 border-t-[#FF6B00] rounded-full animate-spin mb-4" />
+          <p className="text-body-sm text-[#FF6B00] font-bold">Creating your secure workspace redirect...</p>
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-5 border-t border-[#EBE6DD]/60 flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20">
+      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#EBE6DD]/60 flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20 mt-10">
         <span>© 2026 Bavio AI Inc. All rights reserved.</span>
       </footer>
     </div>

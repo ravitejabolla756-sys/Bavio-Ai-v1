@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useCountry, countries } from "@/context/CountryContext";
 import { CALL_FORWARD_INSTRUCTIONS, OperatorInstruction } from "@/config/callForwardInstructions";
+import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 import {
   CaretDown,
   Check,
@@ -158,116 +159,53 @@ export default function CallForwardSetup({
               </h2>
 
               {/* Country Selector */}
-              <div className="flex flex-col gap-1.5 relative">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-[#8A8A96] uppercase tracking-wider">Business Country</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCountryDropdownOpen(!isCountryDropdownOpen);
-                    setIsOperatorDropdownOpen(false);
+                <SearchableDropdown
+                  options={countries.map((c) => ({
+                    value: c.code,
+                    label: c.name,
+                    icon: c.flag,
+                  }))}
+                  value={selectedCountry}
+                  onChange={(val) => {
+                    handleCountryChange(val);
                   }}
-                  className="w-full flex items-center justify-between bg-[#FAF7F2] border border-[#E5E0D8] hover:border-[#D8D2C4] focus:border-[#FF6B00] rounded-xl py-3 px-4 text-body-xs text-[#14141A] font-semibold transition-all duration-200 outline-none select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    {countryLoading ? (
-                      <Spinner className="w-4.5 h-4.5 text-[#FF6B00] animate-spin" />
-                    ) : (
-                      <>
-                        <span className="text-lg leading-none">
-                          {countries.find((c) => c.code === selectedCountry)?.flag || "🌐"}
-                        </span>
-                        <span>
-                          {countries.find((c) => c.code === selectedCountry)?.name || "Global / Other"}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <CaretDown className={`w-4 h-4 text-[#8A8A96] transition-transform duration-300 ${isCountryDropdownOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {/* Country Dropdown */}
-                <AnimatePresence>
-                  {isCountryDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-[#E5E0D8] rounded-xl shadow-premium overflow-hidden"
-                    >
-                      <div className="max-h-[220px] overflow-y-auto py-1">
-                        {countries.map((c) => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => {
-                              handleCountryChange(c.code);
-                              setIsCountryDropdownOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-[#FAF7F2] transition-colors text-left text-body-xs font-semibold ${
-                              c.code === selectedCountry ? "bg-[#FAF7F2]/60 text-[#FF6B00]" : "text-[#14141A]"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span>{c.flag}</span>
-                              <span>{c.name}</span>
-                            </div>
-                            {c.code === selectedCountry && <Check className="w-4 h-4 text-[#FF6B00]" weight="bold" />}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
+                  renderTrigger={(selected) => (
+                    <div className="flex items-center gap-2.5 w-full pr-2">
+                      {countryLoading ? (
+                        <Spinner className="w-4.5 h-4.5 text-[#FF6B00] animate-spin" />
+                      ) : (
+                        <>
+                          <span className="text-lg leading-none">
+                            {selected?.icon || "🌐"}
+                          </span>
+                          <span className="font-semibold text-body-xs text-[#14141A]">
+                            {selected?.label || "Global / Other"}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   )}
-                </AnimatePresence>
+                />
               </div>
 
               {/* Operator Selector */}
-              <div className="flex flex-col gap-1.5 relative">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-[#8A8A96] uppercase tracking-wider">Telecom Operator</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOperatorDropdownOpen(!isOperatorDropdownOpen);
-                    setIsCountryDropdownOpen(false);
+                <SearchableDropdown
+                  options={operators.map((op) => ({
+                    value: op,
+                    label: operatorMap[op].name,
+                  }))}
+                  value={selectedOperator}
+                  onChange={(val) => {
+                    setSelectedOperator(val);
+                    setCurrentStep(0);
+                    setVerificationSuccess(false);
+                    setVerificationError(null);
                   }}
-                  className="w-full flex items-center justify-between bg-[#FAF7F2] border border-[#E5E0D8] hover:border-[#D8D2C4] focus:border-[#FF6B00] rounded-xl py-3 px-4 text-body-xs text-[#14141A] font-semibold transition-all duration-200 outline-none select-none"
-                >
-                  <span>{instruction?.name || selectedOperator}</span>
-                  <CaretDown className={`w-4 h-4 text-[#8A8A96] transition-transform duration-300 ${isOperatorDropdownOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {/* Operator Dropdown */}
-                <AnimatePresence>
-                  {isOperatorDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-[#E5E0D8] rounded-xl shadow-premium overflow-hidden"
-                    >
-                      <div className="py-1">
-                        {operators.map((op) => (
-                          <button
-                            key={op}
-                            type="button"
-                            onClick={() => {
-                              setSelectedOperator(op);
-                              setCurrentStep(0);
-                              setVerificationSuccess(false);
-                              setVerificationError(null);
-                              setIsOperatorDropdownOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-[#FAF7F2] transition-colors text-left text-body-xs font-semibold ${
-                              op === selectedOperator ? "bg-[#FAF7F2]/60 text-[#FF6B00]" : "text-[#14141A]"
-                            }`}
-                          >
-                            <span>{operatorMap[op].name}</span>
-                            {op === selectedOperator && <Check className="w-4 h-4 text-[#FF6B00]" weight="bold" />}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                />
               </div>
 
               {/* Estimated Time Badge */}

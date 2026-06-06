@@ -90,12 +90,15 @@ export async function apiFetch<T = unknown>(
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface SignupPayload {
-  name: string;
+  name?: string;
   email: string;
-  phone: string;
+  phone?: string;
   password: string;
   country?: string;
   country_code?: string;
+  business_name?: string;
+  business_phone?: string;
+  industry?: string;
 }
 
 export interface LoginPayload {

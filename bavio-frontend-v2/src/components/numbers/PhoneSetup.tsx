@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useCountry } from "../shared/CountryContext";
 import { CALL_FORWARD_INSTRUCTIONS, OperatorInstruction } from "@/config/callForwardInstructions";
+import { SearchableDropdown } from "../shared/SearchableDropdown";
 
 interface PhoneSetupProps {
   onComplete: (phoneNumber: string) => void;
@@ -160,20 +161,18 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
               
               {operators.length > 1 && (
                 <div className="flex items-center gap-2">
-                  <label className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider">
+                  <label className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider shrink-0">
                     Carrier:
                   </label>
-                  <select
+                  <SearchableDropdown
+                    options={operators.map((op) => ({
+                      value: op,
+                      label: instructions[op].name,
+                    }))}
                     value={selectedOperator}
-                    onChange={(e) => setSelectedOperator(e.target.value)}
-                    className="border border-[#E5E0D8] rounded-xl px-3 py-1.5 text-body-xs font-semibold bg-white outline-none focus:border-[#FF6B00]"
-                  >
-                    {operators.map((op) => (
-                      <option key={op} value={op}>
-                        {instructions[op].name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedOperator(val)}
+                    className="w-48"
+                  />
                 </div>
               )}
             </div>
