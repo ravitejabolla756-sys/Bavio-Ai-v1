@@ -1,0 +1,56 @@
+{
+  "incoming_call": {
+    "description": "Triggered on Twilio inbound call events. Receives ringing or initial status.",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Twilio-Signature": "computed_twilio_signature_here"
+    },
+    "body": {
+      "CallSid": "call_twilio_test_123",
+      "From": "+919999123456",
+      "To": "+18883334455",
+      "CallStatus": "ringing"
+    }
+  },
+  "call_ended": {
+    "description": "Triggered when a Twilio call has finished. Updates duration in DB.",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Twilio-Signature": "computed_twilio_signature_here"
+    },
+    "body": {
+      "CallSid": "call_twilio_test_123",
+      "CallStatus": "completed",
+      "CallDuration": "90"
+    }
+  },
+  "message_status": {
+    "description": "Triggered when an SMS message status changes (sent, delivered, failed).",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Twilio-Signature": "computed_twilio_signature_here"
+    },
+    "body": {
+      "MessageSid": "SM1234567890",
+      "From": "+919999123456",
+      "To": "+18883334455",
+      "MessageStatus": "delivered"
+    }
+  },
+  "recording_ready": {
+    "description": "Triggered when a Twilio call recording is ready.",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Twilio-Signature": "computed_twilio_signature_here"
+    },
+    "body": {
+      "CallSid": "call_twilio_test_123",
+      "RecordingUrl": "https://api.twilio.com/2010-04-01/Accounts/ACxxx/Recordings/RExxx",
+      "RecordingDuration": "90"
+    }
+  }
+}

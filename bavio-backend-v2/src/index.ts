@@ -5,6 +5,9 @@ import { WebhookController } from './controllers/webhook.controller';
 import onboardingRouter from './api/routes/onboarding';
 import pricingRouter from './api/routes/pricing';
 import numbersRouter from './api/routes/numbers';
+import exotelWebhookRouter from './api/webhooks/exotel';
+import twilioWebhookRouter from './api/webhooks/twilio';
+import paymentsWebhookRouter from './api/webhooks/payments';
 
 dotenv.config();
 
@@ -23,6 +26,11 @@ app.get('/health', (req, res) => {
 app.use('/api', onboardingRouter);
 app.use('/api', pricingRouter);
 app.use('/api', numbersRouter);
+
+// Mount Webhooks routes
+app.use('/api/webhooks', exotelWebhookRouter);
+app.use('/api/webhooks', twilioWebhookRouter);
+app.use('/api/webhooks', paymentsWebhookRouter);
 
 app.post('/webhooks/exotel/incoming', WebhookController.handleIncomingCall);
 app.post('/webhooks/exotel/transcript', WebhookController.handleTranscript);
