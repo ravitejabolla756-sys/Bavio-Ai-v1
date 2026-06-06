@@ -40,3 +40,12 @@ Thumbs.db
 # ── Temp ──────────────────────────────────────
 tmp/
 temp/
+
+# ── Large Media (use CDN or Supabase Storage) ─
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# ── Ngrok / Local dev ────────────────────────
+ngrok_tunnels.json
