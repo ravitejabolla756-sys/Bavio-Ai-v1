@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { query } from '../../db/db';
 import { logger } from '../../utils/logger';
 import { rateLimiter } from '../middleware/rateLimit.middleware';
+import { DbOptimizationsService } from '../../db/optimizations/dbOptimizations';
 
 const router = Router();
 
@@ -97,6 +98,11 @@ router.post('/dodo-payments', rateLimiter, async (req: Request, res: Response) =
         [subscription.plan_name, subscription.user_id]
       );
 
+      // Invalidate cache and refresh materialized view in background
+      DbOptimizationsService.invalidateCountryMetricsCache(subscription.country_code);
+      DbOptimizationsService.invalidateGlobalMetricsCache();
+      DbOptimizationsService.refreshMetricsView();
+
       // Log success and confirm receipt
       logger.info(`[PAYMENT WEBHOOK] Successfully activated subscription ${subscription.id} for user ${subscription.user_id}`);
       return res.status(200).json({ received: true, status: 'active' });
@@ -114,6 +120,11 @@ router.post('/dodo-payments', rateLimiter, async (req: Request, res: Response) =
          WHERE id = $1`,
         [subscription.id]
       );
+
+      // Invalidate cache and refresh materialized view in background
+      DbOptimizationsService.invalidateCountryMetricsCache(subscription.country_code);
+      DbOptimizationsService.invalidateGlobalMetricsCache();
+      DbOptimizationsService.refreshMetricsView();
 
       // 2. Update user status or plan if required (keep them on starter or block usage)
       logger.warn(`[PAYMENT WEBHOOK] Scheduled automatic billing retry in 3 days for subscription ${subscription.id}`);

@@ -8,6 +8,9 @@ import numbersRouter from './api/routes/numbers';
 import exotelWebhookRouter from './api/webhooks/exotel';
 import twilioWebhookRouter from './api/webhooks/twilio';
 import paymentsWebhookRouter from './api/webhooks/payments';
+import adminRouter from './api/routes/admin';
+import analyticsRouter from './api/routes/analytics';
+import { initMonitoringJobs } from './monitoring/metrics';
 
 dotenv.config();
 
@@ -32,6 +35,10 @@ app.use('/api/webhooks', exotelWebhookRouter);
 app.use('/api/webhooks', twilioWebhookRouter);
 app.use('/api/webhooks', paymentsWebhookRouter);
 
+// Mount Admin routes
+app.use('/api/admin', adminRouter);
+app.use('/api/admin', analyticsRouter);
+
 app.post('/webhooks/exotel/incoming', WebhookController.handleIncomingCall);
 app.post('/webhooks/exotel/transcript', WebhookController.handleTranscript);
 app.post('/webhooks/exotel/end', WebhookController.handleCallEnd);
@@ -40,6 +47,7 @@ app.post('/webhooks/exotel/end', WebhookController.handleCallEnd);
 export { app };
 
 if (process.env.NODE_ENV !== 'test') {
+  initMonitoringJobs();
   app.listen(port, () => {
     console.log(`Bavio Telephony Server is running on port ${port}`);
   });

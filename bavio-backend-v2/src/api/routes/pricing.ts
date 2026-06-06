@@ -3,6 +3,7 @@ import { query } from '../../db/db';
 import { ResponseHelper } from '../helpers/response.helper';
 import { requireUserAuth, AuthenticatedUser } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimit.middleware';
+import { DbOptimizationsService } from '../../db/optimizations/dbOptimizations';
 
 const router = Router();
 
@@ -149,6 +150,11 @@ router.post('/billing/charge', rateLimiter, requireUserAuth, async (req: Request
         periodStart.getFullYear()
       ]
     );
+
+    // Invalidate country and global caches and refresh materialized view in background
+    DbOptimizationsService.invalidateCountryMetricsCache(authUser.country_code);
+    DbOptimizationsService.invalidateGlobalMetricsCache();
+    DbOptimizationsService.refreshMetricsView();
 
     // Format ISO Dates (YYYY-MM-DD)
     const formatDate = (d: Date) => d.toISOString().split('T')[0];

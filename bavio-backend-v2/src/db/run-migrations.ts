@@ -35,6 +35,14 @@ async function run() {
     const migrationPath = path.join(__dirname, 'migrations', 'AddMultiCountrySupport.sql');
     await executeSqlFile(migrationPath);
 
+    // 1b. Run Partitioning Migrations
+    const partitionMigrationPath = path.join(__dirname, 'migrations', 'AddCountryPartitioning.sql');
+    await executeSqlFile(partitionMigrationPath);
+
+    // 1c. Run Monitoring Migrations
+    const monitoringMigrationPath = path.join(__dirname, 'migrations', 'AddMonitoringSupport.sql');
+    await executeSqlFile(monitoringMigrationPath);
+
     // 2. Run Seeds
     const seedPath = path.join(__dirname, 'seeds', 'multiCountryTest.sql');
     await executeSqlFile(seedPath);
