@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 export interface CountryData {
   code: string; // ISO 2-letter code
   name: string;
-  currency: "inr" | "usd" | "gbp";
+  currency: "inr" | "usd" | "gbp" | "aud" | "aed";
   symbol: string;
   dialCode: string;
   flag: string;
@@ -16,7 +16,8 @@ export const countries: CountryData[] = [
   { code: "US", name: "United States", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇺🇸" },
   { code: "GB", name: "United Kingdom", currency: "gbp", symbol: "£", dialCode: "+44", flag: "🇬🇧" },
   { code: "CA", name: "Canada", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇨🇦" },
-  { code: "AU", name: "Australia", currency: "usd", symbol: "$", dialCode: "+61", flag: "🇦🇺" },
+  { code: "AU", name: "Australia", currency: "aud", symbol: "AUD", dialCode: "+61", flag: "🇦🇺" },
+  { code: "AE", name: "United Arab Emirates", currency: "aed", symbol: "AED", dialCode: "+971", flag: "🇦🇪" },
 ];
 
 const DEFAULT_COUNTRY = countries[0]; // India as default
