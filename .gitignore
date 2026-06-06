@@ -1,38 +1,42 @@
-# Node.js
+# ── Node.js ───────────────────────────────────
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
 
-# Next.js
+# ── Next.js ───────────────────────────────────
 .next/
 out/
 build/
 dist/
 
-# Env files
+# ── TypeScript build ──────────────────────────
+tsconfig.tsbuildinfo
+
+# ── Env files (NEVER commit these) ───────────
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs
-logs
+# ── Logs ──────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS Files
+# ── OS ────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# IDE Files
+# ── IDE ───────────────────────────────────────
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# Temporary Files
+# ── Temp ──────────────────────────────────────
 tmp/
 temp/

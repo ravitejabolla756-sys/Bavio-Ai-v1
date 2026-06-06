@@ -1,67 +1,95 @@
-# Bavio AI - Complete Monorepo
+# Bavio AI — Monorepo
 
-Welcome to the Bavio AI codebase. This repository contains the complete, production-ready application structure for Bavio AI, including both the frontend and backend applications organized as a single monorepo.
+This is the canonical repository for the Bavio AI platform.
 
-## Project Structure
-
-This monorepo is structured into two main directories to allow for independent deployments while keeping the codebase unified:
-
-- `/bavio-frontend-v2/`: Contains the Next.js App Router application (React 19).
-- `/bavio-backend/`: Contains the Node.js/Express server providing APIs, Webhooks, and Database connectivity (Supabase/PostgreSQL).
-
-## Local Development
-
-### 1. Backend Setup
-
-Navigate to the backend directory:
-```bash
-cd bavio-backend
-npm install
 ```
-
-Ensure your `.env` is configured correctly (refer to `.env.example`).
-Start the backend server:
-```bash
-npm start
-# or
-npm run dev
+Bavio-Ai-v1/
+├── backend/          # Node.js / Express production backend
+└── frontend/         # Next.js production frontend
 ```
-The backend server runs on `http://localhost:5000`.
-
-### 2. Frontend Setup
-
-In a new terminal window, navigate to the frontend directory:
-```bash
-cd bavio-frontend-v2
-npm install
-```
-
-Ensure your `.env.local` is configured correctly (refer to `.env.example`).
-Start the Next.js development server:
-```bash
-npm run dev
-```
-The frontend server runs on `http://localhost:3000`.
 
 ---
 
-## Deployment Instructions
+## Backend
 
-This repository is designed to be easily deployed to modern cloud providers using root directory configurations.
+**Stack:** Node.js, Express, PostgreSQL (Supabase), Twilio, Exotel, Sarvam AI, Dodo Payments, Razorpay
 
-### Deploying the Frontend (Vercel)
+### Local development
+```bash
+cd backend
+npm install
+cp .env.example .env   # Fill in your credentials
+node server.js
+# → http://localhost:5000
+```
 
-1. Connect this repository to your Vercel account.
-2. In the project setup, set the **Root Directory** to `bavio-frontend-v2`.
-3. Set the Framework Preset to **Next.js**.
-4. Configure your environment variables (e.g. `NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_SUPABASE_URL`).
-5. Deploy! Vercel will automatically run `npm run build` from within the frontend directory.
+### Key endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| POST | `/auth/signup` | Register business |
+| POST | `/auth/login` | Login |
+| GET | `/auth/profile` | Get business profile |
+| POST | `/onboarding/save-step` | Save onboarding step |
+| POST | `/onboarding/complete-trial` | Activate free trial |
+| POST | `/billing/subscribe` | Create Dodo subscription |
+| POST | `/billing/razorpay/create-order` | Create Razorpay order |
+| GET | `/billing/status/:id` | Get subscription status |
+| GET | `/assistants/:clientId` | List AI agents |
+| GET | `/calls/:clientId` | Get call logs |
+| GET | `/usage/:clientId` | Get usage stats |
+| GET | `/knowledge-base` | List knowledge documents |
+| GET | `/integrations` | List integrations |
 
-### Deploying the Backend (Railway / Render)
+### Railway Deployment
+- **Root directory:** `backend/`
+- **Start command:** `node server.js`
+- **Health check path:** `/health`
 
-1. Connect this repository to your preferred backend host (like Railway or Render).
-2. Set the **Root Directory** to `bavio-backend`.
-3. The host should automatically detect the Node.js environment from `package.json`.
-4. Ensure the start command is `npm start` (which runs `node server.js`).
-5. Configure all required environment variables for your database, Stripe/Razorpay, Twilio, JWT secret, etc.
-6. Deploy!
+---
+
+## Frontend
+
+**Stack:** Next.js 14, TypeScript, Tailwind CSS, Supabase Auth
+
+### Local development
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local   # Fill in your credentials
+npm run dev
+# → http://localhost:3000
+```
+
+The frontend proxies all `/api/*` requests to the backend via `next.config.mjs`.  
+Set `BACKEND_URL=http://localhost:5000` for local dev.
+
+### Vercel Deployment
+- **Root directory:** `frontend/`
+- **Framework:** Next.js (auto-detected)
+- **Environment variable:** `BACKEND_URL=https://<your-railway-url>.up.railway.app`
+
+---
+
+## Environment Variables Summary
+
+### Backend (set in Railway)
+```
+PORT, NODE_ENV, DATABASE_URL
+SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
+JWT_SECRET
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+EXOTEL_SID, EXOTEL_API_KEY, EXOTEL_API_TOKEN, EXOTEL_REGION, EXOTEL_SUBDOMAIN
+SARVAM_API_KEY
+DODO_API_KEY, DODO_STARTER_PRODUCT_ID, DODO_GROWTH_PRODUCT_ID, DODO_SCALE_PRODUCT_ID, DODO_WEBHOOK_SECRET
+RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+VAPI_API_KEY
+WEBHOOK_BASE_URL, FRONTEND_URL
+```
+
+### Frontend (set in Vercel)
+```
+BACKEND_URL
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
