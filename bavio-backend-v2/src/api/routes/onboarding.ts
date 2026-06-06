@@ -5,6 +5,7 @@ import { query } from '../../db/db';
 import { ResponseHelper } from '../helpers/response.helper';
 import { JWT_SECRET } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimit.middleware';
+import { DbOptimizationsService } from '../../db/optimizations/dbOptimizations';
 
 const router = Router();
 
@@ -132,6 +133,11 @@ router.post('/auth/signup', rateLimiter, async (req: Request, res: Response) => 
         0
       ]
     );
+
+    // Invalidate country and global caches and refresh materialized view in background
+    DbOptimizationsService.invalidateCountryMetricsCache(newUser.country_code);
+    DbOptimizationsService.invalidateGlobalMetricsCache();
+    DbOptimizationsService.refreshMetricsView();
 
     // Formulate final success payload
     const responseData = {

@@ -17,6 +17,7 @@ jest.mock('ioredis', () => {
 describe('Bavio Webhook Handlers Integration Tests', () => {
   let testUserId = '';
   let testEmail = '';
+  let testSubscriptionId = '';
   const testExotelNumber = '+918080999999';
   const testTwilioNumber = '+18883334455';
   const testWhitelistedFrom = '+919999123456';
@@ -58,14 +59,16 @@ describe('Bavio Webhook Handlers Integration Tests', () => {
     }
 
     // 2. Create default pending subscription
-    await query(
+    const subInsertRes = await query(
       `INSERT INTO subscriptions (
         user_id, country_code, plan_name, price_amount, price_currency, 
         billing_cycle_start, billing_cycle_end, next_billing_date, 
         payment_method, payment_status, minutes_limit, minutes_used
-      ) VALUES ($1, 'IN', 'starter', 1999.00, 'INR', NOW(), NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days', 'dodo_payments', 'pending', 30, 0)`,
+      ) VALUES ($1, 'IN', 'starter', 1999.00, 'INR', NOW(), NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days', 'dodo_payments', 'pending', 30, 0)
+      RETURNING id`,
       [testUserId]
     );
+    testSubscriptionId = subInsertRes.rows[0].id;
 
     // 3. Assign Exotel virtual number to test user
     await query(
@@ -266,7 +269,7 @@ describe('Bavio Webhook Handlers Integration Tests', () => {
         .set('x-dodo-signature', 'test_signature_bypass')
         .send({
           event: 'payment.success',
-          subscription_id: 'sub_mock_123',
+          subscription_id: testSubscriptionId,
           amount: 1999,
           currency: 'INR',
         });
@@ -290,7 +293,7 @@ describe('Bavio Webhook Handlers Integration Tests', () => {
         .set('x-dodo-signature', 'test_signature_bypass')
         .send({
           event: 'payment.failed',
-          subscription_id: 'sub_mock_123',
+          subscription_id: testSubscriptionId,
           amount: 1999,
           currency: 'INR',
         });
