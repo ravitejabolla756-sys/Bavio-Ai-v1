@@ -4,8 +4,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Backend URL: default to localhost:5000, override via env for production/ngrok
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+// Backend URL: default to production AWS backend, override via env if needed
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api.bavio.in';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
