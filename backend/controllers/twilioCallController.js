@@ -665,8 +665,13 @@ async function handleTelephonySync(req, res) {
     }
 
     const call = message.call;
-    const fromNumber = call.customer?.number || 'Unknown';
-    const toNumber = call.phoneNumber?.number || 'Unknown';
+    const rawFrom = call.customer?.number || 'Unknown';
+    const rawTo = call.phoneNumber?.number || 'Unknown';
+    
+    // Normalize phone numbers (remove spaces, dashes, parentheses)
+    const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
+    let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
+    
     const duration = Math.round(call.duration || 0);
     const callSid = call.id;
 
@@ -674,7 +679,7 @@ async function handleTelephonySync(req, res) {
 
     // 1. Resolve business owner details by Twilio number
     const phoneResult = await db.query(
-      'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1',
+      'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1',
       [toNumber]
     );
 
