@@ -17,6 +17,17 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
   try {
     console.log(`[ROUTING] Incoming call: ${fromNumber} → ${toNumber}`);
 
+    // Normalize Exotel number formats (handle leading 0, raw 10 digits, +91, etc.)
+    let formattedNumbers = [toNumber];
+    const cleanDigits = toNumber.replace(/\D/g, '');
+    if (cleanDigits.length >= 10) {
+      const tenDigits = cleanDigits.slice(-10);
+      formattedNumbers.push('+91' + tenDigits);
+      formattedNumbers.push(tenDigits);
+      formattedNumbers.push('0' + tenDigits);
+    }
+    formattedNumbers = [...new Set(formattedNumbers)];
+
     // Strategy 1: Provider-Specific Call Forwarding Metadata
     let providerOriginalNumber = null;
     if (req) {
@@ -34,7 +45,7 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
       const { data: mapping } = await supabase
         .from('business_phone_mapping')
         .select('business_id, business_number')
-        .eq('exotel_number', toNumber)
+        .in('exotel_number', formattedNumbers)
         .eq('business_number', providerOriginalNumber)
         .eq('status', 'active')
         .limit(1)
@@ -51,7 +62,7 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
     }
 
     // Strategy 2: Caller Whitelist Lookup (Diagram Method A)
-    console.log(`[ROUTING] Performing Caller Whitelist Lookup for ${fromNumber} on Exotel number ${toNumber}`);
+    console.log(`[ROUTING] Performing Caller Whitelist Lookup for ${fromNumber} on Exotel numbers: ${formattedNumbers.join(', ')}`);
     const { data: whitelistMatch } = await supabase
       .from('caller_whitelist')
       .select('business_id')
@@ -65,7 +76,7 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
         .from('business_phone_mapping')
         .select('business_id, business_number')
         .eq('business_id', whitelistMatch.business_id)
-        .eq('exotel_number', toNumber)
+        .in('exotel_number', formattedNumbers)
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
@@ -81,11 +92,11 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
     }
 
     // Strategy 3: Default Fallback Mapped Tenant
-    console.log(`[ROUTING] Whitelist/metadata resolution failed. Checking default fallback mapping for Exotel number ${toNumber}`);
+    console.log(`[ROUTING] Whitelist/metadata resolution failed. Checking default fallback mapping for Exotel numbers: ${formattedNumbers.join(', ')}`);
     const { data: defaultMapping } = await supabase
       .from('business_phone_mapping')
       .select('business_id, business_number')
-      .eq('exotel_number', toNumber)
+      .in('exotel_number', formattedNumbers)
       .eq('status', 'active')
       .limit(1)
       .maybeSingle();
@@ -104,7 +115,7 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
     const { data: phoneRecord } = await supabase
       .from('phone_numbers')
       .select('business_id, call_routing_method, user_original_number, type')
-      .eq('phone_number', toNumber)
+      .in('phone_number', formattedNumbers)
       .eq('status', 'active')
       .limit(1)
       .maybeSingle();
@@ -118,7 +129,7 @@ async function resolveBusinessFromCall(toNumber, fromNumber, req = null) {
       };
     }
 
-    console.log(`[ROUTING] No route found for Exotel number: ${toNumber}, Caller: ${fromNumber}`);
+    console.log(`[ROUTING] No route found for Exotel numbers: ${formattedNumbers.join(', ')}, Caller: ${fromNumber}`);
     return null;
   } catch (err) {
     console.error('[ROUTING] Error:', err.message);

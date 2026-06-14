@@ -334,8 +334,8 @@ INSERT INTO phone_numbers
   (phone_number, type, provider, country_code,
    status, pool_user_count, max_users, call_routing_method)
 VALUES
-  ('+918080810001', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
-  ('+918080810002', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
+  ('+919513886363', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
+  ('+914041893150', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
   ('+918080810003', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
   ('+918080810004', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id'),
   ('+918080810005', 'pool', 'exotel', 'IN', 'active', 0, 50, 'caller_id')

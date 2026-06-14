@@ -133,7 +133,7 @@ export function SearchableDropdown({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full text-left font-sans ${className}`}
+      className={`relative w-full text-left font-sans ${isOpen ? "z-[60]" : "z-10"} ${className}`}
       onKeyDown={handleKeyDown}
     >
       {/* Trigger Button */}
@@ -177,7 +177,7 @@ export function SearchableDropdown({
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             style={{ borderRadius: "16px" }}
-            className="absolute left-0 right-0 mt-2 z-50 bg-white border border-[#E5E0D8] shadow-[0_12px_32px_rgba(0,0,0,0.08)] overflow-hidden origin-top"
+            className="absolute left-0 right-0 mt-1 z-50 bg-white border border-[#FF6B00] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
           >
             {/* Search Input (only shown if options count exceeds 5) */}
             {options.length > 5 && (
@@ -192,7 +192,8 @@ export function SearchableDropdown({
                     setSearchQuery(e.target.value);
                     setHighlightedIndex(-1);
                   }}
-                  className="w-full bg-transparent border-none outline-none text-body-xs font-semibold text-[#14141A] placeholder-[#8A8A96] p-0"
+                  className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-body-xs font-semibold text-[#14141A] placeholder-[#8A8A96] p-0"
+                  style={{ outline: "none", boxShadow: "none" }}
                 />
               </div>
             )}
@@ -216,13 +217,14 @@ export function SearchableDropdown({
                           setIsOpen(false);
                         }}
                         onMouseEnter={() => setHighlightedIndex(idx)}
-                        className={`w-full text-left px-3.5 py-2.5 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] border ${
+                        className={`w-full text-left px-3.5 py-2.5 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] border focus:outline-none focus-visible:outline-none focus-visible:ring-0 ${
                           isSelected
                             ? "bg-[#FF6B00]/8 border-[#FF6B00] font-bold"
                             : isHighlighted
                             ? "bg-[#FAF7F2] border-[#E5E0D8]/45"
                             : "bg-transparent border-transparent"
                         }`}
+                        style={{ outline: "none", boxShadow: "none" }}
                       >
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           {opt.icon && (

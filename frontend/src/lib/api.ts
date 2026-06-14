@@ -27,9 +27,13 @@ export function setAuthData(token: string, clientId: string, name?: string) {
 }
 
 export function clearAuthData() {
-  localStorage.removeItem('bavio_token');
-  localStorage.removeItem('bavio_client_id');
-  localStorage.removeItem('bavio_name');
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('bavio_token');
+    localStorage.removeItem('bavio_client_id');
+    localStorage.removeItem('bavio_name');
+    document.cookie = 'bavio_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'bavio_onboarding_completed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  }
 }
 
 export function isAuthenticated(): boolean {

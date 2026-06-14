@@ -8,7 +8,7 @@ export interface PricingTierData {
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  IN: { currency: "₹", starter: 1999, growth: 3999, scale: 7999, overageRate: "₹5/min", mostPopularBadge: "Most popular in India" },
+  IN: { currency: "₹", starter: 2599, growth: 5199, scale: 10399, overageRate: "₹5.20 - ₹10.40/min", mostPopularBadge: "Most popular in India" },
   US: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular in USA" },
   CA: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular in Canada" },
   GB: { currency: "£", starter: 29, growth: 59, scale: 99, overageRate: "£0.08/min", mostPopularBadge: "Most popular in UK" },
@@ -36,7 +36,7 @@ export const PLANS: PlanDetails[] = [
     key: "starter",
     description: "For small businesses starting with voice automation.",
     features: [
-      { text: "200 minutes/month", included: true },
+      { text: "250 minutes/month", included: true },
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
@@ -51,7 +51,7 @@ export const PLANS: PlanDetails[] = [
     key: "growth",
     description: "For growing teams that need full-stack voice AI.",
     features: [
-      { text: "500 minutes/month", included: true },
+      { text: "600 minutes/month", included: true },
       { text: "Unlimited agents", included: true },
       { text: "24/7 phone support", included: true },
       { text: "Full analytics + exports", included: true },
@@ -66,7 +66,7 @@ export const PLANS: PlanDetails[] = [
     key: "scale",
     description: "For enterprises that demand reliability and scale.",
     features: [
-      { text: "1,500 minutes/month", included: true },
+      { text: "2,000 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
       { text: "Dedicated account manager", included: true },
       { text: "Custom integrations", included: true },
@@ -85,7 +85,7 @@ export interface ComparisonRow {
 }
 
 export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
-  { feature: "Minutes included", starter: "200", growth: "500", scale: "1,500" },
+  { feature: "Minutes included", starter: "250", growth: "600", scale: "2,000" },
   { feature: "AI agents", starter: "1", growth: "Unlimited", scale: "Unlimited" },
   { feature: "Support", starter: "Email", growth: "24/7 Phone", scale: "Priority + Dedicated" },
   { feature: "Analytics", starter: "Basic", growth: "Full + Export", scale: "Full + Custom" },
@@ -93,7 +93,12 @@ export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
   { feature: "Webhook API", starter: "No", growth: "Yes", scale: "Yes" },
   { feature: "WhatsApp/SMS routing", starter: "No", growth: "Yes", scale: "Yes" },
   { feature: "White-label", starter: "No", growth: "No", scale: "Yes" },
-  { feature: "Overage rate", starter: overageRate, growth: overageRate, scale: overageRate },
+  { 
+    feature: "Overage rate", 
+    starter: overageRate.includes("₹") ? "₹10.40/min" : overageRate, 
+    growth: overageRate.includes("₹") ? "₹8.60/min" : overageRate, 
+    scale: overageRate.includes("₹") ? "₹5.20/min" : overageRate 
+  },
 ];
 
 export const FAQS = [

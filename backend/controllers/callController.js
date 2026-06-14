@@ -52,7 +52,7 @@ async function handleIncomingExotel(req, res) {
     // ── Get business info ─────────────────────────────────────────────
     const { data: business } = await supabase
       .from('businesses')
-      .select('name, phone, plan, minutes_limit, minutes_used, business_name, industry, owner_name, owner_phone, owner_email, language, system_prompt, first_message, call_handling_type, subscription_plan')
+      .select('name, phone, plan, minutes_limit, minutes_used, business_name, industry, owner_name, owner_phone, owner_email, language, system_prompt, first_message, call_handling_type, subscription_plan, country_code')
       .eq('id', businessId)
       .maybeSingle();
 
@@ -116,7 +116,8 @@ async function handleIncomingExotel(req, res) {
         provider: 'exotel',
         bavio_number: To,
         routing_method: legacyRoutingMethod,
-        user_original_number: route.business_number
+        user_original_number: route.business_number,
+        country_code: business?.country_code || 'IN'
       })
       .select()
       .single();

@@ -268,7 +268,7 @@ export default function SignUpPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-10"
+          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-20"
         >
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
@@ -468,13 +468,13 @@ export default function SignUpPage() {
         </motion.div>
 
         {/* Secure encryption footer */}
-        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative z-10">
+        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative">
           <ShieldCheck className="w-4 h-4 text-state-success" weight="fill" />
           <span>Your data is secure and encrypted</span>
         </div>
 
         {/* Need help? contact */}
-        <div className="mt-4 text-center text-body-xs text-[#8A8A96] relative z-10">
+        <div className="mt-4 text-center text-body-xs text-[#8A8A96] relative">
           <span>Need help? Contact: </span>
           <a href="mailto:hello@bavio.in" className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] hover:underline">
             hello@bavio.in
