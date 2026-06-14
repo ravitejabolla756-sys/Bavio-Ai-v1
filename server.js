@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
-const passport = require('passport');
 const { generalLimiter, apiLimiter } = require('./middleware/rateLimit');
 
 // Error handlers
@@ -21,7 +19,10 @@ const allowedOrigins = [
   'https://bavio.in',
   'https://www.bavio.in',
   'http://localhost:3000',
-  'http://localhost:3001'
+  'http://localhost:3001',
+  'http://localhost:5000',
+  'https://bavio.vercel.app',
+  'https://alaya-osteopathic-suppliantly.ngrok-free.dev'
 ];
 
 const corsOptions = {
@@ -40,24 +41,14 @@ const corsOptions = {
 };
 
 // ------- Global Middleware -------
+app.set('trust proxy', 1); // Trust first proxy (ngrok / load balancer)
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'bavio_secret',
-  resave: false,
-  saveUninitialized: false
-}));
-app.use(passport.initialize());
 app.use(generalLimiter);
 
-// ------- Audio Static Route (MUST be before other routes) -------
-app.use('/audio', express.static('/tmp/bavio-audio', {
-  setHeaders: (res) => {
-    res.setHeader('Content-Type', 'audio/wav');
-    res.setHeader('Cache-Control', 'no-cache');
-  }
-}));
+// Serve static audio files locally for ultra-low latency playback
+app.use('/audio', express.static('/tmp/bavio-audio'));
 
 // ------- API Routes -------
 const authRoutes = require('./routes/auth');
@@ -70,14 +61,18 @@ const telephonyRoutes = require('./routes/telephony');
 const leadsRoutes = require('./routes/leads');
 const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
-const googleAuthRoutes = require('./routes/googleAuth');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
+const phoneRoutes = require('./routes/phoneRoutes');
+const exotelRoutes = require('./routes/exotelRoutes');
+const integrationsRoutes = require('./routes/integrations');
+const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 
 app.use('/auth', authRoutes);
-app.use('/auth', googleAuthRoutes);
 app.use('/calls/twilio', twilioRoutes);
+app.use('/calls/exotel', exotelRoutes);
 app.use('/onboarding', onboardingRoutes);
+app.use('/phone', phoneRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
@@ -87,6 +82,8 @@ app.use('/telephony', telephonyRoutes);
 app.use('/leads', apiLimiter, leadsRoutes);
 app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
+app.use('/integrations', integrationsRoutes);
+app.use('/knowledge-base', knowledgeBaseRoutes);
 
 // ------- Health Check -------
 app.get('/health', (req, res) => {
@@ -119,9 +116,68 @@ app.get('/db-test', async (req, res) => {
   }
 });
 
+// ------- Global Error Handler -------
+app.use((err, req, res, next) => {
+  console.error('Unhandled request error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message || 'An unexpected error occurred'
+  });
+});
+
 // ------- Start Server -------
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Bavio AI Backend running on port ${PORT}`);
+
+  // ── Supabase Storage Cleanup Cron ──────────────────────────────────────
+  // Deletes TTS audio files older than 24 hours from the tts-audio bucket.
+  // Runs once on startup, then every 24 hours.
+  const { cleanupOldTtsFiles } = require('./services/storage/storageService');
+
+  const runCleanup = () => {
+    cleanupOldTtsFiles().catch(err =>
+      console.error('[CRON] TTS cleanup failed:', err.message)
+    );
+  };
+
+  // Run once at startup (clears any leftover files from previous deploys)
+  runCleanup();
+
+  // Then every 24 hours
+  setInterval(runCleanup, 24 * 60 * 60 * 1000);
+
+  console.log('[CRON] TTS audio cleanup scheduled every 24h');
+
+  // ── Monthly Minutes Reset Cron ──────────────────────────────────────────
+  // Resets minutes_used to 0 for all businesses on the 1st of each month.
+  // Checks every hour and triggers when date is the 1st at midnight.
+  const { resetMonthlyMinutes } = require('./middleware/planEnforcement');
+
+  let lastResetMonth = -1; // Track to prevent double resets
+
+  const checkMonthlyReset = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentDate = now.getDate();
+    
+    // Reset on the 1st of each month, but only once per month
+    if (currentDate === 1 && currentMonth !== lastResetMonth) {
+      lastResetMonth = currentMonth;
+      console.log('[CRON] Triggering monthly minutes reset...');
+      resetMonthlyMinutes().catch(err =>
+        console.error('[CRON] Monthly reset failed:', err.message)
+      );
+    }
+  };
+
+  // Check every hour
+  setInterval(checkMonthlyReset, 60 * 60 * 1000);
+  
+  // Also check on startup in case server restarted on the 1st
+  checkMonthlyReset();
+  
+  console.log('[CRON] Monthly minutes reset scheduled (checks hourly, runs on 1st)');
 });
 
 module.exports = app;
+
