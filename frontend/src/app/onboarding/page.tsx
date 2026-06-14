@@ -44,6 +44,11 @@ function OnboardingContent() {
       try {
         setProfileLoading(true);
         const user = await authApi.getProfile();
+        if (user.onboarding_status === "ready") {
+          document.cookie = "bavio_onboarding_completed=true; path=/";
+          router.push("/workspace");
+          return;
+        }
         setUserId(user.id);
         setUserEmail(user.email);
         if (user.country) {
