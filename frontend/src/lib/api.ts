@@ -252,6 +252,39 @@ export const callsApi = {
     apiFetch<CallRecord[]>(`/calls/${clientId}`),
 };
 
+// ─── Leads ────────────────────────────────────────────────────────────────────
+
+export interface Lead {
+  id: string;
+  business_id: string;
+  call_id: string | null;
+  phone: string;
+  name: string | null;
+  intent: string | null;
+  budget: string | null;
+  location: string | null;
+  notes: string | null;
+  status: string;
+  created_at: string;
+}
+
+export const leadsApi = {
+  list: (clientId: string) =>
+    apiFetch<Lead[]>(`/leads/${clientId}`),
+  
+  create: (data: Partial<Lead>) =>
+    apiFetch<Lead>('/leads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: Partial<Lead>) =>
+    apiFetch<Lead>(`/leads/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+};
+
 // ─── Usage ────────────────────────────────────────────────────────────────────
 
 export interface UsageSummary {

@@ -24,12 +24,14 @@ import {
   List,
   X,
   Bell,
-  ArrowLeft
+  ArrowLeft,
+  IdentificationCard
 } from "@phosphor-icons/react";
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
   { name: "Agents", href: "/dashboard/agents", icon: Users },
+  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
   { name: "Analytics", href: "/dashboard/analytics", icon: ChartBar },
   { name: "Knowledge Base", href: "/dashboard/knowledge-base", icon: BookOpen },
