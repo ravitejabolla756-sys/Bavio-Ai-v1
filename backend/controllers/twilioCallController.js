@@ -656,8 +656,8 @@ async function handleCallStatus(req, res) {
   }
 }
 
-// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
-// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
+// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Bavio Voice logs) ────
+// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Bavio Voice logs) ────
 async function handleTelephonySync(req, res) {
   try {
     const { message } = req.body;
@@ -667,7 +667,7 @@ async function handleTelephonySync(req, res) {
 
     const call = message.call || {};
     
-    // Robust resolution of caller and virtual number from multiple Vapi payload formats
+    // Robust resolution of caller and virtual number from multiple Bavio Voice payload formats
     const getToNumber = () => {
       if (call.phoneNumber) {
         if (typeof call.phoneNumber === 'string') return call.phoneNumber;
@@ -746,7 +746,7 @@ async function handleTelephonySync(req, res) {
       }
     }
 
-    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    // Fallback: Use the first business if not found (for Bavio Voice web testing convenience)
     if (!businessId) {
       const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
       if (firstBiz.rows.length > 0) {
@@ -769,7 +769,7 @@ async function handleTelephonySync(req, res) {
     const dbCallId = insertCallResult.rows[0]?.id;
 
     if (dbCallId) {
-      // 3. Format Vapi transcript into standard database array
+      // 3. Format Bavio Voice transcript into standard database array
       const rawTranscript = message.transcript || call.transcript || '';
       const lines = rawTranscript.split('\n').filter(l => l.trim().length > 0);
       const transcriptArray = lines.map(line => {
@@ -934,7 +934,7 @@ async function handleTelephonySync(req, res) {
   }
 }
 
-// ── STEP 5: Vapi Tool Call (Save Lead During Call) ────────────────────────────
+// ── STEP 5: Bavio Voice Tool Call (Save Lead During Call) ────────────────────────────
 async function handleSaveLeadTool(req, res) {
   try {
     console.log('[SAVE LEAD TOOL] Payload received:', JSON.stringify(req.body, null, 2));
@@ -943,7 +943,7 @@ async function handleSaveLeadTool(req, res) {
     let toolCalls = [];
     let call = {};
 
-    // 1. Parse standard Vapi tool-calls wrapped in message
+    // 1. Parse standard Bavio Voice tool-calls wrapped in message
     if (message && message.type === 'tool-calls') {
       toolCalls = message.toolCalls || [];
       call = message.call || {};
@@ -1042,7 +1042,7 @@ async function handleSaveLeadTool(req, res) {
       }
     }
 
-    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    // Fallback: Use the first business if not found (for Bavio Voice web testing convenience)
     if (!businessId) {
       const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
       businessId = firstBiz.rows[0]?.id || null;
@@ -1130,7 +1130,7 @@ async function handleSaveLeadTool(req, res) {
       }
     }
 
-    // Return response in the format Vapi expects
+    // Return response in the format Bavio Voice expects
     return res.status(200).json({ results });
 
   } catch (err) {
