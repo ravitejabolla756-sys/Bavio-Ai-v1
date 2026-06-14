@@ -2,7 +2,8 @@ const callService = require('../services/callService');
 
 async function getCalls(req, res) {
     try {
-        const calls = await callService.getCallsForClient(req.params.client_id);
+        const businessId = req.user.id;
+        const calls = await callService.getCallsForClient(businessId);
         res.status(200).json(calls);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -11,7 +12,8 @@ async function getCalls(req, res) {
 
 async function getUsage(req, res) {
     try {
-        const usage = await callService.getUsageForClient(req.params.client_id);
+        const businessId = req.user.id;
+        const usage = await callService.getUsageForClient(businessId);
         res.status(200).json(usage);
     } catch (err) {
         res.status(500).json({ error: err.message });

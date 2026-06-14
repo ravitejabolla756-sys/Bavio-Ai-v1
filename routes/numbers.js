@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const numberController = require('../controllers/numberController');
-const { authenticateJwt } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 
-router.post('/buy', authenticateJwt, numberController.buyNumber);
-router.post('/link', authenticateJwt, numberController.linkNumber);
-router.get('/:client_id', authenticateJwt, numberController.getNumbers);
+router.post('/buy', requireAuth, numberController.buyNumber);
+router.post('/link', requireAuth, numberController.linkNumber);
+router.get('/:client_id', requireAuth, numberController.getNumbers);
 
 module.exports = router;

@@ -1,38 +1,41 @@
 const db = require('../database/db');
 
-async function getCallsForClient(client_id) {
+async function getCallsForClient(business_id) {
     const result = await db.query(
-        `SELECT c.*, pn.phone_number, pn.provider
-         FROM calls c
-         JOIN phone_numbers pn ON c.phone_number_id = pn.id
-         WHERE pn.client_id = $1
-         ORDER BY c.created_at DESC`,
-        [client_id]
+        `SELECT id, user_id, country_code, call_sid, provider, 
+                from_number as caller_number, virtual_number, 
+                duration_seconds as duration, started_at, ended_at, 
+                status as call_status, cost_amount as cost, 
+                cost_currency as currency, recording_url, transcript, created_at
+         FROM calls
+         WHERE user_id = $1
+         ORDER BY created_at DESC`,
+        [business_id]
     );
     return result.rows;
 }
 
-async function getUsageForClient(client_id) {
+async function getUsageForClient(business_id) {
     const usageLogs = await db.query(
-        `SELECT ul.*, c.caller_number, c.duration, c.call_status
+        `SELECT ul.*, c.from_number as caller_number, c.duration_seconds as duration, c.status
          FROM usage_logs ul
          JOIN calls c ON ul.call_id = c.id
-         WHERE ul.client_id = $1
+         WHERE ul.user_id = $1
          ORDER BY ul.created_at DESC`,
-        [client_id]
+        [business_id]
     );
 
     const summary = await db.query(
-        `SELECT usage_minutes, SUM(ul.cost) AS total_cost
+        `SELECT b.minutes_used, SUM(ul.cost_total) AS total_cost
          FROM businesses b
-         LEFT JOIN usage_logs ul ON ul.client_id = b.id
+         LEFT JOIN usage_logs ul ON ul.user_id = b.id
          WHERE b.id = $1
-         GROUP BY b.usage_minutes`,
-        [client_id]
+         GROUP BY b.minutes_used`,
+        [business_id]
     );
 
     return {
-        summary: summary.rows[0] || { usage_minutes: 0, total_cost: 0 },
+        summary: summary.rows[0] || { minutes_used: 0, total_cost: 0 },
         logs: usageLogs.rows
     };
 }

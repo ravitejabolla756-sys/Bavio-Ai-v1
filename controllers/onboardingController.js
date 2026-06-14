@@ -1,4 +1,6 @@
 const db = require('../database/db');
+const axios = require('axios');
+
 
 // Save onboarding step data
 async function saveStep(req, res) {
@@ -69,7 +71,7 @@ async function saveStep(req, res) {
 
         // Check if assistant exists
         const assistantResult = await db.query(
-          'SELECT id FROM assistants WHERE client_id = $1',
+          'SELECT id FROM assistants WHERE business_id = $1',
           [clientId]
         );
 
@@ -92,7 +94,7 @@ async function saveStep(req, res) {
               industry = $5,
               language = $6,
               system_prompt = $7
-            WHERE client_id = $8`,
+            WHERE business_id = $8`,
             [
               data.agent_name,
               data.greeting,
@@ -108,7 +110,7 @@ async function saveStep(req, res) {
           // Create new assistant
           await db.query(
             `INSERT INTO assistants
-              (client_id, name, agent_name, greeting, voice_id, faqs, industry, language, system_prompt, is_active)
+              (business_id, name, agent_name, greeting, voice_id, faqs, industry, language, system_prompt, is_active)
              VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, false)`,
             [
               clientId,
@@ -157,7 +159,7 @@ async function getStatus(req, res) {
     const requestingClientId = req.client?.id;
 
     // Security check
-    if (parseInt(client_id) !== requestingClientId) {
+    if (client_id !== requestingClientId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
@@ -174,7 +176,8 @@ async function getStatus(req, res) {
         twilio_number,
         onboarding_status,
         onboarding_step,
-        created_at
+        created_at,
+        country
       FROM businesses WHERE id = $1`,
       [client_id]
     );
@@ -203,7 +206,8 @@ async function getStatus(req, res) {
         whatsapp_number: business.whatsapp_number,
         industry: business.industry,
         language: business.language,
-        plan: business.plan
+        plan: business.plan,
+        country: business.country
       }
     });
 
@@ -224,10 +228,9 @@ function buildSystemPrompt(config) {
   } = config;
 
   const langInstruction = {
-    'hi-IN': 'Hinglish mein baat karo (Hindi + English mix). Natural aur friendly tone.',
-    'en-IN': 'Speak in Indian English. Warm and professional tone.',
-    'hinglish': 'Hinglish mein baat karo (Hindi + English mix). Natural aur friendly tone.',
-    'en-US': 'Speak in clear American English. Professional and friendly.'
+    'en-US': 'Speak in clear American English. Professional and friendly.',
+    'en-GB': 'Speak in clear British English. Professional and polite.',
+    'es-US': 'Speak in clear US Spanish. Professional and friendly.'
   }[language] || 'Speak in a natural, friendly and professional tone.';
 
   const industryPrompt = {
@@ -285,7 +288,7 @@ Capture: caller name, phone number, and reason for calling.`;
 ${langInstruction}${faqSection}
 
 GREETING:
-Always start with: "${greeting || `Hello! Main ${agent_name} bol raha hoon.`}"
+Always start with: "${greeting || `Hello! I am ${agent_name}, how can I help you today?`}"
 
 IMPORTANT RULES:
 1. Keep responses SHORT — maximum 2 sentences per turn
@@ -306,8 +309,273 @@ When the conversation is naturally complete (lead captured + goodbye exchanged),
 [END_CALL]`;
 }
 
+// Complete onboarding and activate free trial
+async function completeTrial(req, res) {
+  try {
+    const { 
+      // Step 1 data
+      businessName,
+      industry,
+      phone,
+      website,
+      objectives,
+      // Step 2 data
+      agentName,
+      businessRole,
+      languages,
+      workingHoursFrom,
+      workingHoursTo,
+      greetingMessage,
+      leadCapturePreferences
+    } = req.body;
+    
+    const clientId = req.client?.id || req.user?.id;
+
+    if (!clientId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    console.log(`[ONBOARDING] Activating Free Trial for client ${clientId}`);
+
+    // Update business table details:
+    // Sets plan = 'free', plan_name = 'free_trial', current_period_end = NOW() + 14 days, onboarding_status = 'ready', onboarding_step = 4
+    await db.query(
+      `UPDATE businesses SET
+        name = COALESCE($1, name),
+        industry = COALESCE($2, industry),
+        phone = COALESCE($3, phone),
+        whatsapp_number = COALESCE($3, whatsapp_number),
+        website = COALESCE($4, website),
+        intents = $5::jsonb,
+        language = $6,
+        working_hours_from = $7,
+        working_hours_to = $8,
+        onboarding_status = 'ready',
+        onboarding_step = 4,
+        plan = 'free',
+        plan_name = 'free_trial',
+        minutes_limit = 30,
+        minutes_used = 0,
+        status = 'active',
+        current_period_end = NOW() + INTERVAL '14 days',
+        billing_cycle_start = NOW()
+      WHERE id = $9`,
+      [
+        businessName,
+        industry,
+        phone,
+        website,
+        JSON.stringify(objectives || []),
+        Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
+        workingHoursFrom || '09:00:00',
+        workingHoursTo || '18:00:00',
+        clientId
+      ]
+    );
+
+    // Build default system prompt for assistant
+    const systemPrompt = buildSystemPrompt({
+      agent_name: agentName || 'Bavio Agent',
+      greeting: greetingMessage || `Hello! Thank you for calling ${businessName || 'us'}.`,
+      industry: industry || 'other',
+      language: Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
+      faqs: leadCapturePreferences ? [{ question: 'What details do you collect?', answer: `We collect: ${leadCapturePreferences.join(', ')}` }] : []
+    });
+
+    // Check if assistant exists
+    const assistantResult = await db.query(
+      'SELECT id FROM assistants WHERE business_id = $1',
+      [clientId]
+    );
+
+    if (assistantResult.rows.length > 0) {
+      await db.query(
+        `UPDATE assistants SET
+          agent_name = $1,
+          greeting = $2,
+          voice_id = 'meera',
+          industry = $3,
+          language = $4,
+          system_prompt = $5,
+          is_active = true
+        WHERE business_id = $6`,
+        [
+          agentName || 'Bavio Agent',
+          greetingMessage,
+          industry || 'other',
+          Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
+          systemPrompt,
+          clientId
+        ]
+      );
+    } else {
+      await db.query(
+        `INSERT INTO assistants
+          (business_id, name, agent_name, greeting, voice_id, faqs, industry, language, system_prompt, is_active)
+         VALUES ($1, $2, $3, $4, 'meera', '[]'::jsonb, $5, $6, $7, true)`,
+        [
+          clientId,
+          agentName || 'Bavio Agent',
+          agentName || 'Bavio Agent',
+          greetingMessage,
+          industry || 'other',
+          Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
+          systemPrompt
+        ]
+      );
+    }
+
+    // Allocate a default pool number to business so it can be previewed/called immediately
+    const poolNumResult = await db.query(
+      "SELECT phone_number FROM phone_numbers WHERE type = 'pool' AND status = 'active' LIMIT 1"
+    );
+    let assignedNum = '+18005550199';
+    if (poolNumResult.rows.length > 0) {
+      assignedNum = poolNumResult.rows[0].phone_number;
+    }
+
+    await db.query(
+      `UPDATE businesses SET
+        twilio_number = $1,
+        number_assigned_at = NOW()
+      WHERE id = $2`,
+      [assignedNum, clientId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Guided onboarding completed. Free trial activated.',
+      plan: 'free_trial',
+      minutesLimit: 30,
+      currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    });
+
+  } catch (err) {
+    console.error('[ONBOARDING] completeTrial error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+// Detect user's country from GeoIP
+async function detectCountry(req, res) {
+  try {
+    let ip = req.headers['x-forwarded-for'] || 
+             req.headers['x-real-ip'] || 
+             req.connection.remoteAddress || 
+             req.ip;
+
+    if (ip && ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+
+    console.log(`[GEOIP] Client IP detected: ${ip}`);
+
+    // Try MaxMind if credentials exist
+    const maxmindUserId = process.env.MAXMIND_USER_ID;
+    const maxmindLicenseKey = process.env.MAXMIND_LICENSE_KEY;
+
+    if (maxmindUserId && maxmindLicenseKey) {
+      try {
+        const auth = Buffer.from(`${maxmindUserId}:${maxmindLicenseKey}`).toString('base64');
+        const response = await axios.get('https://geoip.maxmind.com/geoip/v2.1/country/' + (ip || 'me'), {
+          headers: { 'Authorization': `Basic ${auth}` },
+          timeout: 4000
+        });
+        if (response.data && response.data.country && response.data.country.iso_code) {
+          let countryCode = response.data.country.iso_code.toUpperCase();
+          if (countryCode === 'IN') countryCode = 'US';
+          console.log(`[GEOIP] MaxMind resolved IP ${ip} to country ${countryCode}`);
+          return res.status(200).json({ success: true, country_code: countryCode, method: 'maxmind' });
+        }
+      } catch (err) {
+        console.warn('[GEOIP] MaxMind lookup failed, falling back to free GeoIP APIs:', err.message);
+      }
+    }
+
+    // Try ipapi.co
+    try {
+      const response = await axios.get(`https://ipapi.co/${ip && ip !== '::1' && ip !== '127.0.0.1' ? ip : ''}/json/`, {
+        timeout: 3000
+      });
+      if (response.data && response.data.country_code) {
+        let countryCode = response.data.country_code.toUpperCase();
+        if (countryCode === 'IN') countryCode = 'US';
+        console.log(`[GEOIP] ipapi.co resolved IP to country ${countryCode}`);
+        return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback' });
+      }
+    } catch (err) {
+      console.warn('[GEOIP] ipapi.co fallback failed, trying next fallback:', err.message);
+    }
+
+    // Try country.is
+    try {
+      const response = await axios.get('https://api.country.is/' + (ip && ip !== '::1' && ip !== '127.0.0.1' ? ip : ''), {
+        timeout: 3000
+      });
+      if (response.data && response.data.country) {
+        let countryCode = response.data.country.toUpperCase();
+        if (countryCode === 'IN') countryCode = 'US';
+        console.log(`[GEOIP] country.is resolved IP to country ${countryCode}`);
+        return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback_secondary' });
+      }
+    } catch (err) {
+      console.warn('[GEOIP] All GeoIP fallbacks failed. Defaulting.');
+    }
+
+    // Default to US
+    const defaultCountry = 'US';
+
+    res.status(200).json({ success: true, country_code: defaultCountry, method: 'default_fallback' });
+  } catch (err) {
+    console.error('[GEOIP] detectCountry endpoint error:', err);
+    res.status(200).json({ success: true, country_code: 'US', method: 'error_fallback' });
+  }
+}
+
+// Update country_code for authenticated user
+async function setCountry(req, res) {
+  try {
+    const { country_code } = req.body;
+    const clientId = req.client?.id || req.user?.id;
+
+    if (!country_code) {
+      return res.status(400).json({ error: 'country_code is required' });
+    }
+
+    if (!clientId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const cleanedCountryCode = country_code.trim().toUpperCase().substring(0, 2);
+
+    console.log(`[ONBOARDING] Setting country code to ${cleanedCountryCode} for client ${clientId}`);
+
+    await db.query(
+      `UPDATE businesses SET 
+        country_code = $1::varchar,
+        country = COALESCE(country, $1::text),
+        updated_at = NOW()
+       WHERE id = $2`,
+      [cleanedCountryCode, clientId]
+    );
+
+    res.status(200).json({
+      success: true,
+      country_code: cleanedCountryCode,
+      message: 'Country code updated successfully'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] setCountry error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   saveStep,
   getStatus,
-  buildSystemPrompt
+  buildSystemPrompt,
+  completeTrial,
+  detectCountry,
+  setCountry
 };
+

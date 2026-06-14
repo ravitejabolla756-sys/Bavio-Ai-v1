@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const sarvamService = require('../services/sarvamService');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
-const { authenticateJwt } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
+const { checkMinutesLimit } = require('../middleware/planEnforcement');
 const multer = require('multer');
 
 // Configure multer for audio file uploads
@@ -15,7 +16,7 @@ const upload = multer({
  * POST /voice/process - Full STT → LLM → TTS pipeline
  * Accepts audio file, processes through complete pipeline, returns audio
  */
-router.post('/process', authenticateJwt, upload.single('audio'), async (req, res) => {
+router.post('/process', requireAuth, checkMinutesLimit, upload.single('audio'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'Audio file required' });
@@ -44,7 +45,7 @@ router.post('/process', authenticateJwt, upload.single('audio'), async (req, res
 /**
  * POST /voice/stt - Test STT only
  */
-router.post('/stt', authenticateJwt, upload.single('audio'), async (req, res) => {
+router.post('/stt', requireAuth, upload.single('audio'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'Audio file required' });
@@ -67,7 +68,7 @@ router.post('/stt', authenticateJwt, upload.single('audio'), async (req, res) =>
 /**
  * POST /voice/tts - Test TTS only
  */
-router.post('/tts', authenticateJwt, async (req, res) => {
+router.post('/tts', requireAuth, async (req, res) => {
     try {
         const { text, language_code } = req.body;
         
@@ -91,7 +92,7 @@ router.post('/tts', authenticateJwt, async (req, res) => {
 /**
  * POST /voice/chat - Test LLM only
  */
-router.post('/chat', authenticateJwt, async (req, res) => {
+router.post('/chat', requireAuth, async (req, res) => {
     try {
         const { transcript, system_prompt, conversation_history } = req.body;
         

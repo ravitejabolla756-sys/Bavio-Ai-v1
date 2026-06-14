@@ -49,7 +49,7 @@ async function textToSpeech(text, languageCode = 'hi-IN') {
             {
                 text,
                 model: 'bulbul:v2',
-                voice: 'meera',
+                voice: 'anushka',
                 target_language_code: languageCode
             },
             {
@@ -85,14 +85,18 @@ async function chat(transcript, systemPrompt, conversationHistory = []) {
     try {
         const messages = [
             { role: 'system', content: systemPrompt },
-            ...conversationHistory,
-            { role: 'user', content: transcript }
+            ...conversationHistory.map(m => ({
+                role: m.role,
+                content: m.content?.trim() || '(silence)'
+            })),
+            { role: 'user', content: transcript?.trim() || '(silence)' }
         ];
 
         const response = await axios.post(
             `${SARVAM_BASE_URL}/v1/chat/completions`,
             {
                 model: 'sarvam-m',
+                reasoning_effort: null,
                 messages: messages
             },
             {

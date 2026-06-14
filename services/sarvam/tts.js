@@ -2,12 +2,21 @@ const axios = require('axios');
 
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY;
 
+/**
+ * Synthesizes speech using Sarvam AI TTS.
+ *
+ * Returns: { audioBase64, audioBuffer }
+ *   - audioBase64: raw base64 string (for debugging / legacy)
+ *   - audioBuffer: Buffer ready for Supabase Storage upload
+ *
+ * Upload to Supabase and get a public URL in the CALLER (twilioCallController),
+ * not here. This keeps TTS focused on audio generation only.
+ */
 async function synthesizeSpeech(
   text,
   language = 'hi-IN',
   speaker = 'meera'
 ) {
-
   if (!SARVAM_API_KEY) {
     throw new Error('[TTS] SARVAM_API_KEY not set in .env');
   }
@@ -16,21 +25,26 @@ async function synthesizeSpeech(
     throw new Error('[TTS] Empty text provided');
   }
 
-  console.log(`[TTS] Synthesizing ${text.length} chars, lang: ${language}, speaker: ${speaker}`);
+  // bulbul:v2 compatible speakers: anushka, abhilash, manisha, vidya, arya, karun, hitesh
+  let activeSpeaker = speaker;
+  const validV2Speakers = ['anushka', 'abhilash', 'manisha', 'vidya', 'arya', 'karun', 'hitesh'];
+  if (!validV2Speakers.includes(activeSpeaker.toLowerCase())) {
+    activeSpeaker = 'anushka';
+  }
 
-  // Chunk if text > 500 chars
-  // Sarvam TTS has character limits
+  console.log(`[TTS] Synthesizing ${text.length} chars, lang: ${language}, speaker: ${activeSpeaker}`);
+
+  // Chunk if text > 450 chars — Sarvam TTS has character limits
   const chunks = chunkText(text, 450);
   const audioParts = [];
 
   for (const chunk of chunks) {
     const response = await axios.post(
-      process.env.SARVAM_TTS_URL ||
-        'https://api.sarvam.ai/text-to-speech',
+      process.env.SARVAM_TTS_URL || 'https://api.sarvam.ai/text-to-speech',
       {
         inputs: [chunk],
         target_language_code: language,
-        speaker: speaker,
+        speaker: activeSpeaker,
         pitch: 0,
         pace: 1.0,
         loudness: 1.5,
@@ -55,15 +69,22 @@ async function synthesizeSpeech(
     audioParts.push(audioBase64);
   }
 
-  // If only one chunk, return directly
-  // If multiple chunks, concatenate base64
-  const finalAudio = audioParts.length === 1
-    ? audioParts[0]
-    : concatenateBase64Audio(audioParts);
+  // Concatenate multiple chunks if needed
+  const finalBase64 =
+    audioParts.length === 1
+      ? audioParts[0]
+      : concatenateBase64Audio(audioParts);
 
-  console.log(`[TTS] Done — ${finalAudio.length} chars of base64 audio`);
-  return finalAudio;
+  const audioBuffer = Buffer.from(finalBase64, 'base64');
+  console.log(`[TTS] Done — ${audioBuffer.length} bytes of WAV audio`);
+
+  return {
+    audioBase64: finalBase64,
+    audioBuffer
+  };
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 // Split text into chunks at sentence boundaries
 function chunkText(text, maxChars) {
@@ -86,7 +107,7 @@ function chunkText(text, maxChars) {
   return chunks.length > 0 ? chunks : [text.slice(0, maxChars)];
 }
 
-// Simple base64 concatenation for audio parts
+// Concatenate multiple base64 WAV buffers
 function concatenateBase64Audio(parts) {
   const buffers = parts.map(p => Buffer.from(p, 'base64'));
   return Buffer.concat(buffers).toString('base64');

@@ -19,14 +19,14 @@ async function runTests() {
     if (!process.env.SARVAM_API_KEY) {
       console.log('  ⚠️ SARVAM_API_KEY not set — skipping');
     } else {
-      const audioBase64 = await ttsService.synthesizeSpeech(
+      const ttsResult = await ttsService.synthesizeSpeech(
         'Namaste! Aap kaunsa property dhundh rahe hain?',
         'hi-IN'
       );
 
       // Save to test file
       const testPath = '/tmp/test-tts.wav';
-      const buffer = Buffer.from(audioBase64, 'base64');
+      const buffer = Buffer.from(ttsResult.audioBase64, 'base64');
       fs.writeFileSync(testPath, buffer);
 
       const stats = fs.statSync(testPath);
@@ -55,6 +55,9 @@ async function runTests() {
     }
   } catch (err) {
     console.log(`  ❌ LLM failed: ${err.message}`);
+    if (err.response?.data) {
+      console.log('     Details:', JSON.stringify(err.response.data));
+    }
   }
 
   // Test 3: Audio file serving
@@ -111,12 +114,12 @@ async function runTests() {
 
       const llmResult = await llmService.generateResponse(messages, systemPrompt);
 
-      const audioBase64 = await ttsService.synthesizeSpeech(
+      const ttsResult = await ttsService.synthesizeSpeech(
         llmResult.response_text,
         'en-IN'
       );
 
-      const filename = audioService.saveAudio(audioBase64, 'sim-call', 1);
+      const filename = audioService.saveAudio(ttsResult.audioBase64, 'sim-call', 1);
 
       console.log(`  ✅ Full pipeline complete`);
       console.log(`     LLM: "${llmResult.response_text.slice(0, 60)}..."`);
@@ -128,6 +131,9 @@ async function runTests() {
     }
   } catch (err) {
     console.log(`  ❌ Pipeline failed: ${err.message}`);
+    if (err.response?.data) {
+      console.log('     Details:', JSON.stringify(err.response.data));
+    }
   }
 
   // Summary

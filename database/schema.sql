@@ -20,7 +20,7 @@ CREATE TABLE clients (
     dodo_customer_id VARCHAR(100),
     plan VARCHAR(20) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'growth', 'scale')),
     plan_expires_at TIMESTAMP,
-    minutes_limit INTEGER DEFAULT 100,
+    minutes_limit INTEGER DEFAULT 30,
     minutes_used INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

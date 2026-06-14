@@ -14,7 +14,7 @@ async function checkMinutesLimit(req, res, next) {
 
         // Refresh client data to get latest minutes
         const result = await db.query(
-            'SELECT minutes_limit, minutes_used, plan FROM businesses WHERE id = $1',
+            'SELECT minutes_limit, minutes_used, plan, plan_name, current_period_end FROM businesses WHERE id = $1',
             [client.id]
         );
 
@@ -22,17 +22,35 @@ async function checkMinutesLimit(req, res, next) {
             return res.status(404).json({ error: 'Business not found' });
         }
 
-        const { minutes_limit, minutes_used, plan } = result.rows[0];
+        const { minutes_limit, minutes_used, plan, plan_name, current_period_end } = result.rows[0];
+        
+        // Check for subscription or trial expiration
+        if (current_period_end && new Date(current_period_end) < new Date()) {
+            return res.status(403).json({
+                error: plan_name === 'free_trial' ? 'Free trial expired' : 'Subscription expired',
+                plan: plan,
+                minutesLimit: minutes_limit,
+                minutesUsed: minutes_used,
+                expired: true,
+                upgradeUrl: '/workspace/subscription',
+                message: plan_name === 'free_trial'
+                    ? 'Your trial has ended. Choose a plan to continue using Bavio.'
+                    : 'Your subscription has expired. Please renew your plan to continue using Bavio.'
+            });
+        }
+
         const minutesRemaining = minutes_limit - minutes_used;
 
-        if (minutes_remaining <= 0) {
+        if (minutesRemaining <= 0) {
             return res.status(403).json({
                 error: 'Monthly minutes limit reached',
                 plan: plan,
                 minutesLimit: minutes_limit,
                 minutesUsed: minutes_used,
-                upgradeUrl: '/billing/subscribe',
-                message: `You've used all ${minutes_limit} minutes in your ${plan} plan. Upgrade to continue.`
+                upgradeUrl: '/workspace/subscription',
+                message: plan_name === 'free_trial'
+                    ? `You've used all ${minutes_limit} minutes in your free trial. Upgrade to continue.`
+                    : `You've used all ${minutes_limit} minutes in your ${plan} plan. Upgrade to continue.`
             });
         }
 
@@ -40,7 +58,7 @@ async function checkMinutesLimit(req, res, next) {
         req.minutesInfo = {
             limit: minutes_limit,
             used: minutes_used,
-            remaining: minutes_remaining,
+            remaining: minutesRemaining,
             plan: plan
         };
 
@@ -70,16 +88,34 @@ async function incrementMinutesUsed(clientId, durationMinutes) {
 
 /**
  * Reset minutes_used at the start of billing cycle
- * Could be called by a cron job
+ * Called by the monthly cron job in server.js
  */
 async function resetMonthlyMinutes() {
     try {
-        await db.query(
-            "UPDATE businesses SET minutes_used = 0 WHERE plan != 'free'"
+        // Reset paid plan users — keep their plan limits
+        const paidResult = await db.query(
+            `UPDATE businesses 
+             SET minutes_used = 0,
+                 billing_cycle_start = NOW()
+             WHERE plan != 'free' AND status = 'active'
+             RETURNING id`
         );
-        console.log('Reset monthly minutes for all paid businesses');
+        
+        // Reset free plan users — ensure limit stays at 30
+        const freeResult = await db.query(
+            `UPDATE businesses 
+             SET minutes_used = 0,
+                 minutes_limit = 30,
+                 billing_cycle_start = NOW()
+              WHERE plan = 'free' AND status = 'active'
+              RETURNING id`
+        );
+        
+        const paidCount = paidResult.rows.length;
+        const freeCount = freeResult.rows.length;
+        console.log(`[CRON] Monthly minutes reset: ${paidCount} paid businesses, ${freeCount} free businesses`);
     } catch (err) {
-        console.error('resetMonthlyMinutes error:', err);
+        console.error('[CRON] resetMonthlyMinutes error:', err);
     }
 }
 

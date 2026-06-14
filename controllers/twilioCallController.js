@@ -3,6 +3,7 @@ const sttService = require('../services/sarvam/stt');
 const llmService = require('../services/sarvam/llm');
 const ttsService = require('../services/sarvam/tts');
 const storageService = require('../services/storage/storageService');
+const audioService = require('../services/audio/audioService');
 const axios = require('axios');
 
 const activeRequests = {};
@@ -19,14 +20,12 @@ function buildAudioTag(audioUrl, fallbackText, language) {
 
 // Synthesize TTS and upload to Supabase → returns public HTTPS URL or null
 async function generateAndUploadTts(text, language, callSid, turn) {
-  const fileName = storageService.buildTtsFileName(callSid, turn);
   const ttsResult = await ttsService.synthesizeSpeech(text, language);
-  const { audioUrl, filePath } = await storageService.uploadTtsAudio(
-    ttsResult.audioBuffer,
-    fileName
-  );
-  console.log(`[TTS→STORAGE] Turn ${turn} → ${audioUrl}`);
-  return { audioUrl, filePath };
+  const base64Audio = ttsResult.audioBuffer.toString('base64');
+  const fileName = audioService.saveAudio(base64Audio, callSid, turn);
+  const audioUrl = audioService.getAudioUrl(fileName);
+  console.log(`[TTS→LOCAL] Turn ${turn} → ${audioUrl}`);
+  return { audioUrl, filePath: fileName };
 }
 
 // Helper to upsert transcript in transcripts table
@@ -67,7 +66,7 @@ async function handleIncomingCall(req, res) {
 
     try {
       phoneResult = await db.query(
-        'SELECT id, business_id, assistant_id, country_code FROM phone_numbers WHERE number = $1',
+        'SELECT id, business_id, assistant_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
         [To]
       );
 
@@ -138,7 +137,7 @@ async function handleIncomingCall(req, res) {
     // ── Create call record (include business_id!) ──────────────────────────
     try {
       const countryCode = phoneResult.rows[0]?.country_code || 'US';
-      const currency = countryCode === 'IN' ? 'INR' : 'USD';
+      const currency = 'USD';
       await db.query(
         `INSERT INTO calls (
           user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
@@ -531,8 +530,9 @@ async function handleCallStatus(req, res) {
       console.error('[TWILIO] Call lookup error:', dbErr.message);
     }
 
-    // ── Async: clean up this call's TTS files in Supabase Storage ───────
+    // ── Async: clean up this call's TTS files in Supabase Storage & Local Storage ───────
     // Fire-and-forget — don't await (keep webhook response fast)
+    audioService.deleteAudio(CallSid);
     storageService
       .cleanupCallTtsFiles(CallSid)
       .catch(err => console.error('[STORAGE] Cleanup error:', err.message));
@@ -565,9 +565,9 @@ async function handleCallStatus(req, res) {
     }
 
     // Calculate costs
-    const cost_stt = (mins / 60) * 30;           // Sarvam STT ₹30/hr
-    const cost_tts = (transcript.length * 100 / 10000) * 15;
-    const cost_telephony = mins * 0.71;            // Twilio India ₹0.71/min
+    const cost_stt = (mins / 60) * 0.15;          // Whisper STT $0.15/hr
+    const cost_tts = (transcript.length * 100 / 10000) * 0.005;
+    const cost_telephony = mins * 0.013;           // Twilio US $0.013/min
     const cost_total = cost_stt + cost_tts + cost_telephony;
 
     // Check if business has remaining minutes and calculate overage
@@ -656,8 +656,333 @@ async function handleCallStatus(req, res) {
   }
 }
 
+// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
+async function handleTelephonySync(req, res) {
+  try {
+    const { message } = req.body;
+    if (!message || message.type !== 'end-of-call-report') {
+      return res.status(200).json({ status: 'ignored' });
+    }
+
+    const call = message.call;
+    const rawFrom = call.customer?.number || 'Unknown';
+    const rawTo = call.phoneNumber?.number || 'Unknown';
+    
+    // Normalize phone numbers (remove spaces, dashes, parentheses)
+    const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
+    let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
+    
+    const duration = Math.round(call.duration || 0);
+    const callSid = call.id;
+
+    console.log(`[TELEPHONY SYNC] Webhook received: ${fromNumber} → ${toNumber} | Duration: ${duration}s`);
+
+    // 1. Resolve business owner details by Twilio number
+    let businessId = null;
+    let countryCode = 'US';
+
+    if (toNumber && toNumber !== 'Unknown') {
+      const phoneResult = await db.query(
+        'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
+        [toNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
+    // Try assistantId lookup if we still don't have businessId
+    const assistantId = call.assistantId;
+    if (!businessId && assistantId) {
+      const astResult = await db.query(
+        'SELECT business_id FROM assistants WHERE id = $1',
+        [assistantId]
+      );
+      if (astResult.rows.length > 0) {
+        businessId = astResult.rows[0].business_id;
+        // Lookup country from business
+        const bizRes = await db.query('SELECT country_code FROM businesses WHERE id = $1', [businessId]);
+        countryCode = bizRes.rows[0]?.country_code || 'US';
+      }
+    }
+
+    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    if (!businessId) {
+      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
+      if (firstBiz.rows.length > 0) {
+        businessId = firstBiz.rows[0].id;
+        countryCode = firstBiz.rows[0].country_code || 'US';
+      }
+    }
+
+    const currency = 'USD';
+
+    // 2. Insert call record
+    const insertCallResult = await db.query(
+      `INSERT INTO calls (
+        user_id, country_code, call_sid, provider, from_number, virtual_number, duration_seconds, status, started_at, ended_at, cost_currency, created_at
+      ) VALUES ($1, $2, $3, 'twilio', $4, $5, $6, 'completed', NOW() - interval '${duration} seconds', NOW(), $7, NOW())
+      RETURNING id`,
+      [businessId, countryCode, callSid, fromNumber, toNumber, duration, currency]
+    );
+
+    const dbCallId = insertCallResult.rows[0]?.id;
+
+    if (dbCallId) {
+      // 3. Format Vapi transcript into standard database array
+      const rawTranscript = call.transcript || '';
+      const lines = rawTranscript.split('\n').filter(l => l.trim().length > 0);
+      const transcriptArray = lines.map(line => {
+        const lower = line.toLowerCase();
+        if (lower.startsWith('user:') || lower.startsWith('caller:')) {
+          return { role: 'user', content: line.replace(/^(user|caller):/i, '').trim() };
+        }
+        return { role: 'assistant', content: line.replace(/^assistant:/i, '').trim() };
+      });
+
+      const summary = call.analysis?.summary || `${transcriptArray.length} turns.`;
+      await upsertTranscript(dbCallId, businessId, transcriptArray, summary);
+
+      // 4. Extract and save structured lead details if present
+      const structuredData = call.analysis?.structuredData || {};
+      
+      // Helper to find key case-insensitively
+      const getField = (obj, key) => {
+        if (!obj) return null;
+        const lowerKey = key.toLowerCase();
+        for (const k of Object.keys(obj)) {
+          if (k.toLowerCase() === lowerKey) {
+            return obj[k];
+          }
+        }
+        return null;
+      };
+
+      const extractedName = getField(structuredData, 'name');
+      const extractedIntent = getField(structuredData, 'intent');
+      const extractedLocation = getField(structuredData, 'location');
+      const extractedApptTime = getField(structuredData, 'appointment_time') || getField(structuredData, 'budget');
+
+      const hasLead = extractedName || extractedIntent || extractedLocation || extractedApptTime;
+
+      if (hasLead) {
+        try {
+          await db.query(
+            `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', NOW())`,
+            [
+              businessId,
+              dbCallId,
+              fromNumber,
+              extractedName || null,
+              extractedIntent || 'inquiry',
+              extractedApptTime || null,
+              extractedLocation || null,
+              JSON.stringify(structuredData)
+            ]
+          );
+          console.log('[TELEPHONY SYNC] Lead auto-captured:', structuredData);
+        } catch (dbErr) {
+          console.error('[TELEPHONY SYNC] Lead save error:', dbErr.message);
+        }
+      }
+
+      // 5. Save usage log and deduct minutes
+      try {
+        const mins = duration / 60;
+        const cost_stt = (mins / 60) * 30; // Sarvam STT standard rate
+        const cost_tts = (transcriptArray.length * 100 / 10000) * 15;
+        const cost_telephony = mins * 0.71;
+        const cost_total = cost_stt + cost_tts + cost_telephony;
+
+        const now = new Date();
+        const billingMonth = now.getMonth() + 1;
+        const billingYear = now.getFullYear();
+
+        await db.query(
+          `INSERT INTO usage_logs (
+            user_id, country_code, call_id, minutes_used, cost_stt, cost_tts, cost_telephony, cost_total, currency_code, billing_month, billing_year, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+          [
+            businessId,
+            countryCode,
+            dbCallId,
+            Math.ceil(mins),
+            cost_stt,
+            cost_tts,
+            cost_telephony,
+            cost_total,
+            currency,
+            billingMonth,
+            billingYear
+          ]
+        );
+
+        if (businessId) {
+          await db.query(
+            'UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2',
+            [Math.ceil(mins), businessId]
+          );
+        }
+      } catch (logErr) {
+        console.error('[TELEPHONY SYNC] Usage logging error:', logErr.message);
+      }
+    }
+
+    return res.status(200).json({ status: 'success' });
+  } catch (err) {
+    console.error('[TELEPHONY SYNC] handleTelephonySync error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// ── STEP 5: Vapi Tool Call (Save Lead During Call) ────────────────────────────
+async function handleSaveLeadTool(req, res) {
+  try {
+    const { message } = req.body;
+    
+    // Check if it's a tool call message from Vapi
+    if (!message || message.type !== 'tool-calls') {
+      // Sometimes Vapi sends tool call arguments directly depending on setup, but typically wraps it in message
+      const toolCalls = req.body.toolCalls || [];
+      if (toolCalls.length === 0) {
+        return res.status(400).json({ error: 'Invalid payload. Expected tool-calls.' });
+      }
+    }
+
+    const payloadMessage = message || req.body || {};
+    const toolCalls = payloadMessage.toolCalls || [];
+    const call = payloadMessage.call || {};
+    const rawFrom = call.customer?.number || 'Unknown';
+    const rawTo = call.phoneNumber?.number || 'Unknown';
+    const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
+    let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
+    const callSid = call.id || 'Unknown';
+
+    // 1. Resolve business owner details
+    let businessId = req.query?.business_id || null;
+    let countryCode = 'US';
+
+    if (!businessId && toNumber && toNumber !== 'Unknown') {
+      const phoneResult = await db.query(
+        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
+        [toNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
+    // Try assistantId lookup if we still don't have businessId
+    const assistantId = call.assistantId;
+    if (!businessId && assistantId) {
+      const astResult = await db.query(
+        'SELECT business_id FROM assistants WHERE id = $1',
+        [assistantId]
+      );
+      if (astResult.rows.length > 0) {
+        businessId = astResult.rows[0].business_id;
+      }
+    }
+
+    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    if (!businessId) {
+      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
+      businessId = firstBiz.rows[0]?.id || null;
+      countryCode = firstBiz.rows[0]?.country_code || 'US';
+    } else {
+      // If we have businessId but didn't resolve countryCode (e.g. from assistantId path), lookup country
+      if (!countryCode) {
+        const bizRes = await db.query('SELECT country_code FROM businesses WHERE id = $1', [businessId]);
+        countryCode = bizRes.rows[0]?.country_code || 'US';
+      }
+    }
+
+    // 2. Find the db call record if it exists, or create one
+    let dbCallId = null;
+    const callResult = await db.query('SELECT id FROM calls WHERE call_sid = $1', [callSid]);
+    if (callResult.rows.length > 0) {
+      dbCallId = callResult.rows[0].id;
+    } else {
+      // Create a temporary call record so we can link it
+      const insertCallResult = await db.query(
+        `INSERT INTO calls (
+          user_id, country_code, call_sid, provider, from_number, virtual_number, status, started_at, created_at
+        ) VALUES ($1, $2, $3, 'twilio', $4, $5, 'in-progress', NOW(), NOW())
+        RETURNING id`,
+        [businessId, countryCode, callSid, fromNumber, toNumber]
+      );
+      dbCallId = insertCallResult.rows[0]?.id;
+    }
+
+    // 3. Process each tool call (usually just one)
+    const results = [];
+    for (const toolCall of toolCalls) {
+      const functionName = toolCall.function?.name;
+      if (functionName === 'save_lead') {
+        const args = toolCall.function.arguments || {};
+        
+        // Use case-insensitive helper to extract arguments
+        const getField = (obj, key) => {
+          if (!obj) return null;
+          const lowerKey = key.toLowerCase();
+          for (const k of Object.keys(obj)) {
+            if (k.toLowerCase() === lowerKey) {
+              return obj[k];
+            }
+          }
+          return null;
+        };
+
+        const name = getField(args, 'name');
+        const phone = getField(args, 'phone') || fromNumber;
+        const intent = getField(args, 'intent') || 'inquiry';
+        const location = getField(args, 'location');
+        const appointmentTime = getField(args, 'appointment_time') || getField(args, 'budget');
+
+        // Insert into leads table
+        await db.query(
+          `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', NOW())`,
+          [
+            businessId,
+            dbCallId,
+            phone,
+            name || null,
+            intent || null,
+            appointmentTime || null,
+            location || null,
+            JSON.stringify(args)
+          ]
+        );
+
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Lead details saved successfully to Supabase."
+        });
+      } else {
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Tool ignored."
+        });
+      }
+    }
+
+    // Return response in the format Vapi expects
+    return res.status(200).json({ results });
+
+  } catch (err) {
+    console.error('[SAVE LEAD TOOL] Error:', err.stack);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   handleIncomingCall,
   handleRecording,
-  handleCallStatus
+  handleCallStatus,
+  handleTelephonySync,
+  handleSaveLeadTool
 };

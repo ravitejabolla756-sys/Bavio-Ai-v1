@@ -3,7 +3,9 @@ const router = express.Router();
 const {
   handleIncomingCall,
   handleRecording,
-  handleCallStatus
+  handleCallStatus,
+  handleTelephonySync,
+  handleSaveLeadTool
 } = require('../controllers/twilioCallController');
 
 // All Twilio webhooks — NO JWT auth
@@ -17,5 +19,11 @@ router.post('/recording', handleRecording);
 
 // Step 3: Call ended
 router.post('/status', handleCallStatus);
+
+// Step 4: Telephony sync callback (logs & metrics)
+router.post('/telephony-sync', handleTelephonySync);
+
+// Step 5: Vapi Tool Callback (save lead during call)
+router.post('/save-lead', handleSaveLeadTool);
 
 module.exports = router;

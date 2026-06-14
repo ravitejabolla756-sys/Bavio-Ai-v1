@@ -9,29 +9,29 @@ async function processCallEnd({ providerCallId, phoneNumberId, callerNumber, dur
 
     // Insert call record
     const callResult = await db.query(
-        `INSERT INTO calls (phone_number_id, provider_call_id, caller_number, call_status, duration, cost)
+        `INSERT INTO calls (phone_number_id, provider_call_id, caller_number, status, duration, cost)
          VALUES ($1, $2, $3, 'completed', $4, $5) RETURNING *`,
         [phoneNumberId, providerCallId, callerNumber, durationSeconds, cost]
     );
     const call = callResult.rows[0];
 
-    // Get client_id from phone_numbers
+    // Get business_id from phone_numbers
     const numResult = await db.query(
-        'SELECT client_id FROM phone_numbers WHERE id = $1', [phoneNumberId]
+        'SELECT business_id FROM phone_numbers WHERE id = $1', [phoneNumberId]
     );
-    const clientId = numResult.rows[0]?.client_id;
+    const businessId = numResult.rows[0]?.business_id;
 
-    if (clientId) {
+    if (businessId) {
         // Insert usage log
         await db.query(
-            `INSERT INTO usage_logs (client_id, call_id, minutes_used, cost) VALUES ($1, $2, $3, $4)`,
-            [clientId, call.id, durationMinutes, cost]
+            `INSERT INTO usage_logs (user_id, call_id, minutes_used, cost_total) VALUES ($1, $2, $3, $4)`,
+            [businessId, call.id, durationMinutes, cost]
         );
 
-        // Update business usage_minutes
+        // Update business minutes_used
         await db.query(
-            `UPDATE businesses SET usage_minutes = usage_minutes + $1 WHERE id = $2`,
-            [durationMinutes, clientId]
+            `UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2`,
+            [durationMinutes, businessId]
         );
     }
 

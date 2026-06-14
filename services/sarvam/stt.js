@@ -11,20 +11,20 @@ async function transcribeAudio(audioBuffer, language = 'hi-IN') {
 
   console.log(`[STT] Transcribing ${audioBuffer.length} bytes, lang: ${language}`);
 
-  const form = new FormData();
-  form.append('file', audioBuffer, {
-    filename: 'audio.wav',
-    contentType: 'audio/wav'
-  });
-  form.append('language_code', language);
-  form.append('model', 'saarika:v1');
-  form.append('with_timestamps', 'false');
-  form.append('with_disfluencies', 'false');
-
   // Retry logic — max 3 attempts
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
+      const form = new FormData();
+      form.append('file', audioBuffer, {
+        filename: 'audio.wav',
+        contentType: 'audio/wav'
+      });
+      form.append('language_code', language);
+      form.append('model', 'saarika:v2.5');
+      form.append('with_timestamps', 'false');
+      form.append('with_disfluencies', 'false');
+
       const response = await axios.post(
         process.env.SARVAM_STT_URL ||
           'https://api.sarvam.ai/speech-to-text',

@@ -2,7 +2,7 @@ const sarvamService = require('./sarvamService');
 const db = require('../database/db');
 const { incrementMinutesUsed } = require('../middleware/planEnforcement');
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful Indian business assistant. 
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful, professional business assistant. 
 You help customers with inquiries, booking appointments, and answering questions. 
 Be concise, friendly, and professional. 
 Reply in the same language the customer uses.`;
@@ -39,7 +39,7 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
         const assistantResult = await db.query(
             `SELECT a.*, c.system_prompt 
              FROM assistants a 
-             JOIN clients c ON a.client_id = c.id 
+             JOIN businesses c ON a.client_id = c.id 
              WHERE c.id = $1 
              LIMIT 1`,
             [clientId]
