@@ -225,7 +225,7 @@ async function getProfile(req, res) {
                     req.user.id,
                     emailPrefix,
                     req.user.email,
-                    'google_oauth_fallback',
+                    `google_oauth_fallback_${req.user.id}`,
                     'supabase_auth_placeholder',
                     apiKey,
                     'IN', // default country

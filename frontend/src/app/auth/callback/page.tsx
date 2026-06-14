@@ -26,16 +26,20 @@ function AuthCallback() {
         }
 
         const result = await res.json();
-        if (result.success && result.data?.user) {
-          const user = result.data.user;
+        if (result.success && result.id) {
+          const user = result;
           localStorage.setItem('bavio_token', tokenVal);
+          localStorage.setItem('bavio_client_id', user.id);
+          if (user.name) {
+            localStorage.setItem('bavio_name', user.name);
+          }
           localStorage.setItem('bavio_user', JSON.stringify(user));
           
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
           // Check if onboarding is completed by looking at phone number fallback
-          const isOnboardingComplete = user.phone && user.phone !== 'google_oauth_fallback';
+          const isOnboardingComplete = user.phone && !user.phone.startsWith('google_oauth_fallback');
           
           if (isOnboardingComplete) {
             setCookie("bavio_onboarding_completed", "true");
@@ -48,6 +52,7 @@ function AuthCallback() {
               router.push('/workspace');
             }
           } else {
+            setCookie("bavio_onboarding_completed", "false");
             setStatus('Welcome! Redirecting to Onboarding...');
             router.push('/onboarding');
           }
