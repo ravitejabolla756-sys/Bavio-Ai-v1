@@ -147,7 +147,7 @@ function OnboardingContent() {
   const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
 
   return (
-    <div className={`relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-between overflow-x-hidden ${step === 1 ? "pb-36" : ""}`}>
+    <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-between overflow-x-hidden">
       {/* Background ambient lighting */}
       <div className="absolute w-[500px] h-[500px] bg-[#FF6B00]/3 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
       <div className="absolute w-[600px] h-[600px] bg-[#FF6B00]/2 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
@@ -176,7 +176,7 @@ function OnboardingContent() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-grow flex items-center justify-center p-6 relative z-10 my-4">
+      <main className={`flex-grow flex items-center justify-center p-6 relative z-10 my-4 ${step === 1 ? "pb-24" : ""}`}>
         {step === 1 && (
           <div className="w-full max-w-5xl text-center py-6">
             <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
@@ -268,7 +268,7 @@ function OnboardingContent() {
 
       {/* Sticky Bottom Plan Summary Section */}
       {step === 1 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] z-30 transition-all duration-300">
+        <div className="sticky bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] z-30 transition-all duration-300">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             {/* Metadata info */}
             <div className="flex flex-wrap items-center justify-start gap-y-3 gap-x-6 text-left">

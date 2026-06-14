@@ -11,24 +11,24 @@ const PRODUCT_IDS = {
 
 const PLAN_LIMITS = {
     free: 30,
-    starter: 200,
-    growth: 500,
-    scale: 1500
+    starter: 250,
+    growth: 600,
+    scale: 2000
 };
 
 const OVERAGE_RATES = {
     free: 0,
-    starter: 5,
-    growth: 4,
-    scale: 3
+    starter: 10.40,
+    growth: 8.60,
+    scale: 5.20
 };
 
 // Base costs in INR (paisa-free, display values)
 const BASE_COSTS = {
     free: 0,
-    starter: 1999,
-    growth: 3999,
-    scale: 7999
+    starter: 2599,
+    growth: 5199,
+    scale: 10399
 };
 
 // International pricing in USD

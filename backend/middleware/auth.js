@@ -23,6 +23,18 @@ const requireAuth = async (req, res, next) => {
         const result = await db.query('SELECT * FROM businesses WHERE id = $1 AND status = $2', [supabaseUser.id, 'active']);
         
         if (result.rows.length === 0) {
+            // Allow auto-creation of profile for Google/OAuth users if hitting profile route
+            const isProfileRoute = req.path === '/profile' || req.path === '/me' || 
+                                   (req.originalUrl && (req.originalUrl.includes('/profile') || req.originalUrl.includes('/me')));
+            if (isProfileRoute) {
+                req.client = null;
+                req.user = {
+                    id: supabaseUser.id,
+                    email: supabaseUser.email
+                };
+                req.tokenData = supabaseUser;
+                return next();
+            }
             return res.status(403).json({ error: 'Authentication failed: Business not found or inactive' });
         }
         

@@ -109,12 +109,12 @@ async function runTests() {
         id: businessIdA,
         name: 'Apollo Hospital',
         email: 'apollo@bavio.test',
-        phone: '+917569960503',
+        phone: '+917569960999',
         password_hash: 'mock_password_hash',
         business_name: 'Apollo Hospital',
         industry: 'Healthcare',
         owner_name: 'Dr. Raj Kumar',
-        owner_phone: '+917569960503',
+        owner_phone: '+917569960999',
         owner_email: 'apollo@bavio.test',
         language: 'hi-IN',
         first_message: 'Namaste Apollo Hospital mein aapka swagat hai.',
@@ -157,7 +157,7 @@ async function runTests() {
     // ── 3. Create Phone Mappings (Shared Exotel Number) ─────────────────────
     console.log('Inserting business phone mappings to shared Exotel number...');
     const { error: mapErr } = await supabase.from('business_phone_mapping').insert([
-      { business_id: businessIdA, business_number: '+917569960503', exotel_number: testExotelNumber, status: 'active' },
+      { business_id: businessIdA, business_number: '+917569960999', exotel_number: testExotelNumber, status: 'active' },
       { business_id: businessIdB, business_number: '+917569960502', exotel_number: testExotelNumber, status: 'active' }
     ]);
     if (mapErr) console.error('❌ Insert business_phone_mapping error:', mapErr);
@@ -219,7 +219,7 @@ async function runTests() {
     assert(session !== null, 'Redis session initialized successfully');
     if (session) {
       assert(session.business_id === businessIdA, 'Session contains business_id');
-      assert(session.business_number === '+917569960503', 'Session contains business_number');
+      assert(session.business_number === '+917569960999', 'Session contains business_number');
       assert(session.business_name === 'Apollo Hospital', 'Session contains business_name');
       assert(session.exotel_number === testExotelNumber, 'Session contains exotel_number');
       assert(session.caller_phone === patientPhone, 'Session contains caller_phone');

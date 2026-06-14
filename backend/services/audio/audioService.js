@@ -24,7 +24,7 @@ function getAudioPath(filename) {
 function getAudioUrl(filename) {
   const base = process.env.AUDIO_BASE_URL ||
                process.env.WEBHOOK_BASE_URL ||
-               'https://api.bavio.in';
+               'http://localhost:3000';
   return `${base}/audio/${filename}`;
 }
 

@@ -85,14 +85,19 @@ export default function CallForwardSetup({
 
   const instruction: OperatorInstruction = operatorMap[selectedOperator] || Object.values(operatorMap)[0];
 
-  // USSD code builder (extracts 10 digits for Indian carriers)
-  const getClean10DigitNumber = (num: string) => {
+  // USSD code builder (extracts 10 digits for local carriers, formats international prefix for US numbers)
+  const getCleanUssdNumber = (num: string) => {
     const cleaned = num.replace(/\D/g, "");
+    // If it's a US number (starts with +1 or has 11 digits starting with 1)
+    if (num.startsWith("+1") || (cleaned.length === 11 && cleaned.startsWith("1"))) {
+      const digitsWithoutPlus = cleaned.startsWith("1") ? cleaned : `1${cleaned}`;
+      return `00${digitsWithoutPlus}`; // e.g. 0012025550199
+    }
     return cleaned.length > 10 ? cleaned.slice(-10) : cleaned;
   };
 
-  const clean10Digit = getClean10DigitNumber(virtualNumber);
-  const ussdCodeString = instruction.code ? `${instruction.code}${clean10Digit}#` : "";
+  const cleanUssdNum = getCleanUssdNumber(virtualNumber);
+  const ussdCodeString = instruction.code ? `${instruction.code}${cleanUssdNum}#` : "";
 
   const handleCopyCode = () => {
     const textToCopy = ussdCodeString || virtualNumber;
