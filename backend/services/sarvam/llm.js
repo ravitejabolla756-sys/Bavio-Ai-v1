@@ -14,7 +14,7 @@ async function generateResponse(messages, systemPrompt) {
     process.env.SARVAM_LLM_URL ||
       'https://api.sarvam.ai/v1/chat/completions',
     {
-      model: process.env.SARVAM_LLM_MODEL || 'sarvam-m',
+      model: process.env.SARVAM_LLM_MODEL || 'sarvam-30b',
       max_tokens: 1024,
       temperature: 0.7,
       reasoning_effort: null,
@@ -69,11 +69,30 @@ async function generateResponse(messages, systemPrompt) {
     rawText = rawText.replace(/\[LEAD_CAPTURED\][\s\S]*?(\{[\s\S]*?\})?/g, '').trim();
   }
 
+  // Filter out empty or placeholder lead data
+  if (lead_data) {
+    const hasRealData = Object.entries(lead_data).some(([key, val]) => {
+      return val && val !== '...' && val !== 'Unknown' && String(val).trim() !== '';
+    });
+    if (!hasRealData) {
+      console.log('[LLM] Discarding empty/placeholder lead data:', lead_data);
+      lead_data = null;
+    }
+  }
+
   // Check if call should end
-  const should_end = rawText.includes('[END_CALL]');
+  let should_end = rawText.includes('[END_CALL]');
   if (should_end) {
-    rawText = rawText.replace('[END_CALL]', '').trim();
-    console.log('[LLM] End call detected');
+    // Prevent premature end-call if it's the first turn or if the lead data was a placeholder
+    const isPremature = messages.length <= 2 || (rawText.includes('Thank you for calling') && !lead_data);
+    if (isPremature) {
+      console.log('[LLM] Ignoring premature end call');
+      should_end = false;
+      rawText = rawText.replace('[END_CALL]', '').trim();
+    } else {
+      rawText = rawText.replace('[END_CALL]', '').trim();
+      console.log('[LLM] End call detected');
+    }
   }
 
   return {
