@@ -7,22 +7,22 @@ import { CountryProvider } from "@/context/CountryContext";
 export const metadata: Metadata = {
   title: "Bavio AI - Autonomous Voice Agents for Business Calls",
   description:
-    "Answer every call instantly. Qualify leads in Hindi, English and Hinglish. 24/7 AI voice agents for Indian businesses starting at Rs 1,999 per month.",
+    "Answer every call instantly. Qualify leads instantly. 24/7 AI voice agents starting at $39 per month.",
   metadataBase: new URL("https://bavio.in"),
   openGraph: {
     title: "Bavio AI - Autonomous Voice Agents for Business Calls",
     description:
-      "Answer every call instantly. Qualify leads in Hindi, English and Hinglish. 24/7 AI voice agents for Indian businesses.",
+      "Answer every call instantly. Qualify leads instantly. 24/7 AI voice agents for your business.",
     url: "https://bavio.in",
     siteName: "Bavio AI",
-    locale: "en_IN",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Bavio AI - Autonomous Voice Agents",
     description:
-      "Answer every call instantly. Qualify leads in Hindi, English and Hinglish.",
+      "Answer every call instantly. Qualify leads instantly with autonomous voice AI.",
   },
   robots: {
     index: true,

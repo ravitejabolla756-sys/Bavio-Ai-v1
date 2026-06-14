@@ -210,15 +210,15 @@ function SectionContent({ id }: { id: string }) {
           <SubHeading>Request body</SubHeading>
           <CodeBlock lang="json" code={`{
   "name": "Sunstar Properties Assistant",
-  "language": "hinglish",
-  "voice": "priya-v2",
-  "greeting": "Namaste! Main Sunstar Properties ki taraf se bol rahi hoon.",
-  "timezone": "Asia/Kolkata",
+  "language": "english-us",
+  "voice": "sarah-v1",
+  "greeting": "Hello! I am speaking on behalf of Sunstar Properties.",
+  "timezone": "America/New_York",
   "business_hours": {
     "enabled": false,
     "schedule": {
-      "mon": ["09:00", "19:00"],
-      "tue": ["09:00", "19:00"],
+      "mon": ["09:00", "17:00"],
+      "tue": ["09:00", "17:00"],
       "sat": ["10:00", "16:00"]
     }
   },
@@ -231,8 +231,8 @@ function SectionContent({ id }: { id: string }) {
   "data": {
     "agent_id": "ag_7f3k29mx",
     "name": "Sunstar Properties Assistant",
-    "language": "hinglish",
-    "voice": "priya-v2",
+    "language": "english-us",
+    "voice": "sarah-v1",
     "status": "inactive",
     "created_at": "2026-06-03T12:30:00Z"
   }
@@ -240,7 +240,7 @@ function SectionContent({ id }: { id: string }) {
 
           <SubHeading>Supported languages</SubHeading>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-            {["hindi", "english", "hinglish", "marathi", "tamil", "telugu"].map(l => (
+            {["english-us", "english-gb", "spanish", "french", "german", "italian"].map(l => (
               <code key={l} className="text-[11px] font-mono text-ink-secondary bg-surface-raised border border-line px-3 py-2 rounded-lg">{l}</code>
             ))}
           </div>
@@ -278,7 +278,7 @@ function SectionContent({ id }: { id: string }) {
   "content": [
     {
       "question": "What are your office hours?",
-      "answer": "We are open Monday to Saturday, 9 AM to 7 PM IST."
+      "answer": "We are open Monday to Friday, 9 AM to 5 PM EST."
     },
     {
       "question": "Do you offer home visits?",
@@ -332,17 +332,17 @@ function SectionContent({ id }: { id: string }) {
   "call_id": "call_4p9x1n",
   "agent_id": "ag_7f3k29mx",
   "duration_seconds": 94,
-  "caller_number": "+91 98765 43210",
+  "caller_number": "+1 512 555 0199",
   "transcript_url": "https://api.bavio.in/v1/calls/call_4p9x1n/transcript",
   "lead": {
-    "name": "Rajesh Verma",
-    "intent": "Property inquiry — 3BHK",
-    "budget": "Rs 1.4–1.7 Cr",
-    "location": "Gachibowli, Hyderabad",
+    "name": "Alex Mercer",
+    "intent": "Property inquiry — 3-bedroom",
+    "budget": "$1.4–1.7M",
+    "location": "Austin, Texas",
     "sentiment": "interested",
     "follow_up": "site_visit_requested"
   },
-  "summary": "Caller inquired about 3BHK availability in Gachibowli. Budget confirmed. Requested Saturday site visit."
+  "summary": "Caller inquired about 3-bedroom availability in Austin. Budget confirmed. Requested Saturday site visit."
 }`} />
 
           <SubHeading>Signature verification</SubHeading>
@@ -393,7 +393,7 @@ app.post("/bavio/events", (req, res) => {
     {
       "call_id": "call_4p9x1n",
       "agent_id": "ag_7f3k29mx",
-      "caller_number": "+91 98765 43210",
+      "caller_number": "+1 512 555 0199",
       "direction": "inbound",
       "duration_seconds": 94,
       "status": "completed",
@@ -417,15 +417,15 @@ app.post("/bavio/events", (req, res) => {
   "data": {
     "call_id": "call_4p9x1n",
     "transcript": [
-      { "role": "agent",  "text": "Namaste! Main Sunstar Properties ki taraf se bol rahi hoon.", "t": 0.0 },
-      { "role": "caller", "text": "Haan, mujhe 3BHK flat ke baare mein jaanna tha Gachibowli mein.", "t": 3.4 },
-      { "role": "agent",  "text": "Bilkul. Aapka budget range kya hai?", "t": 5.1 }
+      { "role": "agent",  "text": "Hello! I am speaking on behalf of Sunstar Properties.", "t": 0.0 },
+      { "role": "caller", "text": "Yes, I was looking for info on 3-bedroom apartments in Austin.", "t": 3.4 },
+      { "role": "agent",  "text": "Sure. What is your budget range?", "t": 5.1 }
     ],
     "audio_url": "https://api.bavio.in/v1/calls/call_4p9x1n/audio",
     "lead": {
-      "name": "Rajesh Verma",
-      "intent": "Property inquiry — 3BHK",
-      "budget": "Rs 1.4–1.7 Cr"
+      "name": "Alex Mercer",
+      "intent": "Property inquiry — 3-bedroom",
+      "budget": "$1.4–1.7M"
     }
   }
 }`} />
@@ -529,7 +529,7 @@ app.post("/bavio/events", (req, res) => {
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "The field 'language' must be one of: hindi, english, hinglish.",
+    "message": "The field 'language' must be one of: english-us, english-gb, spanish.",
     "field": "language"
   }
 }`} />

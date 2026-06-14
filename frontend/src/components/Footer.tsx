@@ -97,7 +97,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-body-sm text-ink-tertiary max-w-xs leading-relaxed">
-              India-first AI voice agents for business calls. Answer every call.
+              Autonomous AI voice receptionists for business calls. Answer every call.
               Capture every lead. 24/7.
             </p>
 
@@ -176,7 +176,7 @@ export default function Footer() {
             2026 Bavio AI. All rights reserved.
           </p>
           <p className="text-body-xs text-ink-muted">
-            Made in India
+            Bavio AI
           </p>
         </div>
       </div>

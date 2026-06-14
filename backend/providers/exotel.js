@@ -20,10 +20,9 @@ class ExotelProvider {
     }
 
     async buyNumber(country) {
-        // Exotel is primarily for India. Buying automated numbers requires KYC logic.
-        // We simulate the purchase of an ExoPhone here.
+        // Exotel simulated purchase. Returns a simulated US number.
         console.log(`Exotel simulated purchase in ${country}`);
-        return `+9180${Math.floor(1000000 + Math.random() * 9000000)}`;
+        return `+1800${Math.floor(1000000 + Math.random() * 9000000)}`;
     }
 
     async handleIncomingCall(req) {

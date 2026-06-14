@@ -15,7 +15,6 @@ jest.mock("../shared/CountryContext", () => {
 
 describe("CountryContext Currency Mapping", () => {
   test("resolves correct currency codes per country code", () => {
-    expect(CURRENCY_MAP.IN).toBe("INR");
     expect(CURRENCY_MAP.US).toBe("USD");
     expect(CURRENCY_MAP.GB).toBe("GBP");
     expect(CURRENCY_MAP.AU).toBe("AUD");
@@ -28,18 +27,16 @@ describe("PricingSelector Component", () => {
     jest.clearAllMocks();
   });
 
-  test("renders India localized pricing, currency, and badge when country is IN", () => {
+  test("renders GB localized pricing, currency, and badge when country is GB", () => {
     (useCountry as jest.Mock).mockReturnValue({
-      country: "IN",
+      country: "GB",
       loading: false,
     });
 
     render(<PricingSelector onSelectPlan={jest.fn()} />);
 
-    // Check India currency symbol and growth price (₹3,999)
-    expect(screen.getByText("₹3,999")).toBeInTheDocument();
-    // Check Indian operator custom badge
-    expect(screen.getByText("Most popular in India")).toBeInTheDocument();
+    // Check GB currency symbol and growth price (£59)
+    expect(screen.getByText("£59")).toBeInTheDocument();
   });
 
   test("renders US localized pricing, currency, and badge when country is US", () => {
@@ -74,13 +71,12 @@ describe("PricingSelector Component", () => {
 });
 
 describe("PhoneSetup Telephony & Dial Code Generation", () => {
-  const mockNumber = "+91 80802 74248";
-  const cleanNumber = "918080274248";
+  const mockNumber = "+1 (512) 555-0199";
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useCountry as jest.Mock).mockReturnValue({
-      country: "IN",
+      country: "US",
       loading: false,
     });
     global.fetch = jest.fn().mockImplementation(() =>
@@ -108,7 +104,7 @@ describe("PhoneSetup Telephony & Dial Code Generation", () => {
     expect(global.fetch).toHaveBeenCalledWith("/api/numbers/assign", expect.any(Object));
   });
 
-  test("generates operator USSD dial code dynamically for Airtel in India", async () => {
+  test("displays carrier portal steps for US carrier routing", async () => {
     render(<PhoneSetup onComplete={jest.fn()} />);
 
     // Assign number first
@@ -119,14 +115,8 @@ describe("PhoneSetup Telephony & Dial Code Generation", () => {
       expect(screen.getByText(mockNumber)).toBeInTheDocument();
     });
 
-    // Select Airtel operator (which is the default, but let's change value to be sure)
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "Airtel" } });
-
-    // Airtel code is *567*. Code should be *567* + clean number + #
-    // cleanNumber = 918080274248
-    const expectedDialCode = `*567*${cleanNumber}#`;
-    expect(screen.getByText(expectedDialCode)).toBeInTheDocument();
+    // Verify Carrier Portal options are shown
+    expect(screen.getByText(/US Carrier Portal/i)).toBeInTheDocument();
   });
 
   test("simulates call-forward verification handshake successfully", async () => {

@@ -11,21 +11,21 @@ export default function Careers() {
     {
       title: "Voice AI Pipeline Engineer",
       dept: "Engineering",
-      loc: "Hyderabad, India (Hybrid)",
+      loc: "Miami, FL (Hybrid)",
       type: "Full-time",
       desc: "Optimize pipeline buffering between SIP Telephony networks and local/cloud STT and synthesis models. Enhance sub-500ms voice response performance."
     },
     {
       title: "STT Optimization Specialist",
       dept: "Research",
-      loc: "Hyderabad, India (Hybrid)",
+      loc: "Austin, TX (Hybrid)",
       type: "Full-time",
-      desc: "Train custom language and vocabulary models targeting regional Indian dialects, Hindi accents, and Hinglish code-switching parameters."
+      desc: "Train custom language and vocabulary models targeting regional accents, custom jargon, and speech-to-text parameters."
     },
     {
       title: "Senior Frontend Engineer (Next.js)",
       dept: "Product",
-      loc: "Remote (India)",
+      loc: "Remote (US)",
       type: "Full-time",
       desc: "Lead dashboard development, workflow mapping canvas, and real-time visualization widgets using React, Tailwind CSS, and Framer Motion."
     }
@@ -45,7 +45,7 @@ export default function Careers() {
             Build the Future of <span className="text-saffron">Voice OS</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
-            We are building state-of-the-art voice qualification systems to help Indian businesses capture every lead. Join us in Hyderabad or remotely.
+            We are building state-of-the-art voice qualification systems to help businesses capture every lead. Join us hybrid or remotely.
           </p>
 
           <h2 className="font-display font-bold text-heading-lg text-ink mb-6">Open Positions</h2>
@@ -95,11 +95,11 @@ export default function Careers() {
               </div>
               <div>
                 <span className="font-bold text-body-sm text-ink block mb-1">Impact First</span>
-                <p className="text-body-xs text-ink-tertiary leading-relaxed">Directly contribute to revenue metrics of SMB and enterprise clients across India.</p>
+                <p className="text-body-xs text-ink-tertiary leading-relaxed">Directly contribute to revenue metrics of SMB and enterprise clients globally.</p>
               </div>
               <div>
                 <span className="font-bold text-body-sm text-ink block mb-1">Flexible Schedule</span>
-                <p className="text-body-xs text-ink-tertiary leading-relaxed">Hybrid setups in Hyderabad or fully remote options depending on your alignment.</p>
+                <p className="text-body-xs text-ink-tertiary leading-relaxed">Hybrid setups or fully remote options depending on your alignment.</p>
               </div>
             </div>
           </div>

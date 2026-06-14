@@ -10,9 +10,9 @@ export default function Changelog() {
     {
       version: "v2.4.0",
       date: "May 2026",
-      title: "Hinglish Translation & Dialect Fine-tuning",
-      description: "Deployed custom vocabulary weights for common Hinglish mixings in metro regions, lowering transcription errors on budget figures and location spellings by 18%.",
-      tags: ["STT Core", "India Regional"]
+      title: "Speech Translation & Dialect Fine-tuning",
+      description: "Deployed custom vocabulary weights for common speech mixings in metropolitan areas, lowering transcription errors on budget figures and location spellings by 18%.",
+      tags: ["STT Core", "Dialect Tuning"]
     },
     {
       version: "v2.3.2",

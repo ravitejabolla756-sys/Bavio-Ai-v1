@@ -20,17 +20,17 @@ import { assistantsApi, getClientId, Assistant } from "@/lib/api";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
 const VOICE_OPTIONS = [
-  "Saffron-Female (Meera)",
-  "Bold-Male (Arjun)",
-  "Hinglish-Neutral",
-  "Professional-Female (Priya)",
+  "Sarah-Female (US)",
+  "John-Male (US)",
+  "Emily-Female (UK)",
+  "Jessica-Female (US)",
 ];
 
 const LANGUAGE_OPTIONS = [
-  "hi-IN",
-  "hinglish",
-  "en-IN",
   "en-US",
+  "en-GB",
+  "es-US",
+  "fr-FR",
 ];
 
 const MODEL_OPTIONS = [
@@ -42,18 +42,18 @@ const MODEL_OPTIONS = [
 const voiceOptions = VOICE_OPTIONS.map((v) => {
   let icon = "🗣️";
   let description = "AI synthesized natural voice";
-  if (v.includes("Meera")) {
+  if (v.includes("Sarah")) {
     icon = "👩";
-    description = "Warm Hindi & English female tone, perfect for support.";
-  } else if (v.includes("Arjun")) {
+    description = "Warm American female tone, perfect for customer support.";
+  } else if (v.includes("John")) {
     icon = "👨";
-    description = "Confident Hindi & English male tone, great for sales.";
-  } else if (v.includes("Priya")) {
+    description = "Confident American male tone, great for sales.";
+  } else if (v.includes("Jessica")) {
     icon = "👩";
-    description = "Formal, professional female voice for corporate inquiries.";
-  } else if (v.includes("Hinglish")) {
-    icon = "🎙️";
-    description = "Bilingual conversational blend, high fluid speed.";
+    description = "Formal, professional American female voice for inquiries.";
+  } else if (v.includes("Emily")) {
+    icon = "👩";
+    description = "Clear British accented female voice.";
   }
   return { value: v, label: v, icon, description };
 });
@@ -62,18 +62,18 @@ const languageOptions = LANGUAGE_OPTIONS.map((l) => {
   let icon = "🌐";
   let label = l;
   let description = "Supported communication dialect";
-  if (l === "hi-IN") {
-    icon = "🇮🇳";
-    label = "Hindi (India)";
-    description = "Standard Devanagari speech recognition & synthesis.";
-  } else if (l === "hinglish") {
-    icon = "🇮🇳";
-    label = "Hinglish";
-    description = "Bilingual blend of Hindi and English speech patterns.";
-  } else if (l === "en-IN") {
-    icon = "🇮🇳";
-    label = "English (India)";
-    description = "Indian accented English speech recognition.";
+  if (l === "es-US") {
+    icon = "🇺🇸";
+    label = "Spanish (US)";
+    description = "US Spanish speech recognition & synthesis.";
+  } else if (l === "fr-FR") {
+    icon = "🇫🇷";
+    label = "French (FR)";
+    description = "Standard French speech recognition & synthesis.";
+  } else if (l === "en-GB") {
+    icon = "🇬🇧";
+    label = "English (UK)";
+    description = "British accented English speech recognition.";
   } else if (l === "en-US") {
     icon = "🇺🇸";
     label = "English (US)";
@@ -111,9 +111,9 @@ export default function AgentsDirectory() {
   // Form states
   const [formName, setFormName] = useState("");
   const [formPrompt, setFormPrompt] = useState("");
-  const [formLanguage, setFormLanguage] = useState("hi-IN");
+  const [formLanguage, setFormLanguage] = useState("en-US");
   const [formModel, setFormModel] = useState("Bavio Voice-Local");
-  const [formVoice, setFormVoice] = useState("Saffron-Female (Meera)");
+  const [formVoice, setFormVoice] = useState("Sarah-Female (US)");
   const [formActive, setFormActive] = useState(true);
   const [formFirstMessage, setFormFirstMessage] = useState("");
 
@@ -144,9 +144,9 @@ export default function AgentsDirectory() {
     if (selectedAgent) {
       setFormName(selectedAgent.name || "");
       setFormPrompt(selectedAgent.system_prompt || "");
-      setFormLanguage(selectedAgent.language || "hi-IN");
+      setFormLanguage(selectedAgent.language || "en-US");
       setFormModel(selectedAgent.model || "Bavio Voice-Local");
-      setFormVoice(selectedAgent.voice || "Saffron-Female (Meera)");
+      setFormVoice(selectedAgent.voice || "Sarah-Female (US)");
       setFormActive(selectedAgent.active !== false);
       setFormFirstMessage(selectedAgent.first_message || "");
     }
@@ -190,11 +190,11 @@ export default function AgentsDirectory() {
       const newAgent = await assistantsApi.create({
         name: "New Voice Agent",
         system_prompt: "You are a professional customer voice assistant. Guide callers professionally and helpfully.",
-        language: "hi-IN",
+        language: "en-US",
         model: "Bavio Voice-Local",
-        voice: "Saffron-Female (Meera)",
+        voice: "Sarah-Female (US)",
         active: true,
-        first_message: "Namaste! Main aapki kaise madad kar sakta hoon?",
+        first_message: "Hello! How can I help you today?",
       });
       setAgents(prev => [...prev, newAgent]);
       setSelectedAgentId(newAgent.id);
@@ -346,7 +346,7 @@ export default function AgentsDirectory() {
                     type="text"
                     value={formFirstMessage}
                     onChange={(e) => setFormFirstMessage(e.target.value)}
-                    placeholder="Namaste! Main aapki kaise madad kar sakta hoon?"
+                    placeholder="Hello! Thanks for calling. How can I help you today?"
                     className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink placeholder:text-ink-muted font-sans"
                   />
                 </div>

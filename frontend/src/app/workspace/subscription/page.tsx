@@ -37,7 +37,7 @@ const includedFeatures = [
   "Knowledge Base Training",
   "Dashboard Analytics",
   "CRM Integrations",
-  "WhatsApp Notifications"
+  "SMS/Slack Notifications"
 ];
 
 export default function WorkspaceSubscription() {
@@ -186,7 +186,7 @@ export default function WorkspaceSubscription() {
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-bold font-mono text-saffron">
-                    {profile?.plan_name === "starter" ? "₹1,499" : profile?.plan_name === "growth" ? "₹3,999" : "Free"}
+                    {profile?.plan_name === "starter" ? "$39" : profile?.plan_name === "growth" ? "$79" : "Free"}
                   </span>
                   <span className="text-[10px] text-ink-muted block font-semibold">/month</span>
                 </div>
@@ -235,7 +235,7 @@ export default function WorkspaceSubscription() {
                 </div>
                 <p className="text-[11px] text-ink-tertiary mb-4">Best for small businesses handling basic client routing & details capture.</p>
                 <div className="flex items-baseline gap-1.5 mb-6">
-                  <span className="text-2xl font-bold font-mono text-ink">₹1,499</span>
+                  <span className="text-2xl font-bold font-mono text-ink">$39</span>
                   <span className="text-body-xs text-ink-muted">/month</span>
                 </div>
                 <ul className="flex flex-col gap-2.5 text-body-xs text-ink-secondary mb-6 font-semibold">
@@ -249,7 +249,7 @@ export default function WorkspaceSubscription() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-state-success" weight="bold" />
-                    <span>WhatsApp lead alerts</span>
+                    <span>SMS/Slack lead alerts</span>
                   </li>
                 </ul>
               </div>
@@ -282,7 +282,7 @@ export default function WorkspaceSubscription() {
                 </div>
                 <p className="text-[11px] text-ink-tertiary mb-4">Perfect for growing organizations automating calendars & active sales booking.</p>
                 <div className="flex items-baseline gap-1.5 mb-6">
-                  <span className="text-2xl font-bold font-mono text-saffron">₹3,999</span>
+                  <span className="text-2xl font-bold font-mono text-saffron">$79</span>
                   <span className="text-body-xs text-ink-muted">/month</span>
                 </div>
                 <ul className="flex flex-col gap-2.5 text-body-xs text-ink-secondary mb-6 font-semibold">

@@ -8,12 +8,12 @@ import ScrollReveal from "@/components/motion/ScrollReveal";
 
 const articles = [
   {
-    title: "Why Indian Businesses Miss Valuable Calls",
+    title: "Why Small Businesses Miss Valuable Calls",
     category: "Industry",
     excerpt:
-      "Most small businesses in India lose qualified leads to missed calls during peak hours, lunch breaks, and after working hours. We break down why this happens and what it costs.",
+      "Most small businesses lose qualified leads to missed calls during peak hours, lunch breaks, and after working hours. We break down why this happens and what it costs.",
     readTime: "5 min read",
-    slug: "why-indian-businesses-miss-calls",
+    slug: "why-small-businesses-miss-calls",
   },
   {
     title: "How AI Receptionists Work",
@@ -52,7 +52,7 @@ export default function Blog() {
             </h1>
             <p className="text-body-lg text-ink-tertiary max-w-xl leading-relaxed">
               Practical insights on voice AI, lead capture, and call automation
-              for Indian businesses.
+              for your business.
             </p>
           </ScrollReveal>
         </section>

@@ -12,7 +12,6 @@ export interface CountryData {
 }
 
 export const countries: CountryData[] = [
-  { code: "IN", name: "India", currency: "inr", symbol: "Rs", dialCode: "+91", flag: "🇮🇳" },
   { code: "US", name: "United States", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇺🇸" },
   { code: "GB", name: "United Kingdom", currency: "gbp", symbol: "£", dialCode: "+44", flag: "🇬🇧" },
   { code: "CA", name: "Canada", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇨🇦" },
@@ -20,7 +19,7 @@ export const countries: CountryData[] = [
   { code: "AE", name: "United Arab Emirates", currency: "aed", symbol: "AED", dialCode: "+971", flag: "🇦🇪" },
 ];
 
-const DEFAULT_COUNTRY = countries[0]; // India as default
+const DEFAULT_COUNTRY = countries[0]; // US as default
 
 interface CountryContextType {
   country: CountryData;
@@ -33,117 +32,31 @@ interface CountryContextType {
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export function CountryProvider({ children }: { children: React.ReactNode }) {
-  const [country, setCountry] = useState<CountryData>(DEFAULT_COUNTRY);
-  const [isLoading, setIsLoading] = useState(true);
-  const [detectedMethod, setDetectedMethod] = useState<CountryContextType["detectedMethod"]>(null);
+  const [country, setCountry] = useState<CountryData>(countries[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [detectedMethod, setDetectedMethod] = useState<CountryContextType["detectedMethod"]>("default");
 
   const getCountryByCode = useCallback((code: string): CountryData => {
-    return countries.find((c) => c.code === code.toUpperCase()) || DEFAULT_COUNTRY;
+    return countries[0];
   }, []);
 
   const detectCountry = useCallback(async (force = false) => {
-    setIsLoading(true);
-    
-    // 1. Check LocalStorage Override
-    if (!force) {
-      const stored = localStorage.getItem("bavio_country_override");
-      if (stored) {
-        setCountry(getCountryByCode(stored));
-        setDetectedMethod("manual");
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    // 2. Try HTML5 Browser Geolocation (Primary)
-    const geoPromise = new Promise<{ lat: number; lon: number }>((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation not supported"));
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        (error) => reject(error),
-        { timeout: 4000 }
-      );
-    });
-
-    try {
-      const coords = await geoPromise;
-      // Reverse geocode via BigDataCloud's free client-side API
-      const geoRes = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lon}&localityLanguage=en`
-      );
-      if (geoRes.ok) {
-        const geoData = await geoRes.json();
-        if (geoData.countryCode) {
-          const resolved = getCountryByCode(geoData.countryCode);
-          setCountry(resolved);
-          setDetectedMethod("geolocation");
-          setIsLoading(false);
-          return;
-        }
-      }
-    } catch (e) {
-      console.log("HTML5 Geolocation lookup failed or denied, falling back to GeoIP...");
-    }
-
-    // 3. Fallback: Backend IP Address GeoIP (MaxMind / ipapi.co)
-    try {
-      const res = await fetch("/api/onboarding/detect-country");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.country_code) {
-          const resolved = getCountryByCode(data.country_code);
-          setCountry(resolved);
-          setDetectedMethod("geoip");
-          setIsLoading(false);
-          return;
-        }
-      }
-    } catch (e) {
-      console.log("Backend GeoIP lookup failed.");
-    }
-
-    // 4. Default Fallback
-    setCountry(DEFAULT_COUNTRY);
+    setCountry(countries[0]);
     setDetectedMethod("default");
     setIsLoading(false);
-  }, [getCountryByCode]);
+  }, []);
 
   const changeCountry = useCallback(async (code: string) => {
-    const nextCountry = getCountryByCode(code);
-    setCountry(nextCountry);
+    setCountry(countries[0]);
     setDetectedMethod("manual");
-    localStorage.setItem("bavio_country_override", nextCountry.code);
-
-    // If authenticated, sync with the backend
-    const token = localStorage.getItem("bavio_token");
-    if (token) {
-      try {
-        await fetch("/api/onboarding/set-country", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({ country_code: nextCountry.code }),
-        });
-      } catch (err) {
-        console.error("Failed to sync country override to database:", err);
-      }
-    }
-  }, [getCountryByCode]);
+  }, []);
 
   // Run on mount
   useEffect(() => {
-    detectCountry();
-  }, [detectCountry]);
+    setCountry(countries[0]);
+    setDetectedMethod("default");
+    setIsLoading(false);
+  }, []);
 
   return (
     <CountryContext.Provider value={{ country, isLoading, detectedMethod, changeCountry, detectCountry }}>

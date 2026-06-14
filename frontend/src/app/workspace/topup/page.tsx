@@ -44,10 +44,10 @@ export default function TopupMinutesPage() {
   const [successInvoice, setSuccessInvoice] = useState<string | null>(null);
 
   const packs = [
-    { mins: 100, price: 250, desc: "Best for quick test extensions and minor overages." },
-    { mins: 500, price: 1000, desc: "Standard scaling package for growing call routing volume." },
-    { mins: 1000, price: 1800, desc: "Discounted growth package for heavy customer reception loads." },
-    { mins: 5000, price: 8000, desc: "Enterprise value pack with priority routing channel access." },
+    { mins: 100, price: 10, desc: "Best for quick test extensions and minor overages." },
+    { mins: 500, price: 45, desc: "Standard scaling package for growing call routing volume." },
+    { mins: 1000, price: 80, desc: "Discounted growth package for heavy customer reception loads." },
+    { mins: 5000, price: 350, desc: "Enterprise value pack with priority routing channel access." },
   ];
 
   const fetchProfile = async () => {
@@ -81,8 +81,8 @@ export default function TopupMinutesPage() {
   const getCalculatedPrice = () => {
     if (useCustom) {
       const mins = parseInt(customMinutes) || 0;
-      // Flat ₹2.00 per minute
-      return mins * 2;
+      // Flat $0.10 per minute
+      return mins * 0.10;
     }
     const activePack = packs.find(p => p.mins === selectedPack);
     return activePack ? activePack.price : 0;
@@ -220,9 +220,9 @@ export default function TopupMinutesPage() {
                       </div>
                       <div className="text-right font-mono shrink-0">
                         <span className={`text-body-sm font-bold block ${isSel ? "text-[#FF6B00]" : "text-ink"}`}>
-                          ₹{p.price}
-                        </span>
-                        <span className="text-[9px] text-ink-muted">₹{(p.price / p.mins).toFixed(2)}/min</span>
+                      ${p.price}
+                    </span>
+                    <span className="text-ink-muted">${(p.price / p.mins).toFixed(2)}/min</span>
                       </div>
                     </div>
                   </div>
@@ -269,8 +269,8 @@ export default function TopupMinutesPage() {
                   <div className="text-left w-full sm:flex-grow">
                     <span className="text-[9px] uppercase font-bold text-[#8A8A96] block mb-1">Calculated Cost</span>
                     <div className="flex items-baseline gap-1 bg-white border border-[#E5E0D8] rounded-xl py-2 px-3.5">
-                      <span className="text-body-sm font-black text-[#FF6B00] font-mono">₹{getCalculatedPrice()}</span>
-                      <span className="text-[9px] text-[#8A8A96] font-semibold">(Flat ₹2.00 / minute rate applies)</span>
+                      <span className="text-body-sm font-black text-[#FF6B00] font-mono">${getCalculatedPrice().toFixed(2)}</span>
+                      <span className="text-[9px] text-[#8A8A96] font-semibold">(Flat $0.10 / minute rate applies)</span>
                     </div>
                   </div>
                 </motion.div>
@@ -303,11 +303,11 @@ export default function TopupMinutesPage() {
                 </div>
                 <div className="flex justify-between border-b border-line/65 pb-3">
                   <span className="text-ink-muted">Payment Provider</span>
-                  <span className="text-ink font-bold">Razorpay Secured UPI/Card</span>
+                  <span className="text-ink font-bold">Credit Card / Dodo Payments</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-1">
                   <span className="text-ink font-black text-body-xs">Total Base Price</span>
-                  <span className="text-body-sm font-black font-mono text-saffron">₹{getCalculatedPrice()}</span>
+                  <span className="text-body-sm font-black font-mono text-saffron">${getCalculatedPrice().toFixed(2)}</span>
                 </div>
               </div>
             </div>

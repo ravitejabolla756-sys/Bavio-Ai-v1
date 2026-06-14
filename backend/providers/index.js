@@ -4,7 +4,7 @@ const exotelProvider = require('./exotel');
 class ProviderFactory {
     getProvider(providerName) {
         const name = providerName.toLowerCase();
-        if (name === 'exotel' || name === 'in' || name === 'india') {
+        if (name === 'exotel') {
             return exotelProvider;
         }
         return twilioProvider;

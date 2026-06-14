@@ -2,7 +2,7 @@ const sarvamService = require('./sarvamService');
 const db = require('../database/db');
 const { incrementMinutesUsed } = require('../middleware/planEnforcement');
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful Indian business assistant. 
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful, professional business assistant. 
 You help customers with inquiries, booking appointments, and answering questions. 
 Be concise, friendly, and professional. 
 Reply in the same language the customer uses.`;

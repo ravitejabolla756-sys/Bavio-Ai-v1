@@ -36,10 +36,10 @@ const features = [
       "Auto-scales during peaks",
     ],
     details: [
-      "Hindi, English, Hinglish natively",
-      "Handles regional accents and dialects",
+      "English and multilingual speech support",
+      "Handles various accents and dialects",
       "Background noise suppression",
-      "Automatic language switching mid-call",
+      "Automatic speech detection and pacing",
     ],
   },
   {
@@ -87,7 +87,7 @@ const features = [
       "95%+ extraction accuracy",
       "6 data fields per lead",
       "Real-time CRM sync",
-      "WhatsApp alert delivery",
+      "SMS/Slack alert delivery",
     ],
     details: [
       "Name, phone, email auto-capture",
@@ -118,7 +118,7 @@ const features = [
     icon: SpeakerHigh,
     title: "Choose your agent's voice",
     description:
-      "20+ AI voices across male and female options with various Indian accents. Adjust speed, tone, and personality to match your brand.",
+      "20+ AI voices across male and female options with various accents. Adjust speed, tone, and personality to match your brand.",
     metrics: [
       "20+ voice options",
       "Voice cloning (beta)",
@@ -126,9 +126,9 @@ const features = [
       "Professional/friendly/formal tones",
     ],
     details: [
-      "Hindi with 10+ accent variations",
-      "English (Indian, British, American)",
-      "Hinglish natural code-switching",
+      "Natural voice cloning",
+      "English (American, British, Australian)",
+      "Adjustable speech pacing",
       "Custom voice training available",
     ],
   },
@@ -146,7 +146,7 @@ const features = [
     details: [
       "HubSpot, Salesforce, Zoho, Pipedrive",
       "Google Calendar, Outlook, Cal.com",
-      "WhatsApp, SMS (Twilio), Email",
+      "Slack, SMS (Twilio), Email",
       "Zapier, Make, custom webhooks",
     ],
   },
@@ -154,18 +154,18 @@ const features = [
     icon: ShieldCheck,
     title: "Enterprise-grade security",
     description:
-      "SOC 2 Type II certified. HIPAA ready for healthcare. GDPR and India DPDP compliant. Your data never leaves your chosen region.",
+      "SOC 2 Type II certified. HIPAA ready for healthcare. GDPR compliant. Your data never leaves your chosen region.",
     metrics: [
       "SOC 2 Type II certified",
       "HIPAA ready",
       "GDPR compliant",
-      "India DPDP compliant",
+      "Secure cloud infrastructure",
     ],
     details: [
       "AES-256 encryption at rest",
       "TLS 1.3 in transit",
       "End-to-end encrypted transcripts",
-      "Data residency (India/US/EU)",
+      "Data residency options (US/EU/etc.)",
     ],
   },
 ];

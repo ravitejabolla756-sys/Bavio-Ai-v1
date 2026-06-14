@@ -49,18 +49,18 @@ export default function RazorpayCheckout({
   // UPI inputs
   const [upiId, setUpiId] = useState("operations@okaxis");
 
-  // GST inputs
-  const [includeGst, setIncludeGst] = useState(false);
-  const [gstNumber, setGstNumber] = useState("");
-  const [gstBusinessName, setGstBusinessName] = useState("");
+  // GST inputs - removed for US localization
+  const includeGst = false;
+  const gstNumber = "";
+  const gstBusinessName = "";
 
   // OTP Verification
   const [otpCode, setOtpCode] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
 
   // Billing math
-  const gstAmount = Math.round(amount * 0.18);
-  const totalAmount = amount + gstAmount;
+  const gstAmount = 0;
+  const totalAmount = amount;
 
   // Fetch Order ID from backend
   useEffect(() => {
@@ -205,10 +205,10 @@ export default function RazorpayCheckout({
           <div className="bg-[#14141D] text-white p-5 flex items-center justify-between border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <span className="bg-[#FF6B00] text-white w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0">
-                R
+                B
               </span>
               <div>
-                <h3 className="text-body-sm font-bold leading-none">Razorpay Secure Checkout</h3>
+                <h3 className="text-body-sm font-bold leading-none">Bavio Secure Checkout</h3>
                 <span className="text-[10px] text-white/50 font-mono mt-0.5 block">
                   Order ID: {orderId || "Generating secured token..."}
                 </span>
@@ -243,11 +243,11 @@ export default function RazorpayCheckout({
                       {planName ? `${planName.toUpperCase()} Subscription` : `${topupMinutes} Minutes Pack`}
                     </span>
                     <span className="text-[#8A8A96] block text-[10px] mt-0.5">
-                      Base: ₹{amount} + 18% GST (₹{gstAmount})
+                      Base Price: ${amount}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-black text-body-sm text-[#FF6B00]">₹{totalAmount}</span>
+                    <span className="font-black text-body-sm text-[#FF6B00]">${totalAmount}</span>
                     <span className="text-[9px] text-[#8A8A96] block uppercase tracking-wider font-bold">Total Payable</span>
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export default function RazorpayCheckout({
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: "card", label: "Card", icon: CreditCard },
-                        { id: "upi", label: "UPI", icon: DeviceMobile },
+                        { id: "upi", label: "ACH", icon: DeviceMobile },
                         { id: "netbanking", label: "Bank", icon: Bank },
                       ].map((tab) => {
                         const Icon = tab.icon;
@@ -324,82 +324,40 @@ export default function RazorpayCheckout({
                       )}
 
                       {selectedMethod === "upi" && (
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold text-[#8A8A96]">UPI ID / VPA</label>
-                          <input
-                            type="text"
-                            placeholder="username@bank"
-                            value={upiId}
-                            onChange={(e) => setUpiId(e.target.value)}
-                            className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-2 px-3 text-body-xs font-bold font-mono outline-none text-[#14141A]"
-                          />
-                          <span className="text-[9px] text-[#8A8A96] mt-1">
-                            A simulated payment request will be sent to this handle.
-                          </span>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold text-[#8A8A96]">Routing Number</label>
+                            <input
+                              type="text"
+                              placeholder="021000021"
+                              className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-2 px-3 text-body-xs font-bold font-mono outline-none text-[#14141A]"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold text-[#8A8A96]">Account Number</label>
+                            <input
+                              type="text"
+                              placeholder="123456789"
+                              className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-2 px-3 text-body-xs font-bold font-mono outline-none text-[#14141A]"
+                            />
+                          </div>
                         </div>
                       )}
 
                       {selectedMethod === "netbanking" && (
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold text-[#8A8A96]">Select Bank</label>
+                          <label className="text-[9px] uppercase font-bold text-[#8A8A96]">Select Institution</label>
                           <select className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-2 px-3 text-body-xs font-bold outline-none text-[#14141A] cursor-pointer">
-                            <option>HDFC Bank</option>
-                            <option>ICICI Bank</option>
-                            <option>State Bank of India</option>
-                            <option>Axis Bank</option>
-                            <option>Kotak Mahindra Bank</option>
+                            <option>Chase Bank</option>
+                            <option>Bank of America</option>
+                            <option>Wells Fargo</option>
+                            <option>Citibank</option>
+                            <option>Capital One</option>
                           </select>
                         </div>
                       )}
                     </div>
 
-                    {/* GST Section */}
-                    <div className="border border-[#E5E0D8]/80 p-3.5 rounded-2xl bg-[#FAF7F2]/40">
-                      <div 
-                        className="flex items-center gap-2.5 cursor-pointer select-none"
-                        onClick={() => setIncludeGst(!includeGst)}
-                      >
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                          includeGst ? "bg-[#FF6B00] border-[#FF6B00] text-white" : "border-[#C8C2B8] bg-white"
-                        }`}>
-                          {includeGst && <Check className="w-3 h-3" weight="bold" />}
-                        </div>
-                        <span className="text-body-xs font-bold text-[#14141A] flex items-center gap-1.5">
-                          <Buildings className="w-3.5 h-3.5 text-[#8A8A96]" />
-                          Add GST Registration Number
-                        </span>
-                      </div>
-                      
-                      {includeGst && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          className="flex flex-col gap-2.5 mt-3 pt-3 border-t border-[#E5E0D8] text-body-xs"
-                        >
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold text-[#8A8A96]">GSTIN (15 Digits)</label>
-                            <input
-                              type="text"
-                              maxLength={15}
-                              placeholder="29AAAAA1111A1Z1"
-                              value={gstNumber}
-                              onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
-                              className="w-full bg-white border border-[#E5E0D8] rounded-lg py-1.5 px-3 font-mono font-bold text-[#14141A]"
-                            />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold text-[#8A8A96]">GST Business Name</label>
-                            <input
-                              type="text"
-                              placeholder="Acme Realty Private Limited"
-                              value={gstBusinessName}
-                              onChange={(e) => setGstBusinessName(e.target.value)}
-                              className="w-full bg-white border border-[#E5E0D8] rounded-lg py-1.5 px-3 font-semibold text-[#14141A]"
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
                   </div>
 
                   {errorMsg && (
@@ -413,7 +371,7 @@ export default function RazorpayCheckout({
                     onClick={handlePayNow}
                     className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-[0_4px_16px_rgba(255,107,0,0.2)] mt-5 flex items-center justify-center gap-2"
                   >
-                    <span>Proceed to Pay ₹{totalAmount}</span>
+                    <span>Proceed to Pay ${totalAmount}</span>
                     <ArrowRight className="w-4 h-4" weight="bold" />
                   </button>
                 </div>

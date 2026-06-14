@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CreditCard, 
-  CurrencyInr, 
+  CurrencyDollar, 
   Check, 
   Warning,
   Download
@@ -24,8 +24,8 @@ export default function BillingLedger() {
   const [error, setError] = useState<string | null>(null);
   
   const [autoRecharge, setAutoRecharge] = useState(true);
-  const [thresholdLimit, setThresholdLimit] = useState(500);
-  const [rechargeValue, setRechargeValue] = useState(2500);
+  const [thresholdLimit, setThresholdLimit] = useState(10);
+  const [rechargeValue, setRechargeValue] = useState(50);
   const [showPaySuccessToast, setShowPaySuccessToast] = useState(false);
   const [isProcessingPay, setIsProcessingPay] = useState(false);
 
@@ -76,7 +76,7 @@ export default function BillingLedger() {
         amount: order.amount,
         currency: order.currency,
         name: "Bavio AI",
-        description: `Top-Up ${rechargeValue} INR Credits`,
+        description: `Top-Up ${rechargeValue} USD Credits`,
         order_id: order.order_id,
         handler: async function (response: any) {
           try {
@@ -86,7 +86,7 @@ export default function BillingLedger() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               type: "topup",
-              topupMinutes: rechargeValue / 4 // Approx 4 INR per minute
+              topupMinutes: rechargeValue / 0.10 // Approx 0.10 USD per minute
             });
             setShowPaySuccessToast(true);
             setTimeout(() => setShowPaySuccessToast(false), 3000);
@@ -124,7 +124,7 @@ export default function BillingLedger() {
   }, [billingStatus]);
   
   // Approximate credits based on remaining minutes
-  const creditsBalance = minutesRemaining * 4;
+  const creditsBalance = minutesRemaining * 0.10;
 
   if (loading) {
     return (
@@ -156,8 +156,8 @@ export default function BillingLedger() {
             <span>Processing...</span>
           ) : (
             <>
-              <CurrencyInr className="w-3.5 h-3.5" weight="bold" />
-              Add ₹{rechargeValue.toLocaleString()} Credits
+              <CurrencyDollar className="w-3.5 h-3.5" weight="bold" />
+              Add ${rechargeValue.toLocaleString()} Credits
             </>
           )}
         </button>
@@ -183,7 +183,7 @@ export default function BillingLedger() {
                 <div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary">Active compute ledger balance</span>
                   <h3 className="text-4xl font-bold font-mono text-ink mt-1 tracking-tight">
-                    ₹{creditsBalance.toLocaleString()}
+                    ${creditsBalance.toFixed(2)}
                   </h3>
                 </div>
                 <span className="text-[9px] font-mono bg-saffron-muted text-saffron border border-saffron-border px-2.5 py-0.5 rounded">
@@ -226,17 +226,17 @@ export default function BillingLedger() {
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between text-[10px] font-semibold text-ink-tertiary">
                     <span>Trigger recharge when balance drops below:</span>
-                    <span className="text-saffron font-bold font-mono">₹{thresholdLimit}</span>
+                    <span className="text-saffron font-bold font-mono">${thresholdLimit}</span>
                   </div>
                   <input
                     type="range"
-                    min="200"
-                    max="2000"
-                    step="100"
+                    min="5"
+                    max="50"
+                    step="5"
                     value={thresholdLimit}
                     disabled={!autoRecharge}
                     onChange={(e) => setThresholdLimit(Number(e.target.value))}
-                    className="w-full accent-saffron h-1 bg-surface-raised rounded-lg cursor-pointer border border-line"
+                    className="w-full accent-saffron h-1.5 bg-surface-raised rounded-lg cursor-pointer border border-line"
                   />
                 </div>
 
@@ -249,10 +249,10 @@ export default function BillingLedger() {
                     onChange={(e) => setRechargeValue(Number(e.target.value))}
                     className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink font-mono w-full"
                   >
-                    <option value="1000">Add ₹1,000 Credits</option>
-                    <option value="2500">Add ₹2,500 Credits</option>
-                    <option value="5000">Add ₹5,000 Credits</option>
-                    <option value="10000">Add ₹10,000 Credits</option>
+                    <option value="25">Add $25 Credits</option>
+                    <option value="50">Add $50 Credits</option>
+                    <option value="100">Add $100 Credits</option>
+                    <option value="250">Add $250 Credits</option>
                   </select>
                 </div>
               </div>
@@ -294,7 +294,7 @@ export default function BillingLedger() {
                       </div>
   
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-bold font-mono text-ink">₹{inv.amount.toLocaleString()}</span>
+                        <span className="text-xs font-bold font-mono text-ink">${inv.amount.toLocaleString()}</span>
                         <button 
                           className="p-1.5 bg-line-subtle/50 hover:bg-line-subtle border border-line rounded-lg text-ink-secondary hover:text-ink transition-all"
                           aria-label="Download Invoice PDF"
@@ -309,7 +309,7 @@ export default function BillingLedger() {
             </div>
 
             <div className="border-t border-line pt-4 mt-6 flex justify-between items-center text-[10px] font-mono text-ink-muted">
-              <span>Invoices include standard 18% GST</span>
+              <span>Invoices include local sales tax if applicable</span>
               <span className="text-ink-tertiary font-bold">Billing profile active</span>
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function BillingLedger() {
             className="fixed bottom-6 right-6 z-50 bg-state-success border border-state-success/30 px-5 py-3.5 rounded-xl shadow-premium text-white text-[10px] font-bold font-mono flex items-center gap-2.5"
           >
             <Check className="w-4 h-4 border border-white/30 rounded-full p-0.5" />
-            <span>₹{rechargeValue.toLocaleString()} credits added successfully to wallet.</span>
+            <span>${rechargeValue.toLocaleString()} credits added successfully to wallet.</span>
           </motion.div>
         )}
       </AnimatePresence>

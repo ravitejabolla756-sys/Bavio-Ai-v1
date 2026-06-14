@@ -228,10 +228,9 @@ function buildSystemPrompt(config) {
   } = config;
 
   const langInstruction = {
-    'hi-IN': 'Hinglish mein baat karo (Hindi + English mix). Natural aur friendly tone.',
-    'en-IN': 'Speak in Indian English. Warm and professional tone.',
-    'hinglish': 'Hinglish mein baat karo (Hindi + English mix). Natural aur friendly tone.',
-    'en-US': 'Speak in clear American English. Professional and friendly.'
+    'en-US': 'Speak in clear American English. Professional and friendly.',
+    'en-GB': 'Speak in clear British English. Professional and polite.',
+    'es-US': 'Speak in clear US Spanish. Professional and friendly.'
   }[language] || 'Speak in a natural, friendly and professional tone.';
 
   const industryPrompt = {
@@ -289,7 +288,7 @@ Capture: caller name, phone number, and reason for calling.`;
 ${langInstruction}${faqSection}
 
 GREETING:
-Always start with: "${greeting || `Hello! Main ${agent_name} bol raha hoon.`}"
+Always start with: "${greeting || `Hello! I am ${agent_name}, how can I help you today?`}"
 
 IMPORTANT RULES:
 1. Keep responses SHORT — maximum 2 sentences per turn
@@ -367,7 +366,7 @@ async function completeTrial(req, res) {
         phone,
         website,
         JSON.stringify(objectives || []),
-        Array.isArray(languages) ? languages[0] : (languages || 'hi-IN'),
+        Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
         workingHoursFrom || '09:00:00',
         workingHoursTo || '18:00:00',
         clientId
@@ -379,7 +378,7 @@ async function completeTrial(req, res) {
       agent_name: agentName || 'Bavio Agent',
       greeting: greetingMessage || `Hello! Thank you for calling ${businessName || 'us'}.`,
       industry: industry || 'other',
-      language: Array.isArray(languages) ? languages[0] : (languages || 'hi-IN'),
+      language: Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
       faqs: leadCapturePreferences ? [{ question: 'What details do you collect?', answer: `We collect: ${leadCapturePreferences.join(', ')}` }] : []
     });
 
@@ -404,7 +403,7 @@ async function completeTrial(req, res) {
           agentName || 'Bavio Agent',
           greetingMessage,
           industry || 'other',
-          Array.isArray(languages) ? languages[0] : (languages || 'hi-IN'),
+          Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
           systemPrompt,
           clientId
         ]
@@ -420,7 +419,7 @@ async function completeTrial(req, res) {
           agentName || 'Bavio Agent',
           greetingMessage,
           industry || 'other',
-          Array.isArray(languages) ? languages[0] : (languages || 'hi-IN'),
+          Array.isArray(languages) ? languages[0] : (languages || 'en-US'),
           systemPrompt
         ]
       );
@@ -430,7 +429,7 @@ async function completeTrial(req, res) {
     const poolNumResult = await db.query(
       "SELECT phone_number FROM phone_numbers WHERE type = 'pool' AND status = 'active' LIMIT 1"
     );
-    let assignedNum = '+918080810001';
+    let assignedNum = '+18005550199';
     if (poolNumResult.rows.length > 0) {
       assignedNum = poolNumResult.rows[0].phone_number;
     }
@@ -483,7 +482,8 @@ async function detectCountry(req, res) {
           timeout: 4000
         });
         if (response.data && response.data.country && response.data.country.iso_code) {
-          const countryCode = response.data.country.iso_code.toUpperCase();
+          let countryCode = response.data.country.iso_code.toUpperCase();
+          if (countryCode === 'IN') countryCode = 'US';
           console.log(`[GEOIP] MaxMind resolved IP ${ip} to country ${countryCode}`);
           return res.status(200).json({ success: true, country_code: countryCode, method: 'maxmind' });
         }
@@ -498,7 +498,8 @@ async function detectCountry(req, res) {
         timeout: 3000
       });
       if (response.data && response.data.country_code) {
-        const countryCode = response.data.country_code.toUpperCase();
+        let countryCode = response.data.country_code.toUpperCase();
+        if (countryCode === 'IN') countryCode = 'US';
         console.log(`[GEOIP] ipapi.co resolved IP to country ${countryCode}`);
         return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback' });
       }
@@ -512,7 +513,8 @@ async function detectCountry(req, res) {
         timeout: 3000
       });
       if (response.data && response.data.country) {
-        const countryCode = response.data.country.toUpperCase();
+        let countryCode = response.data.country.toUpperCase();
+        if (countryCode === 'IN') countryCode = 'US';
         console.log(`[GEOIP] country.is resolved IP to country ${countryCode}`);
         return res.status(200).json({ success: true, country_code: countryCode, method: 'geoip_fallback_secondary' });
       }
@@ -520,10 +522,8 @@ async function detectCountry(req, res) {
       console.warn('[GEOIP] All GeoIP fallbacks failed. Defaulting.');
     }
 
-    // Try checking browser accept-language
-    const acceptLanguage = req.headers['accept-language'] || '';
-    const isIndia = acceptLanguage.includes('en-IN') || acceptLanguage.includes('hi-IN');
-    const defaultCountry = isIndia ? 'IN' : 'US';
+    // Default to US
+    const defaultCountry = 'US';
 
     res.status(200).json({ success: true, country_code: defaultCountry, method: 'default_fallback' });
   } catch (err) {

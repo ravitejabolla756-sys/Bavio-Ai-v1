@@ -163,37 +163,7 @@ export default function CallForwardSetup({
                 Select Carrier & Provider
               </h2>
 
-              {/* Country Selector */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-[#8A8A96] uppercase tracking-wider">Business Country</label>
-                <SearchableDropdown
-                  options={countries.map((c) => ({
-                    value: c.code,
-                    label: c.name,
-                    icon: c.flag,
-                  }))}
-                  value={selectedCountry}
-                  onChange={(val) => {
-                    handleCountryChange(val);
-                  }}
-                  renderTrigger={(selected) => (
-                    <div className="flex items-center gap-2.5 w-full pr-2">
-                      {countryLoading ? (
-                        <Spinner className="w-4.5 h-4.5 text-[#FF6B00] animate-spin" />
-                      ) : (
-                        <>
-                          <span className="text-lg leading-none">
-                            {selected?.icon || "🌐"}
-                          </span>
-                          <span className="font-semibold text-body-xs text-[#14141A]">
-                            {selected?.label || "Global / Other"}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
+
 
               {/* Operator Selector */}
               <div className="flex flex-col gap-1.5">

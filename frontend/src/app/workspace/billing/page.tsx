@@ -237,7 +237,7 @@ export default function WorkspaceBilling() {
                             {new Date(inv.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </td>
                           <td className="py-3.5 px-4 uppercase text-[9px] font-mono font-black text-ink-secondary">{inv.paymentType}</td>
-                          <td className="py-3.5 px-4 text-right text-ink font-mono font-bold">₹{inv.amount}</td>
+                          <td className="py-3.5 px-4 text-right text-ink font-mono font-bold">${inv.amount}</td>
                           <td className="py-3.5 pl-4 text-right">
                             <button
                               onClick={() => handleViewInvoice(inv.id)}
@@ -287,7 +287,7 @@ export default function WorkspaceBilling() {
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span className="font-mono text-xs font-bold text-[#FF6B00]">-₹{tx.amount}</span>
+                        <span className="font-mono text-xs font-bold text-[#FF6B00]">-${tx.amount}</span>
                         <span className="text-[9px] text-ink-muted block font-mono">ID: {tx.dodoPaymentId}</span>
                       </div>
                     </div>
@@ -311,9 +311,9 @@ export default function WorkspaceBilling() {
 
             <div className="bg-[#14141A] text-white p-5 rounded-2xl shadow-md relative overflow-hidden mb-5">
               <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6B00]/25 to-transparent pointer-events-none" />
-              <div className="absolute top-2 right-2 font-display text-[9px] font-bold text-white/50 tracking-wider">RAZORPAY</div>
+              <div className="absolute top-2 right-2 font-display text-[9px] font-bold text-white/50 tracking-wider">DODO PAYMENTS</div>
               
-              <span className="text-[9px] font-mono tracking-widest text-white/40 block mb-6">SECURED MERCHANT NODE</span>
+              <span className="text-[9px] font-mono tracking-widest text-white/40 block mb-6">VISA / MC / AMEX SECURED</span>
               <span className="text-sm font-mono tracking-[0.2em] font-bold block mb-4">•••• •••• •••• 4021</span>
               
               <div className="flex justify-between items-end">
@@ -347,65 +347,7 @@ export default function WorkspaceBilling() {
             </div>
           </div>
 
-          {/* GST Configuration Card */}
-          <div className="border border-line bg-white/80 p-6 rounded-[22px] shadow-premium">
-            <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-3 pb-2 border-b border-line flex items-center gap-2">
-              <Buildings className="w-4.5 h-4.5 text-saffron" />
-              <span>GST Registration</span>
-            </h3>
 
-            {gstSuccess && (
-              <div className="bg-[#ECFDF5] border border-[#A7F3D0] p-2.5 rounded-xl text-center text-state-success text-body-xs font-bold mb-3 animate-fade-in">
-                GST Settings updated successfully!
-              </div>
-            )}
-
-            <form onSubmit={handleUpdateGst} className="flex flex-col gap-3 text-left">
-              <div className="flex items-center gap-2.5 mb-1 cursor-pointer select-none" onClick={() => setGstEnabled(!gstEnabled)}>
-                <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-all ${
-                  gstEnabled ? "bg-[#FF6B00] border-[#FF6B00] text-white" : "border-[#C8C2B8] bg-white"
-                }`}>
-                  {gstEnabled && <Check className="w-2.5 h-2.5" weight="bold" />}
-                </div>
-                <span className="text-body-xs font-bold text-[#14141A]">Include GST in Invoices</span>
-              </div>
-
-              {gstEnabled && (
-                <div className="flex flex-col gap-3 animate-fade-in">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-[#8A8A96]">GSTIN</label>
-                    <input
-                      type="text"
-                      maxLength={15}
-                      placeholder="e.g. 29AAAAA1111A1Z1"
-                      value={gstNumber}
-                      onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
-                      className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-1.5 px-3 text-body-xs font-mono font-bold text-[#14141A] outline-none"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-[#8A8A96]">GST Legal Entity Name</label>
-                    <input
-                      type="text"
-                      placeholder="Acme Realty Pvt Ltd"
-                      value={gstBusinessName}
-                      onChange={(e) => setGstBusinessName(e.target.value)}
-                      className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-lg py-1.5 px-3 text-body-xs font-semibold text-[#14141A] outline-none"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={gstSaving}
-                    className="w-full bg-[#FF6B00] text-white text-[10px] font-bold uppercase tracking-wider py-2.5 rounded-xl hover:bg-[#FF8C3A] transition-colors mt-1"
-                  >
-                    {gstSaving ? "Saving..." : "Save GST Settings"}
-                  </button>
-                </div>
-              )}
-            </form>
-          </div>
 
           {/* Quick compute top up */}
           <div className="border border-line bg-[#FAF7F2] p-6 rounded-[22px]">
@@ -489,7 +431,7 @@ export default function WorkspaceBilling() {
                   </div>
                   <div className="text-right">
                     <span className="text-[9px] uppercase font-bold text-[#8A8A96] block mb-2">Billing Method:</span>
-                    <span className="font-bold text-[#14141A] block mb-0.5">Razorpay Gateway Credit</span>
+                    <span className="font-bold text-[#14141A] block mb-0.5">Dodo Payments</span>
                     <span className="text-[#8A8A96] block font-mono text-[10px]">TXN Ref: {activeInvoice.dodoPaymentId}</span>
                   </div>
                 </div>
@@ -509,8 +451,8 @@ export default function WorkspaceBilling() {
                       <tr key={idx} className="border-b border-[#E5E0D8]/45">
                         <td className="py-3 font-bold text-[#14141A]">{item.description}</td>
                         <td className="py-3 px-4 text-center font-bold text-[#5A5A66]">{item.quantity}</td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-[#5A5A66]">₹{item.unitPrice}</td>
-                        <td className="py-3 text-right font-mono font-black text-[#14141A]">₹{item.total}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[#5A5A66]">${item.unitPrice}</td>
+                        <td className="py-3 text-right font-mono font-black text-[#14141A]">${item.total}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -521,15 +463,15 @@ export default function WorkspaceBilling() {
                   <div className="w-64 text-body-xs font-semibold flex flex-col gap-2">
                     <div className="flex justify-between">
                       <span className="text-[#8A8A96]">Subtotal</span>
-                      <span className="font-mono text-[#14141A]">₹{activeInvoice.subtotal}</span>
+                      <span className="font-mono text-[#14141A]">${activeInvoice.subtotal}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[#8A8A96]">Tax (0% CGST/SGST)</span>
-                      <span className="font-mono text-[#14141A]">₹0</span>
+                      <span className="text-[#8A8A96]">Sales Tax (0%)</span>
+                      <span className="font-mono text-[#14141A]">$0</span>
                     </div>
                     <div className="flex justify-between border-t border-[#E5E0D8]/65 pt-2 text-body-sm font-black">
                       <span className="text-[#FF6B00]">Total Paid</span>
-                      <span className="font-mono text-[#FF6B00]">₹{activeInvoice.total}</span>
+                      <span className="font-mono text-[#FF6B00]">${activeInvoice.total}</span>
                     </div>
                   </div>
                 </div>

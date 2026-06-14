@@ -42,7 +42,7 @@ async function setupPhoneNumber(req, res) {
       if (!normalized) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid phone number. Use: 9876543210 or +91 9876543210'
+          error: 'Invalid phone number. Use: 5125550199 or +1 512 555 0199'
         });
       }
 
@@ -140,9 +140,9 @@ async function getTestInstructions(req, res) {
         step2: `Dial this code and press call: ${info.forwardingCodes?.conditional || info.forwardingCode}`,
         step3: 'You will hear "Call forwarding activated".',
         step4: `Call ${info.userOriginalNumber} from another phone.`,
-        step5: 'Let it ring 20 seconds. Bavio AI answers in Hindi.',
+        step5: 'Let it ring 20 seconds. Bavio AI answers in English.',
         cancelCode: info.forwardingCodes?.cancel || '#67#',
-        note: 'Works on Airtel, Jio, Vi, and BSNL.'
+        note: 'Works on Verizon, AT&T, and T-Mobile.'
       };
     } else {
       instructions = {

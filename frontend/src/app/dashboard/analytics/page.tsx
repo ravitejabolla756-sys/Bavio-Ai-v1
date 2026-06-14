@@ -119,7 +119,7 @@ export default function AnalyticsDashboard() {
           <div className="card-bezel-inner p-5 flex flex-col gap-3 text-left">
             <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary">Total Compute Cost</span>
             <div className="flex justify-between items-baseline mt-3">
-              <h4 className="text-2xl font-bold font-mono text-saffron">₹{totalCost.toFixed(2)}</h4>
+              <h4 className="text-2xl font-bold font-mono text-saffron">${totalCost.toFixed(2)}</h4>
               <span className="text-[10px] text-state-success font-bold font-mono">
                 {totalCost === 0 ? "Free Trial" : "This period"}
               </span>
@@ -235,7 +235,7 @@ export default function AnalyticsDashboard() {
                           transition={{ duration: 1, ease: "easeOut" }}
                         />
                       </div>
-                      <span className="text-[9px] font-mono text-ink-muted">₹{log.cost_total?.toFixed(2) || "0.00"}</span>
+                      <span className="text-[9px] font-mono text-ink-muted">${log.cost_total?.toFixed(2) || "0.00"}</span>
                     </div>
                   ))}
                 </div>
@@ -254,14 +254,14 @@ export default function AnalyticsDashboard() {
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <HardDrive className="w-3.5 h-3.5 text-ink-tertiary" />
-                    <span className="text-[10px] text-ink-secondary font-mono">Tata SIP Delhi Hub</span>
+                    <span className="text-[10px] text-ink-secondary font-mono">Equinix Ashburn SIP Hub</span>
                   </div>
                   <span className="text-[9px] font-mono text-state-success bg-state-success/15 px-2 py-0.5 rounded">Online</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <Globe className="w-3.5 h-3.5 text-ink-tertiary" />
-                    <span className="text-[10px] text-ink-secondary font-mono">AWS Mumbai Gateway</span>
+                    <span className="text-[10px] text-ink-secondary font-mono">AWS US East Gateway</span>
                   </div>
                   <span className="text-[9px] font-mono text-state-success bg-state-success/15 px-2 py-0.5 rounded">Online</span>
                 </div>

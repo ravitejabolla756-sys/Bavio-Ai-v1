@@ -29,10 +29,10 @@ const enterpriseFeatures = [
       "SOC 2 Type II certified",
       "HIPAA ready for healthcare",
       "GDPR compliant for Europe",
-      "India DPDP compliant",
+      "Data privacy compliant",
       "AES-256 encryption at rest",
       "TLS 1.3 in transit",
-      "Data residency: India, US, EU",
+      "Data residency options",
     ],
   },
   {
@@ -265,7 +265,7 @@ export default function EnterprisePage() {
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-label uppercase tracking-widest text-ink-muted">Phone</label>
-                          <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="bg-surface-raised border border-line rounded-button px-4 py-3 text-body-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-saffron focus:ring-2 focus:ring-saffron/10 transition-all" placeholder="+91 98765 43210" />
+                          <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="bg-surface-raised border border-line rounded-button px-4 py-3 text-body-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-saffron focus:ring-2 focus:ring-saffron/10 transition-all" placeholder="+1 (555) 000-0000" />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

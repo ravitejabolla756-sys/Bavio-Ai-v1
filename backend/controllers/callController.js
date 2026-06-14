@@ -498,9 +498,9 @@ async function handleCallStatus(req, res) {
       .eq('provider_call_id', CallSid);
 
     // Calculate costs
-    const cost_stt = (mins / 60) * 30;                          // Sarvam STT ₹30/hr
-    const cost_tts = ((session.tts_chars_total || 0) / 10000) * 15; // Sarvam TTS
-    const cost_telephony = mins * 0.60;                          // Exotel India ~₹0.60/min
+    const cost_stt = (mins / 60) * 0.15;                         // Whisper STT $0.15/hr
+    const cost_tts = ((session.tts_chars_total || 0) / 10000) * 0.005; // US TTS
+    const cost_telephony = mins * 0.013;                         // Twilio US $0.013/min
     const cost_total = cost_stt + cost_tts + cost_telephony;
 
     // Update call_logs record

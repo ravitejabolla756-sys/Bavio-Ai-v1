@@ -66,7 +66,7 @@ export default function FieldServiceUseCase() {
                   Address & Coordinates Parsing
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Bavio captures complicated Indian house numbers and sector names, cross-checks coordinates via postal databases, and formats address lines for clean dispatcher use.
+                  Bavio captures complicated address details and location parameters, cross-checks coordinates via postal databases, and formats address lines for clean dispatcher use.
                 </p>
               </div>
             </div>
@@ -84,7 +84,7 @@ export default function FieldServiceUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>WhatsApp/SMS booking confirmations</span>
+                  <span>SMS booking confirmations</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

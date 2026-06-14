@@ -11,7 +11,6 @@ import Logo from "@/components/Logo";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
 const countryOptions = [
-  { value: "IN", label: "India", icon: "🇮🇳" },
   { value: "US", label: "United States", icon: "🇺🇸" },
   { value: "CA", label: "Canada", icon: "🇨🇦" },
   { value: "GB", label: "United Kingdom", icon: "🇬🇧" },
@@ -186,18 +185,7 @@ function OnboardingContent() {
               Answer customer phone calls instantly. Choose a subscription package adapted to your workspace.
             </p>
             
-            {/* Country selector override */}
-            <div className="mb-10 inline-flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-2xl shadow-sm min-w-[320px]">
-              <span className="text-body-xs font-bold text-[#8A8A96] uppercase tracking-wider pl-1 shrink-0">
-                Your country:
-              </span>
-              <SearchableDropdown
-                options={countryOptions}
-                value={country || "US"}
-                onChange={(val) => setCountry(val)}
-                className="w-56"
-              />
-            </div>
+
 
             {/* Pricing Selector Grid */}
             <PricingSelector 

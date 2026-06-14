@@ -47,7 +47,7 @@ export default function CoachingUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Resolve Student Inquiry Backlogs</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Parents call at all hours to verify test dates, offline batches, syllabus details, and installment options. Admissions teams get bogged down repeating the same replies. Bavio takes the load off, holding structured qualification flows in Hinglish and Hindi.
+                Parents call at all hours to verify test dates, offline batches, syllabus details, and installment options. Admissions teams get bogged down repeating the same replies. Bavio takes the load off, holding structured qualification flows in English.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
@@ -76,7 +76,7 @@ export default function CoachingUseCase() {
               <ul className="flex flex-col gap-4 text-body-sm text-ink-tertiary">
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Syllabus PDF delivery on WhatsApp</span>
+                  <span>Syllabus PDF delivery via SMS</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

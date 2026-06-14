@@ -190,7 +190,7 @@ export default function CallsLogs() {
                           }`}
                         >
                           <td className="px-5 py-4 text-xs font-mono text-ink-secondary whitespace-nowrap">
-                            {new Date(call.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
+                            {new Date(call.created_at).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })}
                           </td>
                           <td className="px-5 py-4 text-xs font-mono font-bold text-ink whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
@@ -281,14 +281,14 @@ export default function CallsLogs() {
                       <div>
                         <span className="text-ink-muted uppercase tracking-wider text-[8px]">Date</span>
                         <p className="font-bold text-ink mt-0.5">
-                          {new Date(selectedCall.created_at).toLocaleDateString("en-IN")}
+                          {new Date(selectedCall.created_at).toLocaleDateString("en-US")}
                         </p>
                       </div>
                     </div>
                     {selectedCall.cost_total !== undefined && (
                       <div className="flex items-center gap-1.5 text-[9px] text-ink-tertiary font-mono border-t border-line/50 pt-2.5 mt-0.5">
                         <Database className="w-3.5 h-3.5 text-saffron" />
-                        <span>Cost: ₹{selectedCall.cost_total?.toFixed(2) || "0.00"}</span>
+                        <span>Cost: ${selectedCall.cost_total?.toFixed(2) || "0.00"}</span>
                       </div>
                     )}
                   </div>

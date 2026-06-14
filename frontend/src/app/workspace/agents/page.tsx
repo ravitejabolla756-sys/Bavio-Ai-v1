@@ -20,20 +20,20 @@ const agentsList = [
     name: "Aria",
     description: "Captures inbound buyer queries, answers pricing questions, and schedules site visits.",
     status: "Active",
-    languages: ["Hinglish", "Hindi", "English"],
+    languages: ["English", "Spanish"],
     kbFiles: 6,
-    voice: "Professional Female (Silver)",
+    voice: "Sarah-Female (US)",
     callsCount: 142,
     created: "2 weeks ago"
   },
   {
-    id: "agent-kavya",
-    name: "Kavya",
+    id: "agent-chloe",
+    name: "Chloe",
     description: "Handles off-hours receptionist calls, qualifies leads, and records callbacks.",
     status: "Active",
-    languages: ["Hindi", "English"],
+    languages: ["English"],
     kbFiles: 3,
-    voice: "Warm Female (Gold)",
+    voice: "Jessica-Female (US)",
     callsCount: 200,
     created: "3 days ago"
   }

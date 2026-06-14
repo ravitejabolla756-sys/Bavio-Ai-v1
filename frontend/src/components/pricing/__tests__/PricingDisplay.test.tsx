@@ -7,7 +7,6 @@ import { useCountry } from "@/context/CountryContext";
 jest.mock("@/context/CountryContext", () => ({
   useCountry: jest.fn(),
   countries: [
-    { code: "IN", name: "India", currency: "inr", symbol: "Rs", dialCode: "+91", flag: "🇮🇳" },
     { code: "US", name: "United States", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇺🇸" },
     { code: "GB", name: "United Kingdom", currency: "gbp", symbol: "£", dialCode: "+44", flag: "🇬🇧" },
     { code: "AU", name: "Australia", currency: "aud", symbol: "AUD", dialCode: "+61", flag: "🇦🇺" },
@@ -46,9 +45,9 @@ jest.mock("@/lib/auth-utils", () => ({
 }));
 
 describe("CurrencyConverter Utility", () => {
-  test("formats INR currency correctly with no decimals", () => {
-    const res = CurrencyConverter.format(1999, "₹");
-    expect(res).toBe("₹1,999");
+  test("formats EUR currency correctly with no decimals", () => {
+    const res = CurrencyConverter.format(1999, "€");
+    expect(res).toBe("€1,999");
   });
 
   test("formats USD currency correctly", () => {
@@ -122,17 +121,17 @@ describe("PricingGrid Component", () => {
     jest.clearAllMocks();
   });
 
-  test("renders India pricing when country is IN", () => {
+  test("renders UK pricing when country is GB", () => {
     (useCountry as jest.Mock).mockReturnValue({
-      country: { code: "IN", name: "India", currency: "inr", symbol: "Rs" },
+      country: { code: "GB", name: "United Kingdom", currency: "gbp", symbol: "£" },
       isLoading: false,
     });
 
     render(<PricingGrid />);
 
-    // Growth plan monthly price for India is ₹3999
-    expect(screen.getByText("₹3,999")).toBeInTheDocument();
-    expect(screen.getByText("Overage: ₹5/min")).toBeInTheDocument();
+    // Growth plan monthly price for UK is £59
+    expect(screen.getByText("£59")).toBeInTheDocument();
+    expect(screen.getByText("Overage: £0.08/min")).toBeInTheDocument();
   });
 
   test("renders USA pricing when country is US", () => {
