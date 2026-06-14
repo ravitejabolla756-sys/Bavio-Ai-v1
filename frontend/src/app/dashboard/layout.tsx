@@ -49,12 +49,36 @@ export default function DashboardLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("Sunstar Real Estate");
+  const [workspace, setWorkspace] = useState("Medcare Hospitals");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Handle hotkeys (Cmd/Ctrl + K)
+  // Handle hotkeys (Cmd/Ctrl + K) and workspace name sync
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedName = localStorage.getItem("bavio_name");
+      if (savedName) {
+        setWorkspace(savedName);
+      }
+      
+      const token = localStorage.getItem("bavio_token");
+      if (token) {
+        fetch("/api/auth/profile", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.name) {
+              setWorkspace(data.name);
+              localStorage.setItem("bavio_name", data.name);
+            }
+          })
+          .catch(err => console.error("Failed to load workspace name:", err));
+      }
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
@@ -119,52 +143,18 @@ export default function DashboardLayout({
         <div className="flex flex-col gap-6 p-4 overflow-y-auto flex-grow">
           {/* Brand header / Workspace switcher */}
           <div className="relative">
-            <button 
-              onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className="w-full flex items-center justify-between bg-surface-raised border border-line hover:border-saffron/40 px-3.5 py-2.5 rounded-xl text-left transition-all duration-200"
+            <div 
+              className="w-full flex items-center justify-between bg-surface-raised border border-line px-3.5 py-2.5 rounded-xl text-left"
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="w-5 h-5 bg-saffron rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                  S
+                  {workspace.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold tracking-wide text-ink truncate">
+                <span className="text-xs font-semibold tracking-wide text-ink truncate font-display font-black">
                   {workspace}
                 </span>
               </div>
-              <CaretDown className="w-3.5 h-3.5 text-ink-tertiary shrink-0" />
-            </button>
-
-            {/* Dropdown list */}
-            <AnimatePresence>
-              {showWorkspaceDropdown && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowWorkspaceDropdown(false)} />
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border border-line rounded-xl p-1.5 shadow-premium z-20"
-                  >
-                    {["Sunstar Real Estate", "Apex Healthcare", "Bavio Dev Space"].map((name) => (
-                      <button
-                        key={name}
-                        onClick={() => {
-                          setWorkspace(name);
-                          setShowWorkspaceDropdown(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          workspace === name 
-                            ? "bg-saffron/10 text-saffron" 
-                            : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+            </div>
           </div>
 
           {/* Back to Workspace button */}

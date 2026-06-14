@@ -731,7 +731,7 @@ async function handleTelephonySync(req, res) {
 
     if (dbCallId) {
       // 3. Format Vapi transcript into standard database array
-      const rawTranscript = call.transcript || '';
+      const rawTranscript = message.transcript || call.transcript || '';
       const lines = rawTranscript.split('\n').filter(l => l.trim().length > 0);
       const transcriptArray = lines.map(line => {
         const lower = line.toLowerCase();
@@ -741,11 +741,12 @@ async function handleTelephonySync(req, res) {
         return { role: 'assistant', content: line.replace(/^assistant:/i, '').trim() };
       });
 
-      const summary = call.analysis?.summary || `${transcriptArray.length} turns.`;
+      const analysisObj = message.analysis || call.analysis || {};
+      const summary = analysisObj.summary || `${transcriptArray.length} turns.`;
       await upsertTranscript(dbCallId, businessId, transcriptArray, summary);
 
       // 4. Extract and save structured lead details if present
-      let structuredData = call.analysis?.structuredData || {};
+      let structuredData = analysisObj.structuredData || {};
       
       // Helper to find key case-insensitively
       const getField = (obj, key) => {

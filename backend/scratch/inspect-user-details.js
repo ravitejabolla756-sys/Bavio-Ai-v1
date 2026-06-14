@@ -25,9 +25,9 @@ async function main() {
             const aResult = await pool.query("SELECT * FROM assistants WHERE business_id = $1", [bId]);
             console.log(JSON.stringify(aResult.rows, null, 2));
 
-            console.log("\n=== Querying phone_numbers table ===");
-            const pResult = await pool.query("SELECT * FROM phone_numbers WHERE business_id = $1", [bId]);
-            console.log(JSON.stringify(pResult.rows, null, 2));
+            console.log("\n=== Querying latest call transcript ===");
+            const tResult = await pool.query("SELECT * FROM transcripts ORDER BY created_at DESC LIMIT 1");
+            console.log(JSON.stringify(tResult.rows, null, 2));
         }
     } catch (err) {
         console.error(err);
