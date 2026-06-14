@@ -72,13 +72,26 @@ async function generateResponse(messages, systemPrompt) {
   // Filter out empty or placeholder lead data
   if (lead_data) {
     const hasRealData = Object.entries(lead_data).some(([key, val]) => {
-      return val && val !== '...' && val !== 'Unknown' && String(val).trim() !== '';
+      return val && val !== '...' && val !== 'Unknown' && !String(val).toLowerCase().includes('not collected') && String(val).trim() !== '';
     });
     if (!hasRealData) {
       console.log('[LLM] Discarding empty/placeholder lead data:', lead_data);
       lead_data = null;
     }
   }
+
+  // Strip any lines containing key-value pairs (like name: ..., phone: ...) or lead fields
+  // so the TTS never speaks them out loud
+  rawText = rawText.split('\n').filter(line => {
+    const lower = line.toLowerCase();
+    if (lower.includes('name:') || lower.includes('phone:') || lower.includes('intent:') || lower.includes('budget:') || lower.includes('location:')) {
+      return false;
+    }
+    if (lower.includes('not collected') || lower.includes('[lead_captured]')) {
+      return false;
+    }
+    return true;
+  }).join('\n').trim();
 
   // Check if call should end
   let should_end = rawText.includes('[END_CALL]');
