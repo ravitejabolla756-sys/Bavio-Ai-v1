@@ -715,7 +715,25 @@ async function handleTelephonySync(req, res) {
 
       // 4. Extract and save structured lead details if present
       const structuredData = call.analysis?.structuredData || {};
-      const hasLead = structuredData.name || structuredData.budget || structuredData.location;
+      
+      // Helper to find key case-insensitively
+      const getField = (obj, key) => {
+        if (!obj) return null;
+        const lowerKey = key.toLowerCase();
+        for (const k of Object.keys(obj)) {
+          if (k.toLowerCase() === lowerKey) {
+            return obj[k];
+          }
+        }
+        return null;
+      };
+
+      const extractedName = getField(structuredData, 'name');
+      const extractedIntent = getField(structuredData, 'intent');
+      const extractedLocation = getField(structuredData, 'location');
+      const extractedApptTime = getField(structuredData, 'appointment_time') || getField(structuredData, 'budget');
+
+      const hasLead = extractedName || extractedIntent || extractedLocation || extractedApptTime;
 
       if (hasLead) {
         try {
@@ -726,10 +744,10 @@ async function handleTelephonySync(req, res) {
               businessId,
               dbCallId,
               fromNumber,
-              structuredData.name || null,
-              structuredData.intent || 'inquiry',
-              structuredData.budget || null,
-              structuredData.location || null,
+              extractedName || null,
+              extractedIntent || 'inquiry',
+              extractedApptTime || null,
+              extractedLocation || null,
               JSON.stringify(structuredData)
             ]
           );
