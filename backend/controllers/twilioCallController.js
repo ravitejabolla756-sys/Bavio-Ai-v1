@@ -561,12 +561,31 @@ async function handleCallStatus(req, res) {
       }
     }
 
-    // Save usage log using business_id and cost_total
+    // Save usage log using user_id and cost_total
     try {
+      const now = new Date();
+      const billingMonth = now.getMonth() + 1;
+      const billingYear = now.getFullYear();
+      const countryCode = callData.country_code || 'US';
+      const currency = callData.cost_currency || 'USD';
+
       await db.query(
-        `INSERT INTO usage_logs (business_id, call_id, minutes_used, cost_stt, cost_tts, cost_telephony, cost_total, is_overage, cost_amount, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
-        [callData.business_id, callData.id, Math.ceil(mins), cost_stt, cost_tts, cost_telephony, cost_total, is_overage, cost_amount]
+        `INSERT INTO usage_logs (
+          user_id, country_code, call_id, minutes_used, cost_stt, cost_tts, cost_telephony, cost_total, currency_code, billing_month, billing_year, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+        [
+          callData.user_id,
+          countryCode,
+          callData.id,
+          Math.ceil(mins),
+          cost_stt,
+          cost_tts,
+          cost_telephony,
+          cost_total,
+          currency,
+          billingMonth,
+          billingYear
+        ]
       );
     } catch (logErr) {
       console.error('[TWILIO] Usage log error explicitly:', logErr.message);
