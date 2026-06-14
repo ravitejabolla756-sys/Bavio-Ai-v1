@@ -219,6 +219,7 @@ export default function HomePage() {
   };
   /* ── Hero call demo state ── */
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [callStatus, setCallStatus] = useState<
     "idle" | "dialing" | "connected" | "ended"
   >("idle");
@@ -250,7 +251,19 @@ export default function HomePage() {
 
   const handleStartCall = (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneError("");
     if (!phoneNumber) return;
+
+    const cleanPhone = phoneNumber.replace(/[\s-()]/g, "");
+    if (
+      cleanPhone.startsWith("+91") ||
+      (cleanPhone.length === 10 && /^[6-9]/.test(cleanPhone)) ||
+      (cleanPhone.startsWith("91") && cleanPhone.length === 12)
+    ) {
+      setPhoneError("For India, we'll launch soon!");
+      return;
+    }
+
     setCallStatus("dialing");
     setTimeout(() => {
       setCallStatus("connected");
@@ -575,6 +588,11 @@ export default function HomePage() {
                               </button>
                             )}
                           </div>
+                          {phoneError && (
+                            <p className="text-state-error text-body-xs font-medium px-1">
+                              {phoneError}
+                            </p>
+                          )}
 
                           <div className="flex justify-between items-center text-body-xs text-ink-faint font-mono pt-1 border-t border-line-faint">
                             <span>Trunk delay: 350ms</span>
