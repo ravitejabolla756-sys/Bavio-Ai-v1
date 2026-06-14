@@ -685,6 +685,15 @@ async function handleTelephonySync(req, res) {
       countryCode = phoneResult.rows[0].country_code || 'US';
     }
 
+    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    if (!businessId) {
+      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
+      if (firstBiz.rows.length > 0) {
+        businessId = firstBiz.rows[0].id;
+        countryCode = firstBiz.rows[0].country_code || 'IN';
+      }
+    }
+
     const currency = countryCode === 'IN' ? 'INR' : 'USD';
 
     // 2. Insert call record
