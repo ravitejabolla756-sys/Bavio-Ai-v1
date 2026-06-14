@@ -63,15 +63,15 @@ const industryOptions = [
 ];
 
 const countryCodeOptions = [
-  { value: "+1", label: "United States", icon: "🇺🇸", description: "Available" },
-  { value: "+44", label: "United Kingdom", icon: "🇬🇧", description: "Available" },
-  { value: "+1-CA", label: "Canada", icon: "🇨🇦", description: "Available" },
-  { value: "+49", label: "Germany", icon: "🇩🇪", description: "Available" },
-  { value: "+33", label: "France", icon: "🇫🇷", description: "Available" },
-  { value: "+61", label: "Australia", icon: "🇦🇺", description: "Available" },
-  { value: "+91", label: "India", icon: "🇮🇳", description: "Coming soon" },
-  { value: "+971", label: "United Arab Emirates", icon: "🇦🇪", description: "Coming soon" },
-  { value: "+65", label: "Singapore", icon: "🇸🇬", description: "Coming soon" },
+  { value: "+1", label: "United States (+1)", icon: "🇺🇸", description: "Available", code: "+1" },
+  { value: "+44", label: "United Kingdom (+44)", icon: "🇬🇧", description: "Available", code: "+44" },
+  { value: "+1-CA", label: "Canada (+1)", icon: "🇨🇦", description: "Available", code: "+1" },
+  { value: "+49", label: "Germany (+49)", icon: "🇩🇪", description: "Available", code: "+49" },
+  { value: "+33", label: "France (+33)", icon: "🇫🇷", description: "Available", code: "+33" },
+  { value: "+61", label: "Australia (+61)", icon: "🇦🇺", description: "Available", code: "+61" },
+  { value: "+91", label: "India (+91)", icon: "🇮🇳", description: "Coming soon", code: "+91" },
+  { value: "+971", label: "United Arab Emirates (+971)", icon: "🇦🇪", description: "Coming soon", code: "+971" },
+  { value: "+65", label: "Singapore (+65)", icon: "🇸🇬", description: "Coming soon", code: "+65" },
 ];
 
 export default function SignUpPage() {
@@ -379,7 +379,7 @@ export default function SignUpPage() {
                       Business Phone Number
                     </label>
                     <div className="flex gap-2">
-                      <div className="w-[150px] shrink-0">
+                      <div className="w-[110px] shrink-0">
                         <SearchableDropdown
                           options={countryCodeOptions}
                           value={selectedCountryCode}
@@ -391,6 +391,14 @@ export default function SignUpPage() {
                             }
                           }}
                           placeholder="Code"
+                          renderTrigger={(selected) => (
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <span className="text-base leading-none shrink-0">{selected?.icon}</span>
+                              <span className="font-semibold text-body-xs truncate">
+                                {(selected as any)?.code || selected?.value}
+                              </span>
+                            </div>
+                          )}
                         />
                       </div>
                       <input
