@@ -3,6 +3,7 @@ const sttService = require('../services/sarvam/stt');
 const llmService = require('../services/sarvam/llm');
 const ttsService = require('../services/sarvam/tts');
 const storageService = require('../services/storage/storageService');
+const audioService = require('../services/audio/audioService');
 const axios = require('axios');
 
 const activeRequests = {};
@@ -19,14 +20,12 @@ function buildAudioTag(audioUrl, fallbackText, language) {
 
 // Synthesize TTS and upload to Supabase → returns public HTTPS URL or null
 async function generateAndUploadTts(text, language, callSid, turn) {
-  const fileName = storageService.buildTtsFileName(callSid, turn);
   const ttsResult = await ttsService.synthesizeSpeech(text, language);
-  const { audioUrl, filePath } = await storageService.uploadTtsAudio(
-    ttsResult.audioBuffer,
-    fileName
-  );
-  console.log(`[TTS→STORAGE] Turn ${turn} → ${audioUrl}`);
-  return { audioUrl, filePath };
+  const base64Audio = ttsResult.audioBuffer.toString('base64');
+  const fileName = audioService.saveAudio(base64Audio, callSid, turn);
+  const audioUrl = audioService.getAudioUrl(fileName);
+  console.log(`[TTS→LOCAL] Turn ${turn} → ${audioUrl}`);
+  return { audioUrl, filePath: fileName };
 }
 
 // Helper to upsert transcript in transcripts table
@@ -164,15 +163,16 @@ async function handleIncomingCall(req, res) {
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${audioTag}
-  <Record
+  <Gather
+    input="speech"
     action="/calls/twilio/recording"
     method="POST"
-    maxLength="15"
-    playBeep="false"
-    timeout="3"
-    finishOnKey=""
-  />
+    language="${language}"
+    speechTimeout="auto"
+  >
+    ${audioTag}
+  </Gather>
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
 </Response>`;
 
     res.type('text/xml');
@@ -191,14 +191,15 @@ async function handleIncomingCall(req, res) {
 
 // ── STEP 2: Process Recording ─────────────────────────────────────────────────
 async function handleRecording(req, res) {
-  const { CallSid, RecordingUrl, RecordingDuration } = req.body;
+  const { CallSid, RecordingUrl, RecordingDuration, SpeechResult } = req.body;
+  const isSilence = req.query.silence === 'true';
 
-  if (!RecordingUrl) {
-    console.log('[TWILIO] RecordingUrl is missing — hanging up');
+  if (!RecordingUrl && !SpeechResult && !isSilence) {
+    console.log('[TWILIO] RecordingUrl, SpeechResult, and silence query are missing — hanging up');
     return res.type('text/xml').send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
   }
 
-  const requestKey = `${CallSid}-${RecordingUrl}`;
+  const requestKey = `${CallSid}-${RecordingUrl || SpeechResult || (isSilence ? 'silence-' + Date.now() : 'unknown')}`;
 
   if (activeRequests[requestKey]) {
     console.log(`[TWILIO] Concurrency lock: Duplicate request detected for key: ${requestKey}. Waiting for original response...`);
@@ -270,71 +271,112 @@ async function handleRecording(req, res) {
       return `<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`;
     }
 
-    // ── Skip silence recordings (< 1 second) ────────────────────────────
-    if (parseInt(RecordingDuration) < 1) {
-      console.log('[TWILIO] Recording too short (silence) — re-recording');
+    // ── Skip silence / Parse caller input ────────────────────────────
+    let userText = '';
+
+    if (isSilence) {
+      console.log('[TWILIO] Silence detected via Redirect');
+      const silenceText = session.language === 'hi-IN' 
+        ? "Mujhe aapki awaaz nahi aayi. Kripya phir se bolein." 
+        : "I did not hear you. Could you please repeat?";
       return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Record
+  <Gather
+    input="speech"
     action="/calls/twilio/recording"
     method="POST"
-    maxLength="15"
-    playBeep="false"
-    timeout="3"
-    finishOnKey=""
-  />
+    language="${session.language}"
+    speechTimeout="auto"
+  >
+    <Say language="${session.language}">${silenceText}</Say>
+  </Gather>
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
 </Response>`;
     }
 
-    // ── Download caller's audio from Twilio ──────────────────────────────
-    let audioBuffer;
-    console.log('[TWILIO] Downloading caller audio from:', RecordingUrl);
-    try {
-      const audioResponse = await axios.get(RecordingUrl + '.wav', {
-        responseType: 'arraybuffer',
-        auth: {
-          username: process.env.TWILIO_ACCOUNT_SID,
-          password: process.env.TWILIO_AUTH_TOKEN
-        },
-        timeout: 15000
-      });
-      audioBuffer = Buffer.from(audioResponse.data);
-      console.log(`[TWILIO] Caller audio downloaded: ${audioBuffer.length} bytes`);
-    } catch (downloadErr) {
-      console.error('[TWILIO] Audio download failed:', downloadErr.message);
-      return `<?xml version="1.0" encoding="UTF-8"?>
+    if (SpeechResult) {
+      userText = SpeechResult.trim();
+      console.log(`[GATHER] Twilio speech recognized: "${userText}"`);
+    } else if (RecordingUrl) {
+      // ── Skip silence recordings (< 1 second) ────────────────────────────
+      if (parseInt(RecordingDuration) < 1) {
+        console.log('[TWILIO] Recording too short (silence) — re-recording');
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather
+    input="speech"
+    action="/calls/twilio/recording"
+    method="POST"
+    language="${session.language}"
+    speechTimeout="auto"
+  />
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
+</Response>`;
+      }
+
+      // ── Download caller's audio from Twilio ──────────────────────────────
+      let audioBuffer;
+      console.log('[TWILIO] Downloading caller audio from:', RecordingUrl);
+      try {
+        const audioResponse = await axios.get(RecordingUrl + '.wav', {
+          responseType: 'arraybuffer',
+          auth: {
+            username: process.env.TWILIO_ACCOUNT_SID,
+            password: process.env.TWILIO_AUTH_TOKEN
+          },
+          timeout: 15000
+        });
+        audioBuffer = Buffer.from(audioResponse.data);
+        console.log(`[TWILIO] Caller audio downloaded: ${audioBuffer.length} bytes`);
+      } catch (downloadErr) {
+        console.error('[TWILIO] Audio download failed:', downloadErr.message);
+        return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say language="${session.language}">Sorry, I could not hear that. Please try again.</Say>
-  <Record
+  <Gather
+    input="speech"
     action="/calls/twilio/recording"
     method="POST"
-    maxLength="15"
-    playBeep="false"
-    timeout="3"
-    finishOnKey=""
+    language="${session.language}"
+    speechTimeout="auto"
   />
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
 </Response>`;
-    }
+      }
 
-    // ── SARVAM STT ───────────────────────────────────────────────────────
-    let userText = '';
-    try {
-      const sttResult = await sttService.transcribeAudio(audioBuffer, session.language);
-      userText = sttResult.text?.trim() || '';
-      console.log(`[STT] User said: "${userText}"`);
-    } catch (sttErr) {
-      console.error('[STT] Failed:', sttErr.message);
-      return `<?xml version="1.0" encoding="UTF-8"?>
+      // ── SARVAM STT ───────────────────────────────────────────────────────
+      try {
+        const sttResult = await sttService.transcribeAudio(audioBuffer, session.language);
+        userText = sttResult.text?.trim() || '';
+        console.log(`[STT] User said: "${userText}"`);
+      } catch (sttErr) {
+        console.error('[STT] Failed:', sttErr.message);
+        return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say language="${session.language}">Sorry, I did not catch that. Could you please repeat?</Say>
-  <Record
+  <Gather
+    input="speech"
     action="/calls/twilio/recording"
     method="POST"
-    maxLength="15"
-    playBeep="false"
-    timeout="3"
-    finishOnKey=""
+    language="${session.language}"
+    speechTimeout="auto"
   />
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
+</Response>`;
+      }
+    } else {
+      // General fallback if somehow both are missing
+      console.log('[TWILIO] No speech or recording - looping back to listen');
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather
+    input="speech"
+    action="/calls/twilio/recording"
+    method="POST"
+    language="${session.language}"
+    speechTimeout="auto"
+  />
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
 </Response>`;
     }
 
@@ -437,15 +479,16 @@ async function handleRecording(req, res) {
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${audioTag}
-  <Record
+  <Gather
+    input="speech"
     action="/calls/twilio/recording"
     method="POST"
-    maxLength="15"
-    playBeep="false"
-    timeout="3"
-    finishOnKey=""
-  />
+    language="${session.language}"
+    speechTimeout="auto"
+  >
+    ${audioTag}
+  </Gather>
+  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
 </Response>`;
   })();
 
@@ -487,8 +530,9 @@ async function handleCallStatus(req, res) {
       console.error('[TWILIO] Call lookup error:', dbErr.message);
     }
 
-    // ── Async: clean up this call's TTS files in Supabase Storage ───────
+    // ── Async: clean up this call's TTS files in Supabase Storage & Local Storage ───────
     // Fire-and-forget — don't await (keep webhook response fast)
+    audioService.deleteAudio(CallSid);
     storageService
       .cleanupCallTtsFiles(CallSid)
       .catch(err => console.error('[STORAGE] Cleanup error:', err.message));
