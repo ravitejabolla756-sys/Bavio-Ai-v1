@@ -745,7 +745,7 @@ async function handleTelephonySync(req, res) {
       await upsertTranscript(dbCallId, businessId, transcriptArray, summary);
 
       // 4. Extract and save structured lead details if present
-      const structuredData = call.analysis?.structuredData || {};
+      let structuredData = call.analysis?.structuredData || {};
       
       // Helper to find key case-insensitively
       const getField = (obj, key) => {
@@ -759,12 +759,35 @@ async function handleTelephonySync(req, res) {
         return null;
       };
 
-      const extractedName = getField(structuredData, 'name');
-      const extractedIntent = getField(structuredData, 'intent');
-      const extractedLocation = getField(structuredData, 'location');
-      const extractedApptTime = getField(structuredData, 'appointment_time') || getField(structuredData, 'budget');
+      let extractedName = getField(structuredData, 'name');
+      let extractedIntent = getField(structuredData, 'intent');
+      let extractedLocation = getField(structuredData, 'location');
+      let extractedApptTime = getField(structuredData, 'appointment_time') || getField(structuredData, 'budget');
 
-      const hasLead = extractedName || extractedIntent || extractedLocation || extractedApptTime;
+      let hasLead = extractedName || extractedIntent || extractedLocation || extractedApptTime;
+
+      // Fallback: Parse transcript for [LEAD_CAPTURED]
+      if (!hasLead && rawTranscript.includes('[LEAD_CAPTURED]')) {
+        try {
+          const parts = rawTranscript.split('[LEAD_CAPTURED]');
+          const jsonText = parts[parts.length - 1].trim();
+          const startIdx = jsonText.indexOf('{');
+          const endIdx = jsonText.lastIndexOf('}');
+          if (startIdx !== -1 && endIdx !== -1) {
+            const parsed = JSON.parse(jsonText.substring(startIdx, endIdx + 1));
+            extractedName = getField(parsed, 'name');
+            extractedIntent = getField(parsed, 'intent');
+            extractedLocation = getField(parsed, 'location');
+            extractedApptTime = getField(parsed, 'appointment_time') || getField(parsed, 'budget');
+            if (extractedName || extractedIntent || extractedLocation || extractedApptTime) {
+              hasLead = true;
+              structuredData = parsed;
+            }
+          }
+        } catch (parseErr) {
+          console.error('[TELEPHONY SYNC] Failed to parse [LEAD_CAPTURED] fallback:', parseErr.message);
+        }
+      }
 
       if (hasLead) {
         try {
