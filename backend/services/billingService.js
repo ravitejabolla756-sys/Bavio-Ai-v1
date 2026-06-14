@@ -24,7 +24,7 @@ async function processCallEnd({ providerCallId, phoneNumberId, callerNumber, dur
     if (businessId) {
         // Insert usage log
         await db.query(
-            `INSERT INTO usage_logs (business_id, call_id, minutes_used, cost_total) VALUES ($1, $2, $3, $4)`,
+            `INSERT INTO usage_logs (user_id, call_id, minutes_used, cost_total) VALUES ($1, $2, $3, $4)`,
             [businessId, call.id, durationMinutes, cost]
         );
 
