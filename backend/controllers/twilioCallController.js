@@ -656,8 +656,141 @@ async function handleCallStatus(req, res) {
   }
 }
 
+// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
+async function handleTelephonySync(req, res) {
+  try {
+    const { message } = req.body;
+    if (!message || message.type !== 'end-of-call-report') {
+      return res.status(200).json({ status: 'ignored' });
+    }
+
+    const call = message.call;
+    const fromNumber = call.customer?.number || 'Unknown';
+    const toNumber = call.phoneNumber?.number || 'Unknown';
+    const duration = Math.round(call.duration || 0);
+    const callSid = call.id;
+
+    console.log(`[TELEPHONY SYNC] Webhook received: ${fromNumber} → ${toNumber} | Duration: ${duration}s`);
+
+    // 1. Resolve business owner details by Twilio number
+    const phoneResult = await db.query(
+      'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1',
+      [toNumber]
+    );
+
+    let businessId = null;
+    let countryCode = 'US';
+    if (phoneResult.rows.length > 0) {
+      businessId = phoneResult.rows[0].business_id;
+      countryCode = phoneResult.rows[0].country_code || 'US';
+    }
+
+    const currency = countryCode === 'IN' ? 'INR' : 'USD';
+
+    // 2. Insert call record
+    const insertCallResult = await db.query(
+      `INSERT INTO calls (
+        user_id, country_code, call_sid, provider, from_number, virtual_number, duration_seconds, status, started_at, ended_at, cost_currency, created_at
+      ) VALUES ($1, $2, $3, 'twilio', $4, $5, $6, 'completed', NOW() - interval '${duration} seconds', NOW(), $7, NOW())
+      RETURNING id`,
+      [businessId, countryCode, callSid, fromNumber, toNumber, duration, currency]
+    );
+
+    const dbCallId = insertCallResult.rows[0]?.id;
+
+    if (dbCallId) {
+      // 3. Format Vapi transcript into standard database array
+      const rawTranscript = call.transcript || '';
+      const lines = rawTranscript.split('\n').filter(l => l.trim().length > 0);
+      const transcriptArray = lines.map(line => {
+        const lower = line.toLowerCase();
+        if (lower.startsWith('user:') || lower.startsWith('caller:')) {
+          return { role: 'user', content: line.replace(/^(user|caller):/i, '').trim() };
+        }
+        return { role: 'assistant', content: line.replace(/^assistant:/i, '').trim() };
+      });
+
+      const summary = call.analysis?.summary || `${transcriptArray.length} turns.`;
+      await upsertTranscript(dbCallId, businessId, transcriptArray, summary);
+
+      // 4. Extract and save structured lead details if present
+      const structuredData = call.analysis?.structuredData || {};
+      const hasLead = structuredData.name || structuredData.budget || structuredData.location;
+
+      if (hasLead) {
+        try {
+          await db.query(
+            `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', NOW())`,
+            [
+              businessId,
+              dbCallId,
+              fromNumber,
+              structuredData.name || null,
+              structuredData.intent || 'inquiry',
+              structuredData.budget || null,
+              structuredData.location || null,
+              JSON.stringify(structuredData)
+            ]
+          );
+          console.log('[TELEPHONY SYNC] Lead auto-captured:', structuredData);
+        } catch (dbErr) {
+          console.error('[TELEPHONY SYNC] Lead save error:', dbErr.message);
+        }
+      }
+
+      // 5. Save usage log and deduct minutes
+      try {
+        const mins = duration / 60;
+        const cost_stt = (mins / 60) * 30; // Sarvam STT standard rate
+        const cost_tts = (transcriptArray.length * 100 / 10000) * 15;
+        const cost_telephony = mins * 0.71;
+        const cost_total = cost_stt + cost_tts + cost_telephony;
+
+        const now = new Date();
+        const billingMonth = now.getMonth() + 1;
+        const billingYear = now.getFullYear();
+
+        await db.query(
+          `INSERT INTO usage_logs (
+            user_id, country_code, call_id, minutes_used, cost_stt, cost_tts, cost_telephony, cost_total, currency_code, billing_month, billing_year, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+          [
+            businessId,
+            countryCode,
+            dbCallId,
+            Math.ceil(mins),
+            cost_stt,
+            cost_tts,
+            cost_telephony,
+            cost_total,
+            currency,
+            billingMonth,
+            billingYear
+          ]
+        );
+
+        if (businessId) {
+          await db.query(
+            'UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2',
+            [Math.ceil(mins), businessId]
+          );
+        }
+      } catch (logErr) {
+        console.error('[TELEPHONY SYNC] Usage logging error:', logErr.message);
+      }
+    }
+
+    return res.status(200).json({ status: 'success' });
+  } catch (err) {
+    console.error('[TELEPHONY SYNC] handleTelephonySync error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   handleIncomingCall,
   handleRecording,
-  handleCallStatus
+  handleCallStatus,
+  handleTelephonySync
 };

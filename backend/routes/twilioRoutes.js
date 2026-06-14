@@ -3,7 +3,8 @@ const router = express.Router();
 const {
   handleIncomingCall,
   handleRecording,
-  handleCallStatus
+  handleCallStatus,
+  handleTelephonySync
 } = require('../controllers/twilioCallController');
 
 // All Twilio webhooks — NO JWT auth
@@ -17,5 +18,8 @@ router.post('/recording', handleRecording);
 
 // Step 3: Call ended
 router.post('/status', handleCallStatus);
+
+// Step 4: Telephony sync callback (logs & metrics)
+router.post('/telephony-sync', handleTelephonySync);
 
 module.exports = router;
