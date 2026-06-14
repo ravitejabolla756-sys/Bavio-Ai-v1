@@ -62,6 +62,18 @@ const industryOptions = [
   },
 ];
 
+const countryCodeOptions = [
+  { value: "+1", label: "United States", icon: "🇺🇸", description: "Available" },
+  { value: "+44", label: "United Kingdom", icon: "🇬🇧", description: "Available" },
+  { value: "+1-CA", label: "Canada", icon: "🇨🇦", description: "Available" },
+  { value: "+49", label: "Germany", icon: "🇩🇪", description: "Available" },
+  { value: "+33", label: "France", icon: "🇫🇷", description: "Available" },
+  { value: "+61", label: "Australia", icon: "🇦🇺", description: "Available" },
+  { value: "+91", label: "India", icon: "🇮🇳", description: "Coming soon" },
+  { value: "+971", label: "United Arab Emirates", icon: "🇦🇪", description: "Coming soon" },
+  { value: "+65", label: "Singapore", icon: "🇸🇬", description: "Coming soon" },
+];
+
 export default function SignUpPage() {
   const router = useRouter();
   const { country } = useCountry();
@@ -98,7 +110,11 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
+  const [selectedCountryCode, setSelectedCountryCode] = useState("+1");
   const [industry, setIndustry] = useState("real_estate");
+
+  const selectedCountryDetails = countryCodeOptions.find(c => c.value === selectedCountryCode) || countryCodeOptions[0];
+  const isCountryAvailable = selectedCountryDetails.description !== "Coming soon";
 
   // Validation & Loading states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -124,7 +140,9 @@ export default function SignUpPage() {
       tempErrors.businessName = "Business or Company name is required";
     }
 
-    if (!businessPhone.trim()) {
+    if (!isCountryAvailable) {
+      tempErrors.businessPhone = `${selectedCountryDetails.label} is coming soon`;
+    } else if (!businessPhone.trim()) {
       tempErrors.businessPhone = "Business phone number is required";
     }
 
@@ -143,10 +161,10 @@ export default function SignUpPage() {
         email,
         password,
         business_name: businessName,
-        business_phone: businessPhone,
+        business_phone: `${selectedCountryCode.replace("-CA", "")} ${businessPhone}`,
         industry,
         name: businessName, // Fallback for name
-        phone: businessPhone, // Fallback for phone
+        phone: `${selectedCountryCode.replace("-CA", "")} ${businessPhone}`, // Fallback for phone
         country_code: country.code,
       });
 
@@ -360,14 +378,31 @@ export default function SignUpPage() {
                     <label htmlFor="business-phone-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Business Phone Number
                     </label>
-                    <input
-                      id="business-phone-input"
-                      type="text"
-                      placeholder="Business Phone Number"
-                      value={businessPhone}
-                      onChange={(e) => setBusinessPhone(e.target.value)}
-                      className={`w-full bg-[#FAF7F2] border ${errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
-                    />
+                    <div className="flex gap-2">
+                      <div className="w-[150px] shrink-0">
+                        <SearchableDropdown
+                          options={countryCodeOptions}
+                          value={selectedCountryCode}
+                          onChange={(val) => {
+                            setSelectedCountryCode(val);
+                            const selected = countryCodeOptions.find(c => c.value === val);
+                            if (selected && selected.description === "Coming soon") {
+                              setBusinessPhone("");
+                            }
+                          }}
+                          placeholder="Code"
+                        />
+                      </div>
+                      <input
+                        id="business-phone-input"
+                        type="text"
+                        placeholder={isCountryAvailable ? "Mobile Number" : `Coming soon in ${selectedCountryDetails.label}`}
+                        value={businessPhone}
+                        onChange={(e) => setBusinessPhone(e.target.value)}
+                        disabled={!isCountryAvailable}
+                        className={`w-full bg-[#FAF7F2] border ${errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed`}
+                      />
+                    </div>
                     {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                   </div>
 
