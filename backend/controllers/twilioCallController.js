@@ -136,11 +136,13 @@ async function handleIncomingCall(req, res) {
 
     // ── Create call record (include business_id!) ──────────────────────────
     try {
+      const countryCode = phoneResult.rows[0]?.country_code || 'US';
+      const currency = countryCode === 'IN' ? 'INR' : 'USD';
       await db.query(
-        `INSERT INTO calls
-           (phone_number_id, business_id, caller_number, provider_call_id, status, provider, created_at)
-         VALUES ($1, $2, $3, $4, 'started', 'twilio', NOW())`,
-        [phoneNumberId, businessId, From, CallSid]
+        `INSERT INTO calls (
+          user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
+        ) VALUES ($1, $2, $3, 'twilio', $4, $5, NOW(), $6, NOW())`,
+        [businessId, countryCode, CallSid, From, To, currency]
       );
     } catch (dbErr) {
       console.error('[TWILIO] Call record error:', dbErr.message);
@@ -224,11 +226,12 @@ async function handleRecording(req, res) {
 
     try {
       const callResult = await db.query(
-        'SELECT * FROM calls WHERE provider_call_id = $1',
+        'SELECT * FROM calls WHERE call_sid = $1',
         [CallSid]
       );
       if (callResult.rows.length > 0) {
         callData = callResult.rows[0];
+        callData.business_id = callData.user_id; // map user_id to business_id for backward compatibility
         session.business_id = callData.business_id;
 
         // Fetch transcript from transcripts table instead of calls table
@@ -239,10 +242,10 @@ async function handleRecording(req, res) {
         session.transcript = transResult.rows[0]?.transcript || [];
         session.turn = Math.floor((session.transcript?.length || 0) / 2);
 
-        if (callData.phone_number_id) {
+        if (callData.virtual_number) {
           const phoneResult = await db.query(
-            'SELECT assistant_id FROM phone_numbers WHERE id = $1',
-            [callData.phone_number_id]
+            'SELECT assistant_id FROM phone_numbers WHERE number = $1',
+            [callData.virtual_number]
           );
           if (phoneResult.rows[0]?.assistant_id) {
             session.assistant_id = phoneResult.rows[0].assistant_id;
@@ -472,10 +475,13 @@ async function handleCallStatus(req, res) {
     let callData = null;
     try {
       const callResult = await db.query(
-        'SELECT * FROM calls WHERE provider_call_id = $1',
+        'SELECT * FROM calls WHERE call_sid = $1',
         [CallSid]
       );
       callData = callResult.rows[0];
+      if (callData) {
+        callData.business_id = callData.user_id; // map user_id to business_id for backward compatibility
+      }
     } catch (dbErr) {
       console.error('[TWILIO] Call lookup error:', dbErr.message);
     }
@@ -494,7 +500,7 @@ async function handleCallStatus(req, res) {
     // Update call record
     try {
       await db.query(
-        'UPDATE calls SET status = $1, duration = $2, ended_at = NOW() WHERE provider_call_id = $3',
+        'UPDATE calls SET status = $1, duration_seconds = $2, ended_at = NOW() WHERE call_sid = $3',
         ['completed', duration, CallSid]
       );
     } catch (updErr) {
