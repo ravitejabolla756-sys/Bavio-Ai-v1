@@ -806,9 +806,128 @@ async function handleTelephonySync(req, res) {
   }
 }
 
+// ── STEP 5: Vapi Tool Call (Save Lead During Call) ────────────────────────────
+async function handleSaveLeadTool(req, res) {
+  try {
+    const { message } = req.body;
+    
+    // Check if it's a tool call message from Vapi
+    if (!message || message.type !== 'tool-calls') {
+      // Sometimes Vapi sends tool call arguments directly depending on setup, but typically wraps it in message
+      const toolCalls = req.body.toolCalls || [];
+      if (toolCalls.length === 0) {
+        return res.status(400).json({ error: 'Invalid payload. Expected tool-calls.' });
+      }
+    }
+
+    const payloadMessage = message || req.body || {};
+    const toolCalls = payloadMessage.toolCalls || [];
+    const call = payloadMessage.call || {};
+    const fromNumber = call.customer?.number || 'Unknown';
+    const toNumber = call.phoneNumber?.number || 'Unknown';
+    const callSid = call.id || 'Unknown';
+
+    // 1. Resolve business owner details
+    let businessId = req.query.business_id || null;
+    if (!businessId && toNumber) {
+      const phoneResult = await db.query(
+        'SELECT business_id FROM phone_numbers WHERE number = $1',
+        [toNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+      }
+    }
+
+    // Fallback: Use the first business if not found (for Vapi web testing convenience)
+    if (!businessId) {
+      const firstBiz = await db.query('SELECT id FROM businesses LIMIT 1');
+      businessId = firstBiz.rows[0]?.id || null;
+    }
+
+    // 2. Find the db call record if it exists, or create one
+    let dbCallId = null;
+    const callResult = await db.query('SELECT id FROM calls WHERE call_sid = $1', [callSid]);
+    if (callResult.rows.length > 0) {
+      dbCallId = callResult.rows[0].id;
+    } else {
+      // Create a temporary call record so we can link it
+      const insertCallResult = await db.query(
+        `INSERT INTO calls (
+          user_id, country_code, call_sid, provider, from_number, virtual_number, status, started_at, created_at
+        ) VALUES ($1, 'IN', $2, 'twilio', $3, $4, 'in-progress', NOW(), NOW())
+        RETURNING id`,
+        [businessId, callSid, fromNumber, toNumber]
+      );
+      dbCallId = insertCallResult.rows[0]?.id;
+    }
+
+    // 3. Process each tool call (usually just one)
+    const results = [];
+    for (const toolCall of toolCalls) {
+      const functionName = toolCall.function?.name;
+      if (functionName === 'save_lead') {
+        const args = toolCall.function.arguments || {};
+        
+        // Use case-insensitive helper to extract arguments
+        const getField = (obj, key) => {
+          if (!obj) return null;
+          const lowerKey = key.toLowerCase();
+          for (const k of Object.keys(obj)) {
+            if (k.toLowerCase() === lowerKey) {
+              return obj[k];
+            }
+          }
+          return null;
+        };
+
+        const name = getField(args, 'name');
+        const phone = getField(args, 'phone') || fromNumber;
+        const intent = getField(args, 'intent') || 'inquiry';
+        const location = getField(args, 'location');
+        const appointmentTime = getField(args, 'appointment_time') || getField(args, 'budget');
+
+        // Insert into leads table
+        await db.query(
+          `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', NOW())`,
+          [
+            businessId,
+            dbCallId,
+            phone,
+            name || null,
+            intent || null,
+            appointmentTime || null,
+            location || null,
+            JSON.stringify(args)
+          ]
+        );
+
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Lead details saved successfully to Supabase."
+        });
+      } else {
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Tool ignored."
+        });
+      }
+    }
+
+    // Return response in the format Vapi expects
+    return res.status(200).json({ results });
+
+  } catch (err) {
+    console.error('[SAVE LEAD TOOL] Error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   handleIncomingCall,
   handleRecording,
   handleCallStatus,
-  handleTelephonySync
+  handleTelephonySync,
+  handleSaveLeadTool
 };
