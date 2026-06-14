@@ -47,8 +47,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
 app.use(generalLimiter);
 
-// NOTE: Audio is now served via Supabase Storage public URLs.
-// No local /audio static route needed.
+// Serve static audio files locally for ultra-low latency playback
+app.use('/audio', express.static('/tmp/bavio-audio'));
 
 // ------- API Routes -------
 const authRoutes = require('./routes/auth');
