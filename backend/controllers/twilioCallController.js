@@ -657,6 +657,7 @@ async function handleCallStatus(req, res) {
 }
 
 // ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
+// ── STEP 4: Telephony Sync Callback (Inconspicuous Webhook for Vapi logs) ────
 async function handleTelephonySync(req, res) {
   try {
     const { message } = req.body;
@@ -664,9 +665,35 @@ async function handleTelephonySync(req, res) {
       return res.status(200).json({ status: 'ignored' });
     }
 
-    const call = message.call;
-    const rawFrom = call.customer?.number || 'Unknown';
-    const rawTo = call.phoneNumber?.number || 'Unknown';
+    const call = message.call || {};
+    
+    // Robust resolution of caller and virtual number from multiple Vapi payload formats
+    const getToNumber = () => {
+      if (call.phoneNumber) {
+        if (typeof call.phoneNumber === 'string') return call.phoneNumber;
+        if (call.phoneNumber.number) return call.phoneNumber.number;
+      }
+      if (message.phoneNumber) {
+        if (typeof message.phoneNumber === 'string') return message.phoneNumber;
+        if (message.phoneNumber.number) return message.phoneNumber.number;
+      }
+      return 'Unknown';
+    };
+
+    const getFromNumber = () => {
+      if (call.customer) {
+        if (typeof call.customer === 'string') return call.customer;
+        if (call.customer.number) return call.customer.number;
+      }
+      if (message.customer) {
+        if (typeof message.customer === 'string') return message.customer;
+        if (message.customer.number) return message.customer.number;
+      }
+      return 'Unknown';
+    };
+
+    const rawFrom = getFromNumber();
+    const rawTo = getToNumber();
     
     // Normalize phone numbers (remove spaces, dashes, parentheses)
     const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
@@ -685,6 +712,18 @@ async function handleTelephonySync(req, res) {
       const phoneResult = await db.query(
         'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
         [toNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
+    // Try caller number lookup if not resolved (matches user_original_number)
+    if (!businessId && fromNumber && fromNumber !== 'Unknown') {
+      const phoneResult = await db.query(
+        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
+        [fromNumber]
       );
       if (phoneResult.rows.length > 0) {
         businessId = phoneResult.rows[0].business_id;
@@ -746,17 +785,32 @@ async function handleTelephonySync(req, res) {
       await upsertTranscript(dbCallId, businessId, transcriptArray, summary);
 
       // 4. Extract and save structured lead details if present
-      let structuredData = analysisObj.structuredData || {};
+      let structuredData = analysisObj.structuredData || message.structuredOutputs || call.analysis?.structuredData || {};
       
-      // Helper to find key case-insensitively
+      // Helper to find key case-insensitively and handle both direct values and {name, result} objects
       const getField = (obj, key) => {
         if (!obj) return null;
+        
+        // Direct key check
         const lowerKey = key.toLowerCase();
         for (const k of Object.keys(obj)) {
           if (k.toLowerCase() === lowerKey) {
-            return obj[k];
+            const val = obj[k];
+            if (val && typeof val === 'object') {
+              return val.result !== undefined ? val.result : (val.value !== undefined ? val.value : val);
+            }
+            return val;
           }
         }
+        
+        // Iterate values in case the object has UUID keys and {name, result} values
+        for (const k of Object.keys(obj)) {
+          const val = obj[k];
+          if (val && typeof val === 'object' && val.name && val.name.toLowerCase() === lowerKey) {
+            return val.result !== undefined ? val.result : (val.value !== undefined ? val.value : val);
+          }
+        }
+        
         return null;
       };
 
@@ -790,7 +844,26 @@ async function handleTelephonySync(req, res) {
         }
       }
 
-      if (hasLead) {
+      // Special fallback to get name/location/phone/intent from structuredOutputs sibling if not resolved
+      if (!hasLead && message.structuredOutputs) {
+        extractedName = getField(message.structuredOutputs, 'name');
+        extractedIntent = getField(message.structuredOutputs, 'intent');
+        extractedLocation = getField(message.structuredOutputs, 'location');
+        extractedApptTime = getField(message.structuredOutputs, 'appointment_time') || getField(message.structuredOutputs, 'budget');
+        if (extractedName || extractedIntent || extractedLocation || extractedApptTime) {
+          hasLead = true;
+          structuredData = message.structuredOutputs;
+        }
+      }
+
+      // Prevent saving "None" or placeholder string values
+      if (extractedName === 'None' || extractedName === '...') extractedName = null;
+      if (extractedIntent === 'None' || extractedIntent === '...') extractedIntent = null;
+      if (extractedLocation === 'None' || extractedLocation === '...') extractedLocation = null;
+      if (extractedApptTime === 'None' || extractedApptTime === '...') extractedApptTime = null;
+
+      // Only save if we actually have some valid lead information
+      if (hasLead && (extractedName || extractedIntent || extractedLocation || extractedApptTime)) {
         try {
           await db.query(
             `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
@@ -864,22 +937,69 @@ async function handleTelephonySync(req, res) {
 // ── STEP 5: Vapi Tool Call (Save Lead During Call) ────────────────────────────
 async function handleSaveLeadTool(req, res) {
   try {
+    console.log('[SAVE LEAD TOOL] Payload received:', JSON.stringify(req.body, null, 2));
+
     const { message } = req.body;
-    
-    // Check if it's a tool call message from Vapi
-    if (!message || message.type !== 'tool-calls') {
-      // Sometimes Vapi sends tool call arguments directly depending on setup, but typically wraps it in message
-      const toolCalls = req.body.toolCalls || [];
-      if (toolCalls.length === 0) {
-        return res.status(400).json({ error: 'Invalid payload. Expected tool-calls.' });
-      }
+    let toolCalls = [];
+    let call = {};
+
+    // 1. Parse standard Vapi tool-calls wrapped in message
+    if (message && message.type === 'tool-calls') {
+      toolCalls = message.toolCalls || [];
+      call = message.call || {};
+    } 
+    // 2. Parse tool-calls at root level of body
+    else if (req.body.toolCalls) {
+      toolCalls = req.body.toolCalls || [];
+      call = req.body.call || {};
+    }
+    // 3. Parse direct arguments (apiRequest tool format)
+    else if (req.body && (req.body.name || req.body.phone || req.body.intent || req.body.location)) {
+      console.log('[SAVE LEAD TOOL] Parsing direct fields format...');
+      const args = req.body;
+      
+      // Simulate toolCall structure so the rest of the code works as-is
+      toolCalls = [{
+        id: 'direct_api_request',
+        function: {
+          name: 'save_lead',
+          arguments: args
+        }
+      }];
+      call = req.body.call || {};
+    } else {
+      return res.status(400).json({ error: 'Invalid payload. Expected tool-calls or direct lead details.' });
     }
 
-    const payloadMessage = message || req.body || {};
-    const toolCalls = payloadMessage.toolCalls || [];
-    const call = payloadMessage.call || {};
-    const rawFrom = call.customer?.number || 'Unknown';
-    const rawTo = call.phoneNumber?.number || 'Unknown';
+    const getToNumber = () => {
+      if (call.phoneNumber) {
+        if (typeof call.phoneNumber === 'string') return call.phoneNumber;
+        if (call.phoneNumber.number) return call.phoneNumber.number;
+      }
+      if (message && message.phoneNumber) {
+        if (typeof message.phoneNumber === 'string') return message.phoneNumber;
+        if (message.phoneNumber.number) return message.phoneNumber.number;
+      }
+      return 'Unknown';
+    };
+
+    const getFromNumber = () => {
+      if (call.customer) {
+        if (typeof call.customer === 'string') return call.customer;
+        if (call.customer.number) return call.customer.number;
+      }
+      if (message && message.customer) {
+        if (typeof message.customer === 'string') return message.customer;
+        if (message.customer.number) return message.customer.number;
+      }
+      if (req.body && req.body.phone) {
+        return req.body.phone;
+      }
+      return 'Unknown';
+    };
+
+    const rawFrom = getFromNumber();
+    const rawTo = getToNumber();
     const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
     let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
     const callSid = call.id || 'Unknown';
@@ -899,8 +1019,19 @@ async function handleSaveLeadTool(req, res) {
       }
     }
 
+    if (!businessId && fromNumber && fromNumber !== 'Unknown') {
+      const phoneResult = await db.query(
+        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
+        [fromNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
     // Try assistantId lookup if we still don't have businessId
-    const assistantId = call.assistantId;
+    const assistantId = call.assistantId || req.body.assistantId;
     if (!businessId && assistantId) {
       const astResult = await db.query(
         'SELECT business_id FROM assistants WHERE id = $1',
@@ -945,7 +1076,7 @@ async function handleSaveLeadTool(req, res) {
     const results = [];
     for (const toolCall of toolCalls) {
       const functionName = toolCall.function?.name;
-      if (functionName === 'save_lead') {
+      if (functionName === 'save_lead' || functionName === 'api_request_tool') {
         const args = toolCall.function.arguments || {};
         
         // Use case-insensitive helper to extract arguments
@@ -960,11 +1091,16 @@ async function handleSaveLeadTool(req, res) {
           return null;
         };
 
-        const name = getField(args, 'name');
-        const phone = getField(args, 'phone') || fromNumber;
-        const intent = getField(args, 'intent') || 'inquiry';
-        const location = getField(args, 'location');
-        const appointmentTime = getField(args, 'appointment_time') || getField(args, 'budget');
+        let name = getField(args, 'name');
+        let phone = getField(args, 'phone') || fromNumber;
+        let intent = getField(args, 'intent') || 'inquiry';
+        let location = getField(args, 'location');
+        let appointmentTime = getField(args, 'appointment_time') || getField(args, 'budget');
+
+        if (name === 'None' || name === '...') name = null;
+        if (intent === 'None' || intent === '...') intent = null;
+        if (location === 'None' || location === '...') location = null;
+        if (appointmentTime === 'None' || appointmentTime === '...') appointmentTime = null;
 
         // Insert into leads table
         await db.query(
