@@ -63,10 +63,11 @@ async function handleIncomingCall(req, res) {
     let assistant = null;
     let businessId = null;
     let phoneNumberId = null;
+    let phoneResult = null;
 
     try {
-      const phoneResult = await db.query(
-        'SELECT id, business_id, assistant_id FROM phone_numbers WHERE number = $1',
+      phoneResult = await db.query(
+        'SELECT id, business_id, assistant_id, country_code FROM phone_numbers WHERE number = $1',
         [To]
       );
 
