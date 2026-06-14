@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   PhoneCall,
   Clock,
-  CurrencyInr,
+  CurrencyDollar,
   CheckCircle,
   ArrowUpRight,
   Terminal,
@@ -71,10 +71,10 @@ export default function DashboardOverview() {
     },
     {
       name: "Total Cost",
-      value: totalCost > 0 ? `₹${totalCost.toFixed(2)}` : "₹0.00",
+      value: totalCost > 0 ? `$${totalCost.toFixed(2)}` : "$0.00",
       delta: "Compute + telephony",
       positive: true,
-      icon: CurrencyInr,
+      icon: CurrencyDollar,
       unit: "this month",
     },
     {

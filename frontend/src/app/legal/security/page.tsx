@@ -43,7 +43,7 @@ export default function SecurityPolicy() {
 
           <h3 className="font-bold text-heading-sm text-ink mt-4 mb-2">2. Local Sovereign Storage</h3>
           <p>
-            For regulated clients (such as hospitals or local insurance firms), we deploy call databases strictly on dedicated domestic cloud regions in India, guaranteeing compliance with local residency acts.
+            For regulated clients (such as hospitals or local insurance firms), we deploy call databases strictly on dedicated secure cloud regions, guaranteeing compliance with data residency acts.
           </p>
         </div>
       </div>

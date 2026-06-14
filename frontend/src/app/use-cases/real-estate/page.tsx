@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Buildings, Clock, ChartLineUp, Calendar, ArrowRight, CheckCircle, WhatsappLogo } from "@phosphor-icons/react";
+import { Buildings, Clock, ChartLineUp, Calendar, ArrowRight, CheckCircle, ChatText } from "@phosphor-icons/react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -33,8 +33,8 @@ export default function RealEstateUseCase() {
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">From late-night property ads</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">₹8 Lakh/mo Added</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Average estimated agent revenue</span>
+              <span className="text-2xl font-bold font-display text-saffron block">$10,000/mo Added</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Average estimated agent commissions</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">sub-500ms Response</span>
@@ -47,16 +47,16 @@ export default function RealEstateUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Asymmetric Call Splitting</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Property listing inquiries spike during evenings and weekends when sales desks are offline. Bavio acts as the first line of engagement, holding human-like conversations in Hinglish to filter out tire-kickers from high-intent builders.
+                Property listing inquiries spike during evenings and weekends when sales desks are offline. Bavio acts as the first line of engagement, holding human-like conversations in English to filter out tire-kickers from high-intent buyers.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
-                  <WhatsappLogo className="w-5 h-5 text-saffron" />
-                  Instant WhatsApp Follow-up
+                  <ChatText className="w-5 h-5 text-saffron" />
+                  Instant SMS Follow-up
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  As soon as the call ends, Bavio extracts the caller&apos;s preferences and triggers a WhatsApp delivery carrying property PDF brochures and scheduling details.
+                  As soon as the call ends, Bavio extracts the caller&apos;s preferences and triggers an SMS delivery carrying property PDF brochures and scheduling details.
                 </p>
               </div>
 
@@ -84,7 +84,7 @@ export default function RealEstateUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Property PDF brochure delivery</span>
+                  <span>Brochure delivery via SMS</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Root tokens ── */
+:root {
+  --background: #F5F1EA;
+  --foreground: #14141A;
+  --saffron: #FF6B00;
+  --radius-card: 14px;
+  --radius-button: 10px;
+  --radius-pill: 999px;
+  --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Base resets ── */
+html {
+  scroll-behavior: smooth;
+}
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  background-image: repeating-linear-gradient(45deg, #F5F1EA, #F5F1EA 6px, #EFEAE0 6px, #EFEAE0 7px);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Instant tap / click response ── */
+/* Removes 300ms mobile tap delay that causes double-click requirement */
+a, button, [role="button"], input[type="submit"], input[type="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+/* Instant active-state press feedback so users see their click registered */
+a:not(.no-press):active,
+button:not(.no-press):active,
+[role="button"]:not(.no-press):active {
+  opacity: 0.85;
+}
+
+::selection {
+  background: rgba(255, 107, 0, 0.25);
+  color: #14141A;
+}
+
+/* ── Scrollbar styling (light, thin, premium) ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F1EA;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8D2C4;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3A3A4A;
+}
+
+/* ── Glassmorphism utilities ── */
+.bg-glass {
+  background: rgba(245, 241, 234, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.bg-glass-subtle {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ── Premium shadow utilities ── */
+.shadow-premium {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-premium-hover {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-saffron-glow {
+  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.15);
+}
+
+/* ── Double-bezel card architecture (high-end-visual-design 4.A) ── */
+.card-bezel {
+  position: relative;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  border-radius: 18px;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.card-bezel:hover {
+  transform: translateY(-8px);
+}
+
+.card-bezel-inner {
+  background: #FFFFFF;
+  border: 1px solid #E5E0D8;
+  border-radius: calc(18px - 6px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  transition: border-color 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-bezel:hover .card-bezel-inner {
+  border-color: var(--saffron);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 10px 30px rgba(255, 107, 0, 0.08);
+}
+
+/* ── Interactive button utility classes ── */
+.btn-interactive,
+button[type="submit"],
+.card-bezel-inner button,
+a.bg-saffron,
+button.bg-saffron {
+  transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 250ms cubic-bezier(0.32, 0.72, 0, 1), background-color 250ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.btn-interactive:hover,
+button[type="submit"]:hover,
+.card-bezel-inner button:hover,
+a.bg-saffron:hover,
+button.bg-saffron:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.15);
+}
+
+.btn-interactive:active,
+button[type="submit"]:active,
+.card-bezel-inner button:active,
+a.bg-saffron:active,
+button.bg-saffron:active {
+  transform: scale(0.98);
+}
+
+/* ── Noise texture overlay (fixed, never on scrolling containers) ── */
+.noise-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* ── Ambient mesh gradient blobs ── */
+.mesh-blob-saffron {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 107, 0, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+/* ── Reduced motion safety (mandatory per skills) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Focus ring (accessibility, not optional) ── */
+:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Animation delay utilities ── */
+@layer utilities {
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+}
+
+@keyframes widgetGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 107, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 107, 0, 0.6);
+  }
+}
+
+.widget-glow-active {
+  animation: widgetGlow 2.5s infinite ease-in-out;
+  border-color: rgba(255, 107, 0, 0.3) !important;
+}

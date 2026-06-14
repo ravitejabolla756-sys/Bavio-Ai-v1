@@ -29,7 +29,7 @@ const values = [
   { icon: Lightning, name: "Speed", definition: "Fast responses, fast shipping, fast support. Velocity is a value." },
   { icon: ShieldCheck, name: "Reliability", definition: "99.9% uptime is a promise, not a target. We build for zero downtime." },
   { icon: Brain, name: "Intelligence", definition: "Real AI, not scripted IVR with rebranding. Actual language understanding." },
-  { icon: Flag, name: "India-First", definition: "Built for India, scalable globally. Hindi is not an afterthought." },
+  { icon: Flag, name: "Customer-First", definition: "Built with speed and quality, scalable globally." },
 ];
 
 const timeline = [
@@ -84,7 +84,7 @@ const team = [
     name: "Raviteja",
     title: "Co-Founder",
     email: "raviteja@bavio.in",
-    bio: "Built the AI voice infrastructure powering Bavio. Focused on scalable voice automation, conversational AI, and customer communication systems for Indian businesses.",
+    bio: "Built the AI voice infrastructure powering Bavio. Focused on scalable voice automation, conversational AI, and customer communication systems.",
     linkedin: "https://www.linkedin.com/in/bavio-ai-a34bb93ba/",
     initial: "R",
   },
@@ -92,7 +92,7 @@ const team = [
     name: "Praneeth",
     title: "Co-Founder",
     email: "praneeth@bavio.in",
-    bio: "Leads product vision, customer growth, and business strategy. Focused on building India's most accessible AI voice platform for businesses.",
+    bio: "Leads product vision, customer growth, and business strategy. Focused on building the most accessible AI voice platform for businesses.",
     linkedin: "https://www.linkedin.com/in/bavio-ai-a34bb93ba/",
     initial: "P",
   },
@@ -112,7 +112,7 @@ export default function CompanyPage() {
               Building the future of <span className="text-saffron">business communication</span>
             </h1>
             <p className="text-body-lg text-ink-tertiary max-w-xl">
-              India-first, world-class AI voice agents. Making voice automation accessible to every business, from 1-person shops to 1,000-person companies.
+              World-class AI voice agents. Making voice automation accessible to every business, from 1-person shops to 1,000-person companies.
             </p>
           </ScrollReveal>
         </div>
@@ -126,9 +126,9 @@ export default function CompanyPage() {
               <h2 className="font-display text-display-md text-ink mb-6">The problem</h2>
               <div className="flex flex-col gap-4">
                 {[
-                  "60% of Indian business calls go unanswered",
+                  "60% of business calls go unanswered",
                   "Missed calls equal lost leads and lost revenue",
-                  "Hiring receptionists costs Rs 8,000 to 15,000 per month",
+                  "Hiring human receptionists is costly and inefficient",
                   "Legacy IVR systems frustrate callers and drop conversions",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 text-body-md text-ink-tertiary">
@@ -143,9 +143,9 @@ export default function CompanyPage() {
               <h2 className="font-display text-display-md text-saffron mb-6">Our solution</h2>
               <div className="flex flex-col gap-4">
                 {[
-                  "AI that understands Hindi, English, and Hinglish natively",
+                  "AI that understands your customers naturally",
                   "Answers every call and captures every lead automatically",
-                  "Starting at Rs 1,999 per month with 24/7 uptime",
+                  "Starting at $39 per month with 24/7 uptime",
                   "Conversational and intelligent, never scripted or robotic",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 text-body-md text-ink-secondary">

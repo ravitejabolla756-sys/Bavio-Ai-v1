@@ -201,34 +201,6 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
               ))}
             </ol>
 
-            {/* Dial Code copy utility for India */}
-            {resolvedCountry === "IN" && activeInstruction?.code && (
-              <div className="p-5 rounded-2xl bg-[#FF6B00]/5 border border-[#FF6B00]/15 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[#FF6B00] block mb-1">
-                    Quick Activation Dial Code
-                  </span>
-                  <p className="text-body-xs text-[#4A4A57] font-medium">
-                    Dial this code from your operator SIM card to enable forwarding instantly:
-                  </p>
-                  <div className="text-body-sm font-mono font-bold text-[#14141A] mt-2">
-                    {activeInstruction.code}
-                    {cleanNumber}#
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${activeInstruction.code}${cleanNumber}#`);
-                    alert("USSD Dial Code copied!");
-                  }}
-                  className="px-4 py-2 bg-[#FF6B00] text-white hover:bg-[#E05E00] rounded-xl text-body-xs font-bold transition-colors inline-flex items-center gap-1.5 shrink-0 shadow-sm"
-                >
-                  Copy Code
-                </button>
-              </div>
-            )}
-
             {/* Video Tutorial */}
             {activeInstruction?.videoUrl && (
               <div className="mt-8 border border-[#E5E0D8] rounded-[20px] overflow-hidden">

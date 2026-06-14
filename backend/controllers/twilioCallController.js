@@ -66,7 +66,7 @@ async function handleIncomingCall(req, res) {
 
     try {
       phoneResult = await db.query(
-        'SELECT id, business_id, assistant_id, country_code FROM phone_numbers WHERE number = $1',
+        'SELECT id, business_id, assistant_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
         [To]
       );
 
@@ -137,7 +137,7 @@ async function handleIncomingCall(req, res) {
     // ── Create call record (include business_id!) ──────────────────────────
     try {
       const countryCode = phoneResult.rows[0]?.country_code || 'US';
-      const currency = countryCode === 'IN' ? 'INR' : 'USD';
+      const currency = 'USD';
       await db.query(
         `INSERT INTO calls (
           user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
@@ -565,9 +565,9 @@ async function handleCallStatus(req, res) {
     }
 
     // Calculate costs
-    const cost_stt = (mins / 60) * 30;           // Sarvam STT ₹30/hr
-    const cost_tts = (transcript.length * 100 / 10000) * 15;
-    const cost_telephony = mins * 0.71;            // Twilio India ₹0.71/min
+    const cost_stt = (mins / 60) * 0.15;          // Whisper STT $0.15/hr
+    const cost_tts = (transcript.length * 100 / 10000) * 0.005;
+    const cost_telephony = mins * 0.013;           // Twilio US $0.013/min
     const cost_total = cost_stt + cost_tts + cost_telephony;
 
     // Check if business has remaining minutes and calculate overage
@@ -678,16 +678,33 @@ async function handleTelephonySync(req, res) {
     console.log(`[TELEPHONY SYNC] Webhook received: ${fromNumber} → ${toNumber} | Duration: ${duration}s`);
 
     // 1. Resolve business owner details by Twilio number
-    const phoneResult = await db.query(
-      'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1',
-      [toNumber]
-    );
-
     let businessId = null;
     let countryCode = 'US';
-    if (phoneResult.rows.length > 0) {
-      businessId = phoneResult.rows[0].business_id;
-      countryCode = phoneResult.rows[0].country_code || 'US';
+
+    if (toNumber && toNumber !== 'Unknown') {
+      const phoneResult = await db.query(
+        'SELECT id, business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
+        [toNumber]
+      );
+      if (phoneResult.rows.length > 0) {
+        businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
+    // Try assistantId lookup if we still don't have businessId
+    const assistantId = call.assistantId;
+    if (!businessId && assistantId) {
+      const astResult = await db.query(
+        'SELECT business_id FROM assistants WHERE id = $1',
+        [assistantId]
+      );
+      if (astResult.rows.length > 0) {
+        businessId = astResult.rows[0].business_id;
+        // Lookup country from business
+        const bizRes = await db.query('SELECT country_code FROM businesses WHERE id = $1', [businessId]);
+        countryCode = bizRes.rows[0]?.country_code || 'US';
+      }
     }
 
     // Fallback: Use the first business if not found (for Vapi web testing convenience)
@@ -695,11 +712,11 @@ async function handleTelephonySync(req, res) {
       const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
       if (firstBiz.rows.length > 0) {
         businessId = firstBiz.rows[0].id;
-        countryCode = firstBiz.rows[0].country_code || 'IN';
+        countryCode = firstBiz.rows[0].country_code || 'US';
       }
     }
 
-    const currency = countryCode === 'IN' ? 'INR' : 'USD';
+    const currency = 'USD';
 
     // 2. Insert call record
     const insertCallResult = await db.query(
@@ -837,26 +854,50 @@ async function handleSaveLeadTool(req, res) {
     const payloadMessage = message || req.body || {};
     const toolCalls = payloadMessage.toolCalls || [];
     const call = payloadMessage.call || {};
-    const fromNumber = call.customer?.number || 'Unknown';
-    const toNumber = call.phoneNumber?.number || 'Unknown';
+    const rawFrom = call.customer?.number || 'Unknown';
+    const rawTo = call.phoneNumber?.number || 'Unknown';
+    const fromNumber = rawFrom !== 'Unknown' ? '+' + rawFrom.replace(/\D/g, '') : rawFrom;
+    let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
     const callSid = call.id || 'Unknown';
 
     // 1. Resolve business owner details
-    let businessId = req.query.business_id || null;
-    if (!businessId && toNumber) {
+    let businessId = req.query?.business_id || null;
+    let countryCode = 'US';
+
+    if (!businessId && toNumber && toNumber !== 'Unknown') {
       const phoneResult = await db.query(
-        'SELECT business_id FROM phone_numbers WHERE number = $1',
+        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
         [toNumber]
       );
       if (phoneResult.rows.length > 0) {
         businessId = phoneResult.rows[0].business_id;
+        countryCode = phoneResult.rows[0].country_code || 'US';
+      }
+    }
+
+    // Try assistantId lookup if we still don't have businessId
+    const assistantId = call.assistantId;
+    if (!businessId && assistantId) {
+      const astResult = await db.query(
+        'SELECT business_id FROM assistants WHERE id = $1',
+        [assistantId]
+      );
+      if (astResult.rows.length > 0) {
+        businessId = astResult.rows[0].business_id;
       }
     }
 
     // Fallback: Use the first business if not found (for Vapi web testing convenience)
     if (!businessId) {
-      const firstBiz = await db.query('SELECT id FROM businesses LIMIT 1');
+      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
       businessId = firstBiz.rows[0]?.id || null;
+      countryCode = firstBiz.rows[0]?.country_code || 'US';
+    } else {
+      // If we have businessId but didn't resolve countryCode (e.g. from assistantId path), lookup country
+      if (!countryCode) {
+        const bizRes = await db.query('SELECT country_code FROM businesses WHERE id = $1', [businessId]);
+        countryCode = bizRes.rows[0]?.country_code || 'US';
+      }
     }
 
     // 2. Find the db call record if it exists, or create one
@@ -869,9 +910,9 @@ async function handleSaveLeadTool(req, res) {
       const insertCallResult = await db.query(
         `INSERT INTO calls (
           user_id, country_code, call_sid, provider, from_number, virtual_number, status, started_at, created_at
-        ) VALUES ($1, 'IN', $2, 'twilio', $3, $4, 'in-progress', NOW(), NOW())
+        ) VALUES ($1, $2, $3, 'twilio', $4, $5, 'in-progress', NOW(), NOW())
         RETURNING id`,
-        [businessId, callSid, fromNumber, toNumber]
+        [businessId, countryCode, callSid, fromNumber, toNumber]
       );
       dbCallId = insertCallResult.rows[0]?.id;
     }
@@ -933,7 +974,7 @@ async function handleSaveLeadTool(req, res) {
     return res.status(200).json({ results });
 
   } catch (err) {
-    console.error('[SAVE LEAD TOOL] Error:', err.message);
+    console.error('[SAVE LEAD TOOL] Error:', err.stack);
     return res.status(500).json({ error: err.message });
   }
 }

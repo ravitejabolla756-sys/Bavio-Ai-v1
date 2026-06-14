@@ -169,7 +169,7 @@ export default function WorkspaceSettings() {
               <div className="flex flex-col gap-3 font-mono text-[10px] text-ink-secondary">
                 {[
                   ["Primary SIP Target Host", "sip.bavio.in:5060"],
-                  ["India Central Gateway", "in.sip-gateway.bavio.in"],
+                  ["US East Gateway", "us-east.sip-gateway.bavio.in"],
                   ["Signaling Protocol", "UDP / TLS Lock"],
                 ].map(([label, val]) => (
                   <div key={label} className="flex justify-between items-center bg-surface-raised border border-line p-3.5 rounded-xl">
@@ -218,7 +218,7 @@ export default function WorkspaceSettings() {
                           <input
                             type="tel"
                             required
-                            placeholder="+91 80 4010 3802"
+                            placeholder="+1 (555) 000-0000"
                             value={newNumber}
                             onChange={(e) => setNewNumber(e.target.value)}
                             className="bg-canvas border border-line rounded-lg px-3 py-2 text-body-xs focus:outline-none focus:border-saffron text-ink placeholder:text-ink-muted font-mono"
@@ -274,8 +274,8 @@ export default function WorkspaceSettings() {
               </div>
 
               <div className="border-t border-line pt-4 mt-6 flex justify-between items-center text-[10px] font-mono text-ink-muted">
-                <span>Verified IDs protected by DLT laws</span>
-                <span className="text-ink-tertiary font-bold">India Cloud (DLT)</span>
+                <span>Verified IDs</span>
+                <span className="text-ink-tertiary font-bold">Secure Cloud</span>
               </div>
             </div>
           </div>
@@ -285,10 +285,10 @@ export default function WorkspaceSettings() {
             <div className="card-bezel-inner p-6 bg-surface text-left flex flex-col gap-3">
               <div className="flex gap-2 items-center text-xs font-bold text-ink">
                 <ShieldCheck className="w-5 h-5 text-saffron shrink-0" />
-                <span>Sovereign Compliance</span>
+                <span>Compliance Standards</span>
               </div>
               <p className="text-[10px] text-ink-tertiary leading-relaxed">
-                Bavio is fully aligned with the India DPDP Act and DLT telecom requirements. All client data channels use 256-bit TLS encryption pipelines.
+                Bavio is fully aligned with industry security standards. All client data channels use 256-bit TLS encryption pipelines.
               </p>
             </div>
           </div>

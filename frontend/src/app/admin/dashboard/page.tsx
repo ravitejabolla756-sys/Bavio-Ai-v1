@@ -647,8 +647,8 @@ export default function AdminDashboard() {
         />
         <KPICard
           label="Monthly Revenue"
-          value={`₹${metrics.mrr_inr.toLocaleString()}`}
-          secondary={`≈ $${metrics.mrr_usd.toLocaleString()} USD`}
+          value={`$${metrics.mrr_usd.toLocaleString()}`}
+          secondary="Monthly Recurring Revenue"
           change={metrics.mrr_growth_rate}
           icon={CurrencyCircleDollar}
           index={1}

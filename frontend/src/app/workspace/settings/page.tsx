@@ -94,8 +94,8 @@ function WorkspaceSettingsContent() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Developer");
   const [teamMembers, setTeamMembers] = useState([
-    { email: "rohan@sunstarrealty.com", name: "Rohan Sharma", role: "Owner", status: "Active" },
-    { email: "priya@sunstarrealty.com", name: "Priya Nair", role: "Admin", status: "Active" }
+    { email: "robert@sunstarrealty.com", name: "Robert Smith", role: "Owner", status: "Active" },
+    { email: "sarah@sunstarrealty.com", name: "Sarah Jenkins", role: "Admin", status: "Active" }
   ]);
   const [inviting, setInviting] = useState(false);
 

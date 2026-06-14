@@ -20,7 +20,6 @@ import {
 import Logo from "@/components/Logo";
 import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
-import CountrySelector from "@/components/onboarding/CountrySelector";
 import { useCountry } from "@/context/CountryContext";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
@@ -297,13 +296,7 @@ export default function SignUpPage() {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   
-                  {/* Country Selector */}
-                  <div>
-                    <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Country Code
-                    </label>
-                    <CountrySelector />
-                  </div>
+
 
                   {/* Work Email Address */}
                   <div>

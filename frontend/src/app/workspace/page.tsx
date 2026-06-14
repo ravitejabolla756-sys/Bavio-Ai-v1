@@ -56,7 +56,7 @@ export default function WorkspaceHome() {
   // Quick activity stream
   const [activities, setActivities] = useState([
     { id: 1, text: "Knowledge base document 'services_guide.pdf' parsed successfully", time: "15 mins ago", type: "kb" },
-    { id: 2, text: "SIP gateway routing test call from +91 80808 10001 completed", time: "2 hours ago", type: "call" },
+    { id: 2, text: "SIP gateway routing test call from +1 (512) 555-0100 completed", time: "2 hours ago", type: "call" },
     { id: 3, text: "Free trial activated automatically upon onboarding", time: "1 day ago", type: "system" },
   ]);
 
@@ -413,8 +413,8 @@ export default function WorkspaceHome() {
                   <span className="text-ink font-bold">{profile.name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-ink-muted font-bold">Industry Vertical</span>
-                  <span className="text-ink bg-saffron/5 border border-saffron/10 px-2.5 py-0.5 rounded text-[10px] uppercase font-bold">{profile.country === "IN" ? "India operations" : "International"}</span>
+                  <span className="text-[10px] text-ink-muted font-bold">Workspace Region</span>
+                  <span className="text-ink bg-saffron/5 border border-saffron/10 px-2.5 py-0.5 rounded text-[10px] uppercase font-bold">US East</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-ink-muted font-bold">Contact Phone</span>
@@ -465,7 +465,7 @@ export default function WorkspaceHome() {
                 </div>
                 <div className="text-right">
                   <span className="text-base font-bold font-mono text-saffron">
-                    {profile.plan_name === "starter" ? "₹1,499" : profile.plan_name === "growth" ? "₹3,999" : "Free"}
+                    {profile.plan_name === "starter" ? "$39" : profile.plan_name === "growth" ? "$79" : "Free"}
                   </span>
                   <span className="text-[9px] text-ink-muted font-bold block">
                     {profile.plan_name === "free_trial" ? "14 days evaluation" : "/month"}

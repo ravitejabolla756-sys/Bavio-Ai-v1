@@ -8,12 +8,11 @@ export interface PricingTierData {
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  IN: { currency: "₹", starter: 2599, growth: 5199, scale: 10399, overageRate: "₹5.20 - ₹10.40/min", mostPopularBadge: "Most popular in India" },
-  US: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular in USA" },
-  CA: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular in Canada" },
-  GB: { currency: "£", starter: 29, growth: 59, scale: 99, overageRate: "£0.08/min", mostPopularBadge: "Most popular in UK" },
-  AU: { currency: "AUD ", starter: 49, growth: 99, scale: 199, overageRate: "AUD 0.12/min", mostPopularBadge: "Most popular in Australia" },
-  AE: { currency: "AED ", starter: 149, growth: 299, scale: 499, overageRate: "AED 0.40/min", mostPopularBadge: "Most popular in UAE" },
+  US: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
+  CA: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
+  GB: { currency: "£", starter: 29, growth: 59, scale: 99, overageRate: "£0.08/min", mostPopularBadge: "Most popular" },
+  AU: { currency: "AUD ", starter: 49, growth: 99, scale: 199, overageRate: "AUD 0.12/min", mostPopularBadge: "Most popular" },
+  AE: { currency: "AED ", starter: 149, growth: 299, scale: 499, overageRate: "AED 0.40/min", mostPopularBadge: "Most popular" },
   DEFAULT: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
 };
 
@@ -42,7 +41,7 @@ export const PLANS: PlanDetails[] = [
       { text: "Basic analytics", included: true },
       { text: "Integrations", included: false },
       { text: "Webhook API", included: false },
-      { text: "WhatsApp routing", included: false },
+      { text: "SMS/Slack routing", included: false },
     ],
     popular: false,
   },
@@ -57,7 +56,7 @@ export const PLANS: PlanDetails[] = [
       { text: "Full analytics + exports", included: true },
       { text: "20+ integrations", included: true },
       { text: "Webhook API", included: true },
-      { text: "SMS/WhatsApp routing", included: true },
+      { text: "SMS/Slack routing", included: true },
     ],
     popular: true,
   },
@@ -91,13 +90,13 @@ export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
   { feature: "Analytics", starter: "Basic", growth: "Full + Export", scale: "Full + Custom" },
   { feature: "Integrations", starter: "None", growth: "20+", scale: "50+ Custom" },
   { feature: "Webhook API", starter: "No", growth: "Yes", scale: "Yes" },
-  { feature: "WhatsApp/SMS routing", starter: "No", growth: "Yes", scale: "Yes" },
+  { feature: "SMS/Slack routing", starter: "No", growth: "Yes", scale: "Yes" },
   { feature: "White-label", starter: "No", growth: "No", scale: "Yes" },
   { 
     feature: "Overage rate", 
-    starter: overageRate.includes("₹") ? "₹10.40/min" : overageRate, 
-    growth: overageRate.includes("₹") ? "₹8.60/min" : overageRate, 
-    scale: overageRate.includes("₹") ? "₹5.20/min" : overageRate 
+    starter: overageRate, 
+    growth: overageRate, 
+    scale: overageRate 
   },
 ];
 

@@ -7,7 +7,6 @@ import { PRICING_BY_COUNTRY, PLANS, getComparisonRows, FAQS } from "@/config/pri
 import { useCTADestination } from "@/lib/auth-utils";
 import { CheckCircle, Minus, CaretDown, Buildings, Headset, ArrowRight } from "@phosphor-icons/react";
 import ScrollReveal from "@/components/motion/ScrollReveal";
-import CountrySelector from "@/components/onboarding/CountrySelector";
 
 // 3. CurrencyConverter utility (for display only)
 export const CurrencyConverter = {
@@ -18,7 +17,7 @@ export const CurrencyConverter = {
     }).format(amount);
     const symbol = currencySymbol.trim();
     // Add space for multi-character currency codes like AUD / AED
-    const needsSpace = symbol.length > 1 && !symbol.includes("$") && !symbol.includes("₹") && !symbol.includes("£");
+    const needsSpace = symbol.length > 1 && !symbol.includes("$") && !symbol.includes("€") && !symbol.includes("£");
     return `${symbol}${needsSpace ? " " : ""}${formatted}`;
   },
 };
@@ -178,18 +177,10 @@ export function PricingGrid() {
               Answer every call instantly. Scale plans built to fit your business requirements.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 flex-wrap bg-surface border border-line rounded-[24px] p-4 lg:p-6 shadow-sm max-w-xl">
-              {/* Country override */}
-              <div className="w-56 text-left">
-                <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5 pl-1">
-                  Billing Country
-                </label>
-                <CountrySelector />
-              </div>
-
+            <div className="flex items-center justify-center bg-surface border border-line rounded-[24px] p-4 lg:p-6 shadow-sm max-w-xs mx-auto">
               {/* Billing Period Toggle */}
-              <div className="flex flex-col text-left">
-                <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5 pl-1">
+              <div className="flex flex-col text-center">
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
                   Billing Cycle
                 </label>
                 <div className="flex items-center gap-1 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl p-1">

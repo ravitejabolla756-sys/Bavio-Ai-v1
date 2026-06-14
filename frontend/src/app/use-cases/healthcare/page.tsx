@@ -47,7 +47,7 @@ export default function HealthcareUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Frictionless Patient Intake</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Hospitals and clinic OPD desks face massive call spikes in morning hours. Patients frequently get busy tones or wait in queues, leading to missed appointments. Bavio AI takes call streams concurrently, booking slots in Hindi, English, and Hinglish.
+                Hospitals and clinic OPD desks face massive call spikes in morning hours. Patients frequently get busy tones or wait in queues, leading to missed appointments. Bavio AI takes call streams concurrently, booking slots in real-time.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
@@ -66,7 +66,7 @@ export default function HealthcareUseCase() {
                   Medical Privacy Compliance
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  We isolate client transcripts on a tenant-by-tenant basis. Audio recordings are automatically purged after processing, and personal health details are stored on local sovereign servers in India.
+                  We isolate client transcripts on a tenant-by-tenant basis. Audio recordings are automatically purged after processing, and personal health details are stored securely with industry-standard encryption.
                 </p>
               </div>
             </div>
@@ -84,7 +84,7 @@ export default function HealthcareUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Follow-up WhatsApp booking links</span>
+                  <span>Follow-up SMS booking links</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

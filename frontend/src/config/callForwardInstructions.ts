@@ -14,68 +14,6 @@ export interface CountryInstructions {
 }
 
 export const CALL_FORWARD_INSTRUCTIONS: Record<string, CountryInstructions> = {
-  IN: {
-    Airtel: {
-      name: "Airtel",
-      code: "*567*",
-      steps: [
-        "Open your phone's dialer application.",
-        "Dial the generated USSD code: {ussdCode}.",
-        "Press the Call button on the SIM card corresponding to your Airtel business number.",
-        "Wait for the on-screen confirmation popup (e.g., 'Call Forwarding Registration Successful').",
-        "Test by calling your Airtel business number from another phone to ensure Bavio answers."
-      ],
-      videoUrl: "dQw4w9WgXcQ", // Placeholder video ID
-      portalUrl: "https://www.airtel.in",
-      portalLabel: "Visit Airtel Help Desk",
-      estimatedTimeMinutes: 2
-    },
-    Jio: {
-      name: "Reliance Jio",
-      code: "*571*",
-      steps: [
-        "Open your phone's dialer application.",
-        "Dial the generated Jio call forwarding code: {ussdCode}.",
-        "Press the Call button on your Jio SIM card.",
-        "You will hear a recorded announcement saying call forwarding activation was successful, or receive a toast popup.",
-        "Restart your device if call forwarding doesn't immediately activate, then verify by dialing your Jio number."
-      ],
-      videoUrl: "dQw4w9WgXcQ",
-      portalUrl: "https://www.jio.com",
-      portalLabel: "Jio Support Portal",
-      estimatedTimeMinutes: 2
-    },
-    Vodafone: {
-      name: "Vi (Vodafone Idea)",
-      code: "*67*",
-      steps: [
-        "Open the mobile phone dialer.",
-        "Dial the Vi forwarding USSD command string: {ussdCode}.",
-        "Tap the Call button.",
-        "Wait for your network provider connection status to return a success code.",
-        "Test the line to confirm calls are successfully redirected."
-      ],
-      videoUrl: "dQw4w9WgXcQ",
-      portalUrl: "https://www.myvi.in",
-      portalLabel: "Vi Help & Support",
-      estimatedTimeMinutes: 2
-    },
-    BSNL: {
-      name: "BSNL",
-      code: "*21*",
-      steps: [
-        "Open the phone dialer interface.",
-        "Dial the standard BSNL forwarding command: {ussdCode}.",
-        "Press the Call icon and await the network response popup.",
-        "If you encounter a connection error, try again or use the conditional forwarding command: *61*{virtualNumber}#.",
-        "Perform a validation test call."
-      ],
-      videoUrl: "dQw4w9WgXcQ",
-      portalUrl: "https://www.bsnl.co.in",
-      portalLabel: "BSNL Customer Care",
-      estimatedTimeMinutes: 3
-    }
-  },
   US: {
     Carrier: {
       name: "US Carrier Portal (AT&T, Verizon, T-Mobile)",

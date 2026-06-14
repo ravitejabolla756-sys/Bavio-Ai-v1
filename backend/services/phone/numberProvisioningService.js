@@ -8,21 +8,17 @@
 const { supabase } = require('../../database/db');
 
 // ── normalizePhoneNumber ──────────────────────────────────────────────
-// Input: any Indian number format
-// Output: +91XXXXXXXXXX or null if invalid
+// Input: US or international format
+// Output: normalized phone number or null if invalid
 function normalizePhoneNumber(phone) {
   if (!phone) return null;
   let cleaned = String(phone).replace(/[\s\-\(\)\.]/g, '');
-  if (cleaned.startsWith('+91') && cleaned.length === 13) return cleaned;
-  if (cleaned.startsWith('91') && cleaned.length === 12) return '+' + cleaned;
-  if (cleaned.startsWith('0') && cleaned.length === 11) {
-    cleaned = cleaned.slice(1);
+  if (cleaned.startsWith('+1') && cleaned.length === 12) return cleaned;
+  if (cleaned.startsWith('1') && cleaned.length === 11) return '+' + cleaned;
+  if (cleaned.length === 10 && /^[2-9]\d{9}$/.test(cleaned)) {
+    return '+1' + cleaned;
   }
-  if (cleaned.length === 10 && /^[6-9]\d{9}$/.test(cleaned)) {
-    return '+91' + cleaned;
-  }
-  // Handle international (US/UK)
-  if (cleaned.startsWith('+1') || cleaned.startsWith('+44')) return cleaned;
+  if (cleaned.startsWith('+')) return cleaned;
   return null;
 }
 
@@ -41,14 +37,13 @@ function buildForwardingResult(bavioNumber, originalNumber, assignmentId) {
     },
     recommendedCode: `*67*${numberClean}#`,
     carrierInstructions: {
-      airtel: `Dial *67*${numberClean}# and press call`,
-      jio: `Dial *67*${numberClean}# and press call`,
-      vi: `Dial *67*${numberClean}# and press call`,
-      bsnl: `Dial *67*${numberClean}# and press call`
+      verizon: `Dial *71${numberClean} and press call`,
+      att: `Dial **67*${numberClean}# and press call`,
+      tmobile: `Dial **67*${numberClean}# and press call`
     },
     testInstructions:
       `Call ${originalNumber} from another phone. ` +
-      `Let it ring 20 seconds. Bavio AI should answer in Hindi.`,
+      `Let it ring 20 seconds. Bavio AI should answer in English.`,
     status: 'pending'
   };
 }
@@ -58,7 +53,7 @@ async function assignForwardingNumber(businessId, userOriginalNumber) {
   const normalizedNumber = normalizePhoneNumber(userOriginalNumber);
   if (!normalizedNumber) {
     throw new Error(
-      'Invalid phone number. Use format: 9876543210 or +91 9876543210'
+      'Invalid phone number. Use format: 5125550199 or +1 512 555 0199'
     );
   }
 

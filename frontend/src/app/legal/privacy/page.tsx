@@ -25,13 +25,13 @@ export default function PrivacyPolicy() {
           </p>
           <ul className="list-disc pl-5 flex flex-col gap-2 text-ink-tertiary">
             <li>Call audio streams and temporary recording files.</li>
-            <li>Real-time voice transcripts (Hindi, English, and Hinglish).</li>
+            <li>Real-time voice transcripts.</li>
             <li>Structured contact card information (Names, intent, phone numbers, budgets).</li>
           </ul>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">2. Processing Consent</h3>
           <p>
-            Our clients are solely responsible for acquiring valid processing consents from end callers where required by local regulations (such as GDPR or India DPDP guidelines).
+            Our clients are solely responsible for acquiring valid processing consents from end callers where required by local regulations (such as GDPR or data privacy guidelines).
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">3. Data Security & Storage</h3>

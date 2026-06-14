@@ -35,7 +35,7 @@ export default function CallForwardPage() {
       {/* Main Content Area */}
       <main className="flex-1 relative z-10">
         <CallForwardSetup
-          virtualNumber="+91 80802 74248" // Sample virtual number from the India tests
+          virtualNumber="+1 (555) 302-7424" // Sample virtual number from tests
           onComplete={handleComplete}
           onSupportClick={handleSupportClick}
         />

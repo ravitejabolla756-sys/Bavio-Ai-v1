@@ -348,7 +348,7 @@ async function getPaymentHistory(req, res) {
                 id: p.id,
                 dodoPaymentId: p.dodo_payment_id,
                 amount: parseFloat(p.amount) || 0,
-                currency: p.currency || 'INR',
+                currency: p.currency || 'USD',
                 status: p.status,
                 planName: p.plan_name,
                 invoiceNumber: p.invoice_number,
@@ -449,7 +449,7 @@ async function getInvoice(req, res) {
                 name: 'Bavio AI',
                 email: 'billing@bavio.in',
                 website: 'https://bavio.in',
-                address: 'India'
+                address: 'USA'
             }
         };
 
@@ -680,10 +680,10 @@ async function autoProvisionBusiness(clientId) {
         
         let purchasedNumber = null;
         let purchasedSid = null;
-        const isIndia = business.country && business.country.toUpperCase() === 'IN';
+        const isIndia = false; // Forced false for US localization
 
         if (isIndia) {
-            console.log(`[AUTO-PROVISION] Indian user detected. Provisioning pooled Exotel number.`);
+            console.log(`[AUTO-PROVISION] India bypass path. Bypassed.`);
             const numberProvisioningService = require('../services/phone/numberProvisioningService');
             const provisionResult = await numberProvisioningService.assignPhoneNumber(
                 clientId, 
@@ -894,7 +894,7 @@ async function createRazorpayOrder(req, res) {
             success: true,
             id: orderId,
             amount: amount,
-            currency: 'INR',
+            currency: 'USD',
             receipt: 'receipt_' + Date.now()
         });
     } catch (err) {
@@ -977,7 +977,7 @@ async function verifyRazorpayPayment(req, res) {
                 'razorpay_cust_' + clientId,
                 clientId,
                 amount || 0,
-                'INR',
+                'USD',
                 'succeeded',
                 planName || 'topup',
                 invoiceNum,

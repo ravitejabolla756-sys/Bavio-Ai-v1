@@ -84,7 +84,7 @@ export default function IntegrationsPage() {
   ]);
   
   // WhatsApp State
-  const [waPhone, setWaPhone] = useState("+91 98765 43210");
+  const [waPhone, setWaPhone] = useState("+1 (512) 555-0199");
   const [waBusinessId, setWaBusinessId] = useState("meta_biz_9a1c2b3e4f");
   const [waProfileName, setWaProfileName] = useState("Sunstar Real Estate Portal");
 
@@ -275,7 +275,7 @@ export default function IntegrationsPage() {
     } else if (id === "google-calendar") {
       setGcalEmail("ops@sunstarrealty.com");
     } else if (id === "whatsapp") {
-      setWaPhone("+91 98765 43210");
+      setWaPhone("+1 (512) 555-0199");
       setWaBusinessId("meta_biz_9a1c2b3e4f");
       setWaProfileName("Sunstar Real Estate Portal");
     } else if (id === "hubspot") {
@@ -770,7 +770,7 @@ export default function IntegrationsPage() {
                               value={waPhone}
                               onChange={(e) => setWaPhone(e.target.value)}
                               className="bg-surface-raised border border-line rounded-lg px-3 py-2.5 outline-none focus:border-saffron text-xs"
-                              placeholder="+91 98765 43210"
+                              placeholder="+1 (512) 555-0199"
                               required
                             />
                           </div>
@@ -883,7 +883,6 @@ export default function IntegrationsPage() {
                             >
                               <option value="US">US (zoho.com)</option>
                               <option value="EU">Europe (zoho.eu)</option>
-                              <option value="IN">India (zoho.in)</option>
                               <option value="AU">Australia (zoho.com.au)</option>
                             </select>
                           </div>

@@ -45,11 +45,11 @@ import { useRouter } from "next/navigation";
 ───────────────────────────────────────────────── */
 
 const speechLines = [
-  { text: "Namaste! This is Bavio, your AI voice agent.", time: 2 },
-  { text: "I see you are inquiring about 3BHK flats in Gachibowli.", time: 5 },
-  { text: "Your preferred budget is noted as 1.6 to 1.8 crores.", time: 8 },
-  { text: "I have scheduled a site visit for Saturday at 3 PM.", time: 11 },
-  { text: "Details have been sent to your WhatsApp. Thank you!", time: 14 },
+  { text: "Hello! This is Bavio, your AI receptionist.", time: 2 },
+  { text: "I see you are inquiring about the property on Ocean Drive.", time: 5 },
+  { text: "Your preferred budget is noted as 1.2 to 1.5 million.", time: 8 },
+  { text: "I have scheduled a viewing for Saturday at 3 PM.", time: 11 },
+  { text: "Details have been sent via SMS. Thank you!", time: 14 },
 ];
 
 const capabilities = [
@@ -57,7 +57,7 @@ const capabilities = [
     icon: Lightning,
     title: "Real-Time Voice Processing",
     description:
-      "Sub-500ms latency. Hindi, English, and Hinglish natively. Natural conversational flow on any phone.",
+      "Sub-500ms latency. Natural voice pacing natively. Fluent conversational flow on any phone.",
     features: "4 core features",
   },
   {
@@ -71,7 +71,7 @@ const capabilities = [
     icon: GitFork,
     title: "Workflow Automation",
     description:
-      "If-then-else call routing, calendar integration, WhatsApp alerts, and custom webhook actions.",
+      "If-then-else call routing, calendar integration, SMS alerts, and custom webhook actions.",
     features: "Unlimited logic paths",
   },
   {
@@ -85,8 +85,8 @@ const capabilities = [
     icon: Translate,
     title: "Multilingual Support",
     description:
-      "Hindi native, English fluent, Hinglish code-switching. 10+ Indian languages on the roadmap.",
-    features: "3 languages live",
+      "Natural voice pacing, sub-500ms response latency, and high-accuracy speech-to-text.",
+    features: "Sub-500ms response",
   },
 ];
 
@@ -98,9 +98,9 @@ const availableIntegrations = [
     category: "Telephony"
   },
   {
-    id: "whatsapp",
-    name: "WhatsApp Business",
-    desc: "Enable real-time lead notifications and proactive customer messaging.",
+    id: "slack",
+    name: "Slack Notifications",
+    desc: "Enable real-time lead notifications and proactive customer alerts in your channels.",
     category: "Messaging"
   },
   {
@@ -146,11 +146,11 @@ const comingSoonIntegrations = [
 const plans = [
   {
     name: "Starter",
-    price: "1,999",
+    price: "39",
     period: "/month",
     description: "For small businesses starting with voice automation.",
     features: [
-      { text: "200 minutes/month", included: true },
+      { text: "1,000 minutes/month", included: true },
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
@@ -161,27 +161,27 @@ const plans = [
   },
   {
     name: "Growth",
-    price: "3,999",
+    price: "79",
     period: "/month",
     description: "For growing teams that need full-stack voice AI.",
     features: [
-      { text: "500 minutes/month", included: true },
+      { text: "3,000 minutes/month", included: true },
       { text: "Unlimited agents", included: true },
       { text: "24/7 phone support", included: true },
       { text: "Full analytics + exports", included: true },
       { text: "20+ integrations", included: true },
       { text: "Webhook API", included: true },
-      { text: "SMS/WhatsApp routing", included: true },
+      { text: "SMS/Email routing", included: true },
     ],
     popular: true,
   },
   {
     name: "Scale",
-    price: "7,999",
+    price: "149",
     period: "/month",
     description: "For enterprises that demand reliability and scale.",
     features: [
-      { text: "1,500 minutes/month", included: true },
+      { text: "10,000 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
       { text: "Dedicated account manager", included: true },
       { text: "Custom integrations", included: true },
@@ -260,7 +260,7 @@ export default function HomePage() {
 
   /* ── ROI Calculator state ── */
   const [callsPerDay, setCallsPerDay] = useState(50);
-  const [avgDealValue, setAvgDealValue] = useState(100000);
+  const [avgDealValue, setAvgDealValue] = useState(150000);
   const [missRate, setMissRate] = useState(40);
 
   const roiCalculation = useMemo(() => {
@@ -322,9 +322,9 @@ export default function HomePage() {
   const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -40]);
 
   const formatCurrency = (n: number) => {
-    if (n >= 10000000) return `${(n / 10000000).toFixed(1)}Cr`;
-    if (n >= 100000) return `${(n / 100000).toFixed(1)}L`;
-    return n.toLocaleString("en-IN");
+    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
+    return `$${n.toLocaleString("en-US")}`;
   };
 
   return (
@@ -357,14 +357,14 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-body-lg text-ink-tertiary max-w-lg mb-10 leading-relaxed">
-                  AI receptionist that answers calls, qualifies leads, books appointments, and updates your CRM automatically. Built for Indian businesses.
+                  AI receptionist that answers calls, qualifies leads, books appointments, and updates your CRM automatically. Built for modern businesses.
                 </p>
 
                 {/* Trust badges */}
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 mb-10 text-body-xs text-ink-muted font-semibold">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    Hindi, English & Hinglish
+                    Natural Voice Answering
                   </span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
@@ -372,7 +372,7 @@ export default function HomePage() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    CRM & WhatsApp Ready
+                    CRM & SMS Ready
                   </span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
@@ -438,21 +438,21 @@ export default function HomePage() {
                         <div className="w-full bg-surface-raised border border-line rounded-xl p-4 text-left flex flex-col gap-3 font-sans mt-2">
                           <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
                             <span className="text-ink-muted">Lead Name:</span>
-                            <span className="font-semibold text-ink">Priya Sharma</span>
+                            <span className="font-semibold text-ink">Sarah Jenkins</span>
                           </div>
                           <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
                             <span className="text-ink-muted">Intent:</span>
-                            <span className="font-semibold text-ink text-right">Property Inquiry (3BHK Gachibowli)</span>
+                            <span className="font-semibold text-ink text-right">Property Inquiry (Ocean Drive)</span>
                           </div>
                           <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
                             <span className="text-ink-muted">Budget:</span>
-                            <span className="font-semibold text-ink">Rs 1.6 - 1.8 Crores</span>
+                            <span className="font-semibold text-ink">$1.2 - 1.5 Million</span>
                           </div>
                           <div className="flex justify-between text-body-xs">
                             <span className="text-ink-muted">Next Action:</span>
                             <span className="font-semibold text-state-success flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-state-success animate-pulse" />
-                              WhatsApp Details Sent
+                              SMS Details Sent
                             </span>
                           </div>
                         </div>
@@ -490,7 +490,7 @@ export default function HomePage() {
                               </h3>
                               <p className="text-body-xs text-ink-muted font-mono">
                                 {callStatus === "connected"
-                                  ? "Active call (Hinglish)"
+                                  ? "Active call (English)"
                                   : callStatus === "dialing"
                                   ? "Establishing SIP trunk..."
                                   : "Ready for outbound"}
@@ -550,7 +550,7 @@ export default function HomePage() {
                             <input
                               type="tel"
                               required
-                              placeholder="+91 98765 43210"
+                              placeholder="+1 (555) 000-0000"
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value)}
                               disabled={callStatus !== "idle"}
@@ -602,8 +602,8 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
-                title: "Hindi + English + Hinglish",
-                desc: "Natural multilingual conversations built for India.",
+                title: "Natural Voice Conversations",
+                desc: "Clean voice synthesis with natural accents and low latency.",
                 icon: Translate,
               },
               {
@@ -658,8 +658,8 @@ export default function HomePage() {
               Watch how Bavio handles a real business call
             </h2>
             <p className="text-body-md text-ink-tertiary max-w-lg mx-auto">
-              From incoming call to qualified lead in under 60 seconds. Hindi,
-              English, and Hinglish support out of the box.
+              From incoming call to qualified lead in under 60 seconds. English
+              and Spanish support out of the box.
             </p>
           </ScrollReveal>
 
@@ -689,7 +689,7 @@ export default function HomePage() {
                     </span>
                     <span className="flex items-center gap-1.5 bg-surface-raised border border-line px-3 py-1.5 rounded-full">
                       <Translate className="w-3 h-3 text-saffron" weight="fill" />
-                      Hinglish native
+                      Multilingual ready
                     </span>
                     <span className="flex items-center gap-1.5 bg-surface-raised border border-line px-3 py-1.5 rounded-full">
                       <Brain className="w-3 h-3 text-saffron" weight="fill" />
@@ -1088,13 +1088,13 @@ export default function HomePage() {
                       Average deal value
                     </span>
                     <span className="font-mono text-ink font-medium">
-                      Rs {avgDealValue.toLocaleString("en-IN")}
+                      ${avgDealValue.toLocaleString("en-US")}
                     </span>
                   </div>
                   <input
                     type="range"
                     min={10000}
-                    max={5000000}
+                    max={2000000}
                     step={10000}
                     value={avgDealValue}
                     onChange={(e) => setAvgDealValue(Number(e.target.value))}
@@ -1134,7 +1134,7 @@ export default function HomePage() {
                         Monthly loss
                       </span>
                       <span className="font-display text-display-md text-state-error">
-                        Rs {formatCurrency(roiCalculation.monthlyLost)}
+                        {formatCurrency(roiCalculation.monthlyLost)}
                       </span>
                       <span className="text-body-xs text-ink-muted mt-1">
                         Revenue lost to missed calls
@@ -1146,7 +1146,7 @@ export default function HomePage() {
                         Bavio cost
                       </span>
                       <span className="font-display text-display-md text-saffron">
-                        Rs {roiCalculation.bavioCost.toLocaleString("en-IN")}
+                        ${roiCalculation.bavioCost.toLocaleString("en-US")}
                       </span>
                       <span className="text-body-xs text-ink-muted mt-1">
                         Per month, all inclusive
@@ -1158,7 +1158,7 @@ export default function HomePage() {
                         Annual savings
                       </span>
                       <span className="font-display text-display-md text-state-success">
-                        Rs {formatCurrency(roiCalculation.annualSavings)}
+                        {formatCurrency(roiCalculation.annualSavings)}
                       </span>
                       <span className="text-body-xs text-ink-muted mt-1">
                         Projected yearly recovery
@@ -1366,7 +1366,7 @@ export default function HomePage() {
 
                     <div className="flex items-baseline gap-1 mb-6">
                       <span className="font-display text-display-md text-saffron">
-                        Rs {plan.price}
+                        ${plan.price}
                       </span>
                       <span className="text-body-sm text-ink-muted">
                         {plan.period}

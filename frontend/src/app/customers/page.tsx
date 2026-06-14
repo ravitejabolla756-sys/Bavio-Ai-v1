@@ -13,47 +13,47 @@ export default function Customers() {
     {
       company: "Sunstar Properties",
       industry: "Real Estate",
-      city: "Hyderabad",
+      city: "Miami, FL",
       icon: Buildings,
       quote: "We're capturing 3x more leads now. Buyer intent and budget are logged directly, and missed calls dropped by 95% within days.",
-      author: "Priya Sharma, Principal Agent",
+      author: "Sarah Jenkins, Principal Agent",
       stats: [
         { label: "Answered rate", val: "95%" },
         { label: "Leads captured/mo", val: "500+" },
-        { label: "Revenue impact/mo", val: "₹8 Lakh" }
+        { label: "Revenue impact/mo", val: "$10,000" }
       ],
-      story: "Sunstar Properties handles premium residential listings. With agents frequently out on site visits, nearly 60% of incoming buyer inquiries went unanswered. Since deploying Bavio's Hinglish voice agent, every call gets resolved instantly. Caller locations, budgets, and ready-to-move-in parameters are parsed and dispatched on WhatsApp.",
-      setup: ["1 AI Agent (Hinglish)", "Google Calendar Sync", "HubSpot CRM", "WhatsApp Webhook Alerts"]
+      story: "Sunstar Properties handles premium residential listings. With agents frequently out on site visits, nearly 60% of incoming buyer inquiries went unanswered. Since deploying Bavio's AI receptionist, every call gets resolved instantly. Caller locations, budgets, and ready-to-move-in parameters are parsed and dispatched on Slack & CRM.",
+      setup: ["1 AI Agent", "Google Calendar Sync", "HubSpot CRM", "SMS/Email Alerts"]
     },
     {
       company: "Care Clinic",
       industry: "Healthcare",
-      city: "Bangalore",
+      city: "Seattle, WA",
       icon: Heartbeat,
-      quote: "Patient booking is completely frictionless. Patients book slots comfortably in Hindi or English, and our reception desk can focus on patients in the room.",
-      author: "Dr. Amit Kumar, Chief Surgeon",
+      quote: "Patient booking is completely frictionless. Patients book slots comfortably in real-time, and our reception desk can focus on patients in the room.",
+      author: "Dr. Robert Chen, Chief Surgeon",
       stats: [
         { label: "Missed calls drop", val: "-98%" },
         { label: "Appt captured/mo", val: "840+" },
-        { label: "FTE savings/mo", val: "₹45,000" }
+        { label: "FTE savings/mo", val: "$6,000" }
       ],
-      story: "Care Clinic was experiencing heavy call volumes during peak morning OPD hours, leading to patient frustration and lost appointments. Bavio was trained on clinic schedules and indexed doctor availability rules. Now it schedules appointments, answers FAQ about consultation fees, and updates doctors' calendars instantly.",
-      setup: ["2 AI Agents (Hindi & English)", "Custom Booking Database", "HIPAA Compliant Data Logs", "Email Alerts"]
+      story: "Care Clinic was experiencing heavy call volumes during peak morning hours, leading to patient frustration and lost appointments. Bavio was trained on clinic schedules and indexed doctor availability rules. Now it schedules appointments, answers FAQ about consultation fees, and updates doctors' calendars instantly.",
+      setup: ["2 AI Agents", "Custom Booking Database", "HIPAA Compliant Data Logs", "Email Alerts"]
     },
     {
       company: "Peak Academy",
       industry: "EdTech & Coaching",
-      city: "Mumbai",
+      city: "Austin, TX",
       icon: GraduationCap,
       quote: "Course inquiries that used to drop off at night are qualified on the spot. We push booking links and follow up with a SMS before they drop off.",
-      author: "Rohan Mehta, CEO",
+      author: "Marcus Vance, CEO",
       stats: [
         { label: "Enrolled from leads", val: "2,000+" },
         { label: "SLA response time", val: "sub-500ms" },
         { label: "Sales growth", val: "+22%" }
       ],
       story: "Peak Academy receives high volumes of course enquiries from social ads, often late at night when admissions staff are unavailable. Bavio qualifies intent, answers questions about batch timings, fees, syllabus details, and automatically logs details into Zoho CRM, sending SMS confirmations.",
-      setup: ["Multiple Agents (Hinglish)", "Zoho CRM Sync", "WhatsApp SMS Integrations", "Custom Analytics Dashboard"]
+      setup: ["Multiple Agents", "Zoho CRM Sync", "SMS Integrations", "Custom Analytics Dashboard"]
     }
   ];
 
@@ -88,8 +88,8 @@ export default function Customers() {
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Never miss a call or lead</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Multilingual AI</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Hindi, English & Hinglish</span>
+              <span className="text-2xl font-bold font-display text-saffron block">AI Receptionist</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Natural & Responsive</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">CRM Synced</span>

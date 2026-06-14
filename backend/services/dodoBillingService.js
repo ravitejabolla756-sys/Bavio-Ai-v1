@@ -23,7 +23,7 @@ const OVERAGE_RATES = {
     scale: 5.20
 };
 
-// Base costs in INR (paisa-free, display values)
+// Base costs in USD (paisa-free, display values)
 const BASE_COSTS = {
     free: 0,
     starter: 2599,
@@ -231,9 +231,6 @@ function getPlanMinutes(plan) {
 
 function getPlanCost(plan, country) {
     const normalizedPlan = plan.toLowerCase();
-    if (country && country.toUpperCase() === 'IN') {
-        return { amount: BASE_COSTS[normalizedPlan] || 0, currency: 'INR' };
-    }
     return { amount: BASE_COSTS_USD[normalizedPlan] || 0, currency: 'USD' };
 }
 
