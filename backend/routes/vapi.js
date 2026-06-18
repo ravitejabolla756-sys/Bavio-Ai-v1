@@ -17,41 +17,56 @@ router.post('/webhook', async (req, res) => {
     return res.status(200).json({ ignored: true });
   }
 
-  // ── Extract payload fields safely ────────────────────────────────────────
-  const { message = {}, analysis = {}, customer = {}, call = {} } = req.body;
+  // ── Extract payload fields from inside message ────────────────────────────
+  // Vapi nests all end-of-call data inside req.body.message, not at root level
+  const message    = req.body.message    || {};
+  const analysis   = message.analysis   || {};
+  const structured = analysis.structuredData || {};
 
-  const structured   = analysis?.structuredData || {};
-  const callerNumber = customer?.number         || null;
-  const vapiCallId   = call?.id                 || null;
-  const duration     = call?.durationSeconds    || 0;
-  const summary      = analysis?.summary        || null;
+  // call object — contains id, durationSeconds, customer
+  const call = message.call || {};
 
-  const name     = structured?.name     || null;
-  const budget   = structured?.budget   || null;
-  const location = structured?.location || null;
-  const intent   = structured?.intent   || null;
+  // customer.number — check message.customer first, then call.customer
+  const customer     = message.customer || call.customer || {};
+  const callerNumber = customer.number  || null;
+
+  const vapiCallId = call.id                               || null;
+  const duration   = call.durationSeconds                  || 0;
+  const summary    = analysis.summary || message.summary   || null;
+
+  const name     = structured.name     || null;
+  const budget   = structured.budget   || null;
+  const location = structured.location || null;
+  const intent   = structured.intent   || null;
+
+  console.log('[VAPI] Parsed → caller:', callerNumber, '| callId:', vapiCallId, '| duration:', duration);
+  console.log('[VAPI] Lead data → name:', name, '| intent:', intent, '| budget:', budget, '| location:', location);
 
   // ── Temporary business_id for testing ───────────────────────────────────
   // TODO: replace with real lookup once assistant-to-business mapping is live
   const TEST_BUSINESS_ID = process.env.VAPI_TEST_BUSINESS_ID || null;
+
+  // ── Build calls insert — only include business_id when set ──────────────
+  // Omitting it when null avoids Supabase schema cache errors on nullable FK columns
+  const callPayload = {
+    provider_call_id: vapiCallId,
+    caller_number:    callerNumber || 'unknown',
+    duration:         duration,
+    duration_seconds: duration,
+    status:           'completed',
+    call_status:      'completed',
+    provider:         'vapi',
+    direction:        'inbound',
+    transcript:       message.transcript ? [{ text: message.transcript }] : []
+  };
+  if (TEST_BUSINESS_ID) callPayload.business_id = TEST_BUSINESS_ID;
 
   // ── 1. Insert into calls ─────────────────────────────────────────────────
   let callRowId = null;
   try {
     const { data: callRow, error: callError } = await supabase
       .from('calls')
-      .insert({
-        business_id:      TEST_BUSINESS_ID,
-        provider_call_id: vapiCallId,
-        caller_number:    callerNumber,
-        duration:         duration,
-        duration_seconds: duration,
-        status:           'completed',
-        call_status:      'completed',
-        provider:         'vapi',
-        direction:        'inbound',
-        transcript:       message?.transcript ? message.transcript : []
-      })
+      .insert(callPayload)
       .select('id')
       .single();
 
@@ -65,22 +80,25 @@ router.post('/webhook', async (req, res) => {
     console.error('[VAPI] calls insert exception:', err.message);
   }
 
+  // ── Build leads insert — phone is NOT NULL, use fallback ────────────────
+  const leadPayload = {
+    call_id:       callRowId,
+    phone:         callerNumber || 'unknown',   // NOT NULL constraint
+    caller_number: callerNumber || 'unknown',
+    name:          name,
+    intent:        intent,
+    budget:        budget,
+    location:      location,
+    summary:       summary,
+    status:        'new'
+  };
+  if (TEST_BUSINESS_ID) leadPayload.business_id = TEST_BUSINESS_ID;
+
   // ── 2. Insert into leads ─────────────────────────────────────────────────
   try {
     const { data: leadRow, error: leadError } = await supabase
       .from('leads')
-      .insert({
-        business_id: TEST_BUSINESS_ID,
-        call_id:     callRowId,
-        phone:       callerNumber,
-        caller_number: callerNumber,
-        name:        name,
-        intent:      intent,
-        budget:      budget,
-        location:    location,
-        summary:     summary,
-        status:      'new'
-      })
+      .insert(leadPayload)
       .select('id')
       .single();
 
