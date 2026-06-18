@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Phone,
   Pause,
-  WaveformSlash,
   Lightning,
   Brain,
   GitFork,
@@ -30,120 +29,106 @@ import {
   UserCircleGear,
   CloudCheck,
   Database,
+  CaretDown,
+  Play,
 } from "@phosphor-icons/react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import MagneticButton from "@/components/motion/MagneticButton";
 import ScrollReveal from "@/components/motion/ScrollReveal";
 import VoiceWaveform from "@/components/motion/VoiceWaveform";
-import CountUp from "@/components/motion/CountUp";
 import { useCTADestination, getCookie } from "@/lib/auth-utils";
 import { useRouter } from "next/navigation";
 
 /* ─────────────────────────────────────────────────
    DATA
-───────────────────────────────────────────────── */
+   ───────────────────────────────────────────────── */
 
 const speechLines = [
-  { text: "Hello! This is Bavio, your AI receptionist.", time: 2 },
-  { text: "I see you are inquiring about the property on Ocean Drive.", time: 5 },
-  { text: "Your preferred budget is noted as 1.2 to 1.5 million.", time: 8 },
-  { text: "I have scheduled a viewing for Saturday at 3 PM.", time: 11 },
-  { text: "Details have been sent via SMS. Thank you!", time: 14 },
-];
-
-const capabilities = [
-  {
-    icon: Lightning,
-    title: "Real-Time Voice Processing",
-    description:
-      "Sub-500ms latency. Natural voice pacing natively. Fluent conversational flow on any phone.",
-    features: "4 core features",
-  },
-  {
-    icon: Brain,
-    title: "Intelligent Lead Capture",
-    description:
-      "Auto-extracts name, intent, budget, and sentiment. CRM-ready data format from every call.",
-    features: "6 extraction fields",
-  },
-  {
-    icon: GitFork,
-    title: "Workflow Automation",
-    description:
-      "If-then-else call routing, calendar integration, SMS alerts, and custom webhook actions.",
-    features: "Unlimited logic paths",
-  },
-  {
-    icon: Plug,
-    title: "Launch Integrations",
-    description:
-      "Connect Twilio, WhatsApp, Google Calendar, HubSpot, Zoho CRM, and Webhooks directly at launch.",
-    features: "6 live tools",
-  },
-  {
-    icon: Translate,
-    title: "Multilingual Support",
-    description:
-      "Natural voice pacing, sub-500ms response latency, and high-accuracy speech-to-text.",
-    features: "Sub-500ms response",
-  },
+  { text: "Namaste! Sharma Properties mein aapka swagat hai. Main aapki kya madad kar sakta hoon?", time: 2 },
+  { text: "Hi, mujhe Whitefield mein 3BHK flats dekhne hain immediate purchase ke liye.", time: 5 },
+  { text: "Bilkul! Humne aapki request note kar li hai, kya main aapka naam jaan sakti hoon?", time: 8 },
+  { text: "Haan, mera naam Rahul Sharma hai, contact yahi number hai.", time: 11 },
+  { text: "Dhanyawad Rahul ji! Hamare executive aapse WhatsApp par connect karenge.", time: 14 },
 ];
 
 const availableIntegrations = [
   {
     id: "twilio",
-    name: "Twilio",
-    desc: "Handle phone numbers, inbound/outbound calling, and SIP routing trunks.",
-    category: "Telephony"
+    name: "Twilio Telephony",
+    desc: "Handle phone numbers, inbound/outbound calling, and SIP trunks.",
+    category: "Telephony",
+    slug: "twilio",
   },
   {
-    id: "slack",
-    name: "Slack Notifications",
-    desc: "Enable real-time lead notifications and proactive customer alerts in your channels.",
-    category: "Messaging"
+    id: "whatsapp",
+    name: "WhatsApp Notifications",
+    desc: "Send instant lead capture alerts and notifications directly to your chat.",
+    category: "Messaging",
+    slug: "whatsapp",
   },
   {
     id: "google-calendar",
     name: "Google Calendar",
     desc: "Allow AI agents to book, cancel, or reschedule appointments dynamically.",
-    category: "Calendar"
+    category: "Calendar",
+    slug: "googlecalendar",
   },
   {
     id: "hubspot",
-    name: "HubSpot",
+    name: "HubSpot CRM",
     desc: "Sync caller telemetry, lead details, and structured profiles instantly.",
-    category: "CRM"
+    category: "CRM",
+    slug: "hubspot",
   },
   {
     id: "zoho",
     name: "Zoho CRM",
     desc: "Update Zoho lead pipelines and contact cards directly from call logs.",
-    category: "CRM"
+    category: "CRM",
+    slug: "zoho",
   },
   {
     id: "webhooks",
-    name: "Webhooks",
+    name: "Developer Webhooks",
     desc: "Dispatch custom JSON payloads to external systems and APIs after calls.",
-    category: "Developer"
-  }
+    category: "Developer",
+    slug: "json",
+  },
 ];
 
 const comingSoonIntegrations = [
-  { id: "salesforce", name: "Salesforce", category: "CRM" },
-  { id: "slack", name: "Slack", category: "Messaging" },
-  { id: "google-sheets", name: "Google Sheets", category: "Developer" },
-  { id: "zapier", name: "Zapier", category: "Developer" },
-  { id: "make", name: "Make", category: "Developer" },
-  { id: "calendly", name: "Calendly", category: "Calendar" },
-  { id: "stripe", name: "Stripe", category: "Payments" },
-  { id: "microsoft-dynamics", name: "Microsoft Dynamics", category: "CRM" },
-  { id: "freshsales", name: "Freshsales", category: "CRM" },
-  { id: "pipedrive", name: "Pipedrive", category: "CRM" }
+  { id: "salesforce", name: "Salesforce", category: "CRM", slug: "salesforce" },
+  { id: "slack", name: "Slack", category: "Messaging", slug: "slack" },
+  { id: "google-sheets", name: "Google Sheets", category: "Developer", slug: "googlesheets" },
+  { id: "zapier", name: "Zapier", category: "Developer", slug: "zapier" },
+  { id: "make", name: "Make.com", category: "Developer", slug: "make" },
 ];
 
+const testimonials = [
+  {
+    quote: "Missed calls cost us lakhs. Now Bavio answers every query instantly. It paid for itself in the very first week.",
+    name: "Priyanshu Singh",
+    title: "Founder",
+    company: "PropHeights Real Estate",
+    icon: Buildings,
+  },
+  {
+    quote: "Appointment scheduling is automated. Patient inquiries dropped by 95%. Our front-desk is finally free to focus.",
+    name: "Dr. Ananya Sen",
+    title: "Chief Administrator",
+    company: "Apollo Dental Clinic",
+    icon: FirstAid,
+  },
+  {
+    quote: "Ad admissions enquiries that used to go cold now get instant replies. Enrollment conversion jumped 40%.",
+    name: "Vikram Seth",
+    title: "Operations Director",
+    company: "EdTech Academy",
+    icon: GraduationCap,
+  },
+];
 
-const plans = [
+const pricingPlans = [
   {
     name: "Starter",
     price: "39",
@@ -154,7 +139,7 @@ const plans = [
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
-      { text: "Integrations", included: false },
+      { text: "CRM integrations", included: false },
       { text: "Webhook API", included: false },
     ],
     popular: false,
@@ -171,7 +156,6 @@ const plans = [
       { text: "Full analytics + exports", included: true },
       { text: "20+ integrations", included: true },
       { text: "Webhook API", included: true },
-      { text: "SMS/Email routing", included: true },
     ],
     popular: true,
   },
@@ -183,22 +167,18 @@ const plans = [
     features: [
       { text: "10,000 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
-      { text: "Dedicated account manager", included: true },
+      { text: "Dedicated manager", included: true },
       { text: "Custom integrations", included: true },
       { text: "SLA guarantee", included: true },
       { text: "Priority support", included: true },
-      { text: "White-label options", included: true },
     ],
     popular: false,
   },
 ];
 
-
-
 /* ─────────────────────────────────────────────────
-   HOMEPAGE
-───────────────────────────────────────────────── */
-
+   HOMEPAGE COMPONENT
+   ───────────────────────────────────────────────── */
 export default function HomePage() {
   const ctaDestination = useCTADestination();
   const router = useRouter();
@@ -207,7 +187,7 @@ export default function HomePage() {
     const isAuthenticated = getCookie("bavio_auth") === "true";
     const isOnboardingComplete = getCookie("bavio_onboarding_completed") === "true";
     const targetUrl = `/dashboard/integrations?connect=${id}`;
-    
+
     if (!isAuthenticated) {
       router.push(`/signup?redirect=${encodeURIComponent(targetUrl)}`);
     } else if (!isOnboardingComplete) {
@@ -217,6 +197,7 @@ export default function HomePage() {
       router.push(targetUrl);
     }
   };
+
   /* ── Hero call demo state ── */
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -236,7 +217,7 @@ export default function HomePage() {
           if (match) setActiveSpeech(match.text);
           if (next >= 16) {
             setCallStatus("ended");
-            setActiveSpeech("Call demo completed successfully.");
+            setActiveSpeech("Call completed successfully.");
             return 0;
           }
           return next;
@@ -277,15 +258,9 @@ export default function HomePage() {
   const [missRate, setMissRate] = useState(40);
 
   const roiCalculation = useMemo(() => {
-    // Step 1: Monthly Call Volume
     const monthlyCallsTotal = callsPerDay * 30;
-
-    // Step 2: Missed Calls (Current Situation)
     const missedCalls = monthlyCallsTotal * (missRate / 100);
 
-    // Step 3: Potential Deals Lost (Without Bavio)
-    // Using default Real Estate preset values as general default:
-    // callToMeetingRate = 30%, meetingToDealRate = 20%, captureRate = 80%
     const callToMeetingRate = 30;
     const meetingToDealRate = 20;
     const captureRate = 80;
@@ -296,25 +271,21 @@ export default function HomePage() {
 
     const monthlyLost = potentialDeals * avgDealValue;
 
-    // Step 4: Bavio Monthly Cost based on minutes used
     const recoveredMissedCalls = missedCalls * (captureRate / 100);
     const totalMinutes = recoveredMissedCalls * 6; // 6 mins average call duration
 
-    let bavioCost = 1999; // Starter
+    let bavioCost = 39; // Starter
     if (totalMinutes > 200 && totalMinutes <= 500) {
-      bavioCost = 3999; // Growth
+      bavioCost = 79; // Growth
     } else if (totalMinutes > 500) {
-      bavioCost = 7999; // Scale
+      bavioCost = 149; // Scale
     }
 
-    // Step 5: Revenue Recovered (With Bavio)
     const recoveredDeals = recoveredMissedCalls 
       * (callToMeetingRate / 100) 
       * (meetingToDealRate / 100);
 
     const monthlyRevenueWithBavio = recoveredDeals * avgDealValue;
-
-    // Step 6: Net Monthly Profit & Annual Savings
     const monthlyNetGain = monthlyRevenueWithBavio - bavioCost;
     const annualSavings = monthlyNetGain * 12;
 
@@ -340,8 +311,21 @@ export default function HomePage() {
     return `$${n.toLocaleString("en-US")}`;
   };
 
+  const dealLabels = [
+    { value: 10000, label: "$10K Avg Deal" },
+    { value: 50000, label: "$50K Avg Deal" },
+    { value: 150000, label: "$150K Avg Deal" },
+    { value: 500000, label: "$500K Avg Deal" },
+    { value: 1000000, label: "$1M Avg Deal" },
+  ];
+
+  const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
+  const toggleFaq = (index: number) => {
+    setFaqOpen((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   return (
-    <div className="relative bg-canvas text-ink min-h-[100dvh] flex flex-col">
+    <div className="relative bg-zinc-950 text-white min-h-[100dvh] flex flex-col noise-overlay">
       <Navbar />
 
       {/* Ambient mesh blobs */}
@@ -349,79 +333,59 @@ export default function HomePage() {
       <div className="mesh-blob-saffron w-[500px] h-[500px] top-[40%] -right-[12%] fixed" />
 
       {/* ────────────────────────────────────────
-          SECTION 1: HERO
+          SECTION 1: HERO (Asymmetric split layout)
       ──────────────────────────────────────── */}
       <section
         ref={heroRef}
-        className="relative min-h-[100dvh] flex flex-col justify-center pt-32 pb-20 lg:pb-32 overflow-hidden"
+        className="relative min-h-[92dvh] flex flex-col justify-center pt-32 pb-20 overflow-hidden bg-grid"
       >
+        <div className="absolute inset-0 bg-glow-saffron pointer-events-none" />
+
         <motion.div
           style={{ opacity: heroOpacity, y: heroY }}
-          className="max-w-container mx-auto px-6 lg:px-8 w-full"
+          className="max-w-container mx-auto px-6 lg:px-8 w-full relative z-10"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            {/* Left copy */}
-            <div className="lg:col-span-7">
-              <ScrollReveal duration={0.6} className="flex flex-col items-start">
-                <h1 className="font-display text-display-xl lg:text-[4rem] xl:text-[4.5rem] tracking-tight text-ink max-w-xl mb-6 leading-[1.06] mt-4">
-                  Never Miss Another
-                  <br />
-                  <span className="text-saffron">Business Call</span>
-                </h1>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left copy block */}
+            <div className="lg:col-span-7 flex flex-col items-start text-left">
+              <div className="badge mb-6 flex items-center gap-1.5">
+                <CheckCircle size={14} className="text-saffron" weight="fill" />
+                <span>Autonomous voice agent pipeline</span>
+              </div>
 
-                <p className="text-body-lg text-ink-tertiary max-w-lg mb-10 leading-relaxed">
-                  AI receptionist that answers calls, qualifies leads, books appointments, and updates your CRM automatically. Built for modern businesses.
-                </p>
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-[54px] tracking-tight text-white mb-6 font-extrabold max-w-[620px] leading-[1.05]">
+                Answer Every Business Call Instantly
+              </h1>
 
-                {/* Trust badges */}
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 mb-10 text-body-xs text-ink-muted font-semibold">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    Natural Voice Answering
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    24/7 Call Answering
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    CRM & SMS Ready
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-state-success" weight="fill" />
-                    No Hardware Required
-                  </span>
-                </div>
+              <p className="text-base md:text-lg text-zinc-400 mb-8 max-w-[550px] leading-relaxed">
+                Deploy human-like voice receptionists that qualify leads, schedule calendar bookings, and sync with your CRM 24/7.
+              </p>
 
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                  <Link
-                    href={ctaDestination}
-                    className="inline-flex items-center justify-center gap-2.5 bg-saffron hover:bg-saffron-hover text-white text-body-md font-semibold px-7 py-3.5 rounded-button shadow-saffron hover:shadow-saffron-lg hover:scale-[0.96] active:scale-[0.92] transition-all duration-150 ease-out"
-                  >
-                    Start Free Trial
-                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                      <ArrowRight className="w-3.5 h-3.5" weight="bold" />
-                    </span>
-                  </Link>
-                  <Link
-                    href="#live-demo"
-                    className="inline-flex items-center justify-center gap-2 border border-line hover:border-ink-muted text-ink-tertiary hover:text-ink text-body-md font-medium px-7 py-3.5 rounded-button transition-all duration-300 ease-premium"
-                  >
-                    Watch Live Demo
-                    <CaretRight className="w-4 h-4" weight="bold" />
-                  </Link>
-                </div>
-              </ScrollReveal>
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+                <Link
+                  href={ctaDestination}
+                  className="inline-flex items-center justify-center gap-2.5 bg-saffron hover:bg-saffron-hover text-white text-body-sm font-semibold px-8 py-3.5 rounded-lg shadow-saffron transition-all duration-200 active:scale-[0.98] btn-interactive"
+                >
+                  Start Free Trial
+                  <ArrowRight className="w-4 h-4" weight="bold" />
+                </Link>
+                <a
+                  href="#live-demo"
+                  className="inline-flex items-center justify-center gap-2 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 text-zinc-300 hover:text-white text-body-sm font-semibold px-8 py-3.5 rounded-lg transition-all duration-200"
+                >
+                  Watch Live Demo
+                  <CaretRight className="w-4 h-4" weight="bold" />
+                </a>
+              </div>
             </div>
 
-            {/* Right: Voice simulator widget */}
+            {/* Right: Interactive Call Simulator */}
             <div className="lg:col-span-5 w-full flex justify-center lg:justify-end">
               <div className={`w-full max-w-md card-bezel transition-all duration-500 ${callStatus === "dialing" || callStatus === "connected" ? "widget-glow-active" : ""}`}>
-                <div className="card-bezel-inner p-6 flex flex-col gap-5">
+                <div className="card-bezel-inner p-6 flex flex-col gap-5 bg-zinc-900/80 border border-zinc-800">
                   <AnimatePresence mode="wait">
                     {callStatus === "ended" ? (
-                      /* Success state after call ends */
                       <motion.div
                         key="success-state"
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -430,83 +394,70 @@ export default function HomePage() {
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         className="flex flex-col items-center text-center gap-4 py-2"
                       >
-                        <motion.div 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
-                          className="w-16 h-16 rounded-full bg-state-success/10 flex items-center justify-center text-state-success"
-                        >
-                          <CheckCircle className="w-10 h-10" weight="fill" />
-                        </motion.div>
+                        <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                          <CheckCircle className="w-9 h-9" weight="fill" />
+                        </div>
                         <div>
-                          <h3 className="text-heading-md font-bold text-ink">
-                            Lead Captured!
-                          </h3>
-                          <p className="text-body-sm text-ink-tertiary">
-                            Bavio automatically captured lead telemetry.
-                          </p>
+                          <h3 className="text-base font-bold text-white">Lead Captured</h3>
+                          <p className="text-xs text-zinc-400 mt-1">Bavio automatically parsed conversation metrics.</p>
                         </div>
 
-                        {/* Structured Lead Data */}
-                        <div className="w-full bg-surface-raised border border-line rounded-xl p-4 text-left flex flex-col gap-3 font-sans mt-2">
-                          <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
-                            <span className="text-ink-muted">Lead Name:</span>
-                            <span className="font-semibold text-ink">Sarah Jenkins</span>
+                        {/* Structured Lead Data WITHOUT Budget */}
+                        <div className="w-full bg-zinc-950/80 border border-zinc-800/60 rounded-xl p-4 text-left flex flex-col gap-3 font-mono text-[11px] mt-2">
+                          <div className="flex justify-between border-b border-zinc-800/40 pb-2">
+                            <span className="text-zinc-500">Caller:</span>
+                            <span className="font-semibold text-white font-sans">Rahul Sharma</span>
                           </div>
-                          <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
-                            <span className="text-ink-muted">Intent:</span>
-                            <span className="font-semibold text-ink text-right">Property Inquiry (Ocean Drive)</span>
+                          <div className="flex justify-between border-b border-zinc-800/40 pb-2">
+                            <span className="text-zinc-500">Location:</span>
+                            <span className="font-semibold text-white font-sans">Whitefield, Blr</span>
                           </div>
-                          <div className="flex justify-between border-b border-line-subtle pb-2 text-body-xs">
-                            <span className="text-ink-muted">Budget:</span>
-                            <span className="font-semibold text-ink">$1.2 - 1.5 Million</span>
+                          <div className="flex justify-between border-b border-zinc-800/40 pb-2">
+                            <span className="text-zinc-500">Intent:</span>
+                            <span className="font-semibold text-emerald-400 font-sans">3BHK Flat Buy (High)</span>
                           </div>
-                          <div className="flex justify-between text-body-xs">
-                            <span className="text-ink-muted">Next Action:</span>
-                            <span className="font-semibold text-state-success flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-state-success animate-pulse" />
-                              SMS Details Sent
+                          <div className="flex justify-between">
+                            <span className="text-zinc-500">Status:</span>
+                            <span className="font-semibold text-emerald-500 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              WhatsApp Alert Sent
                             </span>
                           </div>
                         </div>
 
-                        {/* Reset CTA */}
                         <button
                           type="button"
                           onClick={() => {
                             setCallStatus("idle");
                             setPhoneNumber("");
                           }}
-                          className="mt-2 w-full bg-saffron hover:bg-saffron-hover text-white text-body-sm font-bold uppercase tracking-wider py-3.5 rounded-button transition-all duration-200 active:scale-[0.95] btn-interactive"
+                          className="mt-2 w-full bg-saffron hover:bg-saffron-hover text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-lg transition-all duration-200"
                         >
                           Reset Simulator
                         </button>
                       </motion.div>
                     ) : (
-                      /* Regular dialing/connected/idle state */
                       <motion.div
                         key="call-state"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex flex-col gap-5"
+                        className="flex flex-col gap-5 text-left"
                       >
-                        {/* Widget header */}
-                        <div className="flex items-center justify-between pb-4 border-b border-line">
+                        {/* Status bar */}
+                        <div className="flex items-center justify-between pb-4 border-b border-zinc-800/60">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-saffron-muted border border-saffron-border flex items-center justify-center">
+                            <div className="w-9 h-9 rounded-xl bg-saffron/10 border border-saffron/20 flex items-center justify-center">
                               <Waveform className="w-4 h-4 text-saffron" weight="bold" />
                             </div>
                             <div>
-                              <h3 className="text-body-sm font-semibold text-ink">
-                                Line Status
-                              </h3>
-                              <p className="text-body-xs text-ink-muted font-mono">
+                              <h3 className="text-xs font-bold text-white">Line Status</h3>
+                              <p className="text-[10px] text-zinc-400 font-mono">
                                 {callStatus === "connected"
-                                  ? "Active call (English)"
+                                  ? "Active voice trunk"
                                   : callStatus === "dialing"
-                                  ? "Establishing SIP trunk..."
-                                  : "Ready for outbound"}
+                                  ? "Establishing line routing..."
+                                  : "Trunk standby"}
                               </p>
                             </div>
                           </div>
@@ -515,22 +466,16 @@ export default function HomePage() {
                               {callStatus === "connected" && (
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-saffron opacity-75" />
                               )}
-                              <span
-                                className={`relative inline-flex rounded-full h-2 w-2 ${
-                                  callStatus === "connected"
-                                    ? "bg-saffron"
-                                    : "bg-ink-muted"
-                                }`}
-                              />
+                              <span className={`relative inline-flex rounded-full h-2 w-2 ${callStatus === "connected" ? "bg-saffron" : "bg-zinc-600"}`} />
                             </span>
-                            <span className="text-label uppercase tracking-widest text-ink-muted">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                               {callStatus === "connected" ? "Live" : "Idle"}
                             </span>
                           </div>
                         </div>
 
-                        {/* Waveform */}
-                        <div className="bg-surface-raised border border-line rounded-2xl py-6 flex flex-col items-center justify-center min-h-[140px] relative">
+                        {/* Speech wave panel */}
+                        <div className="bg-zinc-950/80 border border-zinc-800/60 rounded-xl py-6 flex flex-col items-center justify-center min-h-[140px] relative">
                           <VoiceWaveform isPlaying={callStatus === "connected"} />
                           <AnimatePresence mode="wait">
                             {activeSpeech && (
@@ -539,11 +484,7 @@ export default function HomePage() {
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -6 }}
-                                transition={{
-                                  duration: 0.35,
-                                  ease: [0.32, 0.72, 0, 1],
-                                }}
-                                className="text-body-xs text-ink-tertiary font-medium max-w-xs text-center px-4 mt-3 leading-relaxed"
+                                className="text-xs text-zinc-300 font-medium max-w-[280px] text-center px-4 mt-4 leading-relaxed"
                               >
                                 {activeSpeech}
                               </motion.p>
@@ -551,13 +492,10 @@ export default function HomePage() {
                           </AnimatePresence>
                         </div>
 
-                        {/* Call form */}
-                        <form
-                          onSubmit={handleStartCall}
-                          className="flex flex-col gap-3"
-                        >
-                          <label className="text-label uppercase tracking-widest text-ink-muted">
-                            Dial destination
+                        {/* Dial interface */}
+                        <form onSubmit={handleStartCall} className="flex flex-col gap-3">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                            Simulate US/UK Call
                           </label>
                           <div className="flex gap-2">
                             <input
@@ -567,13 +505,13 @@ export default function HomePage() {
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value)}
                               disabled={callStatus !== "idle"}
-                              className="flex-1 bg-surface-raised border border-line rounded-button px-4 py-3 text-body-sm text-ink placeholder:text-ink-muted font-mono focus:outline-none focus:border-saffron focus:ring-2 focus:ring-saffron/10 transition-all duration-200"
+                              className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-xs text-white placeholder:text-zinc-500 font-mono focus:outline-none focus:border-saffron"
                             />
                             {callStatus === "idle" ? (
                               <button
                                 type="submit"
-                                className="bg-saffron hover:bg-saffron-hover text-white p-3 rounded-button transition-all duration-200 active:scale-[0.95]"
-                                aria-label="Start demo call"
+                                className="bg-saffron hover:bg-saffron-hover text-white p-3.5 rounded-lg transition-all duration-200 active:scale-[0.95]"
+                                aria-label="Start demo"
                               >
                                 <Phone className="w-4 h-4" weight="fill" />
                               </button>
@@ -581,25 +519,19 @@ export default function HomePage() {
                               <button
                                 type="button"
                                 onClick={() => setCallStatus("idle")}
-                                className="bg-state-error hover:bg-red-500 text-white p-3 rounded-button transition-all duration-200"
-                                aria-label="End call"
+                                className="bg-red-500 hover:bg-red-600 text-white p-3.5 rounded-lg transition-all duration-200"
+                                aria-label="End demo"
                               >
                                 <Pause className="w-4 h-4" weight="fill" />
                               </button>
                             )}
                           </div>
                           {phoneError && (
-                            <p className="text-state-error text-body-xs font-medium px-1">
-                              {phoneError}
-                            </p>
+                            <p className="text-red-400 text-[10px] font-semibold px-1">{phoneError}</p>
                           )}
-
-                          <div className="flex justify-between items-center text-body-xs text-ink-faint font-mono pt-1 border-t border-line-faint">
-                            <span>Trunk delay: 350ms</span>
-                            <span>
-                              Session: 00:
-                              {demoTimer < 10 ? `0${demoTimer}` : demoTimer}
-                            </span>
+                          <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono pt-1 border-t border-zinc-800/40">
+                            <span>Latency: sub-500ms</span>
+                            <span>Duration: 00:{demoTimer < 10 ? `0${demoTimer}` : demoTimer}</span>
                           </div>
                         </form>
                       </motion.div>
@@ -612,249 +544,218 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* ────────────────────────────────────────
-          SECTION 2: CREDIBILITY FEATURES
-      ──────────────────────────────────────── */}
-      <section className="relative border-y border-line-subtle bg-surface/50 py-16">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Natural Voice Conversations",
-                desc: "Clean voice synthesis with natural accents and low latency.",
-                icon: Translate,
-              },
-              {
-                title: "24/7 Call Answering",
-                desc: "Never miss a lead outside business hours.",
-                icon: Clock,
-              },
-              {
-                title: "Instant Lead Capture",
-                desc: "Capture caller details, intent, and inquiries automatically.",
-                icon: Brain,
-              },
-              {
-                title: "CRM & WhatsApp Ready",
-                desc: "Sync leads directly into your existing workflow.",
-                icon: Plug,
-              },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <ScrollReveal
-                  key={item.title}
-                  delay={i * 0.15}
-                  className="flex flex-col p-6 bg-glass border border-line rounded-2xl shadow-sm hover:scale-[1.01] hover:border-saffron/20 transition-all duration-300"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-saffron-muted border border-saffron-border flex items-center justify-center mb-4">
-                    <Icon className="w-5 h-5 text-saffron" weight="duotone" />
-                  </div>
-                  <h3 className="text-body-sm font-bold text-ink mb-1.5">
-                    {item.title}
-                  </h3>
-                  <p className="text-body-xs text-ink-tertiary leading-relaxed">
-                    {item.desc}
-                  </p>
-                </ScrollReveal>
-              );
-            })}
+      {/* ─── SECTION 2: TRUST BAR (Monochrome Dimmed Logos) ────────────────── */}
+      <section className="bg-zinc-950 py-12 border-t border-b border-zinc-900/60 overflow-hidden">
+        <div className="container-site flex flex-col items-center justify-center gap-8">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">
+            Seamlessly synced with your workflow stack
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-35">
+            {availableIntegrations.map((logo) => (
+              <img
+                key={logo.id}
+                src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
+                alt={logo.name}
+                className="h-5 object-contain hover:opacity-100 transition-opacity duration-300"
+                title={logo.name}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ────────────────────────────────────────
-          SECTION 3: LIVE DEMO
-      ──────────────────────────────────────── */}
-      <section id="live-demo" className="py-section-lg lg:py-32">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              See it in action
-            </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Watch how Bavio handles a real business call
+      {/* ─── SECTION 3: BENTO GRID OF CAPABILITIES (Varying Composition) ─────── */}
+      <section className="section-padding bg-zinc-950" id="how-it-works">
+        <div className="container-site">
+          <div className="max-w-[700px] text-left mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Built for speed. Programmed for conversion.
             </h2>
-            <p className="text-body-md text-ink-tertiary max-w-lg mx-auto">
-              From incoming call to qualified lead in under 60 seconds. English
-              and Spanish support out of the box.
+            <p className="text-zinc-400 text-base leading-relaxed">
+              Bavio voice agents process audio in real-time, qualify lead profiles, and trigger downstream tasks in under a second.
             </p>
-          </ScrollReveal>
+          </div>
 
-          <ScrollReveal delay={0.15}>
-            <div className="max-w-4xl mx-auto card-bezel">
-              <div className="card-bezel-inner aspect-video flex items-center justify-center relative overflow-hidden">
-                {/* Demo conversation display */}
-                <div className="absolute inset-0 bg-gradient-to-br from-canvas via-surface to-canvas" />
-                <div className="relative z-10 flex flex-col items-center gap-6 px-8">
-                  <div className="w-16 h-16 rounded-2xl bg-saffron-muted border border-saffron-border flex items-center justify-center">
-                    <Waveform className="w-8 h-8 text-saffron" weight="duotone" />
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Cell 1: Latency Engine (Col span 2) */}
+            <div className="md:col-span-2 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 p-8 flex flex-col justify-between overflow-hidden relative min-h-[300px]">
+              <div className="max-w-[420px] text-left z-10">
+                <span className="text-[10px] font-bold text-saffron uppercase tracking-wider block mb-2 font-mono">Real-Time Core</span>
+                <h3 className="text-xl font-bold text-white mb-2 font-display">Sub-500ms Audio Latency</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Optimized voice pipelines minimize traditional response lags to create natural, lifelike conversational intervals.
+                </p>
+              </div>
+
+              {/* Latency Comparison Graph */}
+              <div className="mt-8 space-y-3 z-10 text-left">
+                <div>
+                  <div className="flex justify-between text-[10px] text-zinc-500 font-mono mb-1">
+                    <span>Traditional Voice Bots</span>
+                    <span>1,800ms</span>
                   </div>
-                  <div className="text-center">
-                    <h3 className="text-heading-md text-ink mb-2">
-                      Interactive Voice Demo
-                    </h3>
-                    <p className="text-body-sm text-ink-tertiary max-w-md">
-                      Use the call simulator above to experience how Bavio processes
-                      real-time conversations, extracts lead data, and routes
-                      actions via webhooks.
-                    </p>
+                  <div className="w-full bg-zinc-950 h-2 rounded-full overflow-hidden">
+                    <div className="bg-zinc-700 h-full rounded-full w-[90%]" />
                   </div>
-                  <div className="flex flex-wrap items-center justify-center gap-3 text-body-xs text-ink-muted">
-                    <span className="flex items-center gap-1.5 bg-surface-raised border border-line px-3 py-1.5 rounded-full">
-                      <Lightning className="w-3 h-3 text-saffron" weight="fill" />
-                      420ms response
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-surface-raised border border-line px-3 py-1.5 rounded-full">
-                      <Translate className="w-3 h-3 text-saffron" weight="fill" />
-                      Multilingual ready
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-surface-raised border border-line px-3 py-1.5 rounded-full">
-                      <Brain className="w-3 h-3 text-saffron" weight="fill" />
-                      Lead extraction
-                    </span>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] text-zinc-500 font-mono mb-1">
+                    <span>Human Conversation Gap</span>
+                    <span>300ms</span>
+                  </div>
+                  <div className="w-full bg-zinc-950 h-2 rounded-full overflow-hidden">
+                    <div className="bg-zinc-600 h-full rounded-full w-[25%]" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] text-saffron font-mono mb-1 font-bold">
+                    <span>Bavio AI Agent</span>
+                    <span>450ms</span>
+                  </div>
+                  <div className="w-full bg-zinc-950 h-2 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "35%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      className="bg-saffron h-full rounded-full"
+                    />
                   </div>
                 </div>
               </div>
             </div>
-          </ScrollReveal>
-        </div>
-      </section>
 
-      {/* ────────────────────────────────────────
-          SECTION: HOW IT WORKS
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle bg-surface/10">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Step-by-step
-            </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              How Bavio Works
-            </h2>
-            <p className="text-body-md text-ink-tertiary">
-              Launch your AI voice receptionist and start qualification in four simple phases.
-            </p>
-          </ScrollReveal>
+            {/* Cell 2: Multilingual Support (Col span 1) */}
+            <div className="rounded-2xl bg-zinc-900/40 border border-zinc-800/80 p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
+              <div className="text-left">
+                <span className="text-[10px] font-bold text-saffron uppercase tracking-wider block mb-2 font-mono">Speech Engine</span>
+                <h3 className="text-xl font-bold text-white mb-2 font-display">Multilingual Dialects</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Deploy agents fluent in Hindi, English, Hinglish, Tamil, Telugu, and local regional phrasing.
+                </p>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
-            {[
-              {
-                step: "01",
-                title: "Connect Your Business Number",
-                desc: "Forward calls from your existing number.",
-                icon: Phone,
-              },
-              {
-                step: "02",
-                title: "Train Your AI Agent",
-                desc: "Upload FAQs, documents, services, and business information.",
-                icon: BookOpen,
-              },
-              {
-                step: "03",
-                title: "AI Handles Every Call",
-                desc: "Answers questions, qualifies leads, and books appointments.",
-                icon: Chats,
-              },
-              {
-                step: "04",
-                title: "Leads Delivered Instantly",
-                desc: "Send captured leads to CRM, WhatsApp, Email, or Webhooks.",
-                icon: ArrowRight,
-              },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              const isLast = i === 3;
-              return (
-                <ScrollReveal key={item.step} delay={i * 0.15} className="relative flex flex-col items-center">
-                  <div className="card-bezel w-full h-full group text-center lg:text-left">
-                    <div className="card-bezel-inner p-6 lg:p-8 flex flex-col h-full transition-all duration-500 hover:border-saffron/30">
-                      <div className="flex items-center justify-between mb-5">
-                        <span className="font-mono text-display-sm text-saffron/20 font-black">
-                          {item.step}
-                        </span>
-                        <div className="w-10 h-10 rounded-xl bg-saffron-muted border border-saffron-border flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-saffron" weight="duotone" />
-                        </div>
-                      </div>
-                      <h3 className="text-body-sm font-bold text-ink mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-body-xs text-ink-tertiary leading-relaxed">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
+              {/* Language Pills Visual */}
+              <div className="mt-8 flex flex-wrap gap-2">
+                {["Hindi", "Hinglish", "English", "Tamil", "Telugu", "Kannada"].map((lang, idx) => (
+                  <span
+                    key={lang}
+                    className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg border font-mono transition-colors cursor-default ${
+                      idx === 1
+                        ? "bg-saffron/10 border-saffron/30 text-saffron"
+                        : "bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                    }`}
+                  >
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-                  {/* Flow Arrow - Horizontal on lg screens, vertical on mobile */}
-                  {!isLast && (
-                    <div className="absolute z-10 lg:-right-6 lg:top-1/2 lg:-translate-y-1/2 -bottom-6 left-1/2 -translate-x-1/2 lg:translate-x-0 rotate-90 lg:rotate-0 text-saffron/40 lg:text-saffron pointer-events-none">
-                      <ArrowRight className="w-5 h-5" weight="bold" />
-                    </div>
-                  )}
-                </ScrollReveal>
-              );
-            })}
+            {/* Cell 3: CRM Auto-Sync Node (Col span 1) */}
+            <div className="rounded-2xl bg-zinc-900/40 border border-zinc-800/80 p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
+              <div className="text-left">
+                <span className="text-[10px] font-bold text-saffron uppercase tracking-wider block mb-2 font-mono">Lead Capture</span>
+                <h3 className="text-xl font-bold text-white mb-2 font-display">Instant CRM Sync</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Structured metadata matches names, phone numbers, locations, and intents directly to pipeline fields.
+                </p>
+              </div>
+
+              {/* CRM JSON Node Visual */}
+              <div className="mt-6 bg-zinc-950 p-4 rounded-xl border border-zinc-800/80 font-mono text-[9px] text-zinc-400 text-left">
+                <p className="text-saffron">{"{"}</p>
+                <p className="pl-4"><span className="text-emerald-400">&quot;caller_name&quot;</span>: <span className="text-zinc-200">&quot;Rahul Sharma&quot;</span>,</p>
+                <p className="pl-4"><span className="text-emerald-400">&quot;intent&quot;</span>: <span className="text-zinc-200">&quot;3BHK Flat Buy&quot;</span>,</p>
+                <p className="pl-4"><span className="text-emerald-400">&quot;lead_score&quot;</span>: <span className="text-amber-500">94</span></p>
+                <p className="text-saffron">{"}"}</p>
+              </div>
+            </div>
+
+            {/* Cell 4: Node Logic Flow (Col span 2) */}
+            <div className="md:col-span-2 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
+              <div className="max-w-[420px] text-left z-10">
+                <span className="text-[10px] font-bold text-saffron uppercase tracking-wider block mb-2 font-mono">Workflow Automation</span>
+                <h3 className="text-xl font-bold text-white mb-2 font-display">No-Code Logic Flow</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Design complex branching logic based on conversation steps: book appointments, route key emergencies, or update databases.
+                </p>
+              </div>
+
+              {/* Node builder graphics */}
+              <div className="mt-8 flex items-center justify-start gap-4 z-10 flex-wrap md:flex-nowrap">
+                <div className="bg-zinc-950/90 border border-zinc-800 px-4 py-2.5 rounded-lg text-[10px] font-mono text-zinc-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Incoming Trigger
+                </div>
+                <CaretRight className="text-zinc-700 hidden md:block" size={14} />
+                <div className="bg-zinc-950/90 border border-saffron/30 px-4 py-2.5 rounded-lg text-[10px] font-mono text-zinc-200 flex items-center gap-2 shadow-lg shadow-saffron/5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-saffron" />
+                  Intent Branching
+                </div>
+                <CaretRight className="text-zinc-700 hidden md:block" size={14} />
+                <div className="bg-zinc-950/90 border border-zinc-800 px-4 py-2.5 rounded-lg text-[10px] font-mono text-zinc-400 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Update Database
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ────────────────────────────────────────
-          SECTION: BUILT FOR EVERY BUSINESS
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Industries
+      {/* ─── SECTION 4: BUILT FOR EVERY BUSINESS ──────────────────────── */}
+      <section className="py-24 border-t border-zinc-900/60 bg-zinc-950">
+        <div className="container-site">
+          <div className="text-left mb-16 max-w-2xl">
+            <span className="text-[10px] font-bold text-saffron uppercase tracking-widest mb-4 block">
+              Verticals
             </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Built For Every Business
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Built For Every Industry
             </h2>
-            <p className="text-body-md text-ink-tertiary">
-              Whether you get 20 calls or 2,000 calls a day, Bavio adapts to your
-              industry&apos;s language, workflows, and customer expectations.
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Bavio adapts directly to your sector&apos;s terminology, qualifying questions, and workflow alerts out of the box.
             </p>
-          </ScrollReveal>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               {
                 icon: Buildings,
                 label: "Real Estate",
-                desc: "Capture buyer inquiries and schedule site visits.",
+                desc: "Capture buy/sell requirements and schedule site visits directly.",
                 accent: "from-amber-500/10 to-orange-500/5",
               },
               {
                 icon: FirstAid,
-                label: "Healthcare",
-                desc: "Book appointments and answer patient questions.",
+                label: "Healthcare & Clinics",
+                desc: "Book appointments, log emergency triage, and answer patient queries.",
                 accent: "from-emerald-500/10 to-teal-500/5",
               },
               {
                 icon: GraduationCap,
-                label: "Education",
-                desc: "Handle admissions and course inquiries.",
+                label: "Education & Academy",
+                desc: "Filter admission inquiries, course information, and tuition fees.",
                 accent: "from-violet-500/10 to-purple-500/5",
               },
               {
                 icon: ForkKnife,
-                label: "Restaurants",
-                desc: "Manage reservations and customer calls.",
+                label: "Hospitality & Dining",
+                desc: "Manage dinner bookings, cater events, and verify availability.",
                 accent: "from-rose-500/10 to-pink-500/5",
               },
               {
                 icon: Car,
-                label: "Automotive",
-                desc: "Capture service requests and sales leads.",
+                label: "Automotive Services",
+                desc: "Schedule vehicle service visits and manage inbound sales queries.",
                 accent: "from-sky-500/10 to-blue-500/5",
               },
               {
                 icon: Briefcase,
                 label: "Professional Services",
-                desc: "Handle inquiries and client bookings.",
+                desc: "Qualify client inquiries and manage calendar schedule slots.",
                 accent: "from-saffron/10 to-orange-400/5",
               },
             ].map((industry, i) => {
@@ -862,24 +763,12 @@ export default function HomePage() {
               return (
                 <ScrollReveal key={industry.label} delay={i * 0.1}>
                   <div className="card-bezel group h-full">
-                    <div className="card-bezel-inner p-7 flex flex-col h-full transition-all duration-500 ease-premium group-hover:border-saffron/30">
-                      {/* Icon with subtle gradient bg */}
-                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${industry.accent} border border-line flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110`}>
+                    <div className="card-bezel-inner p-7 flex flex-col h-full bg-zinc-900/30 border border-zinc-800/80 transition-all duration-300">
+                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${industry.accent} border border-zinc-800 flex items-center justify-center mb-5`}>
                         <Icon className="w-6 h-6 text-saffron" weight="duotone" />
                       </div>
-
-                      <h3 className="text-heading-sm font-semibold text-ink mb-2">
-                        {industry.label}
-                      </h3>
-                      <p className="text-body-sm text-ink-tertiary leading-relaxed flex-1">
-                        {industry.desc}
-                      </p>
-
-                      {/* Hover arrow indicator */}
-                      <div className="mt-5 flex items-center gap-1.5 text-body-xs font-semibold text-saffron opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-1 transition-all duration-300">
-                        <span>Learn more</span>
-                        <ArrowRight className="w-3.5 h-3.5" weight="bold" />
-                      </div>
+                      <h3 className="text-base font-semibold text-white mb-2">{industry.label}</h3>
+                      <p className="text-xs text-zinc-400 leading-relaxed flex-1">{industry.desc}</p>
                     </div>
                   </div>
                 </ScrollReveal>
@@ -889,614 +778,328 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ────────────────────────────────────────
-          SECTION 4: PLATFORM CAPABILITIES
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="mb-16">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-              <div className="lg:col-span-7">
-                <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-                  Platform capabilities
-                </span>
-                <h2 className="font-display text-display-md lg:text-display-lg text-ink">
-                  Five pillars of voice intelligence
-                </h2>
-              </div>
-              <div className="lg:col-span-5 lg:text-right">
-                <p className="text-body-md text-ink-tertiary max-w-md lg:ml-auto">
-                  Each pillar is engineered to eliminate human bottlenecks in your
-                  call operations.
-                </p>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          {/* Bento-style grid (asymmetric, not 5 equal cards) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {capabilities.map((cap, i) => {
-              const Icon = cap.icon;
-              const isLarge = i === 0 || i === 3;
-              return (
-                <ScrollReveal
-                  key={cap.title}
-                  delay={i * 0.08}
-                  className={isLarge ? "md:col-span-2 lg:col-span-1" : ""}
-                >
-                  <div className="card-bezel h-full group">
-                    <div className="card-bezel-inner p-7 lg:p-8 flex flex-col h-full transition-all duration-500 ease-premium group-hover:border-saffron/30">
-                      <div className="w-11 h-11 rounded-xl bg-saffron-muted border border-saffron-border flex items-center justify-center mb-5">
-                        <Icon
-                          className="w-5 h-5 text-saffron"
-                          weight="duotone"
-                        />
-                      </div>
-                      <h3 className="text-heading-sm font-semibold text-ink mb-3">
-                        {cap.title}
-                      </h3>
-                      <p className="text-body-sm text-ink-tertiary leading-relaxed flex-1">
-                        {cap.description}
-                      </p>
-                      <div className="mt-5 pt-4 border-t border-line-faint">
-                        <span className="text-body-xs font-mono text-ink-muted">
-                          {cap.features}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────
-          SECTION 5: INTEGRATION SHOWCASE
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 bg-surface/30 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-3xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Ecosystem
+      {/* ─── SECTION 5: LIVE DEMO (VIDEO BLOCK) ──────────────────────── */}
+      <section id="live-demo" className="py-24 border-t border-zinc-900/60 bg-zinc-950">
+        <div className="container-site text-center">
+          <div className="max-w-[600px] mx-auto mb-16 text-left">
+            <span className="text-[10px] font-bold text-saffron uppercase tracking-widest mb-4 block">
+              Live Walkthrough
             </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Connect Bavio With Your Existing Tools
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Watch Bavio In Action
             </h2>
-            <p className="text-body-md text-ink-tertiary mb-3 max-w-2xl mx-auto">
-              Businesses can connect their phone system, calendars, CRM, and communication tools to automate lead capture, appointment booking, and customer interactions.
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Experience the 90-second product walkthrough showcasing voice pipeline configuration and WhatsApp notifications.
             </p>
-            <p className="text-body-sm text-ink-muted">
-              Launch integrations built for real customer workflows. More integrations are arriving in V2.
-            </p>
-          </ScrollReveal>
-
-          {/* Available Today Category */}
-          <div className="mb-16">
-            <div className="flex items-center gap-3 mb-8">
-              <span className="h-px bg-line flex-1" />
-              <h3 className="text-label uppercase tracking-widest text-saffron font-bold">
-                Available Today
-              </h3>
-              <span className="h-px bg-line flex-1" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableIntegrations.map((item, i) => (
-                <ScrollReveal key={item.id} delay={i * 0.08}>
-                  <div className="card-bezel group h-full">
-                    <div className="card-bezel-inner p-6 flex flex-col justify-between h-full bg-surface/60 transition-all duration-500 hover:border-saffron/30 text-left">
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="text-body-xs font-mono font-bold text-ink-muted uppercase tracking-wider">
-                            {item.category}
-                          </span>
-                          <span className="bg-saffron/10 text-saffron text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-saffron/15 font-mono uppercase">
-                            Available
-                          </span>
-                        </div>
-                        <h4 className="text-heading-sm font-bold text-ink mb-2">
-                          {item.name}
-                        </h4>
-                        <p className="text-body-xs text-ink-tertiary leading-relaxed mb-6">
-                          {item.desc}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleConnectIntegration(item.id)}
-                        className="w-full bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] hover:shadow-saffron flex items-center justify-center gap-1.5"
-                      >
-                        Connect
-                        <ArrowRight className="w-3.5 h-3.5" weight="bold" />
-                      </button>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
           </div>
 
-          {/* Coming Soon Category */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
-              <span className="h-px bg-line flex-1" />
-              <h3 className="text-label uppercase tracking-widest text-ink-muted font-bold">
-                Coming Soon in V2
-              </h3>
-              <span className="h-px bg-line flex-1" />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {comingSoonIntegrations.map((item, i) => (
-                <ScrollReveal key={item.id} delay={i * 0.04} className="opacity-50">
-                  <div className="card-bezel h-full">
-                    <div className="card-bezel-inner p-5 flex flex-col justify-between h-full bg-surface-raised/40 border-dashed text-left cursor-not-allowed">
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-[9px] font-mono text-ink-muted uppercase">
-                            {item.category}
-                          </span>
-                          <span className="bg-line text-ink-muted text-[8px] font-mono font-bold px-2 py-0.5 rounded">
-                            V2 Coming
-                          </span>
-                        </div>
-                        <h4 className="text-body-sm font-bold text-ink-secondary mb-1">
-                          {item.name}
-                        </h4>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-
-          {/* Roadmap note */}
-          <ScrollReveal delay={0.2} className="text-center pt-4 border-t border-line-faint max-w-2xl mx-auto">
-            <p className="text-body-xs text-ink-muted leading-relaxed">
-              Coming in V2: Salesforce, Slack, Zapier, Make, Calendly, Stripe, Google Sheets, and additional enterprise CRM integrations.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────
-          SECTION 6: ROI CALCULATOR
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            <ScrollReveal className="lg:col-span-5">
-              <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-                ROI Calculator
-              </span>
-              <h2 className="font-display text-display-md text-ink mb-4">
-                Calculate your savings
-              </h2>
-              <p className="text-body-md text-ink-tertiary mb-8">
-                Drag the sliders to estimate how much revenue you are losing to
-                missed calls and how Bavio recovers it.
-              </p>
-
-              {/* Sliders */}
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-ink-tertiary">Calls per day</span>
-                    <span className="font-mono text-ink font-medium">
-                      {callsPerDay}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={10}
-                    max={500}
-                    step={5}
-                    value={callsPerDay}
-                    onChange={(e) => setCallsPerDay(Number(e.target.value))}
-                    className="w-full accent-saffron h-1.5 bg-surface-raised rounded-full cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-ink-tertiary">
-                      Average deal value
-                    </span>
-                    <span className="font-mono text-ink font-medium">
-                      ${avgDealValue.toLocaleString("en-US")}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={10000}
-                    max={2000000}
-                    step={10000}
-                    value={avgDealValue}
-                    onChange={(e) => setAvgDealValue(Number(e.target.value))}
-                    className="w-full accent-saffron h-1.5 bg-surface-raised rounded-full cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-ink-tertiary">
-                      Current missed call rate
-                    </span>
-                    <span className="font-mono text-ink font-medium">
-                      {missRate}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={10}
-                    max={90}
-                    step={5}
-                    value={missRate}
-                    onChange={(e) => setMissRate(Number(e.target.value))}
-                    className="w-full accent-saffron h-1.5 bg-surface-raised rounded-full cursor-pointer"
-                  />
-                </div>
+          <div className="max-w-4xl mx-auto card-bezel">
+            <div className="card-bezel-inner aspect-video flex items-center justify-center relative overflow-hidden bg-zinc-950/40">
+              <div className="w-16 h-16 rounded-full bg-saffron flex items-center justify-center shadow-lg shadow-saffron/30 hover:scale-105 transition-transform duration-300 cursor-pointer relative z-10">
+                <Play size={24} className="text-white ml-1" fill="white" />
               </div>
-            </ScrollReveal>
+              <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950/80 to-zinc-900/20 mix-blend-overlay opacity-50" />
+            </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Results */}
-            <ScrollReveal delay={0.15} className="lg:col-span-7">
-              <div className="card-bezel">
-                <div className="card-bezel-inner p-8 lg:p-10">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-label uppercase tracking-widest text-state-error mb-2">
-                        Monthly loss
-                      </span>
-                      <span className="font-display text-display-md text-state-error">
-                        {formatCurrency(roiCalculation.monthlyLost)}
-                      </span>
-                      <span className="text-body-xs text-ink-muted mt-1">
-                        Revenue lost to missed calls
-                      </span>
-                    </div>
+      {/* ─── SECTION 6: ECOSYSTEM INTEGRATIONS ───────────────────────── */}
+      <section className="py-24 bg-zinc-950 border-t border-zinc-900/60">
+        <div className="container-site">
+          <div className="max-w-[650px] text-left mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Ecosystem Integrations
+            </h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Bavio integrates directly with the telephony systems and databases you already run, minimizing workflow delay.
+            </p>
+          </div>
 
-                    <div className="flex flex-col gap-1">
-                      <span className="text-label uppercase tracking-widest text-saffron mb-2">
-                        Bavio cost
-                      </span>
-                      <span className="font-display text-display-md text-saffron">
-                        ${roiCalculation.bavioCost.toLocaleString("en-US")}
-                      </span>
-                      <span className="text-body-xs text-ink-muted mt-1">
-                        Per month, all inclusive
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <span className="text-label uppercase tracking-widest text-state-success mb-2">
-                        Annual savings
-                      </span>
-                      <span className="font-display text-display-md text-state-success">
-                        {formatCurrency(roiCalculation.annualSavings)}
-                      </span>
-                      <span className="text-body-xs text-ink-muted mt-1">
-                        Projected yearly recovery
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-line-faint">
-                    <Link
-                      href={ctaDestination}
-                      className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-hover text-white text-body-sm font-semibold px-6 py-3 rounded-button shadow-saffron hover:scale-[0.96] active:scale-[0.92] transition-all duration-150 ease-out"
-                    >
-                      Start free trial to verify
-                      <ArrowRight className="w-4 h-4" weight="bold" />
-                    </Link>
-                  </div>
-                </div>
+          {/* Symmetrical Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 max-w-5xl mb-12">
+            {availableIntegrations.map((logo) => (
+              <div
+                key={logo.id}
+                className="bg-zinc-900/30 rounded-xl border border-zinc-800/60 p-5 flex flex-col items-center justify-center h-20 hover:border-saffron/40 hover:bg-zinc-900/50 transition-all duration-300 cursor-default group"
+              >
+                <img
+                  src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
+                  alt={logo.name}
+                  className="h-5 object-contain opacity-40 group-hover:opacity-100 transition-opacity duration-300 mb-2"
+                />
+                <span className="text-[9px] font-bold text-zinc-500 tracking-wide font-mono">{logo.name}</span>
               </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────
-          SECTION 7: EARLY CUSTOMER FEEDBACK
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 bg-surface/30 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Pilot Program
-            </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Early Customer Feedback
-            </h2>
-            <p className="text-body-md text-ink-tertiary">
-              From businesses currently running Bavio in early access.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[
-              {
-                vertical: "Real Estate",
-                label: "Real Estate Pilot Customer",
-                quote: "Missed calls are now captured automatically and sent directly to our sales team.",
-                icon: Buildings,
-              },
-              {
-                vertical: "Healthcare",
-                label: "Healthcare Pilot Customer",
-                quote: "Appointment inquiries are handled consistently even outside working hours.",
-                icon: FirstAid,
-              },
-              {
-                vertical: "Education",
-                label: "Education Pilot Customer",
-                quote: "Lead qualification is faster and requires less manual follow-up.",
-                icon: GraduationCap,
-              },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <ScrollReveal key={item.vertical} delay={i * 0.12}>
-                  <div className="card-bezel h-full group">
-                    <div className="card-bezel-inner p-7 flex flex-col h-full transition-all duration-500 ease-premium group-hover:border-saffron/20">
-                      {/* Opening quote mark */}
-                      <span className="font-display text-[3.5rem] leading-none text-saffron/20 select-none mb-2">
-                        &ldquo;
-                      </span>
-
-                      <blockquote className="text-body-md text-ink-secondary leading-relaxed flex-1">
-                        {item.quote}
-                      </blockquote>
-
-                      <div className="pt-5 mt-5 border-t border-line-faint flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-saffron-muted border border-saffron-border flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-saffron" weight="duotone" />
-                        </div>
-                        <div>
-                          <p className="text-body-sm font-semibold text-ink">
-                            {item.label}
-                          </p>
-                          <p className="text-body-xs text-ink-muted">
-                            Early Access Program
-                          </p>
-                        </div>
-                        <span className="ml-auto text-label uppercase tracking-widest text-ink-faint bg-surface-raised border border-line px-2.5 py-1 rounded-md">
-                          {item.vertical}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────
-          SECTION: SECURITY
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Trust &amp; Security
-            </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Built With Security In Mind
-            </h2>
-            <p className="text-body-md text-ink-tertiary">
-              Your calls, customer data, and business information are handled with
-              care from infrastructure to access control.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                icon: LockKey,
-                title: "Encrypted Call Data",
-                desc: "All communication is securely transmitted.",
-              },
-              {
-                icon: UserCircleGear,
-                title: "Role-Based Access",
-                desc: "Control who can view and manage agents.",
-              },
-              {
-                icon: CloudCheck,
-                title: "Secure Infrastructure",
-                desc: "Hosted on reliable cloud infrastructure.",
-              },
-              {
-                icon: Database,
-                title: "Data Ownership",
-                desc: "Your business data remains yours.",
-              },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <ScrollReveal key={item.title} delay={i * 0.1}>
-                  <div className="card-bezel group h-full">
-                    <div className="card-bezel-inner p-7 flex flex-col h-full transition-all duration-500 ease-premium group-hover:border-saffron/20">
-                      {/* Icon */}
-                      <div className="w-11 h-11 rounded-xl bg-saffron-muted border border-saffron-border flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110">
-                        <Icon className="w-5 h-5 text-saffron" weight="duotone" />
-                      </div>
-
-                      <h3 className="text-body-sm font-bold text-ink mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-body-xs text-ink-tertiary leading-relaxed flex-1">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────
-          SECTION 8: PRICING PREVIEW
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-32 border-t border-line-subtle">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal className="text-center mb-16 max-w-2xl mx-auto">
-            <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
-              Pricing
-            </span>
-            <h2 className="font-display text-display-md lg:text-display-lg text-ink mb-4">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-body-md text-ink-tertiary">
-              No contracts, no surprises. 14-day free trial on every plan.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-            {plans.map((plan, i) => (
-              <ScrollReveal key={plan.name} delay={i * 0.1}>
-                <div
-                  className={`card-bezel h-full ${
-                    plan.popular ? "ring-2 ring-saffron" : ""
-                  }`}
-                >
-                  <div className="card-bezel-inner p-7 lg:p-8 flex flex-col h-full relative">
-                    {plan.popular && (
-                      <span className="absolute top-4 right-4 bg-saffron text-white text-label uppercase tracking-widest px-3 py-1.5 rounded-md">
-                        Popular
-                      </span>
-                    )}
-
-                    <h3 className="text-heading-sm font-semibold text-ink mb-2">
-                      {plan.name}
-                    </h3>
-                    <p className="text-body-xs text-ink-muted mb-5">
-                      {plan.description}
-                    </p>
-
-                    <div className="flex items-baseline gap-1 mb-6">
-                      <span className="font-display text-display-md text-saffron">
-                        ${plan.price}
-                      </span>
-                      <span className="text-body-sm text-ink-muted">
-                        {plan.period}
-                      </span>
-                    </div>
-
-                    <ul className="flex flex-col gap-3 flex-1 mb-8">
-                      {plan.features.map((f) => (
-                        <li
-                          key={f.text}
-                          className="flex items-center gap-2.5 text-body-sm"
-                        >
-                          {f.included ? (
-                            <CheckCircle
-                              className="w-4 h-4 text-saffron shrink-0"
-                              weight="fill"
-                            />
-                          ) : (
-                            <Minus className="w-4 h-4 text-ink-faint shrink-0" />
-                          )}
-                          <span
-                            className={
-                              f.included ? "text-ink-secondary" : "text-ink-muted"
-                            }
-                          >
-                            {f.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <Link
-                      href={ctaDestination}
-                      className={`w-full text-center py-3 rounded-button text-body-sm font-semibold transition-all duration-300 ease-premium ${
-                        plan.popular
-                          ? "bg-saffron hover:bg-saffron-hover text-white shadow-saffron"
-                          : "border border-line hover:border-saffron text-ink-tertiary hover:text-ink"
-                      }`}
-                    >
-                      Start Free Trial
-                    </Link>
-                  </div>
-                </div>
-              </ScrollReveal>
             ))}
           </div>
 
-          <ScrollReveal delay={0.3} className="text-center mt-10">
-            <p className="text-body-sm text-ink-muted">
-              All plans include 14-day free trial. No credit card required.{" "}
-              <Link
-                href="/enterprise"
-                className="text-saffron hover:text-saffron-hover transition-colors"
-              >
-                Need custom pricing?
-              </Link>
-            </p>
-          </ScrollReveal>
+          {/* Coming Soon grid strip */}
+          <div className="pt-8 border-t border-zinc-900/40">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-6 text-left">Coming in V2</p>
+            <div className="flex flex-wrap items-center gap-x-12 gap-y-6 opacity-25">
+              {comingSoonIntegrations.map((logo) => (
+                <div key={logo.id} className="flex items-center gap-2">
+                  <img
+                    src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
+                    alt={logo.name}
+                    className="h-4 object-contain"
+                  />
+                  <span className="text-[10px] text-white font-mono font-semibold">{logo.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ────────────────────────────────────────
-          SECTION 9: CTA BANNER
-      ──────────────────────────────────────── */}
-      <section className="py-section-lg lg:py-24">
-        <div className="max-w-container mx-auto px-6 lg:px-8">
-          <ScrollReveal>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-saffron via-saffron to-saffron-hover p-10 lg:p-16 text-center">
-              {/* Subtle texture lines */}
-              <div className="absolute inset-0 opacity-10">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(255,255,255,0.12) 12px, rgba(255,255,255,0.12) 24px)",
-                  }}
-                />
+      {/* ─── SECTION 7: ROI SAVINGS CALCULATOR ───────────────────────── */}
+      <section className="py-24 border-t border-zinc-900/60 bg-zinc-950">
+        <div className="container-site">
+          <div className="max-w-[600px] text-left mb-16">
+            <span className="text-[10px] font-bold text-saffron uppercase tracking-widest block mb-2 font-mono">
+              Savings Estimator
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Calculate Missed Call Loss
+            </h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Find out how much value gets left behind when incoming calls are missed, and what Bavio recovers for you.
+            </p>
+          </div>
+          <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-8 md:p-12 relative overflow-hidden backdrop-blur-md">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Sliders / Inputs */}
+              <div className="space-y-8 text-left">
+                {/* Calls per day */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-semibold text-zinc-300">Calls Handled Daily</label>
+                    <span className="text-base font-bold text-saffron">{callsPerDay} calls</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10} max={500} value={callsPerDay}
+                    onChange={(e) => setCallsPerDay(Number(e.target.value))}
+                    className="w-full accent-saffron h-1.5 rounded-full appearance-none bg-zinc-800 cursor-pointer"
+                  />
+                  <div className="flex justify-between mt-1.5 text-[10px] font-mono text-zinc-500">
+                    <span>10 calls</span><span>500 calls</span>
+                  </div>
+                </div>
+
+                {/* Average deal value */}
+                <div>
+                  <label className="text-sm font-semibold text-zinc-300 block mb-3">Average Transaction Value</label>
+                  <select
+                    value={avgDealValue}
+                    onChange={(e) => setAvgDealValue(Number(e.target.value))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-100 outline-none focus:border-saffron cursor-pointer font-medium"
+                  >
+                    {dealLabels.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Missed call rate */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-semibold text-zinc-300">Estimated Missed Call Rate</label>
+                    <span className="text-base font-bold text-saffron">{missRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={10} max={90} value={missRate}
+                    onChange={(e) => setMissRate(Number(e.target.value))}
+                    className="w-full accent-saffron h-1.5 rounded-full appearance-none bg-zinc-800 cursor-pointer"
+                  />
+                  <div className="flex justify-between mt-1.5 text-[10px] font-mono text-zinc-500">
+                    <span>10% missed</span><span>90% missed</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="relative z-10 flex flex-col items-center gap-6 max-w-xl mx-auto">
-                <h2 className="font-display text-display-md lg:text-display-lg text-canvas tracking-tight">
-                  Ready to never miss a call again?
-                </h2>
-                <p className="text-body-md text-canvas/80 max-w-md">
-                  Start automating your calls with Bavio AI today. 14 days
-                  free, no credit card required.
-                </p>
+              {/* Results Showcase */}
+              <div className="space-y-6 text-left">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-zinc-950/80 rounded-xl p-5 border border-zinc-800/40">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Monthly Loss</p>
+                    <p className="text-xl font-bold text-red-400">{formatCurrency(roiCalculation.monthlyLost)}</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">unanswered requests</p>
+                  </div>
+
+                  <div className="bg-zinc-950/80 rounded-xl p-5 border border-zinc-800/40">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Bavio Cost</p>
+                    <p className="text-xl font-bold text-zinc-100">${roiCalculation.bavioCost}</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">all-inclusive/month</p>
+                  </div>
+                </div>
+
+                <div className="bg-saffron/5 border border-saffron/15 rounded-xl p-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/10 rounded-full blur-2xl -mr-16 -mt-16" />
+                  <p className="text-xs font-bold text-saffron uppercase tracking-wider mb-1">Annual Recoverable Revenue</p>
+                  <p className="text-4xl md:text-5xl font-extrabold text-saffron leading-none mb-2 font-display">
+                    {formatCurrency(roiCalculation.annualSavings)}
+                  </p>
+                  <p className="text-xs text-zinc-400">Captured through instant response operations</p>
+                </div>
+
+                <Link href="/signup" className="btn-primary w-full text-center group bg-saffron text-white py-3.5 rounded-lg flex items-center justify-center gap-1">
+                  Start Free 14-Day Trial
+                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 8: TYPOGRAPHIC TESTIMONIALS ─────────────────────── */}
+      <section className="py-24 border-t border-zinc-900/60 bg-zinc-950">
+        <div className="container-site">
+          <div className="max-w-[600px] text-left mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Trusted by Local Operators
+            </h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Read how business owners and operations teams deploy Bavio voice agents to handle inbound phone traffic.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((t, idx) => {
+              const Icon = t.icon;
+              return (
+                <div
+                  key={idx}
+                  className="bg-zinc-900/20 rounded-xl border border-zinc-800/80 p-8 flex flex-col justify-between hover:border-zinc-700 transition-colors text-left"
+                >
+                  <p className="text-sm text-zinc-300 leading-relaxed mb-6 italic">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 border-t border-zinc-800/50 pt-4 mt-auto">
+                    <div className="w-8 h-8 rounded-full bg-saffron/10 border border-saffron/20 flex items-center justify-center text-[10px] font-bold text-saffron">
+                      <Icon size={14} className="text-saffron" weight="duotone" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">{t.name}</p>
+                      <p className="text-[10px] text-zinc-500 font-mono">
+                        {t.title}, {t.company}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 9: PRICE PACKAGES ─────────────────────────────── */}
+      <section className="py-24 border-t border-zinc-900/60 bg-zinc-950" id="pricing">
+        <div className="container-site">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 font-display tracking-tight">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-zinc-400 text-sm">Deploy instantly. Scale as call minutes grow.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {pricingPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`relative rounded-2xl p-8 flex flex-col justify-between overflow-hidden transition-all duration-300 text-left ${
+                  plan.popular
+                    ? "bg-zinc-900/80 border-2 border-saffron shadow-xl shadow-saffron/5 md:scale-[1.03] z-10"
+                    : "bg-zinc-900/30 border border-zinc-800/80"
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-saffron text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="text-base font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-xs text-zinc-500 mb-4">Starting package tier</p>
+                  <div className="flex items-baseline gap-1.5 mb-1 mt-4">
+                    <span className="text-4xl font-extrabold text-white font-display">${plan.price}</span>
+                    <span className="text-xs text-zinc-500 font-mono">{plan.period}</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-mono">Billed monthly</p>
+
+                  <ul className="space-y-3.5 my-8">
+                    {plan.features.map((f) => (
+                      <li key={f.text} className="flex items-start gap-2.5 text-xs text-zinc-300">
+                        {f.included ? (
+                          <CheckCircle size={14} className="text-saffron mt-0.5 flex-shrink-0" weight="fill" />
+                        ) : (
+                          <Minus size={14} className="text-zinc-600 mt-0.5 flex-shrink-0" />
+                        )}
+                        <span className={f.included ? "text-zinc-300" : "text-zinc-500"}>{f.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <Link
                   href={ctaDestination}
-                  className="inline-flex items-center gap-2.5 bg-canvas hover:bg-surface text-saffron text-body-md font-semibold px-8 py-4 rounded-button shadow-premium hover:scale-[0.96] active:scale-[0.92] transition-all duration-150 ease-out"
+                  className={`w-full text-center py-3 rounded-lg text-body-sm font-semibold transition-all duration-300 ease-premium ${
+                    plan.popular
+                      ? "bg-saffron hover:bg-saffron-hover text-white shadow-saffron"
+                      : "border border-zinc-800 hover:border-saffron text-zinc-400 hover:text-white bg-zinc-900/30"
+                  }`}
                 >
-                  Get Your AI Receptionist
-                  <span className="w-6 h-6 rounded-full bg-saffron/15 flex items-center justify-center">
-                    <ArrowRight
-                      className="w-3.5 h-3.5 text-saffron"
-                      weight="bold"
-                    />
-                  </span>
+                  Start Free Trial
                 </Link>
-
-                <span className="flex items-center gap-1.5 text-body-xs text-canvas/60">
-                  <CheckCircle className="w-3.5 h-3.5" weight="fill" />
-                  14-day free trial · No credit card required
-                </span>
               </div>
-            </div>
-          </ScrollReveal>
+            ))}
+          </div>
+
+          <div className="text-center mt-12 space-y-2">
+            <Link href="/enterprise" className="text-saffron hover:underline text-xs font-semibold inline-flex items-center gap-1">
+              Need custom volume options? Contact Enterprise <ArrowRight size={12} />
+            </Link>
+            <p className="text-zinc-500 text-[10px] font-mono">
+              Includes 14-day free trial · No credit card required · Cancel anytime
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ─── SECTION 10: MONOCHROME CTA CARD ─────────────────────────── */}
+      <section className="bg-zinc-950 pb-24 pt-12">
+        <div className="container-site">
+          <div className="bg-zinc-900/40 border border-saffron/20 rounded-2xl p-10 md:p-16 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-glow-bottom pointer-events-none" />
+
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
+              Ready to Recover Missed Revenue?
+            </h2>
+            <p className="text-zinc-400 text-sm mb-8 max-w-xl mx-auto leading-relaxed">
+              Deploy your first AI voice receptionist in less than 10 minutes. Claim your free 14-day trial now.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                href={ctaDestination}
+                className="inline-flex items-center justify-center gap-2.5 bg-saffron hover:bg-saffron-hover text-white text-body-sm font-semibold px-8 py-3.5 rounded-lg shadow-saffron transition-all duration-200 active:scale-[0.98] btn-interactive"
+              >
+                Start Free Trial
+                <ArrowRight size={14} className="ml-1" />
+              </Link>
+            </div>
+            <p className="text-zinc-500 text-[10px] font-mono mt-6 flex items-center justify-center gap-1.5">
+              <LockKey size={12} className="text-emerald-500" />
+              99.9% uptime SLA configuration active
+            </p>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
