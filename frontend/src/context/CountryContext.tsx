@@ -5,21 +5,27 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 export interface CountryData {
   code: string; // ISO 2-letter code
   name: string;
-  currency: "inr" | "usd" | "gbp" | "aud" | "aed";
+  currency: string; // e.g. "inr", "usd", "gbp"
+  currencyCode: string; // e.g. "INR", "USD", "GBP"
   symbol: string;
   dialCode: string;
   flag: string;
 }
 
 export const countries: CountryData[] = [
-  { code: "US", name: "United States", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇺🇸" },
-  { code: "GB", name: "United Kingdom", currency: "gbp", symbol: "£", dialCode: "+44", flag: "🇬🇧" },
-  { code: "CA", name: "Canada", currency: "usd", symbol: "$", dialCode: "+1", flag: "🇨🇦" },
-  { code: "AU", name: "Australia", currency: "aud", symbol: "AUD", dialCode: "+61", flag: "🇦🇺" },
-  { code: "AE", name: "United Arab Emirates", currency: "aed", symbol: "AED", dialCode: "+971", flag: "🇦🇪" },
+  { code: "IN", name: "India",               currency: "inr", currencyCode: "INR", symbol: "₹",    dialCode: "+91",  flag: "🇮🇳" },
+  { code: "US", name: "United States",       currency: "usd", currencyCode: "USD", symbol: "$",    dialCode: "+1",   flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom",      currency: "gbp", currencyCode: "GBP", symbol: "£",    dialCode: "+44",  flag: "🇬🇧" },
+  { code: "CA", name: "Canada",              currency: "cad", currencyCode: "CAD", symbol: "C$",   dialCode: "+1",   flag: "🇨🇦" },
+  { code: "AU", name: "Australia",           currency: "aud", currencyCode: "AUD", symbol: "A$",   dialCode: "+61",  flag: "🇦🇺" },
+  { code: "AE", name: "United Arab Emirates",currency: "aed", currencyCode: "AED", symbol: "AED ", dialCode: "+971", flag: "🇦🇪" },
+  { code: "DE", name: "Germany",             currency: "eur", currencyCode: "EUR", symbol: "€",    dialCode: "+49",  flag: "🇩🇪" },
+  { code: "FR", name: "France",              currency: "eur", currencyCode: "EUR", symbol: "€",    dialCode: "+33",  flag: "🇫🇷" },
+  { code: "SG", name: "Singapore",           currency: "sgd", currencyCode: "SGD", symbol: "S$",   dialCode: "+65",  flag: "🇸🇬" },
+  { code: "NZ", name: "New Zealand",         currency: "nzd", currencyCode: "NZD", symbol: "NZ$",  dialCode: "+64",  flag: "🇳🇿" },
 ];
 
-const DEFAULT_COUNTRY = countries[0]; // US as default
+const DEFAULT_COUNTRY = countries.find(c => c.code === "US") || countries[0];
 
 interface CountryContextType {
   country: CountryData;
@@ -32,31 +38,57 @@ interface CountryContextType {
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export function CountryProvider({ children }: { children: React.ReactNode }) {
-  const [country, setCountry] = useState<CountryData>(countries[0]);
+  const [country, setCountry] = useState<CountryData>(DEFAULT_COUNTRY);
   const [isLoading, setIsLoading] = useState(false);
   const [detectedMethod, setDetectedMethod] = useState<CountryContextType["detectedMethod"]>("default");
 
   const getCountryByCode = useCallback((code: string): CountryData => {
-    return countries[0];
+    return countries.find(c => c.code === code) || DEFAULT_COUNTRY;
   }, []);
 
   const detectCountry = useCallback(async (force = false) => {
-    setCountry(countries[0]);
+    // Auto-detect can be wired to a geo-IP API later.
+    // For now default to US, but respect a previously saved user preference.
+    try {
+      if (typeof window !== "undefined") {
+        const saved = sessionStorage.getItem("bavio_country");
+        if (saved) {
+          const found = countries.find(c => c.code === saved);
+          if (found) {
+            setCountry(found);
+            setDetectedMethod("manual");
+            return;
+          }
+        }
+      }
+    } catch (_) {
+      // sessionStorage not available
+    }
+    setCountry(DEFAULT_COUNTRY);
     setDetectedMethod("default");
     setIsLoading(false);
   }, []);
 
   const changeCountry = useCallback(async (code: string) => {
-    setCountry(countries[0]);
-    setDetectedMethod("manual");
+    const found = countries.find(c => c.code === code);
+    if (found) {
+      setCountry(found);
+      setDetectedMethod("manual");
+      // Persist to session so the choice survives page navigation
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("bavio_country", code);
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
   }, []);
 
   // Run on mount
   useEffect(() => {
-    setCountry(countries[0]);
-    setDetectedMethod("default");
-    setIsLoading(false);
-  }, []);
+    detectCountry();
+  }, [detectCountry]);
 
   return (
     <CountryContext.Provider value={{ country, isLoading, detectedMethod, changeCountry, detectCountry }}>

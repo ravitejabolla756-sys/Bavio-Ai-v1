@@ -1,5 +1,6 @@
 export interface PricingTierData {
   currency: string;
+  currencyCode: string;
   starter: number;
   growth: number;
   scale: number;
@@ -8,12 +9,17 @@ export interface PricingTierData {
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  US: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
-  CA: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
-  GB: { currency: "£", starter: 29, growth: 59, scale: 99, overageRate: "£0.08/min", mostPopularBadge: "Most popular" },
-  AU: { currency: "AUD ", starter: 49, growth: 99, scale: 199, overageRate: "AUD 0.12/min", mostPopularBadge: "Most popular" },
-  AE: { currency: "AED ", starter: 149, growth: 299, scale: 499, overageRate: "AED 0.40/min", mostPopularBadge: "Most popular" },
-  DEFAULT: { currency: "$", starter: 39, growth: 79, scale: 149, overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
+  IN: { currency: "₹",  currencyCode: "INR", starter: 1999, growth: 3999, scale: 7999, overageRate: "₹8/min",   mostPopularBadge: "Most popular" },
+  US: { currency: "$",  currencyCode: "USD", starter: 39,   growth: 79,   scale: 149,  overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
+  CA: { currency: "C$", currencyCode: "CAD", starter: 49,   growth: 99,   scale: 189,  overageRate: "C$0.13/min",mostPopularBadge: "Most popular" },
+  GB: { currency: "£",  currencyCode: "GBP", starter: 29,   growth: 59,   scale: 99,   overageRate: "£0.08/min", mostPopularBadge: "Most popular" },
+  AU: { currency: "A$", currencyCode: "AUD", starter: 49,   growth: 99,   scale: 199,  overageRate: "A$0.12/min",mostPopularBadge: "Most popular" },
+  AE: { currency: "AED ",currencyCode: "AED",starter: 149,  growth: 299,  scale: 499,  overageRate: "AED 0.40/min",mostPopularBadge: "Most popular" },
+  DE: { currency: "€",  currencyCode: "EUR", starter: 35,   growth: 69,   scale: 129,  overageRate: "€0.09/min", mostPopularBadge: "Most popular" },
+  FR: { currency: "€",  currencyCode: "EUR", starter: 35,   growth: 69,   scale: 129,  overageRate: "€0.09/min", mostPopularBadge: "Most popular" },
+  SG: { currency: "S$", currencyCode: "SGD", starter: 49,   growth: 99,   scale: 189,  overageRate: "S$0.13/min",mostPopularBadge: "Most popular" },
+  NZ: { currency: "NZ$",currencyCode: "NZD", starter: 59,   growth: 119,  scale: 219,  overageRate: "NZ$0.15/min",mostPopularBadge: "Most popular" },
+  DEFAULT: { currency: "$", currencyCode: "USD", starter: 39, growth: 79, scale: 149,  overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
 };
 
 export interface PlanFeature {
@@ -92,11 +98,11 @@ export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
   { feature: "Webhook API", starter: "No", growth: "Yes", scale: "Yes" },
   { feature: "SMS/Slack routing", starter: "No", growth: "Yes", scale: "Yes" },
   { feature: "White-label", starter: "No", growth: "No", scale: "Yes" },
-  { 
-    feature: "Overage rate", 
-    starter: overageRate, 
-    growth: overageRate, 
-    scale: overageRate 
+  {
+    feature: "Overage rate",
+    starter: overageRate,
+    growth: overageRate,
+    scale: overageRate,
   },
 ];
 
@@ -136,5 +142,9 @@ export const FAQS = [
   {
     q: "Is there a trial period?",
     a: "14 days free trial on every plan. No credit card required. Full access to all features during the trial. Cancel anytime.",
+  },
+  {
+    q: "Which currencies do you support?",
+    a: "Bavio bills in your local currency — INR for India, USD for the US and Canada, GBP for the UK, AUD for Australia, EUR for Europe, AED for the UAE, and more. Internal cost accounting is in USD.",
   },
 ];
