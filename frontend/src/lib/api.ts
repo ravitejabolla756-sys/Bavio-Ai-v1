@@ -435,10 +435,10 @@ export const billingApi = {
   getPayments: (clientId: string) =>
     apiFetch<PaymentRecord[]>(`/billing/payments/${clientId}`),
 
-  subscribe: (plan: string) =>
+  subscribe: (plan: string, country_code?: string) =>
     apiFetch<{ subscriptionId: string; url: string; checkoutUrl: string }>('/billing/subscribe', {
       method: 'POST',
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, ...(country_code ? { country_code } : {}) }),
     }),
 
   cancel: () =>

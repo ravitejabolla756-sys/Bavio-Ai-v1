@@ -131,7 +131,7 @@ export function PricingCard({
 // 2. PricingGrid component (combines pricing layers, switches, comparison, and FAQ)
 export function PricingGrid() {
   const ctaDestination = useCTADestination();
-  const { country, isLoading: countryLoading } = useCountry();
+  const { country, isLoading: countryLoading, changeCountry } = useCountry();
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -177,6 +177,37 @@ export function PricingGrid() {
               Answer every call instantly. Scale plans built to fit your business requirements.
             </p>
 
+            {/* Country Switcher */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+              {[
+                { code: "IN", flag: "🇮🇳", label: "INR" },
+                { code: "US", flag: "🇺🇸", label: "USD" },
+                { code: "GB", flag: "🇬🇧", label: "GBP" },
+                { code: "CA", flag: "🇨🇦", label: "CAD" },
+                { code: "AU", flag: "🇦🇺", label: "AUD" },
+                { code: "AE", flag: "🇦🇪", label: "AED" },
+                { code: "DE", flag: "🇩🇪", label: "EUR" },
+                { code: "SG", flag: "🇸🇬", label: "SGD" },
+              ].map((c) => {
+                const isActive = country.code === c.code;
+                return (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => changeCountry(c.code)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-xs font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "bg-saffron border-saffron text-white shadow-saffron"
+                        : "bg-surface border-line text-ink-muted hover:border-saffron/50 hover:text-ink"
+                    }`}
+                  >
+                    <span className="text-sm leading-none">{c.flag}</span>
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="flex items-center justify-center bg-surface border border-line rounded-[24px] p-4 lg:p-6 shadow-sm max-w-xs mx-auto">
               {/* Billing Period Toggle */}
               <div className="flex flex-col text-center">
@@ -210,6 +241,7 @@ export function PricingGrid() {
           </ScrollReveal>
         </div>
       </section>
+
 
       {/* Grid of Tiers */}
       <section className="pb-section-lg w-full">

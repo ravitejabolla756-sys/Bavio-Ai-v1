@@ -8,20 +8,29 @@ import { PhoneSetup } from "@/components/numbers/PhoneSetup";
 import { authApi, onboardingApi, billingApi } from "@/lib/api";
 import { PRICING_BY_COUNTRY } from "@/config/pricing";
 import Logo from "@/components/Logo";
-import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
-const countryOptions = [
-  { value: "US", label: "United States", icon: "🇺🇸" },
-  { value: "CA", label: "Canada", icon: "🇨🇦" },
-  { value: "GB", label: "United Kingdom", icon: "🇬🇧" },
-  { value: "AU", label: "Australia", icon: "🇦🇺" },
-  { value: "AE", label: "United Arab Emirates", icon: "🇦🇪" },
+// ─── Country options for Step 0 ───────────────────────────────────────────────
+
+const COUNTRY_OPTIONS = [
+  { code: "IN", label: "India",          flag: "🇮🇳", currency: "INR", dial: "+91"  },
+  { code: "US", label: "United States",  flag: "🇺🇸", currency: "USD", dial: "+1"   },
+  { code: "GB", label: "United Kingdom", flag: "🇬🇧", currency: "GBP", dial: "+44"  },
+  { code: "CA", label: "Canada",         flag: "🇨🇦", currency: "CAD", dial: "+1"   },
+  { code: "AU", label: "Australia",      flag: "🇦🇺", currency: "AUD", dial: "+61"  },
+  { code: "AE", label: "UAE",            flag: "🇦🇪", currency: "AED", dial: "+971" },
+  { code: "DE", label: "Germany",        flag: "🇩🇪", currency: "EUR", dial: "+49"  },
+  { code: "FR", label: "France",         flag: "🇫🇷", currency: "EUR", dial: "+33"  },
+  { code: "SG", label: "Singapore",      flag: "🇸🇬", currency: "SGD", dial: "+65"  },
+  { code: "NZ", label: "New Zealand",    flag: "🇳🇿", currency: "NZD", dial: "+64"  },
 ];
+
+// ─── Main onboarding content ──────────────────────────────────────────────────
 
 function OnboardingContent() {
   const router = useRouter();
   const { country, setCountry, loading: countryLoading } = useCountry();
-  const [step, setStep] = useState<number>(1); // 1 = Pricing Selection, 2 = Phone Setup, 3 = Success
+  // Step 0 = Country Selection, 1 = Plan Selection, 2 = Phone Setup, 3 = Success
+  const [step, setStep] = useState<number>(0);
 
   // User auth and profile states
   const [userId, setUserId] = useState<string>("");
@@ -29,12 +38,16 @@ function OnboardingContent() {
   const [profileLoading, setProfileLoading] = useState<boolean>(true);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Selection states
+  // Country selection state
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("");
+  const [countrySearchQuery, setCountrySearchQuery] = useState<string>("");
+
+  // Plan selection states
   const [selectedPlan, setSelectedPlan] = useState<string>("starter");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [planPrice, setPlanPrice] = useState<number>(0);
 
-  // Setup / Redirection loader states
+  // Action loader states
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -51,8 +64,11 @@ function OnboardingContent() {
         }
         setUserId(user.id);
         setUserEmail(user.email);
-        if (user.country) {
+        // If the user already has a country set, skip country selection
+        if (user.country && user.country !== "US") {
           setCountry(user.country);
+          setSelectedCountryCode(user.country);
+          setStep(1);
         }
       } catch (err: any) {
         console.error("Failed to load user profile in onboarding:", err);
@@ -63,7 +79,25 @@ function OnboardingContent() {
     };
 
     fetchProfile();
-  }, [setCountry]);
+  }, [setCountry, router]);
+
+  // Handle country selection in Step 0
+  const handleSelectCountry = async (code: string) => {
+    setSelectedCountryCode(code);
+    setCountry(code);
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      // Persist country to backend
+      await authApi.updateProfile({ country: code });
+    } catch (err: any) {
+      console.error("Failed to save country:", err);
+      // Non-blocking — continue anyway
+    } finally {
+      setActionLoading(false);
+    }
+    setStep(1);
+  };
 
   // Handle plan select updates from selector component
   const handleSelectPlan = (planName: string, cycle: "monthly" | "annual", price: number) => {
@@ -73,7 +107,7 @@ function OnboardingContent() {
     setActionError(null);
   };
 
-  // Process selected plan setup action (Continue Setup)
+  // Process selected plan setup action
   const handleContinueSetup = async () => {
     if (actionLoading) return;
     setActionLoading(true);
@@ -81,14 +115,12 @@ function OnboardingContent() {
 
     try {
       if (selectedPlan === "starter") {
-        // Starter Plan: Create trial workspace with 100 free minutes
-        const result = await onboardingApi.completeTrial();
+        const result = await onboardingApi.completeTrial({ country_code: selectedCountryCode || "US" });
         console.log("Starter trial workspace activated:", result);
-        setStep(2); // Advance to Phone Setup
+        setStep(2);
       } else {
-        // Growth or Scale: Create subscription and redirect to Dodo Payments checkout
-        console.log(`Initiating checkout for plan: ${selectedPlan}`);
-        const result = await billingApi.subscribe(selectedPlan);
+        console.log(`Initiating checkout for plan: ${selectedPlan}, country: ${selectedCountryCode}`);
+        const result = await billingApi.subscribe(selectedPlan, selectedCountryCode || "US");
         if (result.checkoutUrl || result.url) {
           window.location.href = result.checkoutUrl || result.url;
         } else {
@@ -105,20 +137,22 @@ function OnboardingContent() {
 
   // Handle Phone allocation completion in Step 2
   const handlePhoneComplete = (num: string) => {
-    setStep(3); // Advance to success activation screen
+    setStep(3);
   };
 
-  // Loading indicator for initial profile fetch
+  // Loading indicator
   if (profileLoading || countryLoading) {
     return (
       <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-center items-center">
         <div className="w-12 h-12 border-4 border-[#FF6B00]/25 border-t-[#FF6B00] rounded-full animate-spin mb-4" />
-        <p className="text-body-sm text-[#8A8A96] font-medium animate-pulse">Initializing your onboarding workspace...</p>
+        <p className="text-body-sm text-[#8A8A96] font-medium animate-pulse">
+          Initializing your onboarding workspace...
+        </p>
       </div>
     );
   }
 
-  // Profile loading error state
+  // Profile loading error
   if (profileError) {
     return (
       <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-center items-center p-6 text-center">
@@ -143,12 +177,27 @@ function OnboardingContent() {
     );
   }
 
-  // Calculate configuration details for the sticky summary section
+  // Calculate summary bar values for Step 1
   const activeCountry = country || "US";
   const countryPricing = PRICING_BY_COUNTRY[activeCountry] || PRICING_BY_COUNTRY.DEFAULT;
   const overageRate = countryPricing.overageRate;
-  const includedMinutes = selectedPlan === "starter" ? 100 : (selectedPlan === "growth" ? 500 : 1500);
+  const includedMinutes = selectedPlan === "starter" ? 200 : selectedPlan === "growth" ? 500 : 1500;
   const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
+
+  // Total steps = 3 (0-indexed: country, plan, phone) — success is not counted
+  const totalSteps = 3;
+  // Display as 1-indexed progress
+  const displayStep = step + 1;
+
+  // Country search filter
+  const filteredCountries = COUNTRY_OPTIONS.filter(
+    (c) =>
+      countrySearchQuery === "" ||
+      c.label.toLowerCase().includes(countrySearchQuery.toLowerCase()) ||
+      c.currency.toLowerCase().includes(countrySearchQuery.toLowerCase())
+  );
+
+  const selectedCountryOption = COUNTRY_OPTIONS.find((c) => c.code === selectedCountryCode);
 
   return (
     <div className="relative min-h-[100dvh] bg-[#FAF9F6] text-[#14141A] font-sans flex flex-col justify-between overflow-x-hidden">
@@ -167,12 +216,12 @@ function OnboardingContent() {
         {step < 3 && (
           <div className="flex items-center gap-4">
             <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider hidden sm:inline">
-              Step {step} of 2
+              Step {displayStep} of {totalSteps}
             </span>
             <div className="w-24 sm:w-40 h-1 bg-[#E5E0D8] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#FF6B00] rounded-full transition-all duration-300"
-                style={{ width: `${(step / 2) * 100}%` }}
+                className="h-full bg-[#FF6B00] rounded-full transition-all duration-500"
+                style={{ width: `${(displayStep / totalSteps) * 100}%` }}
               />
             </div>
           </div>
@@ -181,26 +230,138 @@ function OnboardingContent() {
 
       {/* Main Content Area */}
       <main className={`flex-grow flex items-center justify-center p-6 relative z-10 my-4 ${step === 1 ? "pb-24" : ""}`}>
+
+        {/* ── STEP 0: Country Selection ───────────────────────────────── */}
+        {step === 0 && (
+          <div className="w-full max-w-3xl text-center py-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FF6B00]/8 border border-[#FF6B00]/20 rounded-full text-[10px] font-black uppercase tracking-widest text-[#FF6B00] mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
+              Welcome to Bavio
+            </div>
+
+            <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
+              Where are you based?
+            </h1>
+            <p className="text-body-md text-[#5A5A66] max-w-md mx-auto mb-10">
+              We&apos;ll show you pricing in your local currency and assign a phone number for your region.
+            </p>
+
+            {/* Search input */}
+            <div className="relative max-w-sm mx-auto mb-8">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-[#8A8A96]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search country or currency..."
+                value={countrySearchQuery}
+                onChange={(e) => setCountrySearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-[#E5E0D8] rounded-xl text-body-xs text-[#14141A] placeholder-[#8A8A96] font-medium outline-none focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 transition-all duration-200"
+              />
+            </div>
+
+            {/* Country grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 w-full">
+              {filteredCountries.map((c) => {
+                const isSelected = selectedCountryCode === c.code;
+                return (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => handleSelectCountry(c.code)}
+                    disabled={actionLoading}
+                    className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer group ${
+                      isSelected
+                        ? "border-[#FF6B00] bg-[#FF6B00]/5 ring-4 ring-[#FF6B00]/10 scale-[1.04]"
+                        : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50 hover:scale-[1.02] hover:shadow-md"
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-[#FF6B00] rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                    <span className="text-3xl leading-none">{c.flag}</span>
+                    <div className="text-center">
+                      <span className="block text-[11px] font-bold text-[#14141A] leading-snug">
+                        {c.label}
+                      </span>
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-[#8A8A96] mt-0.5">
+                        {c.currency}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {filteredCountries.length === 0 && (
+              <p className="text-body-xs text-[#8A8A96] text-center mt-8">
+                No countries match &quot;{countrySearchQuery}&quot;.{" "}
+                <button
+                  type="button"
+                  onClick={() => setCountrySearchQuery("")}
+                  className="text-[#FF6B00] font-bold underline"
+                >
+                  Clear search
+                </button>
+              </p>
+            )}
+
+            {/* Localization note */}
+            <p className="text-[10px] text-[#8A8A96] mt-8 font-medium max-w-sm mx-auto leading-relaxed">
+              Billing is handled via Dodo Payments in your local currency. Internal cost accounting is in USD.
+            </p>
+
+            {/* Loading spinner overlay */}
+            {actionLoading && (
+              <div className="fixed inset-0 bg-[#FAF9F6]/60 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
+                <div className="w-10 h-10 border-4 border-[#FF6B00]/25 border-t-[#FF6B00] rounded-full animate-spin mb-3" />
+                <p className="text-body-xs text-[#FF6B00] font-bold">Saving region preference...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 1: Plan Selection ──────────────────────────────────── */}
         {step === 1 && (
           <div className="w-full max-w-5xl text-center py-6">
+            {/* Back to country */}
+            <button
+              type="button"
+              onClick={() => setStep(0)}
+              className="inline-flex items-center gap-2 text-[#8A8A96] hover:text-[#14141A] text-body-xs font-bold mb-8 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              {selectedCountryOption ? (
+                <>
+                  {selectedCountryOption.flag} {selectedCountryOption.label}
+                </>
+              ) : (
+                "Change Region"
+              )}
+            </button>
+
             <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
               Simple, regional SaaS pricing
             </h1>
             <p className="text-body-md text-[#5A5A66] max-w-lg mx-auto mb-10">
               Answer customer phone calls instantly. Choose a subscription package adapted to your workspace.
             </p>
-            
 
-
-            {/* Pricing Selector Grid */}
-            <PricingSelector 
-              selectedPlan={selectedPlan} 
+            <PricingSelector
+              selectedPlan={selectedPlan}
               onSelectPlan={handleSelectPlan}
               billingCycle={billingCycle}
               setBillingCycle={setBillingCycle}
             />
 
-            {/* Error messaging inside the selector view */}
             {actionError && (
               <div className="max-w-md mx-auto mt-8 p-4 bg-red-50 border border-red-200 rounded-xl text-body-xs text-red-600 font-semibold animate-fade-in">
                 {actionError}
@@ -209,12 +370,14 @@ function OnboardingContent() {
           </div>
         )}
 
+        {/* ── STEP 2: Phone Setup ─────────────────────────────────────── */}
         {step === 2 && (
           <div className="w-full max-w-2xl py-4">
             <PhoneSetup onComplete={handlePhoneComplete} userId={userId} />
           </div>
         )}
 
+        {/* ── STEP 3: Success ─────────────────────────────────────────── */}
         {step === 3 && (
           <div className="w-full max-w-lg bg-white border border-[#E5E0D8] rounded-[24px] p-8 md:p-10 shadow-premium animate-fade-in text-center">
             {/* Success icon */}
@@ -240,14 +403,17 @@ function OnboardingContent() {
               </div>
               <div className="flex justify-between text-body-xs">
                 <span className="font-semibold text-[#8A8A96]">Billing Country:</span>
-                <span className="font-bold text-[#14141A]">{country || "US"}</span>
+                <span className="font-bold text-[#14141A]">
+                  {selectedCountryOption
+                    ? `${selectedCountryOption.flag} ${selectedCountryOption.label} (${selectedCountryOption.currency})`
+                    : country || "US"}
+                </span>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => {
-                // Set onboarding completed cookie and route to dashboard
                 document.cookie = "bavio_onboarding_completed=true; path=/";
                 router.push("/workspace");
               }}
@@ -259,7 +425,7 @@ function OnboardingContent() {
         )}
       </main>
 
-      {/* Sticky Bottom Plan Summary Section */}
+      {/* Sticky Bottom Plan Summary — Step 1 only */}
       {step === 1 && (
         <div className="sticky bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] z-30 transition-all duration-300">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -287,11 +453,13 @@ function OnboardingContent() {
               <div className="h-8 w-px bg-[#E5E0D8]/85 hidden md:block" />
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Trial Status</span>
-                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
-                  selectedPlan === "starter"
-                    ? "bg-[#FF6B00]/15 text-[#FF6B00]"
-                    : "bg-[#14141A]/10 text-[#14141A]"
-                }`}>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
+                    selectedPlan === "starter"
+                      ? "bg-[#FF6B00]/15 text-[#FF6B00]"
+                      : "bg-[#14141A]/10 text-[#14141A]"
+                  }`}
+                >
                   {trialStatus}
                 </span>
               </div>
@@ -324,8 +492,8 @@ function OnboardingContent() {
         </div>
       )}
 
-      {/* Screen action loading overlay */}
-      {actionLoading && (
+      {/* Screen action loading overlay — Steps 1/2 */}
+      {actionLoading && step > 0 && (
         <div className="fixed inset-0 bg-[#FAF9F6]/60 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
           <div className="w-12 h-12 border-4 border-[#FF6B00]/25 border-t-[#FF6B00] rounded-full animate-spin mb-4" />
           <p className="text-body-sm text-[#FF6B00] font-bold">Creating your secure workspace redirect...</p>
