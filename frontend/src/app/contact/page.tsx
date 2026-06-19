@@ -31,7 +31,7 @@ export default function Contact() {
             Sales & Partnership <span className="text-saffron">Inquiries</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-xl leading-relaxed">
-            Contact our team for billing arrangements, customized voice alignments, or integration partnerships.
+            Contact our team for billing arrangements, customized voice alignments, or partnership inquiries.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full max-w-4xl text-left items-start">
@@ -144,7 +144,7 @@ export default function Contact() {
                       className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-sm focus:outline-none focus:border-saffron text-ink"
                     >
                       <option value="sales">Sales & Custom Quote</option>
-                      <option value="developer">Developer Integration Help</option>
+                      <option value="developer">Technical Support</option>
                       <option value="partnership">Business Partnership</option>
                     </select>
                   </div>

@@ -63,9 +63,7 @@ const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
-const phoneRoutes = require('./routes/phoneRoutes');
 const exotelRoutes = require('./routes/exotelRoutes');
-const integrationsRoutes = require('./routes/integrations');
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const vapiRoutes = require('./routes/vapi');
 
@@ -73,7 +71,6 @@ app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
 app.use('/calls/exotel', exotelRoutes);
 app.use('/onboarding', onboardingRoutes);
-app.use('/phone', phoneRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
@@ -83,7 +80,6 @@ app.use('/telephony', telephonyRoutes);
 app.use('/leads', apiLimiter, leadsRoutes);
 app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
-app.use('/integrations', integrationsRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/vapi', vapiRoutes);
 

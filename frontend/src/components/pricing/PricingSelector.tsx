@@ -11,19 +11,20 @@ const PLAN_FEATURES: Record<string, string[]> = {
     "200 included minutes",
     "Basic call routing",
     "AI Receptionist role",
-    "Email logs support",
+    "Email lead notifications",
+    "Dashboard lead storage",
   ],
   growth: [
     "500 included minutes",
     "Multi-tenant routing",
-    "Google Calendar integration",
-    "WhatsApp alerts",
-    "Custom voice configs",
+    "Email lead notifications",
+    "SMS lead notifications",
+    "WhatsApp lead notifications",
   ],
   scale: [
     "1,500 included minutes",
-    "HubSpot & Zoho CRM syncs",
-    "Webhooks integrations",
+    "Everything in Growth",
+    "Custom notification channels",
     "Premium low-latency voices",
     "Priority SLA helpdesk",
   ],
@@ -32,7 +33,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
 const PLAN_DESCRIPTIONS: Record<string, string> = {
   starter: "Perfect for micro businesses starting with voice AI receptionist.",
   growth: "Most popular plan for expanding customer care outreach.",
-  scale: "For high-volume operations requiring advanced CRM pipelines.",
+  scale: "For high-volume operations requiring custom notifications & SLA.",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

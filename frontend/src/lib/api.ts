@@ -344,37 +344,6 @@ export const knowledgeBaseApi = {
     apiFetch<SearchResult[]>(`/knowledge-base/search?q=${encodeURIComponent(q)}`),
 };
 
-// ─── Integrations ─────────────────────────────────────────────────────────────
-
-export interface Integration {
-  id: string;
-  name: string;
-  desc: string;
-  status: 'Connected' | 'Inactive' | 'Coming Soon';
-  category: string;
-  comingSoon: boolean;
-  enabled: boolean;
-  keys: Record<string, string>;
-}
-
-export const integrationsApi = {
-  list: () => apiFetch<{ success: boolean; data: Integration[] }>('/integrations'),
-
-  connect: (id: string, keys: Record<string, string>) =>
-    apiFetch(`/integrations/${id}/connect`, {
-      method: 'POST',
-      body: JSON.stringify(keys),
-    }),
-
-  disconnect: (id: string) =>
-    apiFetch(`/integrations/${id}/disconnect`, { method: 'POST' }),
-
-  test: (id: string) =>
-    apiFetch(`/integrations/${id}/test`, { method: 'POST' }),
-
-  sync: (id: string) =>
-    apiFetch(`/integrations/${id}/sync`, { method: 'POST' }),
-};
 
 // ─── Numbers ──────────────────────────────────────────────────────────────────
 

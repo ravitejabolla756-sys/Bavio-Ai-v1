@@ -79,7 +79,7 @@ describe("PricingCard Component", () => {
     description: "For growing teams that need full-stack voice AI.",
     features: [
       { text: "500 minutes", included: true },
-      { text: "Integrations", included: false },
+      { text: "Email alerts", included: false },
     ],
     popular: true,
     overageRate: "$0.10/min",
@@ -100,7 +100,7 @@ describe("PricingCard Component", () => {
   test("renders features lists with appropriate indicators", () => {
     render(<PricingCard {...defaultProps} />);
     expect(screen.getByText("500 minutes")).toBeInTheDocument();
-    expect(screen.getByText("Integrations")).toBeInTheDocument();
+    expect(screen.getByText("Email alerts")).toBeInTheDocument();
     expect(screen.queryAllByTestId("check-circle").length).toBe(1);
     expect(screen.queryAllByTestId("minus").length).toBe(1);
   });

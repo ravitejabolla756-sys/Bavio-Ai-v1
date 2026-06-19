@@ -19,7 +19,7 @@ export default function SecurityPolicy() {
 
         <div className="flex flex-col gap-6 text-body-sm text-ink-tertiary leading-relaxed">
           <p>
-            Bavio AI enforces enterprise-grade security protocols across all voice agents, call queues, data records, and integration pathways to keep your business records safe.
+            Bavio AI enforces enterprise-grade security protocols across all voice agents, call queues, data records, and notification systems to keep your business records safe.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">

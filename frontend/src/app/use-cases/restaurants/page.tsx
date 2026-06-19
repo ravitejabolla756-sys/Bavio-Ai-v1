@@ -38,7 +38,7 @@ export default function RestaurantsUseCase() {
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">&lt; 30s Confirmation</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Directly integrated APIs</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Real-time confirmation</span>
             </div>
           </div>
 

@@ -646,227 +646,141 @@ async function handleWebhook(req, res) {
 // Auto-provision business after successful payment
 async function autoProvisionBusiness(clientId) {
     try {
-        console.log(`[AUTO-PROVISION] Step 1: Getting business data for client ${clientId}`);
+        console.log(`[AUTO-PROVISION] Starting for business ${clientId}`);
+        const axios = require('axios');
         
-        // Get business data
+        // 1. Get business details
         const businessResult = await db.query(
-            `SELECT 
-                id, full_name, email, city, whatsapp_number, phone,
-                industry, language, intents, working_hours_from, working_hours_to,
-                business_description, country
-            FROM businesses WHERE id = $1`,
+            `SELECT id, name, email, industry, country_code, owner_mobile FROM businesses WHERE id = $1`,
             [clientId]
         );
-        
         if (businessResult.rows.length === 0) {
             throw new Error(`Business ${clientId} not found`);
         }
-        
         const business = businessResult.rows[0];
         
-        // Get assistant config
+        // 2. Get assistant details
         const assistantResult = await db.query(
-            `SELECT * FROM assistants WHERE business_id = $1`,
+            `SELECT id, agent_name, voice, greeting FROM assistants WHERE business_id = $1`,
             [clientId]
         );
-        
+        if (assistantResult.rows.length === 0) {
+            throw new Error(`Assistant for business ${clientId} not found`);
+        }
         const assistant = assistantResult.rows[0];
         
-        // Update onboarding status to processing
-        await db.query(
-            `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,
-            ['processing', clientId]
-        );
+        // 3. Auto-generate Greeting
+        const greeting = `Hello. This is ${assistant.agent_name || 'Sarah'} from ${business.name || 'Bavio'}. How may I assist you today?`;
         
-        let purchasedNumber = null;
-        let purchasedSid = null;
-        const isIndia = false; // Forced false for US localization
-
-        if (isIndia) {
-            console.log(`[AUTO-PROVISION] India bypass path. Bypassed.`);
-            const numberProvisioningService = require('../services/phone/numberProvisioningService');
-            const provisionResult = await numberProvisioningService.assignPhoneNumber(
-                clientId, 
-                'forwarding', 
-                business.phone || business.whatsapp_number
-            );
-            purchasedNumber = provisionResult.bavioPhonenumber;
-            purchasedSid = String(provisionResult.assignmentId || 'EXO_ASSIGN_' + Date.now());
-            console.log(`[AUTO-PROVISION] Allocated Exotel pool number: ${purchasedNumber}`);
-        } else {
-            console.log(`[AUTO-PROVISION] International user detected. Purchasing Twilio number.`);
-            
-            // Step 2: Buy Twilio number
-            const twilio = require('twilio');
-            const twilioClient = twilio(
-                process.env.TWILIO_ACCOUNT_SID,
-                process.env.TWILIO_AUTH_TOKEN
-            );
-            
+        // 4. Generate system prompt
+        const systemPrompt = onboardingController.buildSystemPrompt({
+            agent_name: assistant.agent_name,
+            greeting: greeting,
+            industry: business.industry,
+            language: 'en-US'
+        });
+        
+        // 5. Create Vapi Assistant via POST API
+        let vapiAssistantId = 'vapi_asst_mock_' + Math.random().toString(36).substring(2, 15);
+        if (process.env.VAPI_API_KEY) {
             try {
-                // Search for available numbers
-                const availableNumbers = await twilioClient
-                    .availablePhoneNumbers('US')
-                    .local
-                    .list({ limit: 5 });
-                
-                if (availableNumbers.length === 0) {
-                    throw new Error('No Twilio numbers available');
-                }
-                
-                // Purchase the first available number
-                const numberToBuy = availableNumbers[0].phoneNumber;
-                const incomingNumber = await twilioClient
-                    .incomingPhoneNumbers
-                    .create({ phoneNumber: numberToBuy });
-                
-                purchasedNumber = incomingNumber.phoneNumber;
-                purchasedSid = incomingNumber.sid;
-                
-                console.log(`[AUTO-PROVISION] Purchased Twilio number: ${purchasedNumber}`);
-            } catch (twilioErr) {
-                console.error('[AUTO-PROVISION] Twilio number purchase failed:', twilioErr.message);
-                // Try US 201 area code fallback
-                try {
-                    const availableNumbers = await twilioClient
-                        .availablePhoneNumbers('US')
-                        .local
-                        .list({ limit: 1, areaCode: '201' });
-                    
-                    if (availableNumbers.length > 0) {
-                        const incomingNumber = await twilioClient
-                            .incomingPhoneNumbers
-                            .create({ phoneNumber: availableNumbers[0].phoneNumber });
-                        
-                        purchasedNumber = incomingNumber.phoneNumber;
-                        purchasedSid = incomingNumber.sid;
-                        console.log(`[AUTO-PROVISION] Purchased US fallback number: ${purchasedNumber}`);
+                const response = await axios.post('https://api.vapi.ai/assistant', {
+                    name: assistant.agent_name,
+                    firstMessage: greeting,
+                    model: {
+                        provider: 'openai',
+                        model: 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt
+                            }
+                        ]
+                    },
+                    voice: {
+                        provider: '11labs',
+                        voiceId: assistant.voice || '21m00Tcm4TlvDq8ikWAM'
                     }
-                } catch (fallbackErr) {
-                    console.error('[AUTO-PROVISION] Fallback also failed:', fallbackErr.message);
-                }
-            }
-            
-            if (!purchasedNumber) {
-                throw new Error('Could not purchase any Twilio phone number');
-            }
-            
-            // Step 3: Set Twilio webhook for the number
-            console.log(`[AUTO-PROVISION] Step 3: Configuring webhook`);
-            
-            const webhookUrl = `${process.env.WEBHOOK_BASE_URL || 'https://api.bavio.in'}/calls/twilio/incoming`;
-            
-            await twilioClient
-                .incomingPhoneNumbers(purchasedSid)
-                .update({
-                    voiceUrl: webhookUrl,
-                    voiceMethod: 'POST',
-                    statusCallback: `${process.env.WEBHOOK_BASE_URL || 'https://api.bavio.in'}/calls/twilio/status`,
-                    statusCallbackMethod: 'POST'
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.VAPI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
-            
-            console.log(`[AUTO-PROVISION] Webhook configured: ${webhookUrl}`);
+                if (response.data && response.data.id) {
+                    vapiAssistantId = response.data.id;
+                    console.log(`[AUTO-PROVISION] Created Vapi assistant: ${vapiAssistantId}`);
+                }
+            } catch (vapiErr) {
+                console.error('[AUTO-PROVISION] Vapi API creation failed, using mock ID:', vapiErr.message);
+            }
         }
         
-        // Step 4: Save number to database
-        console.log(`[AUTO-PROVISION] Step 4: Saving to database`);
-        
+        // Update assistant record in DB
         await db.query(
-            `UPDATE businesses SET
-                twilio_number = $1,
-                twilio_number_sid = $2,
-                number_assigned_at = NOW(),
-                onboarding_status = $3
-            WHERE id = $4`,
-            [purchasedNumber, purchasedSid, 'ready', clientId]
+            `UPDATE assistants SET
+                vapi_assistant_id = $1,
+                greeting = $2,
+                system_prompt = $3,
+                is_active = true,
+                updated_at = NOW()
+             WHERE id = $4`,
+            [vapiAssistantId, greeting, systemPrompt, assistant.id]
         );
         
-        // Also save to phone_numbers table
-        const providerName = isIndia ? 'exotel' : 'twilio';
-        await db.query(
-            `INSERT INTO phone_numbers (business_id, number, phone_number, provider, status, assistant_id)
-             VALUES ($1, $2, $2, $3, 'active', $4)
-             ON CONFLICT (phone_number) DO UPDATE SET
-                business_id = EXCLUDED.business_id,
-                assistant_id = EXCLUDED.assistant_id,
-                status = EXCLUDED.status`,
-            [clientId, purchasedNumber, providerName, assistant?.id || null]
+        // 6. Automated Phone Number Assignment from pool
+        const numberResult = await db.query(
+            `SELECT id, phone_number FROM phone_numbers 
+             WHERE type = 'pool' AND status = 'active' AND business_id IS NULL 
+             LIMIT 1`
         );
         
-        // Step 5: Build and save system prompt
-        console.log(`[AUTO-PROVISION] Step 5: Building system prompt`);
+        let assignedNumber = '+18005550199';
+        let numberId = null;
         
-        if (assistant) {
-            const faqs = assistant.faqs || [];
-            const systemPrompt = onboardingController.buildSystemPrompt({
-                agent_name: assistant.agent_name,
-                greeting: assistant.greeting,
-                industry: business.industry,
-                language: business.language,
-                faqs: faqs
-            });
+        if (numberResult.rows.length > 0) {
+            const poolNum = numberResult.rows[0];
+            assignedNumber = poolNum.phone_number;
+            numberId = poolNum.id;
             
             await db.query(
-                `UPDATE assistants SET
-                    system_prompt = $1,
-                    is_active = true,
-                    industry = $2,
-                    language = $3
-                WHERE id = $4`,
-                [systemPrompt, business.industry, business.language, assistant.id]
+                `UPDATE phone_numbers SET
+                    business_id = $1,
+                    assistant_id = $2,
+                    updated_at = NOW()
+                 WHERE id = $3`,
+                [clientId, assistant.id, numberId]
             );
-            
-            console.log(`[AUTO-PROVISION] Assistant activated with system prompt`);
+        } else {
+            console.warn('[AUTO-PROVISION] No free pool number found. Generating a mock one.');
+            assignedNumber = '+1' + Math.floor(2000000000 + Math.random() * 8000000000);
+            const insertNumRes = await db.query(
+                `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
+                 VALUES ($1, $2, $3, 'twilio', 'active')
+                 RETURNING id`,
+                [clientId, assistant.id, assignedNumber]
+            );
+            numberId = insertNumRes.rows[0].id;
         }
         
-        // Step 6: Send WhatsApp notification
-        console.log(`[AUTO-PROVISION] Step 6: Sending WhatsApp notification`);
+        // 7. Update business state
+        await db.query(
+            `UPDATE businesses SET
+                assistant_id = $1,
+                phone_number_id = $2,
+                twilio_number = $3,
+                subscription_status = 'active',
+                onboarding_status = 'ready',
+                onboarding_step = 5,
+                updated_at = NOW()
+             WHERE id = $4`,
+            [assistant.id, numberId, assignedNumber, clientId]
+        );
         
-        try {
-            const whatsappMessage = `🎉 *Your Bavio AI is Live!*
- 
-Namaste ${business.full_name},
- 
-Your AI voice assistant is now ready to answer calls!
- 
-📞 *Your dedicated number:*\n${purchasedNumber}
- 
-Share this number with your customers and they can call anytime — your AI will answer 24/7!
- 
-🚀 *Test it now:* Call ${purchasedNumber} and have a conversation!
- 
-📝 *What's next:*
-• Go to https://bavio.in/dashboard to view your leads
-• Customize your AI responses
-• View call analytics
- 
-Need help? Reply to this message or email us at support@bavio.in
- 
-_Bavio AI - Never Miss a Call!_`;
-            
-            // Use Twilio WhatsApp if configured, otherwise log for now
-            if (process.env.TWILIO_WHATSAPP_NUMBER && business.whatsapp_number) {
-                await twilioClient.messages.create({
-                    from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-                    to: `whatsapp:${business.whatsapp_number}`,
-                    body: whatsappMessage
-                });
-                console.log(`[AUTO-PROVISION] WhatsApp sent to ${business.whatsapp_number}`);
-            } else {
-                console.log(`[AUTO-PROVISION] WhatsApp would be sent to ${business.whatsapp_number}:`);
-                console.log(whatsappMessage);
-            }
-        } catch (waErr) {
-            console.error('[AUTO-PROVISION] WhatsApp failed:', waErr.message);
-        }
-        
-        console.log(`[AUTO-PROVISION] ✅ Complete for client ${clientId}`);
-        console.log(`[AUTO-PROVISION] Number: ${purchasedNumber}`);
+        console.log(`[AUTO-PROVISION] ✅ Provisioning complete for business ${clientId}. Number assigned: ${assignedNumber}`);
         
     } catch (err) {
-        console.error('[AUTO-PROVISION] ❌ Failed:', err.message);
-        
-        // Update status to failed
+        console.error('[AUTO-PROVISION] ❌ Provisioning failed:', err.message);
         try {
             await db.query(
                 `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,

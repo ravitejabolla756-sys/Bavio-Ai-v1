@@ -12,7 +12,6 @@ import {
   ChartBar, 
   BookOpen, 
   GitFork, 
-  Cpu, 
   CreditCard, 
   Gear,
   CaretDown,
@@ -30,13 +29,9 @@ import {
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
-  { name: "Agents", href: "/dashboard/agents", icon: Users },
   { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
   { name: "Analytics", href: "/dashboard/analytics", icon: ChartBar },
-  { name: "Knowledge Base", href: "/dashboard/knowledge-base", icon: BookOpen },
-  { name: "Workflows", href: "/dashboard/workflows", icon: GitFork },
-  { name: "Integrations Monitor", href: "/dashboard/integrations", icon: Cpu },
   { name: "Settings", href: "/dashboard/settings", icon: Gear },
 ];
 
@@ -293,24 +288,6 @@ export default function DashboardLayout({
 
             {/* Header Action Buttons */}
             <div className="flex items-center gap-2 border-l border-line pl-4">
-              <Link
-                href="/dashboard/agents?action=create"
-                className="bg-white hover:bg-canvas border border-line text-ink-secondary text-[10px] font-bold uppercase tracking-wider py-2 px-3 rounded-lg transition-all"
-              >
-                Create Agent
-              </Link>
-              <Link
-                href="/dashboard/workflows"
-                className="bg-white hover:bg-canvas border border-line text-ink-secondary text-[10px] font-bold uppercase tracking-wider py-2 px-3 rounded-lg transition-all"
-              >
-                Deploy Agent
-              </Link>
-              <Link
-                href="/dashboard/calls?action=campaign"
-                className="bg-saffron hover:bg-saffron-hover text-white text-[10px] font-bold uppercase tracking-wider py-2 px-3.5 rounded-lg shadow-saffron transition-all"
-              >
-                Start Campaign
-              </Link>
             </div>
           </div>
         </header>
@@ -391,35 +368,7 @@ export default function DashboardLayout({
                   </div>
                 )}
                 
-                {/* Advanced Quick Actions */}
-                {searchQuery === "" && (
-                  <>
-                    <hr className="border-line my-1" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-2.5 py-1">
-                      Quick Operations
-                    </span>
-                    <button 
-                      onClick={() => handleCommandKSelect("/dashboard/agents?action=create")}
-                      className="w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl hover:bg-line-subtle/50 text-xs font-semibold text-ink-secondary hover:text-ink transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Sparkle className="w-4 h-4 text-saffron" />
-                        <span>Deploy new Voice Agent</span>
-                      </div>
-                      <kbd className="font-mono text-[9px] text-ink-muted">A</kbd>
-                    </button>
-                    <button 
-                      onClick={() => handleCommandKSelect("/dashboard/calls?action=test")}
-                      className="w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl hover:bg-line-subtle/50 text-xs font-semibold text-ink-secondary hover:text-ink transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Pulse className="w-4 h-4 text-state-success" />
-                        <span>Initiate SIP Test Trunk Call</span>
-                      </div>
-                      <kbd className="font-mono text-[9px] text-ink-muted">T</kbd>
-                    </button>
-                  </>
-                )}
+                {/* Advanced Quick Actions Removed */}
               </div>
 
               <div className="p-3 bg-surface-raised border-t border-line flex justify-between items-center text-[10px] text-ink-muted font-mono">

@@ -22,16 +22,12 @@ import {
   Cpu,
   Coins,
   Building,
-  ArrowRight,
-  Plug
+  ArrowRight
 } from "@phosphor-icons/react";
 
 const workspaceNavigationItems = [
   { name: "Overview", href: "/workspace", icon: Layout },
-  { name: "AI Agents", href: "/workspace/agents", icon: Cpu },
-  { name: "Integrations", href: "/workspace/integrations", icon: Plug },
-  { name: "Subscription", href: "/workspace/subscription", icon: CreditCard },
-  { name: "Billing & Top-Ups", href: "/workspace/billing", icon: Coins },
+  { name: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
   { name: "Settings & Profile", href: "/workspace/settings", icon: Gear },
 ];
 
