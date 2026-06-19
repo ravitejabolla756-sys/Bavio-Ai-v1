@@ -23,7 +23,7 @@ export default function ECommerceUseCase() {
             Automate Returns, Refunds & <span className="text-saffron">Order Tracking</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
-            Resolve customer return questions instantly. Bavio AI tracks order logistics, resolves refund statuses, and answers shipping timeline questions, integrating with Shopify and custom backends.
+            Resolve customer return questions instantly. Bavio AI tracks order logistics, resolves refund statuses, and answers shipping timeline questions — all in real-time, automatically.
           </p>
 
           {/* Metrics Grid */}

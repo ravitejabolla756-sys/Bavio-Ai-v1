@@ -363,7 +363,7 @@ function WorkspaceSettingsContent() {
                   <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">API Authentication Credentials</h3>
                   
                   <div className="flex flex-col gap-3 text-body-xs font-semibold text-ink-secondary mb-6">
-                    <p className="text-ink-tertiary">Use this key to authorize requests to Bavio endpoints (Call logs API, WhatsApp Webhook integrations).</p>
+                    <p className="text-ink-tertiary">Use this key to authorize requests to Bavio endpoints (Call logs API, Webhook alerts).</p>
                     
                     <div className="relative">
                       <input
@@ -395,7 +395,7 @@ function WorkspaceSettingsContent() {
               {/* Webhooks configuration */}
               <div className="card-bezel">
                 <div className="card-bezel-inner p-6 text-left">
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">CRM Webhook Sync</h3>
+                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Webhook Notifications Sync</h3>
                   
                   <div className="flex flex-col gap-4 text-body-xs font-semibold text-ink-secondary">
                     <p className="text-ink-tertiary">Configure the endpoint URL where Bavio will post call transcripts and booking outcomes.</p>

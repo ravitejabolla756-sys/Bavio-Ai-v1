@@ -51,57 +51,31 @@ const speechLines = [
   { text: "Dhanyawad Rahul ji! Hamare executive aapse WhatsApp par connect karenge.", time: 14 },
 ];
 
-const availableIntegrations = [
+const notificationChannels = [
   {
-    id: "twilio",
-    name: "Twilio Telephony",
-    desc: "Handle phone numbers, inbound/outbound calling, and SIP trunks.",
-    category: "Telephony",
-    slug: "twilio",
+    id: "email",
+    name: "Email Alerts",
+    desc: "Instant lead summaries delivered to your inbox after every qualified call.",
+    icon: "✉️",
+  },
+  {
+    id: "sms",
+    name: "SMS Notifications",
+    desc: "Real-time SMS alerts for new leads, missed calls, and appointment bookings.",
+    icon: "📱",
   },
   {
     id: "whatsapp",
-    name: "WhatsApp Notifications",
-    desc: "Send instant lead capture alerts and notifications directly to your chat.",
-    category: "Messaging",
-    slug: "whatsapp",
+    name: "WhatsApp Alerts",
+    desc: "Rich WhatsApp messages with caller name, intent, and contact — sent instantly.",
+    icon: "💬",
   },
   {
-    id: "google-calendar",
-    name: "Google Calendar",
-    desc: "Allow AI agents to book, cancel, or reschedule appointments dynamically.",
-    category: "Calendar",
-    slug: "googlecalendar",
+    id: "dashboard",
+    name: "Live Dashboard",
+    desc: "Real-time lead feed, call logs, and analytics in your Bavio dashboard.",
+    icon: "📊",
   },
-  {
-    id: "hubspot",
-    name: "HubSpot CRM",
-    desc: "Sync caller telemetry, lead details, and structured profiles instantly.",
-    category: "CRM",
-    slug: "hubspot",
-  },
-  {
-    id: "zoho",
-    name: "Zoho CRM",
-    desc: "Update Zoho lead pipelines and contact cards directly from call logs.",
-    category: "CRM",
-    slug: "zoho",
-  },
-  {
-    id: "webhooks",
-    name: "Developer Webhooks",
-    desc: "Dispatch custom JSON payloads to external systems and APIs after calls.",
-    category: "Developer",
-    slug: "json",
-  },
-];
-
-const comingSoonIntegrations = [
-  { id: "salesforce", name: "Salesforce", category: "CRM", slug: "salesforce" },
-  { id: "slack", name: "Slack", category: "Messaging", slug: "slack" },
-  { id: "google-sheets", name: "Google Sheets", category: "Developer", slug: "googlesheets" },
-  { id: "zapier", name: "Zapier", category: "Developer", slug: "zapier" },
-  { id: "make", name: "Make.com", category: "Developer", slug: "make" },
 ];
 
 const testimonials = [
@@ -139,7 +113,7 @@ const pricingPlans = [
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
-      { text: "CRM integrations", included: false },
+      { text: "Email notifications", included: false },
       { text: "Webhook API", included: false },
     ],
     popular: false,
@@ -154,7 +128,7 @@ const pricingPlans = [
       { text: "Unlimited agents", included: true },
       { text: "24/7 phone support", included: true },
       { text: "Full analytics + exports", included: true },
-      { text: "20+ integrations", included: true },
+      { text: "Email + SMS + WhatsApp alerts", included: true },
       { text: "Webhook API", included: true },
     ],
     popular: true,
@@ -168,7 +142,7 @@ const pricingPlans = [
       { text: "10,000 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
       { text: "Dedicated manager", included: true },
-      { text: "Custom integrations", included: true },
+      { text: "All notification channels", included: true },
       { text: "SLA guarantee", included: true },
       { text: "Priority support", included: true },
     ],
@@ -183,20 +157,7 @@ export default function HomePage() {
   const ctaDestination = useCTADestination();
   const router = useRouter();
 
-  const handleConnectIntegration = (id: string) => {
-    const isAuthenticated = getCookie("bavio_auth") === "true";
-    const isOnboardingComplete = getCookie("bavio_onboarding_completed") === "true";
-    const targetUrl = `/dashboard/integrations?connect=${id}`;
 
-    if (!isAuthenticated) {
-      router.push(`/signup?redirect=${encodeURIComponent(targetUrl)}`);
-    } else if (!isOnboardingComplete) {
-      localStorage.setItem("bavio_auth_redirect", targetUrl);
-      router.push("/onboarding");
-    } else {
-      router.push(targetUrl);
-    }
-  };
 
   /* ── Hero call demo state ── */
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -544,21 +505,18 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* ─── SECTION 2: TRUST BAR (Monochrome Dimmed Logos) ────────────────── */}
+      {/* ─── SECTION 2: TRUST BAR (Notification Channels) ────────────────── */}
       <section className="bg-zinc-950 py-12 border-t border-b border-zinc-900/60 overflow-hidden">
         <div className="container-site flex flex-col items-center justify-center gap-8">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">
-            Seamlessly synced with your workflow stack
+            Lead notifications delivered across every channel
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-35">
-            {availableIntegrations.map((logo) => (
-              <img
-                key={logo.id}
-                src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
-                alt={logo.name}
-                className="h-5 object-contain hover:opacity-100 transition-opacity duration-300"
-                title={logo.name}
-              />
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+            {notificationChannels.map((ch) => (
+              <div key={ch.id} className="flex items-center gap-2 text-zinc-400">
+                <span className="text-lg">{ch.icon}</span>
+                <span className="text-xs font-semibold tracking-wide">{ch.name}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -804,50 +762,32 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── SECTION 6: ECOSYSTEM INTEGRATIONS ───────────────────────── */}
+      {/* ─── SECTION 6: LEAD NOTIFICATIONS ────────────────────────────── */}
       <section className="py-24 bg-zinc-950 border-t border-zinc-900/60">
         <div className="container-site">
           <div className="max-w-[650px] text-left mb-16">
+            <span className="text-[10px] font-bold text-saffron uppercase tracking-widest mb-4 block font-mono">
+              Lead Notifications
+            </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 font-display tracking-tight">
-              Ecosystem Integrations
+              Never Miss a Lead. Ever.
             </h2>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Bavio integrates directly with the telephony systems and databases you already run, minimizing workflow delay.
+              Bavio notifies you the instant a lead qualifies — across Email, SMS, WhatsApp, and your live dashboard — so you can follow up before the competition.
             </p>
           </div>
 
-          {/* Symmetrical Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 max-w-5xl mb-12">
-            {availableIntegrations.map((logo) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 max-w-5xl">
+            {notificationChannels.map((ch) => (
               <div
-                key={logo.id}
-                className="bg-zinc-900/30 rounded-xl border border-zinc-800/60 p-5 flex flex-col items-center justify-center h-20 hover:border-saffron/40 hover:bg-zinc-900/50 transition-all duration-300 cursor-default group"
+                key={ch.id}
+                className="bg-zinc-900/30 rounded-2xl border border-zinc-800/60 p-6 flex flex-col gap-3 hover:border-saffron/40 hover:bg-zinc-900/50 transition-all duration-300"
               >
-                <img
-                  src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
-                  alt={logo.name}
-                  className="h-5 object-contain opacity-40 group-hover:opacity-100 transition-opacity duration-300 mb-2"
-                />
-                <span className="text-[9px] font-bold text-zinc-500 tracking-wide font-mono">{logo.name}</span>
+                <span className="text-3xl">{ch.icon}</span>
+                <h3 className="text-sm font-bold text-white">{ch.name}</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">{ch.desc}</p>
               </div>
             ))}
-          </div>
-
-          {/* Coming Soon grid strip */}
-          <div className="pt-8 border-t border-zinc-900/40">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-6 text-left">Coming in V2</p>
-            <div className="flex flex-wrap items-center gap-x-12 gap-y-6 opacity-25">
-              {comingSoonIntegrations.map((logo) => (
-                <div key={logo.id} className="flex items-center gap-2">
-                  <img
-                    src={`https://cdn.simpleicons.org/${logo.slug}/ffffff`}
-                    alt={logo.name}
-                    className="h-4 object-contain"
-                  />
-                  <span className="text-[10px] text-white font-mono font-semibold">{logo.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

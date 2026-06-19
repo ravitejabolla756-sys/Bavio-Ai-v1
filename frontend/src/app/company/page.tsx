@@ -56,7 +56,7 @@ const timeline = [
   {
     date: "April 2026",
     title: "Voice Intelligence & Automation",
-    description: "Integrated multilingual voice capabilities, conversation routing, lead qualification workflows, appointment booking automation, and business integrations."
+    description: "Integrated multilingual voice capabilities, conversation routing, lead qualification workflows, appointment booking automation, and lead notification delivery."
   },
   {
     date: "May 2026",
