@@ -78,7 +78,7 @@ export default function Navbar() {
     <>
       <header
         className={`fixed left-0 right-0 z-50 w-full transition-all duration-300 ${
-          scrolled ? "top-2 py-3" : "top-4 py-4"
+          scrolled ? "top-2 py-2" : "top-4 py-3"
         }`}
       >
         <div className="mx-auto max-w-container px-4 sm:px-6 lg:px-8 flex items-center justify-between relative">
@@ -88,15 +88,15 @@ export default function Navbar() {
             className="flex items-center gap-3 group shrink-0"
             aria-label="Bavio home"
           >
-            <Logo className="w-12 h-12 transition-transform duration-300 ease-premium group-hover:scale-105" color="text-saffron" />
-            <span className="font-display text-2xl font-black tracking-tight text-ink">
-              Bavio AI
+            <Logo className="w-10 h-10 transition-transform duration-300 ease-premium group-hover:scale-105" color="text-[#FF6B00]" />
+            <span className="font-display text-2xl font-extrabold tracking-tight text-[#140A02] transition-colors duration-200 group-hover:text-[#FF6B00]">
+              Bavio
             </span>
           </Link>
 
           {/* Desktop nav links - Center Pill */}
           <nav
-            className="hidden xl:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-glass border border-line rounded-full px-3 py-1.5 shadow-premium transition-all duration-500 ease-premium"
+            className="hidden xl:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FFFFFF]/85 backdrop-blur-md border border-[#F3E4D4]/80 rounded-full px-3 py-1.5 shadow-sm transition-all duration-500 ease-premium"
           >
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -104,17 +104,17 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-4 py-2 text-body-sm font-bold transition-colors duration-200 ease-premium ${
+                  className={`relative px-4 py-2 text-body-sm font-medium transition-colors duration-200 ease-premium ${
                     isActive
-                      ? "text-saffron"
-                      : "text-ink-tertiary hover:text-ink"
+                      ? "text-[#FF6B00]"
+                      : "text-[#6E6256] hover:text-[#FF6B00]"
                   }`}
                 >
                   {link.label}
                   {isActive && !reduce && (
                     <motion.div
                       layoutId="nav-indicator"
-                      className="absolute bottom-0.5 left-3 right-3 h-[2.5px] bg-saffron rounded-full"
+                      className="absolute bottom-0.5 left-3 right-3 h-[2px] bg-[#FF6B00] rounded-full"
                       transition={{
                         type: "spring",
                         stiffness: 380,
@@ -135,21 +135,21 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="px-4 py-2.5 text-body-sm font-medium text-ink hover:text-saffron transition-colors duration-200"
+                    className="px-4 py-2.5 text-body-sm font-medium text-[#6E6256] hover:text-[#FF6B00] transition-colors duration-200"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/signup"
-                    className="px-5 py-2.5 text-body-sm font-bold text-white bg-saffron hover:bg-saffron-hover rounded-full transition-all duration-200 shadow-saffron hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[0_8px_32px_rgba(255,107,0,0.35)]"
+                    className="px-5 py-2 text-body-sm font-bold text-white bg-[#FF6B00] hover:bg-[#FF8C3A] rounded-full transition-all duration-200 shadow-sm hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[0_8px_32px_rgba(255,107,0,0.25)]"
                   >
-                    Start Free Trial
+                    Try Free
                   </Link>
                 </>
               ) : (
                 <Link
                   href={authHref}
-                  className="px-5 py-2.5 text-body-sm font-bold text-white bg-saffron hover:bg-saffron-hover rounded-full transition-all duration-200 shadow-saffron hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[0_8px_32px_rgba(255,107,0,0.35)]"
+                  className="px-5 py-2 text-body-sm font-bold text-white bg-[#FF6B00] hover:bg-[#FF8C3A] rounded-full transition-all duration-200 shadow-sm hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[0_8px_32px_rgba(255,107,0,0.25)]"
                 >
                   {authText}
                 </Link>
@@ -159,7 +159,7 @@ export default function Navbar() {
             {/* Mobile toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="xl:hidden p-2 text-ink-tertiary hover:text-ink transition-colors bg-glass border border-line rounded-full"
+              className="xl:hidden p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors bg-[#FFFFFF]/90 border border-[#F3E4D4]/80 rounded-full"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
             >
@@ -181,7 +181,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-canvas/95 backdrop-blur-xl xl:hidden"
+            className="fixed inset-0 z-40 bg-[#FFFDF8]/95 backdrop-blur-xl xl:hidden"
           >
             <div className="flex flex-col pt-24 px-6 pb-8 h-full overflow-y-auto">
               <nav className="flex flex-col gap-1">
@@ -203,8 +203,8 @@ export default function Navbar() {
                         onClick={() => setMobileOpen(false)}
                         className={`block px-4 py-3.5 text-heading-md font-semibold rounded-xl transition-colors ${
                           isActive
-                            ? "text-saffron bg-saffron-muted"
-                            : "text-ink hover:bg-surface"
+                            ? "text-[#FF6B00] bg-[#FFF7ED]"
+                            : "text-[#140A02] hover:bg-[#FFF7ED]"
                         }`}
                       >
                         {link.label}
@@ -220,23 +220,23 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setMobileOpen(false)}
-                      className="text-center text-body-md font-medium text-ink hover:bg-surface py-3.5 border border-line rounded-full transition-all duration-200"
+                      className="text-center text-body-md font-medium text-[#140A02] hover:bg-[#FFF7ED] py-3 border border-[#F3E4D4] rounded-full transition-all duration-200"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/signup"
                       onClick={() => setMobileOpen(false)}
-                      className="text-center text-body-md font-bold text-white bg-saffron hover:bg-saffron-hover py-3.5 rounded-full shadow-saffron transition-all duration-200"
+                      className="text-center text-body-md font-bold text-white bg-[#FF6B00] hover:bg-[#FF8C3A] py-3 rounded-full shadow-sm transition-all duration-200"
                     >
-                      Start Free Trial
+                      Try Free
                     </Link>
                   </>
                 ) : (
                   <Link
                     href={authHref}
                     onClick={() => setMobileOpen(false)}
-                    className="text-center text-body-md font-bold text-white bg-saffron hover:bg-saffron-hover py-3.5 rounded-full shadow-saffron transition-all duration-200"
+                    className="text-center text-body-md font-bold text-white bg-[#FF6B00] hover:bg-[#FF8C3A] py-3 rounded-full shadow-sm transition-all duration-200"
                   >
                     {authText}
                   </Link>
