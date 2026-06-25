@@ -3,582 +3,610 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, ChevronDown, Lock, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
+import {
+  CheckCircle,
+  Minus,
+  CaretDown,
+  Buildings,
+  Headset,
+  ArrowRight,
+  ShieldCheck,
+  Star,
+} from "@phosphor-icons/react";
+import ScrollReveal from "@/components/motion/ScrollReveal";
 
-// --- Mock Stripe / Conversion Event Tracker ---
-function trackEvent(eventName: string, details: any) {
-  console.log(`[TRACKING] Event: "${eventName}"`, details);
-}
-
-interface PlanFeature {
-  text: string;
-  included: boolean;
-}
-
-interface Plan {
+interface PlanDetails {
   name: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  minutes: string;
-  overage: string;
-  features: PlanFeature[];
-  badge?: string;
-  highlighted?: boolean;
+  popular: boolean;
+  inrPriceMonthly: number;
+  usdPriceMonthly: number;
+  inrPriceAnnual: number; // ~15% discount
+  usdPriceAnnual: number; // ~15% discount
+  inrOverage: string;
+  usdOverage: string;
+  inrMins: number;
+  usdMins: number;
+  description: string;
+  subtext: string;
+  buttonText: string;
+  buttonStyle: "saffron" | "saffron-large" | "outline";
+  features: string[];
 }
 
-const plans: Plan[] = [
+const PRICING_PLANS: PlanDetails[] = [
   {
     name: "Starter",
-    monthlyPrice: 29,
-    annualPrice: 24,
-    minutes: "200 minutes included",
-    overage: "$0.12/min overage rate",
+    popular: false,
+    inrPriceMonthly: 1999,
+    usdPriceMonthly: 29,
+    inrPriceAnnual: 1699,
+    usdPriceAnnual: 24,
+    inrOverage: "₹5",
+    usdOverage: "$0.08",
+    inrMins: 200,
+    usdMins: 200,
+    description: "Ideal for small clinics & individual consultants.",
+    subtext: "7 days free. No credit card.",
+    buttonText: "Start Free",
+    buttonStyle: "saffron",
     features: [
-      { text: "Up to 200 minutes/month", included: true },
-      { text: "1 AI agent", included: true },
-      { text: "Basic call transcripts", included: true },
-      { text: "WhatsApp alerts", included: true },
-      { text: "Email support", included: true },
-      { text: "Unlimited phone numbers", included: true },
-      { text: "Basic analytics", included: true },
-      { text: "Custom voice", included: false },
-      { text: "Advanced integrations", included: false },
-      { text: "Priority support", included: false },
+      "Single AI agent",
+      "Hindi/English/Hinglish Support",
+      "WhatsApp alerts",
+      "Lead capture",
+      "Dashboard analytics",
+      "Email support",
     ],
   },
   {
     name: "Growth",
-    monthlyPrice: 59,
-    annualPrice: 49,
-    minutes: "500 minutes included",
-    overage: "$0.10/min overage rate",
-    badge: "MOST POPULAR",
-    highlighted: true,
+    popular: true,
+    inrPriceMonthly: 3999,
+    usdPriceMonthly: 59,
+    inrPriceAnnual: 3399,
+    usdPriceAnnual: 49,
+    inrOverage: "₹4",
+    usdOverage: "$0.06",
+    inrMins: 500,
+    usdMins: 500,
+    description: "Designed for growing real estate teams & agencies.",
+    subtext: "7 days free. Most teams choose this.",
+    buttonText: "Start Free",
+    buttonStyle: "saffron-large",
     features: [
-      { text: "Up to 500 minutes/month", included: true },
-      { text: "5 AI agents", included: true },
-      { text: "Full call transcripts + sentiment", included: true },
-      { text: "WhatsApp alerts + lead capture", included: true },
-      { text: "Slack integration", included: true },
-      { text: "HubSpot/Salesforce sync", included: true },
-      { text: "Advanced analytics & reporting", included: true },
-      { text: "Custom voice (priority)", included: true },
-      { text: "Email + chat support", included: true },
-      { text: "API access", included: false },
-      { text: "Custom enterprise features", included: false },
+      "Unlimited agents",
+      "Custom voice training",
+      "Advanced analytics",
+      "Priority support",
+      "Integration builder",
+      "Single AI agent",
+      "Hindi/English/Hinglish Support",
+      "WhatsApp alerts",
+      "Lead capture",
+      "Dashboard analytics",
     ],
   },
   {
     name: "Scale",
-    monthlyPrice: 99,
-    annualPrice: 82,
-    minutes: "1,500 minutes included",
-    overage: "$0.08/min overage rate",
+    popular: false,
+    inrPriceMonthly: 7999,
+    usdPriceMonthly: 119,
+    inrPriceAnnual: 6799,
+    usdPriceAnnual: 99,
+    inrOverage: "₹3",
+    usdOverage: "$0.04",
+    inrMins: 1500,
+    usdMins: 1500,
+    description: "Built for large-scale calling centers and SMB aggregators.",
+    subtext: "For growing businesses",
+    buttonText: "Start Free Trial",
+    buttonStyle: "outline",
     features: [
-      { text: "Up to 1,500 minutes/month", included: true },
-      { text: "Unlimited agents", included: true },
-      { text: "Full transcripts + sentiment + intent detection", included: true },
-      { text: "All Tier 2 integrations", included: true },
-      { text: "Custom integrations via webhook", included: true },
-      { text: "Voice cloning (custom brand voice)", included: true },
-      { text: "Advanced workflow automation", included: true },
-      { text: "Priority 24/7 support", included: true },
-      { text: "Full API access (REST + WebSocket)", included: true },
-      { text: "SLA guarantee (99.9% uptime)", included: true },
-      { text: "Dedicated account manager (optional)", included: true },
+      "Dedicated account manager",
+      "Custom SLA",
+      "White-label option",
+      "API priority",
+      "Phone support",
+      "Unlimited agents",
+      "Custom voice training",
+      "Advanced analytics",
+      "Priority support",
+      "Integration builder",
     ],
   },
 ];
 
-const faqs = [
+interface ComparisonRow {
+  feature: string;
+  starter: string;
+  growth: string;
+  scale: string;
+  enterprise: string;
+}
+
+const COMPARISON_TABLE: ComparisonRow[] = [
+  { feature: "Included Minutes", starter: "200", growth: "500", scale: "1,500", enterprise: "Custom / Volume" },
+  { feature: "Per-minute Overage (INR)", starter: "₹5/min", growth: "₹4/min", scale: "₹3/min", enterprise: "Volume discounts" },
+  { feature: "Per-minute Overage (USD)", starter: "$0.08/min", growth: "$0.06/min", scale: "$0.04/min", enterprise: "Volume discounts" },
+  { feature: "AI Voice Agents", starter: "1", growth: "Unlimited", scale: "Unlimited", enterprise: "Unlimited" },
+  { feature: "Languages Supported", starter: "Hindi, Eng, Hinglish", growth: "Hindi, Eng, Hinglish", scale: "Hindi, Eng, Hinglish", enterprise: "All 12+ Indian languages" },
+  { feature: "Lead Capture & Sync", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Custom Schema" },
+  { feature: "WhatsApp Alerts", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Dedicated Channel" },
+  { feature: "Voice Training", starter: "Standard", growth: "Custom", scale: "Custom + Voice Clone", enterprise: "Custom Voice Studio" },
+  { feature: "Integration Builder", starter: "Basic", growth: "✓ (50+ tools)", scale: "✓ (50+ tools)", enterprise: "Custom API Sync" },
+  { feature: "Dashboard Analytics", starter: "Basic", growth: "Advanced", scale: "Advanced + Exports", enterprise: "Custom Analytics ETL" },
+  { feature: "Support Channels", starter: "Email", growth: "Priority Email/Chat", scale: "24/7 Phone Support", enterprise: "Dedicated TAM 24/7" },
+  { feature: "SSO Security", starter: "—", growth: "—", scale: "—", enterprise: "SAML / OIDC" },
+  { feature: "HIPAA / Compliance", starter: "—", growth: "—", scale: "✓ (Scale+ Ready)", enterprise: "✓ Full Audits" },
+  { feature: "SLA Guarantee", starter: "—", growth: "—", scale: "Custom SLA", enterprise: "99.99% Uptime SLA" },
+];
+
+const FAQS = [
   {
-    q: "What happens when I exceed my minute limit?",
-    a: "You're charged the overage rate for excess minutes. No automatic cancellation. Monitor usage in your dashboard and upgrade anytime.",
+    q: "What if I exceed my monthly minutes?",
+    a: "You'll be charged the specified per-minute overage rate for your plan (e.g. ₹4/min on Growth). There is zero service interruption, and calls will process normally.",
   },
   {
-    q: "Can I switch plans mid-month?",
-    a: "Yes. Upgrade or downgrade instantly. We prorate the difference on your next bill.",
-  },
-  {
-    q: "Is there a contract or minimum commitment?",
-    a: "No. All plans are month-to-month. Cancel anytime with no penalties.",
+    q: "Can I change plans anytime?",
+    a: "Yes. You can upgrade instantly to access more minutes or features. Downgrades will take effect at the end of your current billing cycle.",
   },
   {
     q: "Do you offer annual billing?",
-    a: "Yes. Pay annually and get 2 months free (16.7% discount). Toggle between monthly and annual in the billing section.",
+    a: "Yes, you save 15% on any plan when you pay annually. Choose the annual toggle above to see the discounted monthly rates.",
   },
   {
-    q: "What's included in 'minutes'?",
-    a: "Every inbound call — regardless of duration. 1 call = 1 minute charged. Outbound calls and testing are free.",
+    q: "Is there a free trial?",
+    a: "Yes, we offer a 7-day free trial on all plans. No credit card is required to sign up and test your voice agent.",
   },
   {
-    q: "Can I use Bavio for outbound campaigns?",
-    a: "Not yet. Bavio is optimized for inbound call handling. Outbound is on our roadmap.",
+    q: "What about HIPAA/compliance?",
+    a: "Bavio provides HIPAA-ready infrastructure options starting on the Scale plan. Enterprise plans include full compliance, security audits, and dedicated storage options.",
   },
   {
-    q: "Do you have enterprise pricing?",
-    a: "Yes. For 10,000+ monthly minutes, custom workflows, or SLA guarantees, contact our sales team.",
+    q: "Can I white-label Bavio?",
+    a: "Yes, our white-label options are available on the Scale plan. You can configure custom domains, custom SMTP routing, and visual dashboards for your clients.",
+  },
+  {
+    q: "How accurate is Hinglish speech recognition?",
+    a: "Bavio uses localized voice language engines powered by Sarvam AI and custom models. It recognizes mixed Hindi and English vocabulary with over 95% accuracy.",
+  },
+  {
+    q: "Do I get a dedicated phone number?",
+    a: "Yes, each active plan gets a dedicated virtual landline or mobile trunk number generated instantly in the dashboard via Exotel or Twilio.",
+  },
+  {
+    q: "Can I port my existing number?",
+    a: "Yes. On the Growth and Scale plans, we support call forwarding from your existing business lines, or we can assist in porting SIP trunks directly.",
   },
 ];
 
+const TRUST_BADGES = [
+  "SOC 2 Certified",
+  "No Contracts",
+  "14-Day Free Trial",
+  "Cancel Anytime",
+  "Money-Back Guarantee",
+];
+
 export function PricingGrid() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
-  const [showComparison, setShowComparison] = useState(false);
-  const [stripeLoadingPlan, setStripeLoadingPlan] = useState<string | null>(null);
-  const [stripeModalPlan, setStripeModalPlan] = useState<Plan | null>(null);
-  const [stripeSuccess, setStripeSuccess] = useState(false);
-
-  // Stripe Mock Checkout Click
-  const handleStartTrial = (plan: Plan) => {
-    trackEvent("Tier Clicked", { tier: plan.name, billingPeriod });
-    setStripeLoadingPlan(plan.name);
-
-    // Simulate redirect to Stripe secure checkout
-    setTimeout(() => {
-      setStripeLoadingPlan(null);
-      setStripeModalPlan(plan);
-    }, 1500);
-  };
-
-  const handlePayMockStripe = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStripeSuccess(true);
-    trackEvent("Stripe Payment Completed", { plan: stripeModalPlan?.name, billingPeriod });
-
-    setTimeout(() => {
-      // Clear modal and redirect to signup
-      setStripeModalPlan(null);
-      setStripeSuccess(false);
-      window.location.href = "/signup";
-    }, 2000);
-  };
+  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="relative bg-[#FFFDF8] text-[#140A02] min-h-screen font-sans overflow-hidden py-24 z-10 w-full flex flex-col items-center">
-      {/* Background Accent Grid Lines & Glowing Blobs */}
-      <div className="absolute inset-0 bg-[#FFFDF8] overflow-hidden pointer-events-none z-[-1]">
-        <svg className="absolute w-full h-full opacity-[0.25]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#F3E4D4" strokeWidth="0.8" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-        <div className="absolute top-[10%] left-[-15%] w-[700px] h-[700px] rounded-full bg-[#FF6B00]/5 filter blur-[150px]" />
-        <div className="absolute bottom-[10%] right-[-15%] w-[700px] h-[700px] rounded-full bg-[#FF8C3A]/5 filter blur-[150px]" />
-      </div>
+    <div className="w-full flex flex-col items-center bg-[#080600]">
+      
+      {/* ────────────────────────────────────────
+          HERO & TOGGLES
+      ──────────────────────────────────────── */}
+      <section className="pt-32 pb-16 lg:pt-40 lg:pb-20 w-full relative">
+        <div className="max-w-container mx-auto px-6 lg:px-8 text-center flex flex-col items-center z-10 relative">
+          <ScrollReveal>
+            <h1 className="font-display text-[40px] md:text-[48px] font-extrabold text-white mb-4 tracking-tight leading-tight">
+              Simple, Transparent Pricing
+            </h1>
+            <p className="text-body-md md:text-body-lg text-darkTextMuted max-w-xl mx-auto mb-10">
+              Choose the plan that scales with your business
+            </p>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-8 w-full flex flex-col items-center">
-        
-        {/* 1. Hero Section */}
-        <div className="text-center max-w-4xl mx-auto mt-12 mb-16">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-[42px] sm:text-[56px] lg:text-[76px] font-black leading-[1.05] tracking-tight text-[#140A02] mb-6"
-          >
-            Simple, Transparent Pricing
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[20px] md:text-[24px] text-[#6E6256] leading-relaxed max-w-3xl mx-auto"
-          >
-            Pay only for what you use. Scale from 50 to 50,000 calls per month.
-          </motion.p>
+            {/* Currency Pill Toggle */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              
+              {/* Currency Picker */}
+              <div className="inline-flex items-center bg-darkSurface border border-darkBorder rounded-full p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setCurrency("INR")}
+                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
+                    currency === "INR"
+                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
+                      : "text-darkTextMuted hover:text-white"
+                  }`}
+                >
+                  INR (₹)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrency("USD")}
+                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
+                    currency === "USD"
+                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
+                      : "text-darkTextMuted hover:text-white"
+                  }`}
+                >
+                  USD ($)
+                </button>
+              </div>
+
+              {/* Annual Toggle */}
+              <div className="inline-flex items-center bg-darkSurface border border-darkBorder rounded-full p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle("monthly")}
+                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
+                    billingCycle === "monthly"
+                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
+                      : "text-darkTextMuted hover:text-white"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle("annual")}
+                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
+                    billingCycle === "annual"
+                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
+                      : "text-darkTextMuted hover:text-white"
+                  }`}
+                >
+                  Annual (Save 15%)
+                </button>
+              </div>
+
+            </div>
+          </ScrollReveal>
         </div>
+      </section>
 
-        {/* 2. Trust Bar */}
-        <div className="w-full max-w-5xl bg-[#FFF7ED] border border-[#F3E4D4] rounded-3xl p-5 md:px-8 mb-16 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left shadow-sm">
-          <div className="text-body-sm font-semibold text-[#6E6256] tracking-wide">
-            No hidden fees <span className="text-[#FF6B00] mx-1.5">•</span> Cancel anytime <span className="text-[#FF6B00] mx-1.5">•</span> 14-day free trial
-          </div>
-          <div className="inline-flex items-center gap-2 bg-[#FF6B00]/10 border border-[#FF6B00]/30 rounded-xl px-4 py-2 text-xs font-bold text-[#FF6B00] shadow-sm uppercase tracking-wider font-mono">
-            Starting at $29/month <span className="text-[#6E6256]/40 mx-1">•</span> 99.9% uptime <span className="text-[#6E6256]/40 mx-1">•</span> SOC 2 Certified
-          </div>
-        </div>
+      {/* ────────────────────────────────────────
+          PRICING CARDS
+      ──────────────────────────────────────── */}
+      <section className="pb-20 w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
+            {PRICING_PLANS.map((plan, idx) => {
+              const isAnnual = billingCycle === "annual";
+              const price = isAnnual 
+                ? (currency === "INR" ? plan.inrPriceAnnual : plan.usdPriceAnnual)
+                : (currency === "INR" ? plan.inrPriceMonthly : plan.usdPriceMonthly);
+              
+              const symbol = currency === "INR" ? "₹" : "$";
+              const minutes = currency === "INR" ? plan.inrMins : plan.usdMins;
+              const overage = currency === "INR" ? plan.inrOverage : plan.usdOverage;
+              const isGrowth = plan.popular;
 
-        {/* Billing Toggle (Tabs Component API) */}
-        <div className="flex items-center justify-center bg-[#FFF7ED] border border-[#F3E4D4] rounded-2xl p-1 mb-16 shadow-sm z-10 relative">
-          <button
-            onClick={() => setBillingPeriod("monthly")}
-            className={`px-6 py-2.5 rounded-xl text-body-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-              billingPeriod === "monthly"
-                ? "bg-[#FF6B00] text-white shadow-sm"
-                : "text-[#6E6256] hover:text-[#140A02]"
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setBillingPeriod("annual")}
-            className={`px-6 py-2.5 rounded-xl text-body-xs font-bold uppercase tracking-wider transition-all duration-200 inline-flex items-center gap-2 ${
-              billingPeriod === "annual"
-                ? "bg-[#FF6B00] text-white shadow-sm"
-                : "text-[#6E6256] hover:text-[#140A02]"
-            }`}
-          >
-            Annual
-            <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 text-white py-0.5 px-2 rounded-md">
-              2 Months Free
-            </span>
-          </button>
-        </div>
-
-        {/* 3. Three Pricing Tiers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl items-stretch mb-24 relative z-10">
-          {plans.map((plan) => {
-            const price = billingPeriod === "annual" ? plan.annualPrice : plan.monthlyPrice;
-            const isGrowth = plan.highlighted;
-
-            return (
-              <div
-                key={plan.name}
-                className={`relative rounded-[32px] border p-8 flex flex-col justify-between transition-all duration-300 ease-out hover:translate-y-[-4px] hover:scale-[1.02] ${
-                  isGrowth
-                    ? "border-[#FF6B00] bg-white shadow-[0_0_30px_rgba(255,107,0,0.15)]"
-                    : "border-[#F3E4D4] bg-[#FFF7ED]"
-                }`}
-              >
-                {/* Most Popular Badge */}
-                {plan.badge && (
-                  <motion.div
-                    animate={{ opacity: [0.8, 1, 0.8] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    className="absolute top-6 right-6 bg-[#FF6B00] text-white text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-lg select-none shadow-md font-mono"
-                  >
-                    {plan.badge}
-                  </motion.div>
-                )}
-
-                <div className="text-left">
-                  {/* Name */}
-                  <h3 className="font-display text-[28px] font-bold text-[#140A02] capitalize mb-4">
-                    {plan.name}
-                  </h3>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1.5 mb-6">
-                    <span className="font-display text-[48px] font-extrabold text-[#FF6B00]">
-                      ${price}
-                    </span>
-                    <span className="text-body-sm text-[#6E6256]">/month</span>
-                  </div>
-
-                  {/* Descriptions */}
-                  <div className="text-body-xs font-semibold text-[#140A02]/90 font-mono mb-1">
-                    {plan.minutes}
-                  </div>
-                  <div className="text-[12px] font-mono text-[#6E6256]/60 mb-6">
-                    {plan.overage}
-                  </div>
-
-                  <hr className="border-[#F3E4D4] my-6" />
-
-                  {/* Features */}
-                  <ul className="flex flex-col gap-3.5">
-                    {plan.features.map((feat, idx) => (
-                      <li
-                        key={idx}
-                        className={`flex items-start gap-3.5 text-[14px] font-sans font-normal leading-[1.6] ${
-                          feat.included ? "text-[#140A02]" : "text-[#6E6256]/30 select-none"
-                        }`}
-                      >
-                        {feat.included ? (
-                          <div
-                            className="w-4.5 h-4.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5"
-                            aria-label="Included"
-                          >
-                            <Check className="w-3 h-3" strokeWidth={3} />
-                          </div>
-                        ) : (
-                          <div
-                            className="w-4.5 h-4.5 rounded-full bg-black/5 border border-black/10 text-[#6E6256]/30 flex items-center justify-center shrink-0 mt-0.5"
-                            aria-label="Not Included"
-                          >
-                            <X className="w-3 h-3" strokeWidth={3} />
-                          </div>
-                        )}
-                        <span>{feat.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Call to Action Button */}
-                <div className="mt-8">
-                  <button
-                    onClick={() => handleStartTrial(plan)}
-                    disabled={stripeLoadingPlan !== null}
-                    className={`w-full text-center h-12 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00] ${
-                      isGrowth
-                        ? "bg-[#FF6B00] hover:bg-[#FF8C3A] text-white shadow-md hover:shadow-[0_8px_24px_rgba(255,107,0,0.2)]"
-                        : "bg-white border border-[#F3E4D4] hover:border-[#FF6B00]/30 text-[#140A02] hover:bg-[#FFF7ED]"
+              return (
+                <ScrollReveal key={plan.name} delay={idx * 0.08} className="h-full">
+                  <div
+                    className={`card-bezel border-darkBorder bg-[#12102B] h-full transition-all duration-300 ${
+                      isGrowth ? "ring-2 ring-saffron border-saffron shadow-[0_8px_32px_rgba(255,107,0,0.15)]" : ""
                     }`}
                   >
-                    {stripeLoadingPlan === plan.name ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-[#FF6B00]" />
-                        Redirecting...
-                      </>
-                    ) : (
-                      "Start Free Trial"
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <div className="card-bezel-inner border-darkBorder bg-[#12102B] p-8 flex flex-col justify-between h-full relative">
+                      
+                      {/* Popular Badge */}
+                      {isGrowth && (
+                        <div className="absolute -top-3.5 right-6 bg-saffron text-white text-[9px] uppercase tracking-wider font-black px-3.5 py-1 rounded-full border border-saffron shadow-sm">
+                          Most Popular
+                        </div>
+                      )}
 
-        {/* 4. Feature Comparison Table (Expandable) */}
-        <div className="w-full max-w-5xl mb-24 text-center z-10 relative">
-          
-          {/* Mobile / Tablet Toggle Link */}
-          <div className="md:hidden mb-6">
-            <button
-              onClick={() => {
-                setShowComparison(!showComparison);
-                trackEvent("Comparison Toggled", { show: !showComparison });
-              }}
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#FF6B00] hover:text-[#FF8C3A]"
-            >
-              <span>View Full Comparison</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showComparison ? "rotate-180" : ""}`} />
-            </button>
+                      <div>
+                        {/* Title & Desc */}
+                        <h3 className="text-heading-sm font-bold text-white mb-2">{plan.name}</h3>
+                        <p className="text-body-xs text-darkTextMuted mb-6 min-h-[32px]">{plan.description}</p>
+                        
+                        {/* Price */}
+                        <div className="flex items-baseline gap-1 mb-1">
+                          <span className="font-display text-[40px] font-black text-saffron leading-none">
+                            {symbol}{price.toLocaleString()}
+                          </span>
+                          <span className="text-body-xs text-darkTextMuted">/month</span>
+                        </div>
+
+                        {/* Mins and overage info */}
+                        <div className="text-[11px] font-mono text-darkTextMuted mb-6">
+                          Includes <span className="text-white font-bold">{minutes} mins</span> · Overage: <span className="text-white font-bold">{overage}/min</span>
+                        </div>
+
+                        <div className="w-full h-px bg-darkBorder/40 mb-6" />
+
+                        {/* Features Checklist */}
+                        <ul className="space-y-3.5 text-body-xs text-darkText mb-8">
+                          {plan.features.map((feature, fIdx) => (
+                            <li key={fIdx} className="flex items-center gap-2.5">
+                              <CheckCircle className="w-4 h-4 text-saffron shrink-0" weight="fill" />
+                              <span className="leading-snug">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Card Button */}
+                      <div>
+                        <Link
+                          href={plan.buttonStyle === "outline" ? "/contact" : "/signup"}
+                          className={`w-full text-center py-4 rounded-button text-body-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center ${
+                            plan.buttonStyle === "saffron-large"
+                              ? "bg-saffron hover:bg-saffron-hover text-white shadow-saffron py-4.5 scale-[1.02]"
+                              : plan.buttonStyle === "saffron"
+                              ? "bg-saffron hover:bg-saffron-hover text-white shadow-saffron"
+                              : "border border-saffron/40 hover:border-saffron text-saffron hover:text-white bg-transparent"
+                          }`}
+                        >
+                          {plan.buttonText}
+                        </Link>
+                        <p className="text-center text-[10px] text-darkTextMuted mt-3 font-medium">
+                          {plan.subtext}
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+                </ScrollReveal>
+              );
+            })}
           </div>
+        </div>
+      </section>
 
-          <div className={`w-full ${showComparison ? "block" : "hidden md:block"}`}>
-            <div className="bg-[#FFF7ED] border border-[#F3E4D4] rounded-3xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] border-collapse text-left text-body-sm font-sans">
-                  <thead>
-                    <tr className="border-b border-[#F3E4D4] bg-[#FFF7ED]/80 text-[#6E6256] font-bold uppercase tracking-wider text-[11px]">
-                      <th className="p-5">Feature</th>
-                      <th className="p-5 text-center">Starter</th>
-                      <th className="p-5 text-center text-[#FF6B00] font-black">Growth</th>
-                      <th className="p-5 text-center">Scale</th>
+      {/* ────────────────────────────────────────
+          ENTERPRISE TIER
+      ──────────────────────────────────────── */}
+      <section className="py-16 border-t border-darkBorder bg-darkSurface/30 w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="card-bezel border-darkBorder bg-[#12102B] max-w-4xl mx-auto">
+              <div className="card-bezel-inner border-darkBorder bg-[#12102B] p-8 lg:p-12 flex flex-col lg:flex-row items-center gap-8">
+                
+                <div className="w-14 h-14 rounded-2xl bg-saffron/10 border border-saffron/20 flex items-center justify-center shrink-0">
+                  <Buildings className="w-8 h-8 text-saffron" weight="duotone" />
+                </div>
+
+                <div className="flex-1 text-center lg:text-left">
+                  <span className="text-body-xs font-bold text-darkTextMuted uppercase tracking-wider block mb-1">
+                    Enterprise
+                  </span>
+                  <h3 className="text-heading-md font-bold text-white mb-2">
+                    Custom pricing, dedicated support, SLA & compliance
+                  </h3>
+                  <p className="text-body-xs text-darkTextMuted leading-relaxed">
+                    Custom volume pricing, single sign-on (SSO), HIPAA compliant pipelines, and unlimited voice receptionists configured for enterprise operations.
+                  </p>
+                </div>
+
+                <Link
+                  href="/contact"
+                  className="border border-saffron/50 hover:border-saffron text-saffron hover:text-white bg-transparent text-body-xs font-bold uppercase tracking-wider px-8 py-4 rounded-button transition-all duration-200 shrink-0 text-center"
+                >
+                  Schedule Call
+                </Link>
+
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ────────────────────────────────────────
+          FEATURE COMPARISON TABLE (WITH STICKY HEADER)
+      ──────────────────────────────────────── */}
+      <section className="py-20 lg:py-28 border-t border-darkBorder w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8">
+          
+          <ScrollReveal className="text-center mb-12">
+            <h2 className="font-display text-[32px] md:text-[42px] font-extrabold text-white mb-3">
+              Full Feature Comparison
+            </h2>
+            <p className="text-body-md text-darkTextMuted">
+              Detailed breakdown of features included across all regional plans.
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.1}>
+            <div className="card-bezel border-darkBorder bg-[#12102B] max-w-5xl mx-auto">
+              <div className="card-bezel-inner border-darkBorder bg-[#080600] overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[700px] border-collapse">
+                  
+                  {/* Sticky Header */}
+                  <thead className="sticky top-[64px] bg-[#080600]/95 backdrop-blur z-20 shadow-sm border-b border-darkBorder">
+                    <tr>
+                      <th className="text-left px-6 py-4.5 text-body-xs font-bold text-darkTextMuted uppercase tracking-wider w-[30%]">
+                        Feature Specifications
+                      </th>
+                      <th className="text-center px-4 py-4.5 text-body-xs font-bold text-darkTextMuted uppercase tracking-wider">
+                        Starter
+                      </th>
+                      <th className="text-center px-4 py-4.5 text-body-xs font-bold text-saffron uppercase tracking-wider bg-saffron/5">
+                        Growth
+                      </th>
+                      <th className="text-center px-4 py-4.5 text-body-xs font-bold text-darkTextMuted uppercase tracking-wider">
+                        Scale
+                      </th>
+                      <th className="text-center px-4 py-4.5 text-body-xs font-bold text-darkTextMuted uppercase tracking-wider">
+                        Enterprise
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F3E4D4]/60">
-                    {[
-                      { f: "Minutes included", s: "200 minutes", g: "500 minutes", sc: "1,500 minutes" },
-                      { f: "AI agents", s: "1 agent", g: "5 agents", sc: "Unlimited" },
-                      { f: "Integrations", s: "Basic logs", g: "Slack, HubSpot, Salesforce", sc: "All T2 + Custom Webhooks" },
-                      { f: "API access", s: "✗", g: "✗", sc: "Full (REST + WebSocket)" },
-                      { f: "Custom voice", s: "✗", g: "Priority setup", sc: "Voice cloning (brand voice)" },
-                      { f: "Workflow automation", s: "✗", g: "Advanced leads database", sc: "Custom flows & routing" },
-                      { f: "Support tier", s: "Email support", g: "Email + chat support", sc: "Priority 24/7 support" },
-                      { f: "SLA guarantee", s: "✗", g: "✗", sc: "99.9% uptime SLA" },
-                      { f: "Overage pricing", s: "$0.12/min", g: "$0.10/min", sc: "$0.08/min" },
-                      { f: "Contract lock-in", s: "None (Month-to-month)", g: "None (Month-to-month)", sc: "None (Month-to-month)" },
-                    ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-[#FFFDF8] transition-colors">
-                        <td className="p-4.5 pl-6 font-medium text-[#140A02]">{row.f}</td>
-                        <td className="p-4.5 text-center text-[#6E6256]">{row.s}</td>
-                        <td className="p-4.5 text-center text-[#140A02] font-semibold">{row.g}</td>
-                        <td className="p-4.5 text-center text-[#6E6256]">{row.sc}</td>
-                      </tr>
-                    ))}
+
+                  <tbody>
+                    {COMPARISON_TABLE.map((row, rIdx) => {
+                      if (row.feature.includes("INR") && currency === "USD") return null;
+                      if (row.feature.includes("USD") && currency === "INR") return null;
+
+                      const cleanFeatureName = row.feature.replace(" (INR)", "").replace(" (USD)", "");
+                      const isStriped = rIdx % 2 === 1;
+
+                      return (
+                        <tr
+                          key={row.feature}
+                          className={`border-b border-darkBorder/40 last:border-b-0 transition-colors hover:bg-white/5 ${
+                            isStriped ? "bg-darkSurface/20" : "bg-transparent"
+                          }`}
+                        >
+                          <td className="px-6 py-4 text-body-xs font-medium text-white">
+                            {cleanFeatureName}
+                          </td>
+                          <td className="text-center px-4 py-4 text-body-xs text-darkTextMuted font-mono">
+                            {row.starter === "✓" ? (
+                              <CheckCircle className="w-4 h-4 text-saffron inline" weight="fill" />
+                            ) : (
+                              row.starter
+                            )}
+                          </td>
+                          <td className="text-center px-4 py-4 text-body-xs font-semibold text-white bg-saffron/5 font-mono">
+                            {row.growth === "✓" ? (
+                              <CheckCircle className="w-4 h-4 text-saffron inline" weight="fill" />
+                            ) : (
+                              row.growth
+                            )}
+                          </td>
+                          <td className="text-center px-4 py-4 text-body-xs text-darkTextMuted font-mono">
+                            {row.scale === "✓" ? (
+                              <CheckCircle className="w-4 h-4 text-saffron inline" weight="fill" />
+                            ) : (
+                              row.scale
+                            )}
+                          </td>
+                          <td className="text-center px-4 py-4 text-body-xs text-darkTextMuted font-mono">
+                            {row.enterprise === "✓" ? (
+                              <CheckCircle className="w-4 h-4 text-saffron inline" weight="fill" />
+                            ) : (
+                              row.enterprise
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
+
                 </table>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
+      </section>
 
-        {/* 5. FAQ Section Accordion */}
-        <div className="w-full max-w-[800px] mb-24 z-10 relative flex flex-col items-center">
-          <h2 className="font-display text-[28px] md:text-[36px] font-bold text-[#140A02] text-center mb-10">
-            Frequently Asked Questions
-          </h2>
-          
-          <div className="w-full flex flex-col gap-4">
-            {faqs.map((faq, idx) => (
-              <details
-                key={idx}
-                className="group border border-[#F3E4D4] bg-[#FFF7ED] rounded-2xl overflow-hidden transition-all duration-300 [&_summary::-webkit-details-marker]:hidden"
-                onClick={() => trackEvent("FAQ Expanded", { question: faq.q })}
-              >
-                <summary className="flex justify-between items-center p-6 text-left cursor-pointer list-none select-none font-display text-[18px] font-semibold text-[#140A02] hover:text-[#FF6B00] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]">
-                  <span>{faq.q}</span>
-                  <ChevronDown className="w-5 h-5 text-[#6E6256] group-open:rotate-180 transition-transform duration-300 shrink-0" />
-                </summary>
-                <div className="px-6 pb-6 text-body-sm text-[#6E6256] leading-relaxed">
-                  {faq.a}
-                </div>
-              </details>
+      {/* ────────────────────────────────────────
+          TRUST BADGES ROW
+      ──────────────────────────────────────── */}
+      <section className="py-12 border-t border-darkBorder bg-darkSurface/10 w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 text-center">
+            {TRUST_BADGES.map((badge, bIdx) => (
+              <div key={bIdx} className="flex items-center gap-2 select-none">
+                <ShieldCheck className="w-5 h-5 text-saffron shrink-0" weight="fill" />
+                <span className="text-body-xs font-bold text-white uppercase tracking-wider font-mono">
+                  {badge}
+                </span>
+              </div>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* 6. CTA Section */}
-        <div className="w-full max-w-4xl bg-gradient-to-r from-[#FFF7ED] to-[#FFFDF8] border border-[#F3E4D4] rounded-[40px] p-12 text-center shadow-sm relative z-10 overflow-hidden mb-24 flex flex-col items-center">
-          {/* Subtle inner orange blur */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#FF6B00]/5 rounded-full blur-[80px] pointer-events-none" />
+      {/* ────────────────────────────────────────
+          FAQ SECTION (INTERACTIVE ACCORDION - 9 QUESTIONS)
+      ──────────────────────────────────────── */}
+      <section className="py-20 lg:py-28 border-t border-darkBorder w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+            
+            <ScrollReveal className="lg:col-span-4 flex flex-col items-start">
+              <span className="text-label uppercase tracking-widest text-saffron mb-4 block font-bold">
+                FAQ
+              </span>
+              <h2 className="font-display text-[32px] md:text-[42px] font-extrabold text-white mb-4">
+                Common Questions
+              </h2>
+              <p className="text-body-md text-darkTextMuted leading-relaxed">
+                Everything you need to know about Bavio AI plans, billing cycles, and compliance.
+              </p>
+            </ScrollReveal>
 
-          <h2 className="font-display text-[32px] md:text-[48px] font-black text-[#140A02] mb-4 leading-tight">
-            Ready to handle every call?
-          </h2>
-          <p className="text-body-sm text-[#6E6256] max-w-xl mb-8">
-            Start with a 14-day free trial. No credit card required.
-          </p>
-
-          <Link
-            href="/signup"
-            onClick={() => trackEvent("CTA Clicked", { type: "Get Started Free" })}
-            className="inline-flex items-center justify-center bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#FF6B00]/15 shrink-0"
-          >
-            Get Started Free
-          </Link>
-          
-          <Link
-            href="/contact"
-            className="text-[13px] font-semibold text-[#FF6B00] hover:underline mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00]"
-          >
-            Questions? Chat with our sales team →
-          </Link>
-        </div>
-
-        {/* 7. Trust Badges Section Footer */}
-        <div className="w-full max-w-5xl border-t border-[#F3E4D4] pt-8 flex flex-col md:flex-row justify-between items-center gap-6 text-[12px] font-mono text-[#6E6256]/80">
-          <div className="flex items-center gap-2">
-            <span className="text-emerald-600 font-bold">✓</span>
-            <span>SOC 2 Type II Certified | GDPR Compliant | HIPAA Ready</span>
-          </div>
-          <div>
-            No setup fees <span className="text-[#F3E4D4] mx-1">•</span> Cancel anytime <span className="text-[#F3E4D4] mx-1">•</span> 30-day money-back guarantee*
-          </div>
-        </div>
-
-        <div className="w-full max-w-5xl text-[10px] text-center md:text-left text-[#6E6256]/40 mt-2 font-mono">
-          *Terms apply. See details in support.
-        </div>
-
-      </div>
-
-      {/* --- MOCK STRIPE CHECKOUT MODAL --- */}
-      <AnimatePresence>
-        {stripeModalPlan && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
-            {/* Overlay backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setStripeModalPlan(null)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-
-            {/* Modal Body */}
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="bg-white text-zinc-900 rounded-[24px] border border-zinc-200 shadow-2xl p-8 max-w-md w-full relative z-10 overflow-hidden flex flex-col justify-between"
-            >
-              {!stripeSuccess ? (
-                <form onSubmit={handlePayMockStripe} className="flex flex-col gap-5 text-left">
-                  {/* Stripe Mock Header */}
-                  <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
-                    <div className="flex items-center gap-2 text-indigo-600 font-sans font-black text-xl tracking-tight">
-                      <Lock className="w-4.5 h-4.5 text-indigo-600" />
-                      stripe
-                    </div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider bg-zinc-100 px-2 py-0.5 rounded text-zinc-500 font-bold flex items-center gap-1 select-none">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Test Mode
-                    </span>
-                  </div>
-
-                  {/* Order Summary */}
-                  <div>
-                    <h4 className="text-zinc-500 text-[11px] uppercase font-bold tracking-wider font-mono">Subscribe to Bavio</h4>
-                    <div className="flex justify-between items-baseline mt-1.5">
-                      <span className="text-[20px] font-sans font-bold text-zinc-800">
-                        {stripeModalPlan.name} Plan
+            <div className="lg:col-span-8 flex flex-col">
+              {FAQS.map((faq, idx) => (
+                <ScrollReveal key={faq.q} delay={idx * 0.05}>
+                  <div className="border-b border-darkBorder/60">
+                    <button
+                      onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                      className="w-full flex items-center justify-between py-5.5 text-left group"
+                      aria-expanded={openFaq === idx}
+                    >
+                      <span className="text-body-sm font-bold text-white group-hover:text-saffron transition-colors pr-4">
+                        {faq.q}
                       </span>
-                      <span className="text-[28px] font-sans font-black text-zinc-900 leading-none">
-                        ${billingPeriod === "annual" ? stripeModalPlan.annualPrice : stripeModalPlan.monthlyPrice}
-                        <span className="text-xs text-zinc-500 font-normal">/mo</span>
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1 font-mono">
-                      {billingPeriod === "annual" ? "Billed annually ($" + ((billingPeriod === "annual" ? stripeModalPlan.annualPrice : stripeModalPlan.monthlyPrice) * 12) + "/yr)" : "Billed monthly"} after 14-day free trial.
-                    </p>
-                  </div>
-
-                  {/* Mock Credit Card Form Fields */}
-                  <div className="flex flex-col gap-3.5 mt-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">Card Number</label>
-                      <input
-                        type="text"
-                        required
-                        pattern="[0-9 ]{16,19}"
-                        placeholder="4242 4242 4242 4242"
-                        className="w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-mono"
+                      <CaretDown
+                        className={`w-4 h-4 text-darkTextMuted shrink-0 transition-transform duration-300 ease-premium ${
+                          openFaq === idx ? "rotate-180 text-saffron" : ""
+                        }`}
+                        weight="bold"
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">Expiration</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="MM/YY"
-                          className="w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-mono text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">CVC</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={4}
-                          placeholder="123"
-                          className="w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 font-mono text-center"
-                        />
-                      </div>
+                    </button>
+                    
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-premium ${
+                        openFaq === idx ? "max-h-48 opacity-100 pb-5.5" : "max-h-0 opacity-0 pointer-events-none"
+                      }`}
+                    >
+                      <p className="text-body-xs text-darkTextMuted leading-relaxed pr-8 font-sans">
+                        {faq.a}
+                      </p>
                     </div>
                   </div>
+                </ScrollReveal>
+              ))}
+            </div>
 
-                  {/* Payment Button */}
-                  <button
-                    type="submit"
-                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all duration-150 flex items-center justify-center gap-1.5 shadow-md shadow-indigo-100 hover:scale-[1.01] mt-2"
-                  >
-                    Start 14-Day Free Trial
-                  </button>
-
-                  <div className="text-[10px] text-center text-zinc-400 font-medium">
-                    Secured by Stripe Checkout. Cancel anytime in your billing panel.
-                  </div>
-                </form>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center text-center py-12"
-                >
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6">
-                    <Check className="w-8 h-8" strokeWidth={3} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-zinc-800 mb-2">Subscription Activated!</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed max-w-xs mb-1 font-mono">
-                    Stripe Checkout Authorized successfully.
-                  </p>
-                  <p className="text-xs text-zinc-400 font-mono">Redirecting you to dashboard onboarding...</p>
-                </motion.div>
-              )}
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      </section>
+
+      {/* ────────────────────────────────────────
+          BOTTOM CTA BANNER
+      ──────────────────────────────────────── */}
+      <section className="py-20 lg:py-28 border-t border-darkBorder w-full z-10">
+        <div className="max-w-container mx-auto px-6 lg:px-8 text-center">
+          <ScrollReveal>
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Star className="w-6 h-6 text-saffron animate-pulse" weight="fill" />
+              <h2 className="font-display text-[32px] md:text-[42px] font-extrabold text-white tracking-tight">
+                Ready to Start?
+              </h2>
+            </div>
+            
+            <p className="text-body-md text-darkTextMuted max-w-md mx-auto mb-8">
+              Answer every call, capture every lead. Start your free trial today.
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 max-w-sm mx-auto">
+              <Link
+                href="/signup"
+                className="bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider py-4 px-8 rounded-button shadow-saffron transition-all duration-200 active:scale-[0.97]"
+              >
+                Start Free Trial
+              </Link>
+              <Link
+                href="/contact"
+                className="border border-saffron/40 hover:border-saffron text-saffron hover:text-white bg-transparent text-body-xs font-bold uppercase tracking-wider py-4 px-8 rounded-button transition-all duration-200"
+              >
+                Schedule Demo
+              </Link>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
 
     </div>
   );

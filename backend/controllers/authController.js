@@ -259,6 +259,7 @@ async function getProfile(req, res) {
             language: user.language || null,
             business_description: user.business_description || null,
             city: user.city || null,
+            twilio_number: user.twilio_number || null,
             created_at: user.created_at,
         });
     } catch (err) {

@@ -660,14 +660,40 @@ async function autoProvisionBusiness(clientId) {
         const business = businessResult.rows[0];
         
         // 2. Get assistant details
-        const assistantResult = await db.query(
+        let assistantResult = await db.query(
             `SELECT id, agent_name, voice, greeting FROM assistants WHERE business_id = $1`,
             [clientId]
         );
+        let assistant;
         if (assistantResult.rows.length === 0) {
-            throw new Error(`Assistant for business ${clientId} not found`);
+            console.log(`[AUTO-PROVISION] Assistant not found for client ${clientId}. Creating default assistant...`);
+            const agentName = 'Sarah';
+            const voice = 'meera';
+            const defaultGreeting = `Hello. This is ${agentName} from ${business.name || 'Bavio'}. How may I assist you today?`;
+            const defaultSystemPrompt = onboardingController.buildSystemPrompt({
+                agent_name: agentName,
+                greeting: defaultGreeting,
+                industry: business.industry || 'other',
+                language: 'en-US'
+            });
+            const insertResult = await db.query(
+                `INSERT INTO assistants
+                  (business_id, name, agent_name, greeting, first_message, voice, voice_id, industry, language, system_prompt, is_active)
+                 VALUES ($1, $2, $2, $3, $3, $4, $4, $5, 'en-US', $6, true)
+                 RETURNING id, agent_name, voice, greeting`,
+                [clientId, agentName, defaultGreeting, voice, business.industry || 'other', defaultSystemPrompt]
+            );
+            assistant = insertResult.rows[0];
+            
+            // Link assistant to business
+            await db.query(
+                'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
+                [assistant.id, clientId]
+            );
+            console.log(`[AUTO-PROVISION] Default assistant created with ID: ${assistant.id}`);
+        } else {
+            assistant = assistantResult.rows[0];
         }
-        const assistant = assistantResult.rows[0];
         
         // 3. Auto-generate Greeting
         const greeting = `Hello. This is ${assistant.agent_name || 'Sarah'} from ${business.name || 'Bavio'}. How may I assist you today?`;

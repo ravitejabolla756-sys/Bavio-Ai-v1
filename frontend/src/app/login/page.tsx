@@ -77,7 +77,7 @@ export default function LoginPage() {
         setAuthData(result.token, result.client_id, result.name);
         setCookie("bavio_auth", "true");
 
-        // Use onboarding_status from login response (no extra fetch needed)
+        // Use onboarding_status from login response
         const onboardingStatus = result.onboarding_status || "pending";
 
         if (onboardingStatus === "ready") {
@@ -138,7 +138,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-x-hidden">
+    <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col md:flex-row overflow-x-hidden">
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (55%)
@@ -165,40 +165,39 @@ export default function LoginPage() {
         >
           <source src="/bavio-brand-video.mp4" type="video/mp4" />
         </video>
-
-        {/* Dark overlay above the video to improve text readability */}
+ 
+        {/* Dark overlay above the video */}
         <div 
           className="absolute inset-0 z-10 pointer-events-none"
-          style={{ background: "rgba(0, 0, 0, 0.35)" }}
+          style={{ background: "rgba(0, 0, 0, 0.45)" }}
         />
-
+ 
         {/* Brand Header */}
         <div className="relative z-20">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
-            {/* Render a custom white logo filter or original logo */}
-            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
+            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105" color="text-saffron" />
             <span className="font-display text-xl font-black tracking-tight text-white">
               Bavio AI
             </span>
           </Link>
         </div>
-
+ 
         {/* Spacer for layout structure */}
         <div className="flex-1" />
-
+ 
         {/* Copy & Feature bullets */}
         <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
-          <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block">
+          <span className="text-label uppercase tracking-widest text-saffron font-bold mb-3 block">
             AI RECEPTIONIST FOR YOUR BUSINESS
           </span>
           <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
             Your AI receptionist <br />
-            <span className="text-[#FF6B00]">never sleeps.</span>
+            <span className="text-saffron">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
             Answer calls, qualify leads, and book appointments automatically.
           </p>
-
+ 
           {/* Features horizontal/grid row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
             {[
@@ -210,7 +209,7 @@ export default function LoginPage() {
               const Icon = feat.icon;
               return (
                 <div key={i} className="flex flex-col items-center text-center p-2 transition-transform duration-300 hover:scale-105">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-[#FF6B00] mb-3 shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-[#121212]/40 border border-[#2a2a2a]/40 flex items-center justify-center text-saffron mb-3 shadow-sm">
                     <Icon className="w-6 h-6" weight="bold" />
                   </div>
                   <span className="text-body-xs font-bold text-white/90 leading-tight block">
@@ -222,60 +221,57 @@ export default function LoginPage() {
             })}
           </div>
         </div>
-
-
-
+ 
       </section>
-
+ 
       {/* ────────────────────────────────────────
           RIGHT SIDE: AUTHENTICATION CARD PANEL (45%)
       ──────────────────────────────────────── */}
-      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#F7F4EF] relative min-h-[100dvh]">
+      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#0a0a0a] relative min-h-[100dvh]">
         
-        {/* Subtle mesh background glow for the form side */}
-        <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
-
-        {/* Mobile Header (Hidden on Desktop) */}
+        {/* Subtle mesh background glow */}
+        <div className="absolute w-[250px] h-[250px] bg-saffron/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
+ 
+        {/* Mobile Header */}
         <div className="md:hidden flex items-center gap-2 mb-8 relative z-10 self-start">
-          <Logo className="w-8 h-8" />
-          <span className="font-display text-lg font-black tracking-tight">
+          <Logo className="w-8 h-8" color="text-saffron" />
+          <span className="font-display text-lg font-black tracking-tight text-bavioCream">
             Bavio AI
           </span>
         </div>
-
+ 
         {/* Auth Card Container */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[460px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-10"
+          className="w-full max-w-[460px] bg-[#121212] border border-[#2a2a2a] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-10"
         >
-          {/* Card Header (Same to Same layout with centered inline Logo + Brand name) */}
+          {/* Card Header */}
           <div className="flex flex-col items-center text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-5">
-              <Logo className="w-8 h-8" />
-              <span className="font-display text-xl font-black tracking-tight text-[#14141A]">
+              <Logo className="w-8 h-8" color="text-saffron" />
+              <span className="font-display text-xl font-black tracking-tight text-bavioCream">
                 Bavio AI
               </span>
             </div>
-            <h1 className="font-display text-3xl font-bold text-[#14141A] tracking-tight mb-2">
+            <h1 className="font-display text-3xl font-bold text-bavioCream tracking-tight mb-2">
               {isSignUp ? "Get Started" : "Welcome Back"}
             </h1>
-            <p className="text-body-sm text-[#5A5A66]">
+            <p className="text-body-sm text-darkTextMuted">
               {isSignUp
                 ? "Launch your AI receptionist in minutes."
                 : "Manage your voice agents and telemetry."}
             </p>
           </div>
-
+ 
           {/* Social Auth buttons */}
           <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#FAF7F2] text-[#3A3A42] border border-[#E5E0D8] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-3 bg-[#181818] hover:bg-[#2a2a2a] text-bavioCream border border-[#2a2a2a] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
-              {/* Google Vector Icon */}
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -296,13 +292,12 @@ export default function LoginPage() {
               </svg>
               <span>Continue with Google</span>
             </button>
-
+ 
             <button
               type="button"
               onClick={handleSocialAuth}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#FAF7F2] text-[#3A3A42] border border-[#E5E0D8] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-3 bg-[#181818] hover:bg-[#2a2a2a] text-bavioCream border border-[#2a2a2a] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
-              {/* Microsoft Vector Icon */}
               <svg className="w-4 h-4" viewBox="0 0 23 23">
                 <rect x="0" y="0" width="11" height="11" fill="#f25022" />
                 <rect x="12" y="0" width="11" height="11" fill="#7fba00" />
@@ -312,16 +307,16 @@ export default function LoginPage() {
               <span>Continue with Microsoft</span>
             </button>
           </div>
-
+ 
           {/* Divider */}
           <div className="relative flex py-4 items-center">
-            <div className="flex-grow border-t border-[#E5E0D8]"></div>
-            <span className="flex-shrink mx-4 text-label uppercase tracking-widest text-[#8A8A96]">
+            <div className="flex-grow border-t border-[#2a2a2a]"></div>
+            <span className="flex-shrink mx-4 text-label uppercase tracking-widest text-darkTextMuted">
               OR
             </span>
-            <div className="flex-grow border-t border-[#E5E0D8]"></div>
+            <div className="flex-grow border-t border-[#2a2a2a]"></div>
           </div>
-
+ 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <AnimatePresence mode="popLayout" initial={false}>
@@ -336,7 +331,7 @@ export default function LoginPage() {
                 >
                   <label htmlFor="name-input" className="sr-only">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+                    <User className="absolute left-4 top-3.5 w-4 h-4 text-darkTextMuted" />
                     <input
                       id="name-input"
                       type="text"
@@ -344,16 +339,16 @@ export default function LoginPage() {
                       placeholder="Full Name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-4 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                      className="w-full bg-[#181818] border border-[#2a2a2a] focus:border-saffron focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 pl-11 pr-4 text-body-sm text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200"
                     />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
+ 
             <div className="relative">
               <label htmlFor="email-input" className="sr-only">Work Email</label>
-              <Envelope className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+              <Envelope className="absolute left-4 top-3.5 w-4 h-4 text-darkTextMuted" />
               <input
                 id="email-input"
                 type="email"
@@ -361,13 +356,13 @@ export default function LoginPage() {
                 placeholder="Work Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-4 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                className="w-full bg-[#181818] border border-[#2a2a2a] focus:border-saffron focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 pl-11 pr-4 text-body-sm text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200"
               />
             </div>
-
+ 
             <div className="relative">
               <label htmlFor="password-input" className="sr-only">Password</label>
-              <Lock className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+              <Lock className="absolute left-4 top-3.5 w-4 h-4 text-darkTextMuted" />
               <input
                 id="password-input"
                 type={showPassword ? "text" : "password"}
@@ -375,12 +370,12 @@ export default function LoginPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-11 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                className="w-full bg-[#181818] border border-[#2a2a2a] focus:border-saffron focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 pl-11 pr-11 text-body-sm text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-3.5 text-[#8A8A96] hover:text-[#14141A] transition-colors"
+                className="absolute right-4 top-3.5 text-darkTextMuted hover:text-bavioCream transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -390,7 +385,7 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
-
+ 
             <AnimatePresence mode="popLayout" initial={false}>
               {isSignUp && (
                 <motion.div
@@ -402,7 +397,7 @@ export default function LoginPage() {
                   className="relative"
                 >
                   <label htmlFor="confirm-password-input" className="sr-only">Confirm Password</label>
-                  <Lock className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+                  <Lock className="absolute left-4 top-3.5 w-4 h-4 text-darkTextMuted" />
                   <input
                     id="confirm-password-input"
                     type={showConfirmPassword ? "text" : "password"}
@@ -410,12 +405,12 @@ export default function LoginPage() {
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-11 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                    className="w-full bg-[#181818] border border-[#2a2a2a] focus:border-saffron focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 pl-11 pr-11 text-body-sm text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-3.5 text-[#8A8A96] hover:text-[#14141A] transition-colors"
+                    className="absolute right-4 top-3.5 text-darkTextMuted hover:text-bavioCream transition-colors"
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? (
@@ -427,23 +422,30 @@ export default function LoginPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
+ 
             {!isSignUp && (
               <div className="flex justify-end">
                 <Link
                   href="/forgot-password"
-                  className="text-body-xs font-semibold text-[#8A8A96] hover:text-[#FF6B00] transition-colors"
+                  className="text-body-xs font-semibold text-darkTextMuted hover:text-saffron transition-colors"
                 >
                   Forgot Password?
                 </Link>
               </div>
             )}
-
+ 
+            {/* Error Message */}
+            {errorMsg && (
+              <div className="bg-red-950/20 border border-red-900/50 rounded-xl p-3 text-red-400 text-body-xs font-semibold">
+                {errorMsg}
+              </div>
+            )}
+ 
             {/* Submit CTA */}
             <button
               type="submit"
               disabled={isLoading}
-              className="mt-2 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-sm font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+              className="mt-2 w-full flex items-center justify-center gap-2.5 bg-saffron hover:bg-saffron-hover text-white text-body-sm font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
               {isLoading ? (
                 <>
@@ -458,9 +460,9 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
+ 
           {/* Form mode switcher */}
-          <div className="mt-8 text-center text-body-sm text-[#5A5A66]">
+          <div className="mt-8 text-center text-body-sm text-darkTextMuted">
             <span>
               {isSignUp
                 ? "Already have an account? "
@@ -475,27 +477,27 @@ export default function LoginPage() {
                 setPassword("");
                 setConfirmPassword("");
               }}
-              className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] transition-colors ml-1 focus:outline-none"
+              className="font-bold text-saffron hover:text-saffron-hover transition-colors ml-1 focus:outline-none"
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </button>
           </div>
         </motion.div>
-
+ 
         {/* Secure encryption footer */}
-        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative z-10">
+        <div className="mt-8 flex items-center gap-2 text-body-xs text-darkTextMuted pointer-events-none relative z-10">
           <ShieldCheck className="w-4 h-4 text-state-success" weight="fill" />
           <span>Your data is secure and encrypted</span>
         </div>
-
+ 
         {/* Need help? contact */}
-        <div className="mt-4 text-center text-body-xs text-[#8A8A96] relative z-10">
+        <div className="mt-4 text-center text-body-xs text-darkTextMuted relative z-10">
           <span>Need help? Contact: </span>
-          <a href="mailto:hello@bavio.in" className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] hover:underline">
+          <a href="mailto:hello@bavio.in" className="font-bold text-saffron hover:text-saffron-hover hover:underline">
             hello@bavio.in
           </a>
         </div>
-
+ 
       </section>
 
     </div>

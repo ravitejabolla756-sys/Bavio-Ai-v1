@@ -5,6 +5,8 @@ const { requireAuth } = require('../middleware/auth');
 
 router.post('/buy', requireAuth, numberController.buyNumber);
 router.post('/link', requireAuth, numberController.linkNumber);
+router.post('/assign', requireAuth, numberController.assignNumber);
+router.post('/verify-forwarding', requireAuth, numberController.verifyForwarding);
 router.get('/:client_id', requireAuth, numberController.getNumbers);
 
 module.exports = router;

@@ -26,7 +26,7 @@ export default function TermsOfService() {
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">2. Billing & Overages</h3>
           <p>
-            Bavio AI subscriptions are billed monthly. Overage minutes beyond the plan budget are calculated on a per-minute rate and billed at the end of the billing cycle. Failure to settle outstanding invoices may result in temporary suspension of voice services.
+            Bavio AI subscriptions are billed monthly. Overage minutes beyond the plan budget are calculated on a per-minute rate and billed at the end of the billing cycle. Failure to settle outstanding invoices may result in temporary suspension of voice integrations.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">3. Acceptable Use</h3>

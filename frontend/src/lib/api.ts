@@ -175,6 +175,7 @@ export interface BusinessProfile {
   business_description?: string;
   city?: string;
   website?: string;
+  twilio_number?: string | null;
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────

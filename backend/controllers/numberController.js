@@ -1,4 +1,5 @@
 const numberService = require('../services/numberService');
+const numberProvisioningService = require('../services/phone/numberProvisioningService');
 
 async function buyNumber(req, res) {
     try {
@@ -34,4 +35,36 @@ async function getNumbers(req, res) {
     }
 }
 
-module.exports = { buyNumber, linkNumber, getNumbers };
+async function assignNumber(req, res) {
+    try {
+        const businessId = req.user.id;
+        const { country_code } = req.body;
+        
+        console.log(`[NUMBERS] Assign request for business ${businessId}, country: ${country_code}`);
+        const result = await numberProvisioningService.assignPhoneNumber(businessId, 'forwarding', req.client.phone || null);
+        
+        res.status(200).json({
+            success: true,
+            data: {
+                phone_number: result.bavioPhonenumber
+            }
+        });
+    } catch (err) {
+        console.error('assignNumber error:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+async function verifyForwarding(req, res) {
+    try {
+        const businessId = req.user.id;
+        console.log(`[NUMBERS] Verifying forwarding status for business ${businessId}`);
+        const result = await numberProvisioningService.confirmForwardingActivated(businessId);
+        res.status(200).json(result);
+    } catch (err) {
+        console.error('verifyForwarding error:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+module.exports = { buyNumber, linkNumber, getNumbers, assignNumber, verifyForwarding };
