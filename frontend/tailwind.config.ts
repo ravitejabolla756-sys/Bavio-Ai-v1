@@ -15,8 +15,8 @@ const config: Config = {
         saffron: {
           DEFAULT: "#FF6B00",
           hover: "#FF8C3A",
-          light: "#FFB366",
-          dark: "#CC5500",
+          light: "#FF8C3A",
+          dark: "#D45900",
           muted: "rgba(255, 107, 0, 0.08)",
           border: "rgba(255, 107, 0, 0.2)",
         },
@@ -33,6 +33,12 @@ const config: Config = {
         },
         bavioCream: "#f5f0e8",
         bavioLavender: "#b4a8d4",
+        darkBg: "#080600",
+        darkSurface: "#100e08",
+        darkSurfaceAlt: "#12102B",
+        darkBorder: "#2a2010",
+        darkText: "#F5F0E8",
+        darkTextMuted: "#7a6e5f",
         canvas: "#0a0e27",
         surface: {
           DEFAULT: "#12102b",
@@ -59,8 +65,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-dm-sans)", "var(--font-geist-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-serif)", "var(--font-syne)", "Georgia", "serif"],
+        sans: ["var(--font-dm-sans)", "var(--font-geist-sans)", "Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-serif)", "var(--font-syne)", "var(--font-bodoni)", "Cormorant Garamond", "Georgia", "serif"],
         mono: ["var(--font-jetbrains)", "var(--font-geist-mono)", "monospace"],
       },
       fontSize: {
@@ -79,17 +85,6 @@ const config: Config = {
       spacing: {
         section: "5rem",
         "section-lg": "6.5rem",
-        "0.5": "0.125rem",
-        "1.5": "0.375rem",
-        "2.5": "0.625rem",
-        "3.5": "0.875rem",
-        "4.5": "1.125rem",
-        "5.5": "1.375rem",
-        "6.5": "1.625rem",
-        "7.5": "1.875rem",
-        "8.5": "2.125rem",
-        "9.5": "2.375rem",
-        "10.5": "2.625rem",
       },
       maxWidth: {
         container: "1280px",

@@ -1,4 +1,4 @@
-import { Instrument_Serif, JetBrains_Mono, Syne, DM_Sans } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono, Bodoni_Moda, Syne, DM_Sans } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 
@@ -6,14 +6,14 @@ export const syne = Syne({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-syne",
-  weight: ["800"],
+  weight: ["700", "800"],
 });
 
 export const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-dm-sans",
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const instrumentSerif = Instrument_Serif({
@@ -21,6 +21,14 @@ export const instrumentSerif = Instrument_Serif({
   display: "swap",
   variable: "--font-serif",
   weight: ["400"],
+  style: ["normal", "italic"],
+});
+
+export const bodoniModa = Bodoni_Moda({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-bodoni",
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
 
