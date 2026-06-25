@@ -44,14 +44,14 @@ export default function GettingStarted() {
                   <div className="w-12 h-12 bg-[#FFF7ED] border border-[#F3E4D4] rounded-full flex items-center justify-center text-[#F97316] mb-3">
                     <PhoneCall className="w-5 h-5 animate-pulse" />
                   </div>
-                  <h4 className="text-xs font-bold text-[#140A02]">+91 99887 76655</h4>
+                  <h4 className="text-xs font-bold text-[#140A02]">+1 (555) 019-2834</h4>
                   <p className="text-[10px] text-[#6E6256] mt-0.5">Ringing...</p>
 
                   <div className="w-full h-px bg-[#F3E4D4] my-3" />
                   
                   <div className="flex justify-between items-center w-full text-[10px] text-[#6E6256] font-mono">
-                    <span>Forward: Enabled</span>
-                    <span className="text-[#F97316] font-bold">100% Routed</span>
+                    <span>Forwarding Active</span>
+                    <span className="text-[#F97316] font-bold">All Calls Routed</span>
                   </div>
                 </div>
               </div>
@@ -80,21 +80,21 @@ export default function GettingStarted() {
                 <div>
                   <label className="text-[9px] text-[#6E6256]/60 font-bold block uppercase mb-1">Supported Languages</label>
                   <div className="flex gap-1.5">
-                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">Hindi</span>
+                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">Spanish</span>
                     <span className="bg-[#FFF7ED] border border-[#F3E4D4] text-[#140A02] text-[9px] font-bold px-2 py-0.5 rounded">English</span>
-                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">Hinglish</span>
+                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">French</span>
                   </div>
                 </div>
                 <div>
                   <label className="text-[9px] text-[#6E6256]/60 font-bold block uppercase mb-1">Custom Greeting</label>
                   <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded px-2.5 py-1.5 font-mono text-[9px] text-[#140A02] truncate">
-                    &ldquo;Namaste! Sharma Properties mein aapka swagat...&rdquo;
+                    &ldquo;Hello! Welcome to our office, how can I help you today?&rdquo;
                   </div>
                 </div>
                 <div>
                   <label className="text-[9px] text-[#6E6256]/60 font-bold block uppercase mb-1">Custom Instructions</label>
                   <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded px-2.5 py-1.5 font-mono text-[9px] text-[#6E6256] h-10 overflow-hidden line-clamp-2">
-                    Greet in Hinglish. Collect name, budget range, and preferred visit timing.
+                    Greet in English or Spanish. Collect name, budget range, and preferred visit timing.
                   </div>
                 </div>
               </div>
@@ -104,7 +104,7 @@ export default function GettingStarted() {
             <div className="p-8 text-left space-y-3">
               <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Customize Your AI</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Configure your language priorities (Hindi, English, Hinglish), custom greeting text, and custom prompt guidelines.
+                Configure your language preferences (20+ languages supported including English, Spanish, French, German, Mandarin, Arabic, and more), custom greeting text, and custom prompt guidelines.
               </p>
             </div>
           </motion.div>
@@ -127,8 +127,8 @@ export default function GettingStarted() {
                   <div className="text-[10px] font-bold text-[#128c7e]">💬 Leads Manager</div>
                   <div className="bg-white border border-[#F3E4D4]/40 rounded-xl p-3 text-[11px] leading-relaxed shadow-sm space-y-1">
                     <span className="font-bold text-[#140A02] block border-b border-[#F3E4D4]/40 pb-1.5 mb-1.5">New Lead Captured!</span>
-                    <div className="flex justify-between"><span className="text-[#6E6256]">Name:</span> <span className="font-bold text-[#140A02]">Rahul Sharma</span></div>
-                    <div className="flex justify-between"><span className="text-[#6E6256]">Budget:</span> <span className="font-bold text-[#F97316]">₹90L</span></div>
+                    <div className="flex justify-between"><span className="text-[#6E6256]">Name:</span> <span className="font-bold text-[#140A02]">Sarah Johnson</span></div>
+                    <div className="flex justify-between"><span className="text-[#6E6256]">Budget:</span> <span className="font-bold text-[#F97316]">$450,000</span></div>
                     <div className="flex justify-between"><span className="text-[#6E6256]">Schedule:</span> <span className="font-bold text-[#140A02]">Tomorrow 11AM</span></div>
                   </div>
                 </div>
@@ -137,9 +137,9 @@ export default function GettingStarted() {
 
             {/* Bottom Copy */}
             <div className="p-8 text-left space-y-3">
-              <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Receive Leads On WhatsApp</h3>
+              <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Instant Notifications</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Leads are qualified, summarized, and sent straight to your WhatsApp as structured contact messages.
+                Leads are qualified, summarized, and sent instantly via your preferred notification method (WhatsApp, email, or SMS).
               </p>
             </div>
           </motion.div>

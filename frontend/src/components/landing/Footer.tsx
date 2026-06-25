@@ -18,46 +18,52 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-xs text-[#6B5A4C] leading-relaxed max-w-[200px]">
-              Autonomous AI voice receptionists for Indian SMBs. Answer, qualify, and capture leads 24x7.
+              Autonomous AI voice receptionists for every business. Answer, qualify, and capture leads 24x7.
             </p>
           </div>
 
           {/* Product links */}
           <div>
-            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Product</h4>
+            <h4 className="text-[11px] text-[#140B06] font-bold uppercase tracking-wider mb-4">Product</h4>
             <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
-              <li><Link href="/how-it-works" className="hover:text-[#F97316] transition-colors">How it Works</Link></li>
-              <li><Link href="/pricing" className="hover:text-[#F97316] transition-colors">Pricing</Link></li>
-              <li><Link href="/demo" className="hover:text-[#F97316] transition-colors">Demo</Link></li>
-              <li><Link href="/pricing#faq" className="hover:text-[#F97316] transition-colors">FAQ</Link></li>
+              <li><Link href="/how-it-works" className="hover:text-[#FF6B00] transition-colors">How it Works</Link></li>
+              <li><Link href="/product" className="hover:text-[#FF6B00] transition-colors">Features</Link></li>
+              <li><Link href="/integrations" className="hover:text-[#FF6B00] transition-colors">Integrations</Link></li>
+              <li><Link href="/pricing" className="hover:text-[#FF6B00] transition-colors">Pricing</Link></li>
+              <li><Link href="/changelog" className="hover:text-[#FF6B00] transition-colors">Changelog</Link></li>
+            </ul>
+          </div>
+
+          {/* Use Cases links */}
+          <div>
+            <h4 className="text-[11px] text-[#140B06] font-bold uppercase tracking-wider mb-4">Use Cases</h4>
+            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
+              <li><Link href="/use-cases/real-estate" className="hover:text-[#FF6B00] transition-colors">Real Estate</Link></li>
+              <li><Link href="/use-cases/restaurants" className="hover:text-[#FF6B00] transition-colors">Restaurants</Link></li>
+              <li><Link href="/use-cases/healthcare" className="hover:text-[#FF6B00] transition-colors">Healthcare</Link></li>
+              <li><Link href="/use-cases/e-commerce" className="hover:text-[#FF6B00] transition-colors">E-Commerce</Link></li>
             </ul>
           </div>
 
           {/* Company links */}
           <div>
-            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Company</h4>
+            <h4 className="text-[11px] text-[#140B06] font-bold uppercase tracking-wider mb-4">Company</h4>
             <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
-              <li><Link href="/company" className="hover:text-[#F97316] transition-colors">About Us</Link></li>
-              <li><Link href="/careers" className="hover:text-[#F97316] transition-colors">Careers</Link></li>
-              <li><Link href="/blog" className="hover:text-[#F97316] transition-colors">Blog</Link></li>
-            </ul>
-          </div>
-
-          {/* Resources links */}
-          <div>
-            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Resources</h4>
-            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
-              <li><Link href="/docs" className="hover:text-[#F97316] transition-colors">Documentation</Link></li>
-              <li><Link href="/api" className="hover:text-[#F97316] transition-colors">API</Link></li>
+              <li><Link href="/company" className="hover:text-[#FF6B00] transition-colors">About Us</Link></li>
+              <li><Link href="/customers" className="hover:text-[#FF6B00] transition-colors">Customers</Link></li>
+              <li><Link href="/contact" className="hover:text-[#FF6B00] transition-colors">Contact</Link></li>
+              <li><Link href="/blog" className="hover:text-[#FF6B00] transition-colors">Blog</Link></li>
             </ul>
           </div>
 
           {/* Legal links */}
           <div>
-            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Legal</h4>
+            <h4 className="text-[11px] text-[#140B06] font-bold uppercase tracking-wider mb-4">Legal</h4>
             <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
-              <li><Link href="/legal/privacy" className="hover:text-[#F97316] transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-[#F97316] transition-colors">Terms of Service</Link></li>
+              <li><Link href="/legal/privacy" className="hover:text-[#FF6B00] transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-[#FF6B00] transition-colors">Terms of Service</Link></li>
+              <li><Link href="/legal/cookies" className="hover:text-[#FF6B00] transition-colors">Cookie Policy</Link></li>
+              <li><Link href="/legal/security" className="hover:text-[#FF6B00] transition-colors">Security & Compliance</Link></li>
             </ul>
           </div>
         </div>

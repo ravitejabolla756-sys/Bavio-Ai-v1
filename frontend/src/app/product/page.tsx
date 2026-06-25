@@ -36,7 +36,7 @@ interface ProductFeature {
 }
 
 export default function ProductPage() {
-  const [activeVoice, setActiveVoice] = useState<string>("Male (Hinglish)");
+  const [activeVoice, setActiveVoice] = useState<string>("Male (English - US)");
 
   // Define 8 core features with visual mockups
   const productFeatures: ProductFeature[] = [
@@ -79,15 +79,13 @@ export default function ProductPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-saffron" />
             <span className="text-white font-bold">1. Inbound Call Received</span>
           </div>
-          <div className="w-px h-6 bg-[#2a2a2a] mx-auto" />
-          <div className="flex items-center justify-between p-2.5 bg-[#0a0a0a] border border-saffron/40 rounded-lg">
-            <span className="text-saffron font-bold">2. Check Time & Intent</span>
-            <span className="text-[10px] text-darkTextMuted font-bold">Branch</span>
+          <div className="flex items-center gap-2 p-2.5 bg-[#0f0f0f] border border-saffron/40 rounded-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-saffron animate-ping" />
+            <span className="text-saffron font-bold">2. Triage & Qualification</span>
           </div>
-          <div className="w-px h-6 bg-[#2a2a2a] mx-auto" />
           <div className="flex items-center gap-2 p-2.5 bg-darkBg border border-[#2a2a2a] rounded-lg">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <span className="text-white">3. Book Calendar & WhatsApp Alert</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-white font-bold">3. Push Lead to CRM</span>
           </div>
         </div>
       ),
@@ -107,15 +105,15 @@ export default function ProductPage() {
           <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Indexed Documents</span>
           <div className="flex flex-col gap-2.5 my-2">
             <div className="flex justify-between items-center p-2 bg-darkBg border border-darkBorder rounded text-body-xs">
-              <span className="text-white truncate max-w-[160px]">🏢 property_brochure.pdf</span>
+              <span className="text-white truncate max-w-[160px]">🏢 business_brochure.pdf</span>
               <span className="text-green-500 font-mono text-[10px]">100% Sync</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-darkBg border border-darkBorder rounded text-body-xs">
-              <span className="text-white truncate max-w-[160px]">🔗 bavio.in/faq-rules</span>
+              <span className="text-white truncate max-w-[160px]">🔗 bavio.ai/faq-rules</span>
               <span className="text-green-500 font-mono text-[10px]">100% Sync</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-darkBg border border-darkBorder rounded text-body-xs">
-              <span className="text-white truncate max-w-[160px]">📝 clinic_pricing.txt</span>
+              <span className="text-white truncate max-w-[160px]">📝 service_pricing.txt</span>
               <span className="text-green-500 font-mono text-[10px]">100% Sync</span>
             </div>
           </div>
@@ -139,9 +137,9 @@ export default function ProductPage() {
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-center gap-3 h-[240px] text-body-xs font-mono">
           <span className="text-[10px] text-darkTextMuted uppercase tracking-wider">JSON Lead Data Extracted</span>
           <div className="bg-darkBg border border-darkBorder rounded-lg p-3 text-white flex flex-col gap-1 text-[11px] leading-relaxed">
-            <div><span className="text-saffron">&quot;name&quot;:</span> &quot;Vikram Malhotra&quot;</div>
-            <div><span className="text-saffron">&quot;intent&quot;:</span> &quot;Site Visit (HSR Flat)&quot;</div>
-            <div><span className="text-saffron">&quot;budget&quot;:</span> &quot;₹1.2 Crores&quot;</div>
+            <div><span className="text-saffron">&quot;name&quot;:</span> &quot;Sarah Johnson&quot;</div>
+            <div><span className="text-saffron">&quot;intent&quot;:</span> &quot;Site Visit (Downtown Home)&quot;</div>
+            <div><span className="text-saffron">&quot;budget&quot;:</span> &quot;$750,000&quot;</div>
             <div><span className="text-saffron">&quot;status&quot;:</span> &quot;Qualified Lead&quot;</div>
           </div>
         </div>
@@ -175,12 +173,12 @@ export default function ProductPage() {
       ),
     },
     {
-      title: "Indian Voice Accent Library",
-      description: "Choose from natural female and male voice synthetics trained specifically for Indian regional tones and Hinglish accent profiles.",
+      title: "Global Voice Accent Library",
+      description: "Choose from natural female and male voice synthetics trained specifically for global regional tones and diverse accent profiles.",
       icon: SpeakerHigh,
       bullets: [
         "Male and female voice synthetics",
-        "Dialects adjusted for North and South Indian accents",
+        "Dialects adjusted for regional accents",
         "Pacing speed toggles (0.8x to 1.4x)",
         "Voice cloning options available on Scale+",
       ],
@@ -189,9 +187,9 @@ export default function ProductPage() {
           <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Voice Selector</span>
           <div className="flex flex-col gap-2 my-2">
             {[
-              { id: "v1", name: "Male (Hinglish)", region: "North/Colloquial" },
-              { id: "v2", name: "Female (Hinglish)", region: "Neutral/Corporate" },
-              { id: "v3", name: "Female (Hindi Accent)", region: "Pure Hindi Tone" },
+              { id: "v1", name: "Male (English - US)", region: "US-West" },
+              { id: "v2", name: "Female (English - UK)", region: "UK-London" },
+              { id: "v3", name: "Female (Spanish)", region: "ES-Madrid" },
             ].map((voice) => {
               const active = activeVoice === voice.name;
               return (
@@ -300,7 +298,7 @@ export default function ProductPage() {
             </h1>
 
             <p className="text-body-md md:text-body-lg text-darkTextMuted max-w-xl mx-auto mb-10 leading-relaxed font-sans">
-              Deploy your first AI agent in under 5 minutes. No technical skills required. Conforms to local Indian SMB calling workflows out of the box.
+              Deploy your first AI assistant in under 5 minutes. No technical skills required. Conforms to your business calling workflows out of the box.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

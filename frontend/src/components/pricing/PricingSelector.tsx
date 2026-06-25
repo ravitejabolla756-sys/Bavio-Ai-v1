@@ -8,21 +8,21 @@ import { PRICING_BY_COUNTRY } from "@/config/pricing";
 
 const PLAN_FEATURES: Record<string, string[]> = {
   starter: [
-    "200 included minutes",
+    "100 included minutes",
     "Basic call routing",
     "AI Receptionist role",
     "Email lead notifications",
     "Dashboard lead storage",
   ],
   growth: [
-    "500 included minutes",
+    "300 included minutes",
     "Multi-tenant routing",
     "Email lead notifications",
     "SMS lead notifications",
     "WhatsApp lead notifications",
   ],
   scale: [
-    "1,500 included minutes",
+    "800 included minutes",
     "Everything in Growth",
     "Custom notification channels",
     "Premium low-latency voices",

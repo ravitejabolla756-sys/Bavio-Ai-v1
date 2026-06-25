@@ -14,31 +14,29 @@ const footerColumns = [
   {
     heading: "Product",
     links: [
+      { label: "How it Works", href: "/how-it-works" },
       { label: "Features", href: "/product" },
       { label: "Integrations", href: "/integrations" },
       { label: "Pricing", href: "/pricing" },
       { label: "Changelog", href: "/changelog" },
-      { label: "Security", href: "/legal/security" },
     ],
   },
   {
-    heading: "Resources",
+    heading: "Use Cases",
     links: [
-      { label: "Documentation", href: "/docs" },
-      { label: "API Reference", href: "/docs" },
-      { label: "Blog", href: "/blog" },
-      { label: "Status", href: "/status" },
-      { label: "Community", href: "/blog" },
+      { label: "Real Estate", href: "/use-cases/real-estate" },
+      { label: "Restaurants", href: "/use-cases/restaurants" },
+      { label: "Healthcare", href: "/use-cases/healthcare" },
+      { label: "E-Commerce", href: "/use-cases/e-commerce" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About", href: "/company" },
+      { label: "About Us", href: "/company" },
       { label: "Customers", href: "/customers" },
-      { label: "Careers", href: "/careers" },
       { label: "Contact", href: "/contact" },
-      { label: "Press Kit", href: "/company" },
+      { label: "Blog", href: "/blog" },
     ],
   },
   {
@@ -47,7 +45,7 @@ const footerColumns = [
       { label: "Privacy Policy", href: "/legal/privacy" },
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Cookie Policy", href: "/legal/cookies" },
-      { label: "Compliance", href: "/legal/security" },
+      { label: "Security & Compliance", href: "/legal/security" },
     ],
   },
 ];
@@ -188,7 +186,7 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
             2026 Bavio AI. All rights reserved.
           </p>
           <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
-            Bavio AI | Built in India 🇮🇳
+            Bavio AI | Global AI Receptionist
           </p>
         </div>
       </div>

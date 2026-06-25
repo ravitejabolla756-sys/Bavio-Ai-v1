@@ -18,7 +18,7 @@ export default function Changelog() {
       version: "v2.3.2",
       date: "April 2026",
       title: "Sub-500ms Audio Pipeline Orchestration",
-      description: "Optimized concurrent stream buffering between local SIP Trunks and Sarvam synthesis endpoints. Median latency dropped from 720ms to 480ms.",
+      description: "Optimized concurrent stream buffering between local SIP Trunks and natural voice synthesis endpoints. Median latency dropped from 720ms to 480ms.",
       tags: ["Performance", "Telephony"]
     },
     {
