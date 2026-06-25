@@ -20,6 +20,7 @@ import {
   PhoneCall,
   Check,
   Send,
+  Target,
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
@@ -82,7 +83,7 @@ export default function CompanyPage() {
       date: "April 2026",
       title: "Bavio Backend Complete",
       description:
-        "Successfully integrated Sarvam AI, Exotel, and WhatsApp. Achieved sub-100ms conversational processing latency.",
+        "Successfully integrated advanced AI language processing, enterprise-grade voice infrastructure, and WhatsApp. Achieved sub-100ms conversational processing latency.",
       status: "done",
     },
     {
@@ -103,14 +104,14 @@ export default function CompanyPage() {
       date: "July 2026",
       title: "First Paying Customers",
       description:
-        "Onboarding initial cohort of real estate agencies and clinic founders in Hyderabad and Bangalore.",
+        "Onboarding initial cohort of real estate agencies, healthcare clinics, and consulting firms globally.",
       status: "upcoming",
     },
     {
       date: "Future",
       title: "Expansion & Growth",
       description:
-        "Scaling to 100+ active SMBs and integrating support for additional regional Indian languages.",
+        "Scaling to 100+ active businesses and integrating support for additional global languages.",
       status: "future",
     },
   ];
@@ -132,13 +133,13 @@ export default function CompanyPage() {
               Our Company
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
-              Built by Builders. <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">For Builders.</span>
+              Never Miss Another Customer Call. <br className="hidden sm:inline" />
+              <span className="text-[#FF6B00]">We Built Bavio Because We Understand What That Costs.</span>
             </h1>
             <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl">
               We started Bavio because we watched too many businesses lose
               customers to missed calls. We are on a mission to help 1 million
-              Indian businesses capture every lead automatically.
+              businesses capture every lead automatically.
             </p>
           </motion.div>
         </section>
@@ -158,38 +159,30 @@ export default function CompanyPage() {
                 <div className="text-base text-[#6B5A4C] space-y-5 leading-relaxed font-normal">
                   <p>
                     In 2025, we spent months talking to real estate agents, clinic
-                    owners, and coaching center founders across Hyderabad and
-                    Bangalore. The story was always the same:
+                    owners, and small business owners globally. The story was always the same:
                   </p>
                   <blockquote className="border-l-4 border-[#FF6B00] pl-4 my-4 italic text-[#140A02] bg-[#FF6B00]/5 py-2.5 pr-4 rounded-r-lg">
-                    "I was showing a property when I got a call. I missed it. By
-                    the time I called back, they'd already booked with someone
-                    else. That was a ₹2L commission I lost."
+                    {"\"I was showing a property when I got a call. I missed it. By the time I called back, they'd already booked with someone else. That was a $10,000 commission I lost.\""}
                   </blockquote>
                   <blockquote className="border-l-4 border-[#FF6B00] pl-4 my-4 italic text-[#140A02] bg-[#FF6B00]/5 py-2.5 pr-4 rounded-r-lg">
-                    "My patients call during consultation. My staff misses the
-                    call. They book elsewhere."
+                    {"\"My patients call during consultation. My staff misses the call. They book elsewhere.\""}
                   </blockquote>
                   <blockquote className="border-l-4 border-[#FF6B00] pl-4 my-4 italic text-[#140A02] bg-[#FF6B00]/5 py-2.5 pr-4 rounded-r-lg">
-                    "We get 50 inquiries a week but only convert 10 because we
-                    miss half the calls."
+                    {"\"We get 50 inquiries a week but only convert 10 because we miss half the calls.\""}
                   </blockquote>
                   <p>
-                    We realized: India has world-class AI (Sarvam AI, amazing
-                    Indian language models), but no one is building for SMBs at a
-                    price they can afford. Every competitor charges $100+/month
-                    minimum. A real estate agent sees that price and thinks,{" "}
+                    We realized: While advanced AI language processing and voice technology are expanding globally, no one is building for SMBs at a price they can afford. Every competitor charges $100+/month minimum. A business owner sees that price and thinks,{" "}
                     <em>
-                      "That's a new full-time employee, minus the benefits."
+                      {"\"That's a new full-time employee, minus the benefits.\""}
                     </em>
                   </p>
                   <p>
-                    So we built Bavio: <strong>₹1,999/month</strong>. Speaks
-                    Hindi, English, Hinglish natively. Captures leads instantly.
+                    So we built Bavio: <strong>$49/month</strong>. Speaks
+                    multiple languages natively. Captures leads instantly.
                     Works 24/7. No setup complexity. No IT team needed.
                   </p>
                   <p className="font-semibold text-[#140A02]">
-                    Our goal is simple: help 1 million Indian businesses never
+                    Our goal is simple: help 1 million businesses never
                     miss another customer call.
                   </p>
                 </div>
@@ -247,7 +240,7 @@ export default function CompanyPage() {
                           Inbound Call
                         </div>
                         <div className="text-xs font-bold text-[#140A02]">
-                          +91 99881 22334
+                          +1 (555) 019-2834
                         </div>
                       </div>
                     </div>
@@ -259,10 +252,10 @@ export default function CompanyPage() {
                     <div className="flex items-center gap-3 bg-white border border-[#F3E4D4] p-3 rounded-2xl shadow-sm self-end max-w-[85%] transition-all duration-300 group-hover:-translate-x-2">
                       <div>
                         <div className="text-[10px] text-[#6B5A4C] font-semibold text-right">
-                          Sarvam AI engine
+                          Advanced AI language engine
                         </div>
                         <div className="text-xs font-bold text-[#FF6B00] text-right">
-                          "Ji, batayiye..." (Hinglish)
+                          {"\"Hello, how can I help?\""}
                         </div>
                       </div>
                       <div className="bg-[#FF6B00]/10 p-2 rounded-xl text-[#FF6B00]">
@@ -273,7 +266,7 @@ export default function CompanyPage() {
 
                   {/* Footnote */}
                   <div className="relative z-10 text-xs text-[#6B5A4C] border-t border-[#F3E4D4] pt-4 font-medium">
-                    Speaks Indian languages natively, bypassing heavy cloud latency.
+                    Speaks multiple languages natively, bypassing heavy cloud latency.
                   </div>
                 </div>
               </div>
@@ -294,36 +287,34 @@ export default function CompanyPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Card 1: Mission */}
+              {/* Card 1: Our Mission */}
               <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl flex flex-col justify-between hover:border-[#FF6B00]/30 hover:shadow-md transition-all duration-300">
                 <div className="space-y-4">
                   <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6" />
+                    <Target className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-bold text-[#140A02]">
                     Our Mission
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                    Never let a missed call cost a business a customer. We're
-                    making world-class AI receptionist technology affordable for
-                    every SMB in India.
+                    {"Never let a missed call cost a business a customer. We're making world-class AI receptionist technology affordable for every business globally."}
                   </p>
                 </div>
               </div>
 
-              {/* Card 2: India-First Approach */}
+              {/* Card 2: Global-Ready Approach */}
               <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl flex flex-col justify-between hover:border-[#FF6B00]/30 hover:shadow-md transition-all duration-300">
                 <div className="space-y-4">
                   <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center">
                     <Globe className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-bold text-[#140A02]">
-                    India First
+                    Global-Ready
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                    We're not a US company entering India. We're an India
-                    company, built for Indian languages, Indian business models,
-                    and Indian challenges.
+                    Built for every business from day one. Our system supports
+                    20+ languages natively and adapts seamlessly to diverse business
+                    models and communication preferences.
                   </p>
                 </div>
               </div>
@@ -359,7 +350,7 @@ export default function CompanyPage() {
                 Meet the Founders
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
-                We're a small, hyper-focused team building for India's business ecosystem.
+                {"We're a small, hyper-focused team building the future of automated business communications."}
               </p>
             </div>
 
@@ -377,13 +368,10 @@ export default function CompanyPage() {
                   <div>
                     <h3 className="text-lg font-bold text-[#140A02]">Raviteja</h3>
                     <p className="text-xs font-semibold text-[#FF6B00] uppercase tracking-wider mb-3">
-                      Co-Founder &amp; CTO
+                      Founder &amp; CTO
                     </p>
                     <p className="text-sm text-[#6B5A4C] leading-relaxed mb-6 font-normal">
-                      Built Bavio's entire AI pipeline from scratch. Integrated
-                      Sarvam, Exotel, WhatsApp, and orchestrated sub-100ms
-                      latency. Former AI infrastructure lead and full-stack
-                      developer. Obsessed with making AI work for India.
+                      {"Built Bavio's entire AI pipeline from scratch. Integrated our proprietary voice pipeline, enterprise-grade voice infrastructure, WhatsApp, and orchestrated sub-100ms latency. Former AI infrastructure lead and full-stack developer. Obsessed with making AI work for businesses everywhere."}
                     </p>
                   </div>
                   <div className="border-t border-[#F3E4D4] pt-4 flex gap-4">
@@ -420,13 +408,13 @@ export default function CompanyPage() {
                   <div>
                     <h3 className="text-lg font-bold text-[#140A02]">Praneeth</h3>
                     <p className="text-xs font-semibold text-[#FF6B00] uppercase tracking-wider mb-3">
-                      Co-Founder &amp; Product
+                      CEO
                     </p>
                     <p className="text-sm text-[#6B5A4C] leading-relaxed mb-6 font-normal">
                       Leads product decisions and customer acquisition. Spent 3
                       months talking to real estate agencies to understand the
                       exact problem Bavio solves. Former product builder and
-                      customer researcher. Believes India's SMBs deserve better
+                      customer researcher. Believes growing businesses deserve better
                       tools.
                     </p>
                   </div>
@@ -462,7 +450,7 @@ export default function CompanyPage() {
                 Timeline
               </span>
               <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
-                What We've Built
+                {"What We've Built"}
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
                 Our building path: honest progress, zero vaporware.
@@ -565,16 +553,16 @@ export default function CompanyPage() {
                   </span>
                 </div>
                 <h3 className="text-2xl font-bold text-[#140A02]">
-                  Unlocking the Indian SMB Market
+                  Unlocking the SMB Market
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                   <div className="space-y-1">
                     <div className="text-4xl font-extrabold text-[#FF6B00]">
-                      63M+
+                      75M+
                     </div>
                     <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
-                      Indian SMBs
+                      SMBs Globally
                     </div>
                     <p className="text-xs text-[#6B5A4C]">
                       Massive underserved market transitioning to digital ops.
@@ -595,7 +583,7 @@ export default function CompanyPage() {
 
                   <div className="space-y-1">
                     <div className="text-4xl font-extrabold text-[#140A02]">
-                      ₹1L Cr+
+                      $15B+
                     </div>
                     <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
                       Revenue Lost
@@ -638,11 +626,11 @@ export default function CompanyPage() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-[#140A02]">
-                        India-Native Language Stack
+                        Multilingual Voice Stack
                       </h4>
                       <p className="text-xs text-[#6B5A4C]">
-                        Direct API integration with Sarvam AI allows flawless,
-                        low-latency Hindi, English, and Hinglish streams.
+                        Advanced AI language processing allows flawless,
+                        low-latency multilingual voice streams.
                       </p>
                     </div>
                   </div>
@@ -657,7 +645,7 @@ export default function CompanyPage() {
                       </h4>
                       <p className="text-xs text-[#6B5A4C]">
                         Highly optimized engine allows strong profitability
-                        even at our ₹1,999/month price point.
+                        even at our low monthly price point.
                       </p>
                     </div>
                   </div>
@@ -668,10 +656,10 @@ export default function CompanyPage() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-[#140A02]">
-                        ₹1.32/minute Voice Cost
+                        Low-Cost Voice Compute
                       </h4>
                       <p className="text-xs text-[#6B5A4C]">
-                        10x cheaper pipeline than global products relying on US
+                        10x cheaper pipeline than global products relying on bloated
                         telephony routing and translation.
                       </p>
                     </div>
@@ -683,10 +671,10 @@ export default function CompanyPage() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-[#140A02]">
-                        Regulatory Exotel Moat
+                        Regulatory-Compliant Telephony
                       </h4>
                       <p className="text-xs text-[#6B5A4C]">
-                        Compliant local mobile virtual numbers mapping avoids
+                        Compliant enterprise-grade voice infrastructure routing avoids
                         VoIP bans common to international providers.
                       </p>
                     </div>
@@ -754,11 +742,10 @@ export default function CompanyPage() {
               Careers
             </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 mb-4">
-              We're Hiring
+              {"We're Hiring"}
             </h2>
             <p className="text-[#6B5A4C] text-sm md:text-base mb-8 max-w-xl mx-auto">
-              We're a 2-person team building something big. If you care about
-              India, AI engineering, and real customer impact, let's talk.
+              {"We're a 2-person team building something big. If you care about voice tech, AI engineering, and real customer impact, let's talk."}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 max-w-2xl mx-auto">
@@ -767,7 +754,7 @@ export default function CompanyPage() {
                   Backend Engineer
                 </div>
                 <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Bangalore / Remote
+                  Remote
                 </div>
               </div>
               <div className="bg-white border border-[#F3E4D4] p-5 rounded-2xl">
@@ -775,7 +762,7 @@ export default function CompanyPage() {
                   Sales &amp; Growth
                 </div>
                 <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Bangalore / Hyd
+                  Remote
                 </div>
               </div>
               <div className="bg-white border border-[#F3E4D4] p-5 rounded-2xl">
@@ -783,7 +770,7 @@ export default function CompanyPage() {
                   Product Designer
                 </div>
                 <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Bangalore / Remote
+                  Remote
                 </div>
               </div>
             </div>
@@ -809,7 +796,7 @@ export default function CompanyPage() {
                 </span>
                 <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02]">
                   Questions? <br />
-                  We'd love to hear from you.
+                  {"We'd love to hear from you."}
                 </h2>
                 <p className="text-sm md:text-base text-[#6B5A4C] leading-relaxed">
                   Ask us anything about Bavio, onboarding details, custom regional
@@ -843,12 +830,12 @@ export default function CompanyPage() {
                         WhatsApp Business
                       </div>
                       <a
-                        href="https://wa.me/919988122334"
+                        href="https://wa.me/15550192834"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-bold text-[#140A02] hover:text-[#FF6B00] transition-colors"
                       >
-                        +91 99881 22334
+                        +1 (555) 019-2834
                       </a>
                     </div>
                   </div>

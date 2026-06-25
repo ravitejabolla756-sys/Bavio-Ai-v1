@@ -51,7 +51,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1">
                   <div className="text-[10px] text-[#6E6256] font-bold">Bavio AI Assistant</div>
                   <div className="p-3 bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl rounded-tl-none text-xs text-[#140A02] max-w-[480px] leading-relaxed font-sans">
-                    Namaste. Bavio AI se bol raha hu.
+                    {"Hello! I'm Bavio, an AI assistant. How can I help today?"}
                   </div>
                 </div>
               </div>
@@ -61,7 +61,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1 text-right">
                   <div className="text-[10px] text-[#6E6256] font-bold">Customer (Caller)</div>
                   <div className="p-3 bg-[#F97316] text-white rounded-2xl rounded-tr-none text-xs max-w-[480px] leading-relaxed text-left font-sans">
-                    3BHK dekhna tha.
+                    {"I'm looking for a 3-bedroom home."}
                   </div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#140A02] flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -77,7 +77,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1">
                   <div className="text-[10px] text-[#6E6256] font-bold">Bavio AI Assistant</div>
                   <div className="p-3 bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl rounded-tl-none text-xs text-[#140A02] max-w-[480px] leading-relaxed font-sans">
-                    Budget kya hai sir?
+                    What is your budget range?
                   </div>
                 </div>
               </div>
@@ -87,7 +87,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1 text-right">
                   <div className="text-[10px] text-[#6E6256] font-bold">Customer (Caller)</div>
                   <div className="p-3 bg-[#F97316] text-white rounded-2xl rounded-tr-none text-xs max-w-[480px] leading-relaxed text-left font-sans">
-                    90 lakh tak.
+                    Around $450,000.
                   </div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#140A02] flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -121,28 +121,28 @@ export default function VoiceIntelligence() {
                 <User className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Caller:</span>
-                  <span className="font-bold text-[#140A02]">Rahul Sharma</span>
+                  <span className="font-bold text-[#140A02]">Sarah Johnson</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Landmark className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Requirement:</span>
-                  <span className="font-bold text-[#140A02]">Interested in 3BHK</span>
+                  <span className="font-bold text-[#140A02]">Interested in 3-Bedroom Home</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Budget:</span>
-                  <span className="font-bold text-[#F97316]">₹90L</span>
+                  <span className="font-bold text-[#F97316]">$450,000</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <CalendarClock className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Follow-up:</span>
-                  <span className="font-bold text-[#140A02]">WhatsApp sent</span>
+                  <span className="font-bold text-[#140A02]">Notification sent</span>
                 </div>
               </div>
             </div>

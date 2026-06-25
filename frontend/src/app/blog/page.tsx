@@ -8,41 +8,41 @@ import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/motion/ScrollReveal";
 
 const FEATURED_ARTICLE = {
-  title: "Why Small Indian Businesses Lose Up to 40% of Customer Calls",
+  title: "Why Small Businesses Lose Up to 40% of Customer Calls",
   category: "Industry Insights",
-  excerpt: "During peak hours and after-hours, Indian SMBs miss critical calls that convert to high-value deals. We analyze the root causes and how autonomous Hinglish voice agents solve the problem.",
+  excerpt: "During peak hours and after-hours, small businesses miss critical calls that convert to high-value deals. We analyze the root causes and how autonomous AI voice agents solve the problem.",
   readTime: "6 min read",
   date: "June 23, 2026",
-  author: "Aniket Kulkarni",
-  slug: "why-small-indian-businesses-lose-calls",
+  author: "Andrew Miller",
+  slug: "why-small-businesses-lose-calls",
 };
 
 const ARTICLES = [
   {
-    title: "How Voice AI Understands Mixed Hinglish Dialects",
+    title: "How Voice AI Understands Mixed Regional Accents",
     category: "Technology",
-    excerpt: "Traditional IVR systems fail on colloquial Hinglish code-switching. We dive into the architecture of Sarvam AI and custom models parsing hybrid Indian accents.",
+    excerpt: "Traditional IVR systems fail on colloquial regional code-switching. We dive into the architecture of advanced AI language processing and custom models parsing hybrid accents.",
     readTime: "5 min read",
     date: "June 18, 2026",
-    author: "Dr. Priya Patel",
-    slug: "voice-ai-understands-hinglish",
+    author: "Dr. Sarah Patel",
+    slug: "voice-ai-understands-regional-accents",
   },
   {
-    title: "Connecting Exotel SIP Trunks to Voice Agents",
+    title: "Connecting Enterprise SIP Trunks to Voice Agents",
     category: "Guides",
     excerpt: "Step-by-step setup guide to forward calls from your virtual business numbers to automated AI receptionists in under 5 minutes without writing code.",
     readTime: "4 min read",
     date: "June 12, 2026",
-    author: "Rahul Sharma",
-    slug: "connecting-exotel-sip-trunks",
+    author: "Richard Smith",
+    slug: "connecting-enterprise-sip-trunks",
   },
   {
     title: "The ROI of Answering Every Customer Call Instantly",
     category: "Business ROI",
-    excerpt: "Calculating the financial metrics of call recovery. How a clinic or agency recovering 15 missed calls per day can secure over ₹2,00,000 in monthly opportunities.",
+    excerpt: "Calculating the financial metrics of call recovery. How a clinic or agency recovering 15 missed calls per day can secure over $2,500 in monthly opportunities.",
     readTime: "6 min read",
     date: "June 05, 2026",
-    author: "Vikram Gupta",
+    author: "Victor Vance",
     slug: "roi-of-answering-every-call",
   },
 ];
@@ -69,7 +69,7 @@ export default function Blog() {
             </h1>
             
             <p className="text-body-md md:text-body-lg text-darkTextMuted max-w-xl leading-relaxed">
-              Practical guides on voice AI, lead capture automation, and customer experience for growing Indian businesses.
+              Practical guides on voice AI, lead capture automation, and customer experience for growing businesses globally.
             </p>
           </ScrollReveal>
         </section>

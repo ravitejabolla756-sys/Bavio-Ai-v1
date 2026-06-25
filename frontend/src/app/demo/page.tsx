@@ -84,43 +84,43 @@ const transcriptTimeline = [
   {
     time: 6,
     speaker: "ai",
-    text: "Namaste! Bavio Real Estate AI assistant se bol rahi hoon. Main aapki kya madad kar sakti hoon?",
+    text: "Hello! Welcome to Bavio. I'm your AI assistant. How can I help you today?",
     leadUpdate: { status: "connecting" },
   },
   {
     time: 11,
     speaker: "user",
-    text: "Ji namaste, main Hyderabad mein ek 2BHK flat ki enquiry karna chahta hoon.",
-    leadUpdate: { intent: "Enquiry: 2BHK Flat" },
+    text: "Hi, I'd like to inquire about a 3-bedroom home available in Downtown NYC.",
+    leadUpdate: { intent: "Enquiry: 3BR Home" },
   },
   {
     time: 17,
     speaker: "ai",
-    text: "Bilkul sahi! Hyderabad mein hamare paas Gachibowli aur Madhapur areas mein kaafi flats available hain. Aapka approximate budget kya hoga?",
-    leadUpdate: { location: "Hyderabad" },
+    text: "Great! We have some beautiful properties available in that area. What would be your approximate budget range?",
+    leadUpdate: { location: "Downtown NYC" },
   },
   {
     time: 23,
     speaker: "user",
-    text: "Mera budget lagbhag 75 Lakhs tak ka hai.",
-    leadUpdate: { budget: "₹75L" },
+    text: "My budget limit is around $450,000.",
+    leadUpdate: { budget: "$450,000" },
   },
   {
     time: 29,
     speaker: "ai",
-    text: "Samjhi, ₹75 Lakhs budget. Gachibowli mein is range mein 2 acche properties hain. Kya aap kal subah 11 baje site visit ke liye aa sakte hain?",
+    text: "Got it, a $450,000 budget. We have two excellent properties in that range. Would you be available for a site viewing tomorrow at 11 AM?",
     leadUpdate: {},
   },
   {
     time: 35,
     speaker: "user",
-    text: "Haan, kal subah 11 baje main free hoon, tab chalega.",
+    text: "Yes, tomorrow at 11 AM works perfectly for me.",
     leadUpdate: { schedule: "Tomorrow 11:00 AM" },
   },
   {
     time: 41,
     speaker: "ai",
-    text: "Perfect! Maine aapki details note kar li hain: Gachibowli mein 2BHK flat, budget ₹75L aur site visit kal subah 11 baje. Aapko WhatsApp par booking details aur builder ka number bhej diya hai. Dhanyawad!",
+    text: "Perfect! I've noted down your details: a 3-bedroom home in Downtown NYC with a $450,000 budget and a viewing scheduled for tomorrow at 11 AM. I've sent you the confirmation details via your preferred notification channel. Thank you!",
     leadUpdate: { status: "complete", whatsappSent: true },
   },
   {
@@ -146,7 +146,7 @@ export default function DemoPage() {
   const [simIndex, setSimIndex] = useState(0);
   const [transcript, setTranscript] = useState<Array<{ speaker: string; text: string }>>([]);
   const [leadCard, setLeadCard] = useState({
-    name: "Rahul Sharma",
+    name: "Sarah Johnson",
     phone: "",
     intent: "Extracting...",
     budget: "Waiting...",
@@ -171,7 +171,7 @@ export default function DemoPage() {
     setIsSavingData(true);
     try {
       // Create user account on backend so they have a real client record!
-      const tempPhone = "+91" + Math.floor(1000000000 + Math.random() * 9000000000);
+      const tempPhone = "+1" + Math.floor(1000000000 + Math.random() * 9000000000);
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -239,7 +239,7 @@ export default function DemoPage() {
     setTranscript([transcriptTimeline[0]]);
     setLeadCard((prev) => ({
       ...prev,
-      phone: "+91 " + phoneNumber.replace(/\D/g, ""),
+      phone: "+1 " + phoneNumber.replace(/\D/g, ""),
       intent: "Extracting...",
       budget: "Waiting...",
       location: "Waiting...",
@@ -298,11 +298,11 @@ export default function DemoPage() {
     // Fill remaining fields if ended prematurely
     setLeadCard((prev) => ({
       ...prev,
-      name: googleName || "Rahul Sharma",
-      phone: "+91 " + phoneNumber.replace(/\D/g, ""),
-      intent: "Enquiry: 2BHK Flat",
-      budget: "₹75L",
-      location: "Gachibowli, Hyderabad",
+      name: googleName || "Sarah Johnson",
+      phone: "+1 " + phoneNumber.replace(/\D/g, ""),
+      intent: "Enquiry: 3BR Home",
+      budget: "$450,000",
+      location: "Downtown NYC",
       schedule: "Tomorrow 11:00 AM",
       status: "Qualified",
       whatsappSent: true,
@@ -317,7 +317,7 @@ export default function DemoPage() {
 
       // Save call via backend
       await demoApi.saveCall({
-        caller_number: "+91" + phoneNumber.replace(/\D/g, ""),
+        caller_number: "+1" + phoneNumber.replace(/\D/g, ""),
         duration: secondsElapsed || 150,
         call_status: "completed",
         transcript: fullTranscriptText,
@@ -325,12 +325,12 @@ export default function DemoPage() {
 
       // Save lead via backend
       await leadsApi.create({
-        phone: "+91" + phoneNumber.replace(/\D/g, ""),
-        name: googleName || "Rahul Sharma",
-        intent: "Enquiry: 2BHK Flat in Gachibowli",
-        budget: 75000, // 75,000 for standard trial db conversion or representation
-        location: "Gachibowli, Hyderabad",
-        notes: "Demo call site visit scheduled for tomorrow 11:00 AM.",
+        phone: "+1" + phoneNumber.replace(/\D/g, ""),
+        name: googleName || "Sarah Johnson",
+        intent: "Enquiry: 3BR Home in Downtown NYC",
+        budget: "$450,000", // $450,000
+        location: "Downtown NYC",
+        notes: "Demo call site viewing scheduled for tomorrow 11:00 AM.",
       });
 
     } catch (err) {
@@ -401,11 +401,10 @@ export default function DemoPage() {
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
               Talk to Bavio. <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">It's Just a Phone Call Away.</span>
+              <span className="text-[#FF6B00]">{"It's Just a Phone Call Away."}</span>
             </h1>
             <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl mx-auto">
-              Call now and see Bavio's AI in action. Real conversation, real
-              results, in just 2.5 minutes.
+              {"Call now and see Bavio's AI in action. Real conversation, real results, in just 2.5 minutes."}
             </p>
           </motion.div>
         </section>
@@ -492,7 +491,7 @@ export default function DemoPage() {
                     <div className="space-y-4">
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6B5A4C]">
-                          +91
+                          +1
                         </span>
                         <input
                           type="tel"
@@ -504,7 +503,7 @@ export default function DemoPage() {
                         />
                       </div>
                       <p className="text-[11px] text-[#6B5A4C] font-normal">
-                        You'll receive a mock preview call on your screen instantly.
+                        {"You'll receive a mock preview call on your screen instantly."}
                       </p>
 
                       <button
@@ -523,14 +522,14 @@ export default function DemoPage() {
                 {/* RIGHT COLUMN - WHAT HAPPENS NEXT */}
                 <div className="lg:col-span-6 space-y-6">
                   <h3 className="text-xl font-bold text-[#140A02]">
-                    Here's What to Expect
+                    {"Here's What to Expect"}
                   </h3>
                   
                   <div className="space-y-4">
                     {[
                       { icon: "1️⃣", text: "Hang tight! Bavio will connect the call in ~30 seconds" },
-                      { icon: "2️⃣", text: "Say hello. Tell Bavio what you're looking for (real estate, clinic, coaching)" },
-                      { icon: "3️⃣", text: "Chat naturally in Hindi, English, or Hinglish. No rigid scripts" },
+                      { icon: "2️⃣", text: "Say hello. Tell Bavio what you're looking for (business inquiry, booking, etc.)" },
+                      { icon: "3️⃣", text: "Chat naturally in English, Spanish, or French. No rigid scripts" },
                       { icon: "4️⃣", text: "Bavio captures your info, asks qualifying questions, and logs details" },
                       { icon: "5️⃣", text: "Call ends. View a transcript and results on your screen instantly" },
                     ].map((step, idx) => (
@@ -633,7 +632,7 @@ export default function DemoPage() {
                   <div className="border-t border-[#F3E4D4] pt-4 flex justify-between items-center">
                     <p className="text-[11px] text-[#6B5A4C] flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#FF6B00] animate-spin" />
-                      Capturing conversation logs via Sarvam AI
+                      Capturing conversation logs via advanced AI language processing
                     </p>
                     <button
                       onClick={endCall}
@@ -787,7 +786,7 @@ export default function DemoPage() {
                       <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
                         Location
                       </span>
-                      Gachibowli, Hyderabad
+                      {leadCard.location}
                     </div>
                     <div>
                       <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
@@ -800,7 +799,7 @@ export default function DemoPage() {
                   <div className="border-t border-[#F3E4D4] pt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div className="flex items-center gap-1.5 text-xs text-green-600 font-bold">
                       <Check className="w-4 h-4 bg-green-100 rounded-full p-0.5" />
-                      WhatsApp Alert Sent
+                      Notification Sent
                     </div>
                     
                     <button
@@ -848,17 +847,17 @@ export default function DemoPage() {
         <section className="py-20 border-t border-[#F3E4D4]">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Card 1: Hinglish */}
+              {/* Card 1: Multilingual */}
               <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl hover:shadow-sm transition-all duration-300">
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
                   <MessageSquare className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-[#140A02] mb-3">
-                  Natural Hinglish Conversation
+                  Natural Voice Conversations
                 </h3>
                 <p className="text-sm text-[#6B5A4C] leading-relaxed">
                   No rigid scripts or IVR menus. Bavio understands customer
-                  intent natively and responds fluidly.
+                  intent natively in 20+ languages and responds fluidly.
                 </p>
               </div>
 
@@ -876,17 +875,17 @@ export default function DemoPage() {
                 </p>
               </div>
 
-              {/* Card 3: WhatsApp */}
+              {/* Card 3: Notifications */}
               <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl hover:shadow-sm transition-all duration-300">
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
                   <Smartphone className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-[#140A02] mb-3">
-                  WhatsApp Notification
+                  Instant Notifications
                 </h3>
                 <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  Get details delivered instantly to your WhatsApp business profile
-                  without email checking delays.
+                  Get details delivered instantly to your WhatsApp, email, or SMS
+                  without checking delay.
                 </p>
               </div>
             </div>
@@ -932,7 +931,7 @@ export default function DemoPage() {
                 Prefer to watch instead?
               </h2>
               <p className="text-[#6B5A4C] text-sm mt-2 font-medium">
-                Watch a quick demo showing a real Hinglish conversation handled by Bavio.
+                Watch a quick demo showing a real AI conversation handled by Bavio.
               </p>
             </div>
 
@@ -950,7 +949,7 @@ export default function DemoPage() {
                   How Bavio Works Under the Hood
                 </h3>
                 <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  Bavio bridges the gap between Indian phone networks (Exotel/Twilio)
+                  Bavio bridges the gap between traditional phone networks (enterprise-grade voice infrastructure)
                   and high-speed LLM nodes. Our pipeline performs speech-to-text,
                   intelligent prompt responses, and structured data parsing within
                   milliseconds.

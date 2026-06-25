@@ -4,13 +4,13 @@
 
 /* ── Root tokens ── */
 :root {
-  --background: #FFFDF8;
-  --foreground: #140A02;
+  --background: #FCF8F3;
+  --foreground: #140B06;
   --saffron: #FF6B00;
   --saffron-hover: #EA580C;
   --border-subtle: #E5E0D8;
   --radius-card: 12px;
-  --radius-button: 8px;
+  --radius-button: 999px;
   --radius-pill: 999px;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
@@ -20,9 +20,29 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* ── Global heading typography — Instrument Serif (Famaura-style) ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 0.92 !important;
+}
+
+/* Utility class for explicit serif headings in JSX */
+.font-heading, .font-display, .font-serif {
+  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 0.92 !important;
+}
+
 body {
+  font-family: var(--font-inter), "Inter", sans-serif;
   color: var(--foreground);
   background-color: var(--background);
+  font-size: 18px;
+  line-height: 1.7;
   /* Saffron radial glow on top, combined with a subtle 40px grid overlay adjusted for light theme */
   background-image: 
     radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.06) 0%, transparent 50%),
@@ -33,6 +53,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Color overrides for hardcoded Tailwind arbitrary values */
+.bg-\[\#FFFDF8\] {
+  background-color: #FCF8F3 !important;
+}
+.text-\[\#140A02\] {
+  color: #140B06 !important;
+}
+.bg-\[\#F97316\] {
+  background-color: #FF6B00 !important;
+}
+.text-\[\#F97316\] {
+  color: #FF6B00 !important;
+}
+.border-\[\#F97316\] {
+  border-color: #FF6B00 !important;
+}
+.border-\[\#F3E4D4\] {
+  border-color: #EADFD3 !important;
+}
+.bg-\[\#FFF7ED\] {
+  background-color: #FAF4EE !important;
+}
+
 
 /* ── Instant tap / click response ── */
 a, button, [role="button"], input[type="submit"], input[type="button"] {
