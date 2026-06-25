@@ -40,7 +40,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmSans.variable}`}
     >
-      <body className="antialiased bg-canvas text-ink min-h-[100dvh] font-sans noise-overlay">
+      <body className="antialiased bg-[#FFFDF8] text-[#140A02] min-h-[100dvh] font-sans noise-overlay">
         <CountryProvider>
           <NavigationProgress />
           {children}

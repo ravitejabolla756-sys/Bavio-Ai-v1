@@ -170,7 +170,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col md:flex-row overflow-x-hidden">
+    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-x-hidden">
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
@@ -195,35 +195,35 @@ export default function SignUpPage() {
         >
           <source src="/bavio-brand-video.mp4" type="video/mp4" />
         </video>
- 
+
         <div 
           className="absolute inset-0 z-10 pointer-events-none"
-          style={{ background: "rgba(0, 0, 0, 0.45)" }}
+          style={{ background: "rgba(0, 0, 0, 0.35)" }}
         />
- 
+
         <div className="relative z-20">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
-            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105" color="text-saffron" />
+            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
             <span className="font-display text-xl font-black tracking-tight text-white">
               Bavio AI
             </span>
           </Link>
         </div>
- 
+
         <div className="flex-1" />
- 
+
         <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
-          <span className="text-label uppercase tracking-widest text-saffron font-bold mb-3 block text-xs">
+          <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block text-xs">
             AI RECEPTIONIST FOR YOUR BUSINESS
           </span>
           <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
             Your AI receptionist <br />
-            <span className="text-saffron">never sleeps.</span>
+            <span className="text-[#FF6B00]">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
             Answer calls, qualify leads, and book appointments automatically.
           </p>
- 
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
             {[
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
@@ -234,7 +234,7 @@ export default function SignUpPage() {
               const Icon = feat.icon;
               return (
                 <div key={i} className="flex flex-col items-center text-center p-2 transition-transform duration-300 hover:scale-105">
-                  <div className="w-14 h-14 rounded-2xl bg-[#121212]/40 border border-[#2a2a2a]/40 flex items-center justify-center text-saffron mb-3 shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-[#FF6B00] mb-3 shadow-sm">
                     <Icon className="w-6 h-6" weight="bold" />
                   </div>
                   <span className="text-body-xs font-bold text-white/90 leading-tight block">
@@ -247,27 +247,27 @@ export default function SignUpPage() {
           </div>
         </div>
       </section>
- 
+
       {/* ────────────────────────────────────────
           RIGHT SIDE: SIGNUP CARD PANEL (40%)
       ──────────────────────────────────────── */}
-      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#0a0a0a] relative min-h-[100dvh]">
+      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#F7F4EF] relative min-h-[100dvh]">
         
-        <div className="absolute w-[250px] h-[250px] bg-saffron/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
- 
+        <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
+
         {/* Mobile Header */}
         <div className="md:hidden flex items-center gap-2 mb-8 relative z-10 self-start">
-          <Logo className="w-8 h-8" color="text-saffron" />
-          <span className="font-display text-lg font-black tracking-tight text-bavioCream">
+          <Logo className="w-8 h-8" />
+          <span className="font-display text-lg font-black tracking-tight">
             Bavio AI
           </span>
         </div>
- 
+
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[480px] bg-[#121212] border border-[#2a2a2a] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-20"
+          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-20"
         >
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
@@ -279,27 +279,29 @@ export default function SignUpPage() {
               >
                 {/* Header */}
                 <div className="flex flex-col text-left mb-6">
-                  <h1 className="font-display text-2xl font-bold text-bavioCream tracking-tight mb-2">
+                  <h1 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
                     Create Workspace Account
                   </h1>
-                  <p className="text-body-xs text-darkTextMuted">
+                  <p className="text-body-xs text-[#5A5A66]">
                     Create your administrative credentials to configure call routing.
                   </p>
                 </div>
- 
+
                 {errors.form && (
-                  <div className="mb-4 bg-red-950/20 border border-red-900/50 rounded-xl p-3 text-red-400 text-body-xs font-semibold">
+                  <div className="mb-4 bg-state-error/10 border border-state-error/20 rounded-xl p-3 text-state-error text-body-xs font-semibold">
                     {errors.form}
                   </div>
                 )}
- 
+
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   
+
+
                   {/* Work Email Address */}
                   <div>
-                    <label htmlFor="email-input" className="block font-semibold text-body-xs text-bavioCream mb-1.5 pl-1">
-                       Email Address
+                    <label htmlFor="email-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
+                      Email Address
                     </label>
                     <input
                       id="email-input"
@@ -307,14 +309,14 @@ export default function SignUpPage() {
                       placeholder="Email Address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full bg-[#181818] border ${errors.email ? "border-red-500" : "border-[#2a2a2a] focus:border-saffron"} focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 px-4 text-body-xs text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200`}
+                      className={`w-full bg-[#FAF7F2] border ${errors.email ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
                     />
-                    {errors.email && <p className="text-red-400 text-[10px] mt-1 pl-1">{errors.email}</p>}
+                    {errors.email && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.email}</p>}
                   </div>
- 
+
                   {/* Password */}
                   <div>
-                    <label htmlFor="password-input" className="block font-semibold text-body-xs text-bavioCream mb-1.5 pl-1">
+                    <label htmlFor="password-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Password
                     </label>
                     <div className="relative">
@@ -324,22 +326,22 @@ export default function SignUpPage() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`w-full bg-[#181818] border ${errors.password ? "border-red-500" : "border-[#2a2a2a] focus:border-saffron"} focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 pl-4 pr-11 text-body-xs text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200`}
+                        className={`w-full bg-[#FAF7F2] border ${errors.password ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-4 pr-11 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-3.5 text-darkTextMuted hover:text-bavioCream"
+                        className="absolute right-4 top-3.5 text-[#8A8A96] hover:text-[#14141A]"
                       >
                         {showPassword ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-red-400 text-[10px] mt-1 pl-1">{errors.password}</p>}
+                    {errors.password && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.password}</p>}
                   </div>
- 
+
                   {/* Business / Company Name */}
                   <div>
-                    <label htmlFor="business-name-input" className="block font-semibold text-body-xs text-bavioCream mb-1.5 pl-1">
+                    <label htmlFor="business-name-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Business / Company Name
                     </label>
                     <input
@@ -348,14 +350,14 @@ export default function SignUpPage() {
                       placeholder="Business / Company Name"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className={`w-full bg-[#181818] border ${errors.businessName ? "border-red-500" : "border-[#2a2a2a] focus:border-saffron"} focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 px-4 text-body-xs text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200`}
+                      className={`w-full bg-[#FAF7F2] border ${errors.businessName ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
                     />
-                    {errors.businessName && <p className="text-red-400 text-[10px] mt-1 pl-1">{errors.businessName}</p>}
+                    {errors.businessName && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessName}</p>}
                   </div>
- 
+
                   {/* Business Phone Number */}
                   <div>
-                    <label htmlFor="business-phone-input" className="block font-semibold text-body-xs text-bavioCream mb-1.5 pl-1">
+                    <label htmlFor="business-phone-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Business Phone Number
                     </label>
                     <input
@@ -364,14 +366,14 @@ export default function SignUpPage() {
                       placeholder="Business Phone Number"
                       value={businessPhone}
                       onChange={(e) => setBusinessPhone(e.target.value)}
-                      className={`w-full bg-[#181818] border ${errors.businessPhone ? "border-red-500" : "border-[#2a2a2a] focus:border-saffron"} focus:ring-4 focus:ring-saffron/10 rounded-xl py-3 px-4 text-body-xs text-bavioCream placeholder-darkTextMuted/50 outline-none transition-all duration-200`}
+                      className={`w-full bg-[#FAF7F2] border ${errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
                     />
-                    {errors.businessPhone && <p className="text-red-400 text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
+                    {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                   </div>
- 
+
                   {/* Industry Sector */}
                   <div>
-                    <label className="block font-semibold text-body-xs text-bavioCream mb-1.5 pl-1">
+                    <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Industry Sector
                     </label>
                     <SearchableDropdown
@@ -381,24 +383,24 @@ export default function SignUpPage() {
                       placeholder="Select your industry"
                     />
                   </div>
- 
+
                   {/* Submit CTA */}
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="mt-2 w-full flex items-center justify-center gap-2.5 bg-saffron hover:bg-saffron-hover disabled:bg-[#2a2a2a] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98]"
+                    className="mt-2 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-400 text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98]"
                   >
                     <span>{isLoading ? "Creating Account..." : "Create Account"}</span>
                     <ArrowRight className="w-4 h-4" weight="bold" />
                   </button>
                 </form>
- 
+
                 {/* Form mode switcher */}
-                <div className="mt-6 text-center text-body-xs text-darkTextMuted">
+                <div className="mt-6 text-center text-body-xs text-[#5A5A66]">
                   <span>Already have an account? </span>
                   <Link
                     href="/login"
-                    className="font-bold text-saffron hover:text-saffron-hover transition-colors ml-1"
+                    className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] transition-colors ml-1"
                   >
                     Sign In
                   </Link>
@@ -413,42 +415,42 @@ export default function SignUpPage() {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="flex flex-col items-center text-center gap-5 py-4"
               >
-                <div className="w-16 h-16 rounded-full bg-saffron/10 border border-saffron/20 text-saffron flex items-center justify-center shadow-lg relative">
+                <div className="w-16 h-16 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#10B981] flex items-center justify-center shadow-lg relative">
                   <Check className="w-8 h-8" weight="bold" />
-                  <div className="absolute inset-0 rounded-full border border-saffron/30 animate-ping opacity-75" />
+                  <div className="absolute inset-0 rounded-full border border-[#10B981]/30 animate-ping opacity-75" />
                 </div>
                 
                 <div>
-                  <h2 className="font-display text-2xl font-bold text-bavioCream tracking-tight mb-2">
+                  <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
                     Thank You for Registering!
                   </h2>
-                  <p className="text-body-xs text-darkTextMuted leading-relaxed max-w-sm">
+                  <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm">
                     Your 14-day free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
                   </p>
                 </div>
- 
-                <div className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl p-4 text-left flex flex-col gap-2.5 font-mono text-[10px] text-darkTextMuted">
-                  <div className="flex justify-between border-b border-[#2a2a2a]/50 pb-1.5">
+
+                <div className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl p-4 text-left flex flex-col gap-2.5 font-mono text-[10px] text-[#5A5A66]">
+                  <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
                     <span>Account:</span>
-                    <span className="font-semibold text-bavioCream">{email}</span>
+                    <span className="font-semibold text-[#14141A]">{email}</span>
                   </div>
-                  <div className="flex justify-between border-b border-[#2a2a2a]/50 pb-1.5">
+                  <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
                     <span>Trial Limit:</span>
-                    <span className="font-semibold text-saffron">100 Free Minutes</span>
+                    <span className="font-semibold text-[#10B981]">30 Free Minutes</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <span className="font-semibold text-saffron flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-saffron animate-pulse" />
+                    <span className="font-semibold text-[#10B981] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                       Active
                     </span>
                   </div>
                 </div>
- 
+
                 <button
                   type="button"
                   onClick={handleGoToOnboarding}
-                  className="w-full flex items-center justify-center gap-2 bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <span>Start Onboarding</span>
                   <ArrowRight className="w-4 h-4" weight="bold" />
@@ -457,21 +459,21 @@ export default function SignUpPage() {
             )}
           </AnimatePresence>
         </motion.div>
- 
+
         {/* Secure encryption footer */}
-        <div className="mt-8 flex items-center gap-2 text-body-xs text-darkTextMuted pointer-events-none relative">
+        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative">
           <ShieldCheck className="w-4 h-4 text-state-success" weight="fill" />
           <span>Your data is secure and encrypted</span>
         </div>
- 
+
         {/* Need help? contact */}
-        <div className="mt-4 text-center text-body-xs text-darkTextMuted relative">
+        <div className="mt-4 text-center text-body-xs text-[#8A8A96] relative">
           <span>Need help? Contact: </span>
-          <a href="mailto:hello@bavio.in" className="font-bold text-saffron hover:text-saffron-hover hover:underline">
+          <a href="mailto:hello@bavio.in" className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] hover:underline">
             hello@bavio.in
           </a>
         </div>
- 
+
       </section>
 
     </div>

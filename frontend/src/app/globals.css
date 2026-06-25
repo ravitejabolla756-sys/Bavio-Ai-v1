@@ -4,12 +4,12 @@
 
 /* ── Root tokens ── */
 :root {
-  --background: #0a0a0a;
-  --foreground: #f5f0e8;
+  --background: #FFFDF8;
+  --foreground: #140A02;
   --saffron: #FF6B00;
-  --saffron-hover: #FF8C3A;
-  --border-subtle: #2a2a2a;
-  --radius-card: 8px;
+  --saffron-hover: #EA580C;
+  --border-subtle: #E5E0D8;
+  --radius-card: 12px;
   --radius-button: 8px;
   --radius-pill: 999px;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
@@ -23,11 +23,11 @@ html {
 body {
   color: var(--foreground);
   background-color: var(--background);
-  /* Saffron radial glow on top, combined with a subtle 40px grid overlay */
+  /* Saffron radial glow on top, combined with a subtle 40px grid overlay adjusted for light theme */
   background-image: 
-    radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.08) 0%, transparent 50%),
-    linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+    radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.06) 0%, transparent 50%),
+    linear-gradient(rgba(20, 10, 2, 0.008) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 10, 2, 0.008) 1px, transparent 1px);
   background-size: 100% 100%, 40px 40px, 40px 40px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -49,20 +49,20 @@ button:not(.no-press):active,
 }
 
 ::selection {
-  background: rgba(255, 107, 0, 0.25);
-  color: #ffffff;
+  background: rgba(255, 107, 0, 0.15);
+  color: #FF6B00;
 }
 
-/* ── Scrollbar styling (dark, thin, premium) ── */
+/* ── Scrollbar styling (light, thin, premium) ── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #FFFDF8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  background: #E5E0D8;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -71,41 +71,41 @@ button:not(.no-press):active,
 
 /* ── Glassmorphism utilities ── */
 .bg-glass {
-  background: rgba(10, 10, 10, 0.8);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .bg-glass-subtle {
-  background: rgba(15, 15, 15, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* ── Premium shadow utilities ── */
 .shadow-premium {
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.4);
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 8px 24px rgba(20, 10, 2, 0.04);
 }
 
 .shadow-premium-hover {
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.6),
-    0 24px 64px rgba(0, 0, 0, 0.7);
+    0 4px 12px rgba(20, 10, 2, 0.06),
+    0 24px 64px rgba(20, 10, 2, 0.08);
 }
 
 .shadow-saffron-glow {
-  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.08);
 }
 
-/* ── Double-bezel card architecture (redesigned for AgentPhone #0f0f0f / #2a2a2a) ── */
+/* ── Double-bezel card architecture (redesigned for light theme) ── */
 .card-bezel {
   position: relative;
-  background: rgba(255, 255, 255, 0.01);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.01);
+  border: 1px solid rgba(0, 0, 0, 0.03);
   padding: 5px;
   border-radius: 12px;
   transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -117,8 +117,8 @@ button:not(.no-press):active,
 }
 
 .card-bezel-inner {
-  background: #0f0f0f;
-  border: 1px solid #2a2a2a;
+  background: #ffffff;
+  border: 1px solid #E5E0D8;
   border-radius: calc(12px - 5px);
   overflow: hidden;
   transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -126,7 +126,7 @@ button:not(.no-press):active,
 
 .card-bezel:hover .card-bezel-inner {
   border-color: var(--saffron);
-  box-shadow: 0 0 20px rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.06);
 }
 
 /* ── Interactive button utility classes ── */

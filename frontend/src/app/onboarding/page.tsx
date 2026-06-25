@@ -105,27 +105,25 @@ function OnboardingContent() {
     setStep(3); // Advance to success activation screen
   };
 
-  // Loading indicator for initial profile fetch
   if (profileLoading || countryLoading) {
     return (
-      <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col justify-center items-center">
+      <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-center items-center">
         <div className="w-12 h-12 border-4 border-saffron/25 border-t-saffron rounded-full animate-spin mb-4" />
-        <p className="text-body-sm text-darkTextMuted font-medium animate-pulse">Initializing your onboarding workspace...</p>
+        <p className="text-body-sm text-[#5A5A66] font-medium animate-pulse">Initializing your onboarding workspace...</p>
       </div>
     );
   }
 
-  // Profile loading error state
   if (profileError) {
     return (
-      <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col justify-center items-center p-6 text-center">
-        <div className="w-16 h-16 bg-red-950/20 border border-red-900/50 text-red-400 rounded-full flex items-center justify-center mb-6">
+      <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-center items-center p-6 text-center">
+        <div className="w-16 h-16 bg-red-50 border border-red-200 text-red-500 rounded-full flex items-center justify-center mb-6">
           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
         <h2 className="text-heading-sm font-bold mb-2">Session Authentication Error</h2>
-        <p className="text-body-xs text-darkTextMuted max-w-sm mb-6 leading-relaxed">{profileError}</p>
+        <p className="text-body-xs text-[#5A5A66] max-w-sm mb-6 leading-relaxed">{profileError}</p>
         <button
           type="button"
           onClick={() => {
@@ -148,25 +146,25 @@ function OnboardingContent() {
   const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col justify-between overflow-x-hidden">
+    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-between overflow-x-hidden">
       {/* Background ambient lighting */}
       <div className="absolute w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
       <div className="absolute w-[600px] h-[600px] bg-saffron/3 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
 
       {/* Header bar */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#2a2a2a] relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#E5E0D8] relative z-20">
         <div className="flex items-center gap-3">
           <Logo className="w-12 h-12 transition-transform duration-300 ease-premium hover:scale-105" color="text-saffron" />
-          <span className="font-display text-2xl font-black tracking-tight text-bavioCream">Bavio AI</span>
+          <span className="font-display text-2xl font-black tracking-tight text-[#140A02]">Bavio AI</span>
         </div>
 
         {/* Stepper Progress bar */}
         {step < 3 && (
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold text-darkTextMuted uppercase tracking-wider hidden sm:inline">
+            <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider hidden sm:inline">
               Step {step} of 2
             </span>
-            <div className="w-24 sm:w-40 h-1 bg-[#2a2a2a]/40 rounded-full overflow-hidden">
+            <div className="w-24 sm:w-40 h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-saffron rounded-full transition-all duration-300"
                 style={{ width: `${(step / 2) * 100}%` }}
@@ -213,7 +211,7 @@ function OnboardingContent() {
         )}
 
         {step === 3 && (
-          <div className="w-full max-w-lg bg-[#121212] border border-[#2a2a2a] rounded-[24px] p-8 md:p-10 shadow-premium animate-fade-in text-center">
+          <div className="w-full max-w-lg bg-white border border-[#E5E0D8] rounded-[24px] p-8 md:p-10 shadow-premium animate-fade-in text-center">
             {/* Success icon */}
             <div className="w-16 h-16 bg-saffron/10 border border-saffron/20 text-saffron rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -221,29 +219,29 @@ function OnboardingContent() {
               </svg>
             </div>
 
-            <h2 className="text-heading-sm font-bold text-bavioCream mb-3">AI Call Receptionist Activated!</h2>
-            <p className="text-body-xs text-darkTextMuted mb-8 leading-relaxed">
+            <h2 className="text-heading-sm font-bold text-[#140A02] mb-3">AI Call Receptionist Activated!</h2>
+            <p className="text-body-xs text-[#5A5A66] mb-8 leading-relaxed">
               Congratulations! Your virtual routing line is configured, and call forwarding is active. Your Bavio voice assistant is officially online to handle calls.
             </p>
 
-            <div className="p-5 rounded-2xl bg-[#181818] border border-[#2a2a2a] text-left mb-8 space-y-3">
+            <div className="p-5 rounded-2xl bg-[#FAF9F6] border border-[#E5E0D8] text-left mb-8 space-y-3">
               <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-darkTextMuted">Active Plan:</span>
-                <span className="font-bold text-bavioCream capitalize">{selectedPlan}</span>
+                <span className="font-semibold text-[#8A8A96]">Active Plan:</span>
+                <span className="font-bold text-[#140A02] capitalize">{selectedPlan}</span>
               </div>
               {assignedNumber && (
                 <div className="flex justify-between text-body-xs">
-                  <span className="font-semibold text-darkTextMuted">Virtual Phone Number:</span>
-                  <span className="font-bold text-bavioCream font-mono">{assignedNumber}</span>
+                  <span className="font-semibold text-[#8A8A96]">Virtual Phone Number:</span>
+                  <span className="font-bold text-[#140A02] font-mono">{assignedNumber}</span>
                 </div>
               )}
               <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-darkTextMuted">Workspace Owner:</span>
-                <span className="font-bold text-bavioCream">{userEmail}</span>
+                <span className="font-semibold text-[#8A8A96]">Workspace Owner:</span>
+                <span className="font-bold text-[#140A02]">{userEmail}</span>
               </div>
               <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-darkTextMuted">Billing Country:</span>
-                <span className="font-bold text-bavioCream">{country || "US"}</span>
+                <span className="font-semibold text-[#8A8A96]">Billing Country:</span>
+                <span className="font-bold text-[#140A02]">{country || "US"}</span>
               </div>
             </div>
 
@@ -264,36 +262,36 @@ function OnboardingContent() {
 
       {/* Sticky Bottom Plan Summary Section */}
       {step === 1 && (
-        <div className="sticky bottom-0 w-full bg-[#121212]/95 backdrop-blur-md border-t border-[#2a2a2a] py-4.5 px-6 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] z-30 transition-all duration-300">
+        <div className="sticky bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(20,10,2,0.05)] z-30 transition-all duration-300">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             {/* Metadata info */}
             <div className="flex flex-wrap items-center justify-start gap-y-3 gap-x-6 text-left">
               <div>
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted tracking-wider block mb-0.5">Selected Plan</span>
-                <span className="text-body-xs font-black text-bavioCream capitalize">{selectedPlan}</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Selected Plan</span>
+                <span className="text-body-xs font-black text-[#140A02] capitalize">{selectedPlan}</span>
               </div>
-              <div className="h-8 w-px bg-[#2a2a2a]/50 hidden md:block" />
+              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
               <div>
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted tracking-wider block mb-0.5">Billing Cycle</span>
-                <span className="text-body-xs font-black text-bavioCream capitalize">{billingCycle} Billing</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Billing Cycle</span>
+                <span className="text-body-xs font-black text-[#140A02] capitalize">{billingCycle} Billing</span>
               </div>
-              <div className="h-8 w-px bg-[#2a2a2a]/50 hidden md:block" />
+              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
               <div>
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted tracking-wider block mb-0.5">Included Minutes</span>
-                <span className="text-body-xs font-black text-bavioCream">{includedMinutes} mins</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Included Minutes</span>
+                <span className="text-body-xs font-black text-[#140A02]">{includedMinutes} mins</span>
               </div>
-              <div className="h-8 w-px bg-[#2a2a2a]/50 hidden md:block" />
+              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
               <div>
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted tracking-wider block mb-0.5">Overage Rate</span>
-                <span className="text-body-xs font-black text-bavioCream">{overageRate}</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Overage Rate</span>
+                <span className="text-body-xs font-black text-[#140A02]">{overageRate}</span>
               </div>
-              <div className="h-8 w-px bg-[#2a2a2a]/50 hidden md:block" />
+              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
               <div>
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted tracking-wider block mb-0.5">Trial Status</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Trial Status</span>
                 <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
                   selectedPlan === "starter"
                     ? "bg-saffron/15 text-saffron"
-                    : "bg-[#2a2a2a] text-bavioCream"
+                    : "bg-[#FAF9F6] text-[#140A02] border border-[#E5E0D8]"
                 }`}>
                   {trialStatus}
                 </span>
@@ -306,11 +304,11 @@ function OnboardingContent() {
                 type="button"
                 onClick={handleContinueSetup}
                 disabled={actionLoading}
-                className="w-full md:w-auto min-w-[200px] h-12 bg-saffron hover:bg-saffron-hover disabled:bg-[#2a2a2a]/45 text-white disabled:text-darkTextMuted rounded-xl text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center justify-center gap-2"
+                className="w-full md:w-auto min-w-[200px] h-12 bg-saffron hover:bg-saffron-hover disabled:bg-[#FAF9F6]/45 text-white disabled:text-[#8A8A96] rounded-xl text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center justify-center gap-2"
               >
                 {actionLoading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-darkTextMuted/25 border-t-darkTextMuted rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#8A8A96]/25 border-t-[#8A8A96] rounded-full animate-spin" />
                     Processing...
                   </>
                 ) : (
@@ -329,14 +327,14 @@ function OnboardingContent() {
 
       {/* Screen action loading overlay */}
       {actionLoading && (
-        <div className="fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-[#FFFDF8]/80 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
           <div className="w-12 h-12 border-4 border-saffron/25 border-t-saffron rounded-full animate-spin mb-4" />
           <p className="text-body-sm text-saffron font-bold">Creating your secure workspace redirect...</p>
         </div>
       )}
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#2a2a2a] flex items-center justify-center text-darkTextMuted text-body-xs font-semibold relative z-20 mt-10">
+      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#E5E0D8] flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20 mt-10">
         <span>© 2026 Bavio AI Inc. All rights reserved.</span>
       </footer>
     </div>

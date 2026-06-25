@@ -123,16 +123,16 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl bg-navy-card border border-navy-border rounded-[24px] p-8 shadow-premium font-sans text-left">
-      <h3 className="text-heading-sm font-bold text-bavioCream mb-2">
+    <div className="w-full max-w-2xl bg-white border border-[#E5E0D8] rounded-[24px] p-8 shadow-premium font-sans text-left">
+      <h3 className="text-heading-sm font-bold text-[#140A02] mb-2">
         Virtual Phone Number Allocation
       </h3>
-      <p className="text-body-xs text-bavioLavender mb-8">
+      <p className="text-body-xs text-[#5A5A66] mb-8">
         Bavio AI works by intercepting phone calls routed to your virtual number. Let&apos;s allocate a dedicated line for your workspace.
       </p>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-950/20 border border-red-900/50 rounded-xl text-body-xs text-red-400 font-medium flex items-start gap-3">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-body-xs text-red-500 font-medium flex items-start gap-3">
           <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -141,18 +141,18 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
       )}
 
       {!phoneNumber ? (
-        <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-[#2a2a2a] rounded-2xl bg-[#121212]/40">
-          <svg className="w-12 h-12 text-darkTextMuted mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-[#E5E0D8] rounded-2xl bg-[#FAF9F6]/40">
+          <svg className="w-12 h-12 text-[#8A8A96] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
-          <p className="text-body-xs text-darkTextMuted mb-6 text-center max-w-sm">
+          <p className="text-body-xs text-[#8A8A96] mb-6 text-center max-w-sm">
             We will request a local virtual number matching your detected region ({resolvedCountry}).
           </p>
           <button
             type="button"
             onClick={assignNumber}
             disabled={loading}
-            className="bg-saffron hover:bg-saffron-hover disabled:bg-[#2a2a2a]/45 disabled:text-darkTextMuted text-white py-3 px-8 rounded-button text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center gap-2"
+            className="bg-saffron hover:bg-saffron-hover disabled:bg-[#FAF9F6]/45 disabled:text-[#8A8A96] text-white py-3 px-8 rounded-button text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center gap-2"
           >
             {loading ? (
               <>
@@ -167,12 +167,12 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
       ) : (
         <div className="space-y-8 animate-fade-in">
           {/* Active number card */}
-          <div className="p-6 rounded-2xl bg-[#181818] border border-[#2a2a2a] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[9px] font-black uppercase tracking-widest text-saffron block mb-1">
                 Your Dedicated Virtual Number
               </span>
-              <div className="text-display-sm font-bold text-bavioCream">
+              <div className="text-display-sm font-bold text-[#140A02]">
                 {phoneNumber}
               </div>
             </div>
@@ -182,7 +182,7 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
                 navigator.clipboard.writeText(phoneNumber);
                 alert("Virtual number copied to clipboard!");
               }}
-              className="px-4 py-2 border border-[#2a2a2a] hover:border-saffron text-bavioCream hover:text-white hover:bg-saffron rounded-xl text-body-xs font-bold transition-colors inline-flex items-center gap-1.5 self-start sm:self-auto bg-[#121212]"
+              className="px-4 py-2 border border-[#E5E0D8] hover:border-saffron text-[#140A02] hover:text-white hover:bg-saffron rounded-xl text-body-xs font-bold transition-colors inline-flex items-center gap-1.5 self-start sm:self-auto bg-white"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -193,14 +193,14 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
 
           {/* Stepper call forwarding instructions */}
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2a2a2a] pb-4">
-              <h4 className="text-body-sm font-bold text-bavioCream">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E0D8] pb-4">
+              <h4 className="text-body-sm font-bold text-[#140A02]">
                 Call Forwarding Instructions Guide
               </h4>
               
               {operators.length > 1 && (
                 <div className="flex items-center gap-2">
-                  <label className="text-[10px] font-bold text-darkTextMuted uppercase tracking-wider shrink-0">
+                  <label className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider shrink-0">
                     Carrier:
                   </label>
                   <SearchableDropdown
@@ -230,10 +230,10 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
             <ol className="space-y-4">
               {activeInstruction?.steps.map((step, idx) => (
                 <li key={idx} className="flex gap-4">
-                  <div className="w-6 h-6 rounded-full bg-[#181818] border border-[#2a2a2a] text-body-xs font-black text-saffron flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-[#FAF9F6] border border-[#E5E0D8] text-body-xs font-black text-saffron flex items-center justify-center shrink-0">
                     {idx + 1}
                   </div>
-                  <div className="text-body-xs text-darkTextMuted pt-0.5 font-medium leading-relaxed">
+                  <div className="text-body-xs text-[#5A5A66] pt-0.5 font-medium leading-relaxed">
                     {formatStepText(step)}
                   </div>
                 </li>
@@ -242,7 +242,7 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
 
             {/* Video Tutorial */}
             {activeInstruction?.videoUrl && (
-              <div className="mt-8 border border-[#2a2a2a] rounded-[20px] overflow-hidden">
+              <div className="mt-8 border border-[#E5E0D8] rounded-[20px] overflow-hidden">
                 <iframe
                   className="w-full aspect-video"
                   src={`https://www.youtube.com/embed/${activeInstruction.videoUrl}`}
@@ -256,7 +256,7 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
           </div>
 
           {/* Action buttons */}
-          <div className="border-t border-[#2a2a2a] pt-8 flex items-center justify-between">
+          <div className="border-t border-[#E5E0D8] pt-8 flex items-center justify-between">
             <button
               type="button"
               onClick={handleVerify}
@@ -264,7 +264,7 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
               className={`py-3 px-6 rounded-button text-body-xs font-bold transition-all duration-300 inline-flex items-center gap-2 ${
                 verified
                   ? "bg-saffron/10 border border-saffron/20 text-saffron cursor-default"
-                  : "bg-[#181818] hover:bg-[#2a2a2a] text-bavioCream border border-[#2a2a2a]"
+                  : "bg-[#FAF9F6] hover:bg-[#FAF7F2] text-[#140A02] border border-[#E5E0D8]"
               }`}
             >
               {verifying ? (
@@ -288,7 +288,7 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
               type="button"
               onClick={() => onComplete(phoneNumber)}
               disabled={!verified}
-              className="bg-saffron hover:bg-saffron-hover disabled:bg-[#2a2a2a]/45 disabled:text-darkTextMuted text-white py-3 px-8 rounded-button text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center gap-1.5"
+              className="bg-saffron hover:bg-saffron-hover disabled:bg-[#FAF9F6]/45 disabled:text-[#8A8A96] text-white py-3 px-8 rounded-button text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center gap-1.5"
             >
               Enable AI Assistant
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">

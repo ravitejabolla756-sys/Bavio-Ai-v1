@@ -149,10 +149,10 @@ export default function CallForwardSetup({
         <span className="rounded-full bg-saffron/15 px-3.5 py-1 text-[10px] uppercase tracking-[0.2em] font-bold text-saffron inline-block mb-3">
           Verification Phase
         </span>
-        <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight text-bavioCream mb-3">
+        <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight text-[#140A02] mb-3">
           Configure Call Forwarding
         </h1>
-        <p className="text-body-sm text-darkTextMuted max-w-2xl leading-relaxed">
+        <p className="text-body-sm text-[#5A5A66] max-w-2xl leading-relaxed">
           To receive calls, forward your active business number to your new Bavio virtual line. Select your carrier below for tailored setup guides.
         </p>
       </div>
@@ -164,16 +164,16 @@ export default function CallForwardSetup({
         <div className="lg:col-span-5 flex flex-col gap-6">
           
           {/* Card 1: Configuration Selection */}
-          <div className="bg-[#181818] border border-[#2a2a2a] p-1.5 rounded-[2rem] shadow-premium">
-            <div className="bg-[#121212] border border-[#2a2a2a] rounded-[calc(2rem-0.375rem)] p-6 flex flex-col gap-5">
-              <h2 className="text-body-xs font-bold text-bavioCream uppercase tracking-wider border-b border-[#2a2a2a] pb-3 flex items-center gap-2">
+          <div className="bg-white border border-[#E5E0D8] p-1.5 rounded-[2rem] shadow-premium">
+            <div className="bg-[#FAF9F6]/40 border border-[#E5E0D8] rounded-[calc(2rem-0.375rem)] p-6 flex flex-col gap-5">
+              <h2 className="text-body-xs font-bold text-[#140A02] uppercase tracking-wider border-b border-[#E5E0D8] pb-3 flex items-center gap-2">
                 <GlobeSimple className="w-4 h-4 text-saffron" />
                 Select Carrier & Provider
               </h2>
  
               {/* Operator Selector */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-darkTextMuted uppercase tracking-wider">Telecom Operator</label>
+                <label className="text-[11px] font-bold text-[#8A8A96] uppercase tracking-wider">Telecom Operator</label>
                 <SearchableDropdown
                   options={operators.map((op) => ({
                     value: op,
@@ -190,7 +190,7 @@ export default function CallForwardSetup({
               </div>
  
               {/* Estimated Time Badge */}
-              <div className="flex items-center gap-2 bg-[#181818] rounded-xl p-3 border border-[#2a2a2a]/60 text-body-xs font-bold text-darkTextMuted">
+              <div className="flex items-center gap-2 bg-[#FAF9F6] rounded-xl p-3 border border-[#E5E0D8]/60 text-body-xs font-bold text-[#5A5A66]">
                 <Info className="w-4 h-4 text-saffron" />
                 <span>Estimated Setup Time: <strong className="text-saffron">{instruction.estimatedTimeMinutes} minutes</strong></span>
               </div>
@@ -199,15 +199,15 @@ export default function CallForwardSetup({
  
           {/* Card 2: Interactive Video Embed */}
           {instruction.videoUrl && (
-            <div className="bg-[#181818] border border-[#2a2a2a] p-1.5 rounded-[2rem] shadow-premium">
-              <div className="bg-[#121212] border border-[#2a2a2a] rounded-[calc(2rem-0.375rem)] p-5 flex flex-col gap-4">
-                <h3 className="text-body-xs font-bold text-bavioCream uppercase tracking-wider flex items-center gap-2">
+            <div className="bg-white border border-[#E5E0D8] p-1.5 rounded-[2rem] shadow-premium">
+              <div className="bg-[#FAF9F6]/40 border border-[#E5E0D8] rounded-[calc(2rem-0.375rem)] p-5 flex flex-col gap-4">
+                <h3 className="text-body-xs font-bold text-[#140A02] uppercase tracking-wider flex items-center gap-2">
                   <YoutubeLogo className="w-4.5 h-4.5 text-[#FF0000]" weight="fill" />
                   Video Setup Tutorial
                 </h3>
                 
                 {/* Embed container */}
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-[#2a2a2a]">
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-[#E5E0D8]">
                   <iframe
                     className="absolute inset-0 w-full h-full"
                     src={`https://www.youtube.com/embed/${instruction.videoUrl}?rel=0&modestbranding=1`}
@@ -223,10 +223,10 @@ export default function CallForwardSetup({
  
           {/* Card 3: Portal Help Link */}
           {instruction.portalUrl && (
-            <div className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-4 flex justify-between items-center transition-all hover:bg-[#121212] hover:border-[#2a2a2a] hover:shadow-sm">
+            <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 flex justify-between items-center transition-all hover:bg-[#FAF9F6] hover:border-[#E5E0D8] hover:shadow-sm">
               <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] uppercase font-bold text-darkTextMuted">Portal Support</span>
-                <span className="text-body-xs font-bold text-bavioCream">{instruction.portalLabel}</span>
+                <span className="text-[10px] uppercase font-bold text-[#8A8A96]">Portal Support</span>
+                <span className="text-body-xs font-bold text-[#140A02]">{instruction.portalLabel}</span>
               </div>
               <a
                 href={instruction.portalUrl}
@@ -244,8 +244,8 @@ export default function CallForwardSetup({
         <div className="lg:col-span-7 flex flex-col gap-6">
           
           {/* Main Stepper Card */}
-          <div className="bg-[#181818] border border-[#2a2a2a] p-1.5 rounded-[2rem] shadow-premium relative overflow-hidden min-h-[460px] flex flex-col justify-between">
-            <div className="bg-[#121212] border border-[#2a2a2a] rounded-[calc(2rem-0.375rem)] p-6 md:p-8 flex-1 flex flex-col justify-between">
+          <div className="bg-white border border-[#E5E0D8] p-1.5 rounded-[2rem] shadow-premium relative overflow-hidden min-h-[460px] flex flex-col justify-between">
+            <div className="bg-[#FAF9F6]/40 border border-[#E5E0D8] rounded-[calc(2rem-0.375rem)] p-6 md:p-8 flex-1 flex flex-col justify-between">
               
               {/* Stepper Header */}
               <div>
@@ -253,13 +253,13 @@ export default function CallForwardSetup({
                   <span className="text-[11px] font-mono tracking-widest text-saffron font-bold uppercase">
                     Setup Walkthrough
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-darkTextMuted bg-[#181818] border border-[#2a2a2a] px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-mono font-bold text-[#8A8A96] bg-white border border-[#E5E0D8] px-2.5 py-0.5 rounded-full">
                     Step {currentStep + 1} of {instruction.steps.length}
                   </span>
                 </div>
                 
                 {/* Stepper Progress Bar */}
-                <div className="w-full h-1 bg-[#181818] border border-[#2a2a2a]/40 rounded-full overflow-hidden mb-6">
+                <div className="w-full h-1 bg-[#FAF9F6] border border-[#E5E0D8]/40 rounded-full overflow-hidden mb-6">
                   <motion.div
                     className="h-full bg-saffron rounded-full"
                     animate={{ width: `${((currentStep + 1) / instruction.steps.length) * 100}%` }}
@@ -281,8 +281,8 @@ export default function CallForwardSetup({
                   >
                     {/* Operator Warnings/Compliance Badges */}
                     {instruction.badge && currentStep === 0 && (
-                      <div className="bg-amber-950/20 border border-amber-900/50 text-amber-400 rounded-xl p-3.5 flex items-start gap-2.5">
-                        <Warning className="w-4.5 h-4.5 flex-shrink-0 mt-0.5" />
+                      <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3.5 flex items-start gap-2.5">
+                        <Warning className="w-4.5 h-4.5 flex-shrink-0 mt-0.5 text-amber-600" />
                         <div className="text-body-xs font-semibold leading-relaxed">
                           <strong>Regulatory Notice:</strong> {instruction.badge}
                         </div>
@@ -295,7 +295,7 @@ export default function CallForwardSetup({
                         {currentStep + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="text-body-sm md:text-body font-medium text-bavioCream leading-relaxed">
+                        <p className="text-body-sm md:text-body font-medium text-[#140A02] leading-relaxed">
                           {formatStepText(instruction.steps[currentStep])}
                         </p>
                       </div>
@@ -303,14 +303,14 @@ export default function CallForwardSetup({
  
                     {/* Interactive Widget 1: USSD Code Builder & Dialer Copy */}
                     {instruction.code && instruction.steps[currentStep].includes("{ussdCode}") && (
-                      <div className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="bg-[#FAF9F6] border border-[#E5E0D8] rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-saffron text-white flex items-center justify-center">
                             <DeviceMobile className="w-5 h-5" />
                           </div>
                           <div>
-                            <span className="text-[10px] uppercase font-bold text-darkTextMuted block">Carrier Command Code</span>
-                            <code className="text-body-sm font-mono font-bold text-bavioCream select-all">
+                            <span className="text-[10px] uppercase font-bold text-[#8A8A96] block">Carrier Command Code</span>
+                            <code className="text-body-sm font-mono font-bold text-[#140A02] select-all">
                               {ussdCodeString}
                             </code>
                           </div>
@@ -318,7 +318,7 @@ export default function CallForwardSetup({
                         <button
                           type="button"
                           onClick={handleCopyCode}
-                          className="w-full sm:w-auto bg-[#121212] border border-[#2a2a2a] text-bavioCream hover:bg-[#2a2a2a] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                          className="w-full sm:w-auto bg-white border border-[#E5E0D8] text-[#140A02] hover:bg-[#FAF9F6] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                         >
                           {copiedText ? (
                             <>
@@ -337,14 +337,14 @@ export default function CallForwardSetup({
  
                     {/* Interactive Widget 2: Standard Number Display */}
                     {!instruction.code && instruction.steps[currentStep].includes("{virtualNumber}") && (
-                      <div className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="bg-[#FAF9F6] border border-[#E5E0D8] rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-saffron text-white flex items-center justify-center">
                             <PhoneCall className="w-5 h-5" />
                           </div>
                           <div>
-                            <span className="text-[10px] uppercase font-bold text-darkTextMuted block">Bavio Virtual Number</span>
-                            <span className="text-body-sm font-bold text-bavioCream select-all">
+                            <span className="text-[10px] uppercase font-bold text-[#8A8A96] block">Bavio Virtual Number</span>
+                            <span className="text-body-sm font-bold text-[#140A02] select-all">
                               {virtualNumber}
                             </span>
                           </div>
@@ -352,7 +352,7 @@ export default function CallForwardSetup({
                         <button
                           type="button"
                           onClick={handleCopyCode}
-                          className="w-full sm:w-auto bg-[#121212] border border-[#2a2a2a] text-bavioCream hover:bg-[#2a2a2a] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                          className="w-full sm:w-auto bg-white border border-[#E5E0D8] text-[#140A02] hover:bg-[#FAF9F6] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                         >
                           {copiedText ? (
                             <>
@@ -373,12 +373,12 @@ export default function CallForwardSetup({
               </div>
  
               {/* Stepper Footer Controls */}
-              <div className="flex items-center justify-between gap-3 pt-5 border-t border-[#2a2a2a] mt-6">
+              <div className="flex items-center justify-between gap-3 pt-5 border-t border-[#E5E0D8] mt-6">
                 <button
                   type="button"
                   onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
                   disabled={currentStep === 0}
-                  className="bg-[#121212] hover:bg-[#2a2a2a] disabled:opacity-40 disabled:hover:bg-[#121212] text-bavioCream border border-[#2a2a2a] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center gap-2 transition-all"
+                  className="bg-white hover:bg-[#FAF9F6] disabled:opacity-40 disabled:hover:bg-white text-[#140A02] border border-[#E5E0D8] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center gap-2 transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" weight="bold" />
                   <span>Prev</span>
@@ -397,7 +397,7 @@ export default function CallForwardSetup({
                   <button
                     type="button"
                     onClick={() => setCurrentStep(0)}
-                    className="bg-[#181818] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-bavioCream text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center gap-2 transition-all"
+                    className="bg-[#FAF9F6] hover:bg-[#FAF7F2] border border-[#E5E0D8] text-[#140A02] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center gap-2 transition-all"
                   >
                     <span>Start Over</span>
                   </button>
@@ -407,18 +407,18 @@ export default function CallForwardSetup({
           </div>
  
           {/* Verification / Success Card */}
-          <div className="bg-[#181818] border border-[#2a2a2a] p-1.5 rounded-[2rem] shadow-premium">
-            <div className="bg-[#121212] border border-[#2a2a2a] rounded-[calc(2rem-0.375rem)] p-6 md:p-8 flex flex-col gap-6">
+          <div className="bg-white border border-[#E5E0D8] p-1.5 rounded-[2rem] shadow-premium">
+            <div className="bg-[#FAF9F6]/40 border border-[#E5E0D8] rounded-[calc(2rem-0.375rem)] p-6 md:p-8 flex flex-col gap-6">
               
               {!verificationSuccess ? (
                 <>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-body-sm font-bold text-bavioCream mb-1.5 flex items-center gap-2">
+                      <h3 className="text-body-sm font-bold text-[#140A02] mb-1.5 flex items-center gap-2">
                         <PhoneCall className="w-4.5 h-4.5 text-saffron" />
                         Test Forwarding Connectivity
                       </h3>
-                      <p className="text-body-xs text-darkTextMuted leading-relaxed">
+                      <p className="text-body-xs text-[#5A5A66] leading-relaxed">
                         Once you&apos;ve applied the settings on your phone, click verify. We will run a real backend handshake check to verify your routing line is active.
                       </p>
                     </div>
@@ -447,7 +447,7 @@ export default function CallForwardSetup({
                     <motion.div
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-red-950/20 border border-red-900/50 text-red-400 text-body-xs font-semibold rounded-xl p-3.5 flex items-start gap-2.5"
+                      className="bg-red-50 border border-red-200 text-red-500 text-body-xs font-semibold rounded-xl p-3.5 flex items-start gap-2.5"
                     >
                       <Warning className="w-4.5 h-4.5 flex-shrink-0 mt-0.5" />
                       <div className="leading-relaxed">{verificationError}</div>
@@ -458,17 +458,17 @@ export default function CallForwardSetup({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-green-950/20 border border-green-900/50 rounded-2xl p-6 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_4px_16px_rgba(255,107,0,0.06)]"
+                  className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_4px_16px_rgba(255,107,0,0.06)]"
                 >
                   <div className="flex flex-col md:flex-row items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-saffron text-white flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-green-100 border border-green-200 text-green-600 flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-7 h-7" weight="fill" />
                     </div>
                     <div>
-                      <h3 className="text-body-sm font-bold text-saffron mb-1">
+                      <h3 className="text-body-sm font-bold text-green-700 mb-1">
                         Forwarding Verified & Live!
                       </h3>
-                      <p className="text-[12px] text-darkTextMuted leading-relaxed max-w-md">
+                      <p className="text-[12px] text-[#5A5A66] leading-relaxed max-w-md">
                         Our test connection completed successfully. Calls to your business line will now instantly route to your Bavio AI receptionist.
                       </p>
                     </div>
@@ -488,21 +488,21 @@ export default function CallForwardSetup({
           </div>
  
           {/* Need Help Chatbot CTA */}
-          <div className="bg-[#181818] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-center sm:text-left">
-              <div className="w-10 h-10 rounded-xl bg-[#121212] border border-[#2a2a2a] text-darkTextMuted flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#FAF9F6] border border-[#E5E0D8] text-[#8A8A96] flex items-center justify-center">
                 <Question className="w-5 h-5 text-saffron" />
               </div>
               <div>
-                <span className="text-body-xs font-bold text-bavioCream block">Stuck or need carrier assistance?</span>
-                <span className="text-[11px] text-darkTextMuted block leading-normal">Our team is available 24/7 to help you configure forwarding.</span>
+                <span className="text-body-xs font-bold text-[#140A02] block">Stuck or need carrier assistance?</span>
+                <span className="text-[11px] text-[#5A5A66] block leading-normal">Our team is available 24/7 to help you configure forwarding.</span>
               </div>
             </div>
             
             <button
               type="button"
               onClick={onSupportClick}
-              className="w-full sm:w-auto bg-[#121212] border border-[#2a2a2a] text-bavioCream hover:bg-[#2a2a2a] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              className="w-full sm:w-auto bg-white border border-[#E5E0D8] text-[#140A02] hover:bg-[#FAF9F6] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
               <Chats className="w-4.5 h-4.5" />
               <span>Talk to Agent</span>
