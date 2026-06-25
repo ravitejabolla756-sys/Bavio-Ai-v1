@@ -46,24 +46,24 @@ export default function CallForwardPage() {
 
   if (loading) {
     return (
-      <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col justify-center items-center">
+      <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-center items-center">
         <div className="w-12 h-12 border-4 border-saffron/25 border-t-saffron rounded-full animate-spin mb-4" />
-        <p className="text-body-sm text-darkTextMuted font-medium animate-pulse">Loading call forwarding setup...</p>
+        <p className="text-body-sm text-[#5A5A66] font-medium animate-pulse">Loading call forwarding setup...</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0a0a0a] text-bavioCream font-sans flex flex-col justify-between overflow-x-hidden">
+    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-between overflow-x-hidden">
       {/* Background ambient lighting */}
       <div className="absolute w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
       <div className="absolute w-[600px] h-[600px] bg-saffron/3 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
 
       {/* Header bar */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#2a2a2a] relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#E5E0D8] relative z-20">
         <div className="flex items-center gap-3">
           <Logo className="w-8 h-8" color="text-saffron" />
-          <span className="font-display text-lg font-black tracking-tight text-bavioCream">Bavio AI</span>
+          <span className="font-display text-lg font-black tracking-tight text-[#140A02]">Bavio AI</span>
         </div>
       </header>
 
@@ -77,7 +77,7 @@ export default function CallForwardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-5 border-t border-[#2a2a2a] flex items-center justify-center text-darkTextMuted text-body-xs font-semibold relative z-20">
+      <footer className="w-full max-w-7xl mx-auto px-6 py-5 border-t border-[#E5E0D8] flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20">
         <span>© 2026 Bavio AI Inc. All rights reserved.</span>
       </footer>
     </div>
