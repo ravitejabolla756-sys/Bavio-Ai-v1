@@ -4,15 +4,13 @@
 
 /* ── Root tokens ── */
 :root {
-  --background: #0a0e27;
-  --foreground: #f5f0e8;
-  --saffron: #10b981;
-  --saffron-hover: #059669;
-  --border-default: #2d2560;
-  --bg-secondary: #12102b;
-  --bg-tertiary: #0f1321;
+  --background: #FCF8F3;
+  --foreground: #140B06;
+  --saffron: #FF6B00;
+  --saffron-hover: #EA580C;
+  --border-subtle: #E5E0D8;
   --radius-card: 12px;
-  --radius-button: 8px;
+  --radius-button: 999px;
   --radius-pill: 999px;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
@@ -22,13 +20,63 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* ── Global heading typography — Instrument Serif (Famaura-style) ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 0.92 !important;
+}
+
+/* Utility class for explicit serif headings in JSX */
+.font-heading, .font-display, .font-serif {
+  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 0.92 !important;
+}
+
 body {
+  font-family: var(--font-inter), "Inter", sans-serif;
   color: var(--foreground);
-  background-color: #FFFDF8;
+  background-color: var(--background);
+  font-size: 18px;
+  line-height: 1.7;
+  /* Saffron radial glow on top, combined with a subtle 40px grid overlay adjusted for light theme */
+  background-image: 
+    radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.06) 0%, transparent 50%),
+    linear-gradient(rgba(20, 10, 2, 0.008) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 10, 2, 0.008) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Color overrides for hardcoded Tailwind arbitrary values */
+.bg-\[\#FFFDF8\] {
+  background-color: #FCF8F3 !important;
+}
+.text-\[\#140A02\] {
+  color: #140B06 !important;
+}
+.bg-\[\#F97316\] {
+  background-color: #FF6B00 !important;
+}
+.text-\[\#F97316\] {
+  color: #FF6B00 !important;
+}
+.border-\[\#F97316\] {
+  border-color: #FF6B00 !important;
+}
+.border-\[\#F3E4D4\] {
+  border-color: #EADFD3 !important;
+}
+.bg-\[\#FFF7ED\] {
+  background-color: #FAF4EE !important;
+}
+
 
 /* ── Instant tap / click response ── */
 a, button, [role="button"], input[type="submit"], input[type="button"] {
@@ -45,84 +93,84 @@ button:not(.no-press):active,
 }
 
 ::selection {
-  background: rgba(16, 185, 129, 0.25);
-  color: #f5f0e8;
+  background: rgba(255, 107, 0, 0.15);
+  color: #FF6B00;
 }
 
-/* ── Scrollbar styling (dark, thin, premium) ── */
+/* ── Scrollbar styling (light, thin, premium) ── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0e27;
+  background: #FFFDF8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2d2560;
+  background: #E5E0D8;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
+  background: #FF6B00;
 }
 
 /* ── Glassmorphism utilities ── */
 .bg-glass {
-  background: rgba(10, 14, 39, 0.85);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .bg-glass-subtle {
-  background: rgba(18, 16, 43, 0.75);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* ── Premium shadow utilities ── */
 .shadow-premium {
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 8px 24px rgba(20, 10, 2, 0.04);
 }
 
 .shadow-premium-hover {
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.5),
-    0 24px 64px rgba(0, 0, 0, 0.6);
+    0 4px 12px rgba(20, 10, 2, 0.06),
+    0 24px 64px rgba(20, 10, 2, 0.08);
 }
 
 .shadow-saffron-glow {
-  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.08);
 }
 
-/* ── Double-bezel card architecture ── */
+/* ── Double-bezel card architecture (redesigned for light theme) ── */
 .card-bezel {
   position: relative;
-  background: #12102b;
-  border: 1px solid #2d2560;
-  padding: 6px;
+  background: rgba(0, 0, 0, 0.01);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  padding: 5px;
   border-radius: 12px;
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
 .card-bezel:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 32px rgba(16, 185, 129, 0.1);
 }
 
 .card-bezel-inner {
-  background: #12102b;
-  border: 1px solid #2d2560;
-  border-radius: calc(12px - 6px);
+  background: #ffffff;
+  border: 1px solid #E5E0D8;
+  border-radius: calc(12px - 5px);
   overflow: hidden;
-  transition: border-color 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-bezel:hover .card-bezel-inner {
   border-color: var(--saffron);
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.06);
 }
 
 /* ── Interactive button utility classes ── */
@@ -131,7 +179,7 @@ button[type="submit"],
 .card-bezel-inner button,
 a.bg-saffron,
 button.bg-saffron {
-  transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 250ms cubic-bezier(0.32, 0.72, 0, 1), background-color 250ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1), background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform;
 }
 
@@ -141,7 +189,7 @@ button[type="submit"]:hover,
 a.bg-saffron:hover,
 button.bg-saffron:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 16px rgba(255, 107, 0, 0.2);
 }
 
 .btn-interactive:active,
@@ -160,7 +208,7 @@ button.bg-saffron:active {
   z-index: 50;
   pointer-events: none;
   opacity: 0.015;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
 }
@@ -169,7 +217,7 @@ button.bg-saffron:active {
 .mesh-blob-saffron {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 0, 0.04) 0%, transparent 70%);
   pointer-events: none;
   filter: blur(80px);
 }
@@ -203,16 +251,16 @@ button.bg-saffron:active {
 
 @keyframes widgetGlow {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-    border-color: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
+    border-color: rgba(255, 107, 0, 0.15);
   }
   50% {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
+    border-color: rgba(255, 107, 0, 0.5);
   }
 }
 
 .widget-glow-active {
   animation: widgetGlow 2.5s infinite ease-in-out;
-  border-color: rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(255, 107, 0, 0.3) !important;
 }

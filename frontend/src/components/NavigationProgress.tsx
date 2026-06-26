@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
  */
 export default function NavigationProgress() {
   const pathname = usePathname();
+  const router = useRouter();
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -64,12 +65,33 @@ export default function NavigationProgress() {
       }
     };
 
+    // Prefetch the target route when the user hovers over any link to make transitions instantaneous
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a[href]") as HTMLAnchorElement | null;
+      if (anchor) {
+        const href = anchor.getAttribute("href") || "";
+        if (
+          href &&
+          !href.startsWith("http") &&
+          !href.startsWith("mailto") &&
+          !href.startsWith("#") &&
+          href !== pathname
+        ) {
+          router.prefetch(href);
+        }
+      }
+    };
+
     document.addEventListener("click", handleClick, { capture: true });
+    document.addEventListener("mouseover", handleMouseOver, { capture: true, passive: true });
+
     return () => {
       document.removeEventListener("click", handleClick, { capture: true });
+      document.removeEventListener("mouseover", handleMouseOver, { capture: true });
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [pathname]);
+  }, [pathname, router]);
 
   if (!visible && progress === 0) return null;
 

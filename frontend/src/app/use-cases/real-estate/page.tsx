@@ -23,7 +23,7 @@ export default function RealEstateUseCase() {
             Never Miss a Hot Buyer Inquiry. <span className="text-saffron">Qualify 24/7.</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
-            Real estate buyer calls represent high-value deals. Bavio AI qualifies buyer intent, budgets, location preferences, and ready-to-move timelines instantly on any call, delivering lead details instantly.
+            Real estate buyer calls represent high-value deals. Bavio AI qualifies buyer intent, budgets, location preferences, and ready-to-move timelines instantly on any call, logging CRM contacts instantly.
           </p>
 
           {/* Metrics Grid */}
@@ -66,7 +66,7 @@ export default function RealEstateUseCase() {
                   Site Visit Coordination
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  If the budget matches current listing inventories, Bavio offers site showing visits for coming weekends, schedules appointments, and notifies listing managers.
+                  If the budget matches current listing inventories, Bavio offers site showing visits for coming weekends, syncs calendars, and notifies listing managers.
                 </p>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default function RealEstateUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Sales representative alerts handoff</span>
+                  <span>Sales representative CRM handoff</span>
                 </li>
               </ul>
               <Link

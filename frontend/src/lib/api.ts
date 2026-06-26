@@ -103,6 +103,10 @@ export interface SignupPayload {
   business_name?: string;
   business_phone?: string;
   industry?: string;
+  businessName?: string;
+  countryCode?: string;
+  dialCode?: string;
+  phoneNumber?: string;
 }
 
 export interface LoginPayload {
@@ -175,6 +179,7 @@ export interface BusinessProfile {
   business_description?: string;
   city?: string;
   website?: string;
+  twilio_number?: string | null;
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
@@ -441,3 +446,19 @@ export const billingApi = {
       body: JSON.stringify(data),
     }),
 };
+
+// ─── Demo ─────────────────────────────────────────────────────────────────────
+
+export const demoApi = {
+  saveCall: (data: {
+    caller_number: string;
+    duration?: number;
+    call_status?: string;
+    transcript?: string;
+  }) =>
+    apiFetch('/calls/demo', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Phone, Users, Clock, Percent, Activity, IndianRupee, ArrowUpRight } from "lucide-react";
+import { Phone, Users, Clock, Percent, Activity, DollarSign, ArrowUpRight } from "lucide-react";
 
 const stats = [
   {
@@ -46,9 +46,9 @@ const stats = [
     sparkline: [10, 20, 15, 45, 50, 90, 85, 95]
   },
   {
-    icon: IndianRupee,
+    icon: DollarSign,
     title: "Revenue Recovered",
-    value: "₹8.4 Lakhs",
+    value: "$42,000",
     change: "Estimated missed call value",
     color: "#FF6B00",
     sparkline: [30, 40, 35, 55, 48, 70, 68, 80]
