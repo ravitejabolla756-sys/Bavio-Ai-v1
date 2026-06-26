@@ -38,8 +38,8 @@ function AuthCallback() {
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
-          // Check if onboarding is completed by looking at phone number fallback or status
-          const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
+          // Check if onboarding is completed by looking at phone number fallback
+          const isOnboardingComplete = user.phone && !user.phone.startsWith('google_oauth_fallback');
           
           if (isOnboardingComplete) {
             setCookie("bavio_onboarding_completed", "true");

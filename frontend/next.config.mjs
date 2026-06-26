@@ -22,14 +22,21 @@ const nextConfig = {
         source: '/api/:path*',
         destination: `${BACKEND_URL}/:path*`,
       },
-    ];
-  },
-  async redirects() {
-    return [
       {
-        source: '/sign-up',
-        destination: '/signup',
-        permanent: true,
+        source: '/real-estate',
+        destination: '/use-cases/real-estate',
+      },
+      {
+        source: '/clinics',
+        destination: '/use-cases/healthcare',
+      },
+      {
+        source: '/restaurants',
+        destination: '/use-cases/restaurants',
+      },
+      {
+        source: '/security',
+        destination: '/legal/security',
       },
     ];
   },

@@ -1,32 +1,42 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import {
   LinkedinLogo,
   XLogo,
-  GithubLogo,
-  Envelope,
+  InstagramLogo,
+  ArrowRight,
 } from "@phosphor-icons/react";
 
 const footerColumns = [
   {
     heading: "Product",
     links: [
+      { label: "How it Works", href: "/how-it-works" },
       { label: "Features", href: "/product" },
+      { label: "Integrations", href: "/integrations" },
       { label: "Pricing", href: "/pricing" },
       { label: "Changelog", href: "/changelog" },
-      { label: "Security", href: "/legal/security" },
+    ],
+  },
+  {
+    heading: "Use Cases",
+    links: [
+      { label: "Real Estate", href: "/use-cases/real-estate" },
+      { label: "Restaurants", href: "/use-cases/restaurants" },
+      { label: "Healthcare", href: "/use-cases/healthcare" },
+      { label: "E-Commerce", href: "/use-cases/e-commerce" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About", href: "/company" },
+      { label: "About Us", href: "/company" },
       { label: "Customers", href: "/customers" },
-      { label: "Careers", href: "/careers" },
       { label: "Contact", href: "/contact" },
+      { label: "Blog", href: "/blog" },
     ],
   },
   {
@@ -35,77 +45,92 @@ const footerColumns = [
       { label: "Privacy Policy", href: "/legal/privacy" },
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Cookie Policy", href: "/legal/cookies" },
-      { label: "Compliance", href: "/legal/security" },
+      { label: "Security & Compliance", href: "/legal/security" },
     ],
   },
 ];
 
 const socialLinks = [
   {
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/bavio-ai-a34bb93ba/",
-    icon: LinkedinLogo,
+    label: "Instagram",
+    href: "https://www.instagram.com/bavio.ai/",
+    icon: InstagramLogo,
   },
   {
-    label: "Twitter",
+    label: "X (Twitter)",
     href: "https://x.com/BavioAi",
     icon: XLogo,
   },
   {
-    label: "GitHub",
-    href: "https://github.com",
-    icon: GithubLogo,
-  },
-  {
-    label: "Email",
-    href: "mailto:hello@bavio.ai",
-    icon: Envelope,
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/bavio-ai-a34bb93ba/",
+    icon: LinkedinLogo,
   },
 ];
 
-export default function Footer() {
-  return (
-    <footer className="relative border-t border-[#F3E4D4] bg-[#FFFDF8] font-sans">
-      <div className="max-w-container mx-auto px-6 lg:px-8 pt-20 pb-10">
-        {/* Final CTA Block */}
-        <div className="flex flex-col items-center text-center pb-20 border-b border-[#F3E4D4]/60 mb-16">
-          <h2 className="font-display text-3xl md:text-[36px] font-extrabold text-[#140A02] tracking-tight mb-4">
-            Ready to answer every call?
-          </h2>
-          <p className="text-[#6E6256] text-body-md max-w-md mb-8">
-            Start your free trial. No credit card needed.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-sm font-bold px-8 py-3.5 rounded-full shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-            >
-              Try Free for 14 Days
-            </Link>
-            <Link
-              href="/contact"
-              className="text-[#FF6B00] hover:underline text-body-xs font-semibold"
-            >
-              Schedule a demo
-            </Link>
-          </div>
-        </div>
+export default function Footer({ dark = false }: { dark?: boolean }) {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
 
-        {/* Navigation Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 items-start">
-          {/* Brand Info */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <Link href="/" className="flex items-center gap-3 group w-fit">
-              <Logo className="w-10 h-10 transition-transform duration-300 ease-premium group-hover:scale-105" color="text-[#FF6B00]" />
-              <span className="font-display text-2xl font-extrabold tracking-tight text-[#140A02] group-hover:text-[#FF6B00] transition-colors">
-                bavio
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubscribed(true);
+    setEmail("");
+    setTimeout(() => setSubscribed(false), 4000);
+  };
+
+  return (
+    <footer className={`relative border-t ${dark ? 'border-darkBorder bg-darkBg text-darkText' : 'border-line-subtle bg-canvas'}`}>
+      <div className="max-w-container mx-auto px-6 lg:px-8 pt-20 pb-10">
+        {/* Top section: brand + newsletter | link columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-12">
+          {/* Brand + newsletter column */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <Link href="/" className="flex items-center gap-2.5 group w-fit">
+              <Logo className="w-9 h-9 transition-transform duration-300 ease-premium group-hover:scale-105" color="text-saffron" />
+              <span className={`font-display text-xl font-extrabold tracking-tight ${dark ? 'text-darkText' : 'text-ink'}`}>
+                Bavio AI
               </span>
             </Link>
-            <p className="text-body-sm text-[#6E6256] max-w-sm leading-relaxed">
-              Deploy autonomous voice receptionists that qualify leads, schedule bookings, and sync with your CRM 24/7.
+
+            <p className={`text-body-sm max-w-xs leading-relaxed ${dark ? 'text-darkTextMuted' : 'text-ink-tertiary'}`}>
+              Autonomous AI voice receptionists for business calls. Answer every call.
+              Capture every lead. 24/7.
             </p>
-            {/* Social Icons */}
-            <div className="flex items-center gap-3">
+
+            {/* Newsletter */}
+            <div className="flex flex-col gap-2.5">
+              <span className={`text-label uppercase tracking-widest ${dark ? 'text-darkTextMuted/80' : 'text-ink-muted'}`}>
+                Product updates
+              </span>
+              <form onSubmit={handleSubscribe} className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  placeholder="hello@bavio.in"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`flex-1 rounded-button px-4 py-2.5 text-body-sm focus:outline-none focus:border-saffron focus:ring-2 focus:ring-saffron/10 transition-all duration-200 ${
+                    dark 
+                      ? 'bg-darkSurface border-darkBorder text-darkText placeholder:text-darkTextMuted' 
+                      : 'bg-surface border-line text-ink placeholder:text-ink-muted'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  className="bg-saffron hover:bg-saffron-hover text-white px-4 py-2.5 rounded-button text-body-sm font-semibold transition-all duration-200 active:scale-[0.97] flex items-center gap-1.5 shrink-0"
+                >
+                  {subscribed ? "Sent" : "Join"}
+                  {!subscribed && (
+                    <ArrowRight className="w-3.5 h-3.5" weight="bold" />
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Social */}
+            <div className="flex items-center gap-3 pt-2">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 return (
@@ -115,43 +140,53 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    className="w-10 h-10 rounded-full border border-[#F3E4D4] flex items-center justify-center text-[#6E6256] hover:text-[#FF6B00] hover:border-[#FF6B00] transition-all duration-250 hover:scale-105 active:scale-95"
+                    className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all duration-200 ${
+                      dark 
+                        ? 'border-darkBorder text-darkTextMuted hover:text-saffron hover:border-saffron/30' 
+                        : 'border-line text-ink-muted hover:text-saffron hover:border-saffron-border'
+                    }`}
                   >
-                    <Icon className="w-5 h-5" weight="bold" />
+                    <Icon className="w-4 h-4" weight="regular" />
                   </a>
                 );
               })}
             </div>
           </div>
 
-          {/* Links Columns */}
-          {footerColumns.map((col) => (
-            <div key={col.heading} className="flex flex-col gap-5">
-              <span className="text-label uppercase tracking-widest text-[#140A02]/50 font-bold">
-                {col.heading}
-              </span>
-              <nav className="flex flex-col gap-3">
-                {col.links.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="text-body-sm text-[#6E6256] hover:text-[#FF6B00] transition-colors duration-200"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          ))}
+          {/* Link columns */}
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-10 lg:gap-8">
+            {footerColumns.map((col) => (
+              <div key={col.heading} className="flex flex-col gap-4">
+                <span className={`text-label uppercase tracking-widest ${dark ? 'text-darkTextMuted/80' : 'text-ink-muted'}`}>
+                  {col.heading}
+                </span>
+                <nav className="flex flex-col gap-2.5">
+                  {col.links.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className={`text-body-sm transition-colors duration-200 ${
+                        dark 
+                          ? 'text-darkTextMuted hover:text-darkText' 
+                          : 'text-ink-tertiary hover:text-ink'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Bottom copyright */}
-        <div className="mt-16 pt-8 border-t border-[#F3E4D4]/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-body-xs text-[#6E6256]/50">
-            © 2026 Bavio AI. All rights reserved.
+        {/* Bottom bar */}
+        <div className={`mt-16 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 ${dark ? 'border-darkBorder' : 'border-line-subtle'}`}>
+          <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
+            2026 Bavio AI. All rights reserved.
           </p>
-          <p className="text-body-xs text-[#6E6256]/50 font-medium">
-            Made for global teams.
+          <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
+            Bavio AI | Global AI Receptionist
           </p>
         </div>
       </div>

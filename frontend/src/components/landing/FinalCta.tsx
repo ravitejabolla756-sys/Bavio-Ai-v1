@@ -57,7 +57,7 @@ export default function FinalCta() {
         >
           <Link
             href="/pricing"
-            className="inline-flex items-center justify-center gap-2 bg-[#140A02] hover:bg-[#140A02]/85 text-white text-sm font-bold px-10 py-4 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-lg hover:shadow-[0_12px_36px_rgba(20,10,2,0.3)] font-sans"
+            className="inline-flex items-center justify-center gap-2 bg-[#140B06] hover:bg-[#140B06]/85 text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-lg hover:shadow-[0_12px_36px_rgba(20,10,2,0.3)] font-sans"
           >
             Join Waitlist
             <ArrowRight className="w-5 h-5" />
