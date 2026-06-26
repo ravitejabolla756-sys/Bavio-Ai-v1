@@ -7,7 +7,7 @@ const requireAuth = async (req, res, next) => {
         const authHeader = req.headers.authorization;
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Authentication failed: Missing or invalid Authorization header' });
+            return res.status(401).json({ error: 'Please log in first' });
         }
         
         const token = authHeader.substring(7);
@@ -15,27 +15,15 @@ const requireAuth = async (req, res, next) => {
         const { data, error } = await authClient.auth.getUser(token);
         
         if (error || !data.user) {
-            return res.status(401).json({ error: 'Authentication failed: Invalid or expired token' });
+            return res.status(401).json({ error: 'Please log in first' });
         }
         
         const supabaseUser = data.user;
         
-        const result = await db.query('SELECT * FROM businesses WHERE id = $1 AND status = $2', [supabaseUser.id, 'active']);
+        const result = await db.query('SELECT * FROM businesses WHERE id = $1', [supabaseUser.id]);
         
         if (result.rows.length === 0) {
-            // Allow auto-creation of profile for Google/OAuth users if hitting profile route
-            const isProfileRoute = req.path === '/profile' || req.path === '/me' || 
-                                   (req.originalUrl && (req.originalUrl.includes('/profile') || req.originalUrl.includes('/me')));
-            if (isProfileRoute) {
-                req.client = null;
-                req.user = {
-                    id: supabaseUser.id,
-                    email: supabaseUser.email
-                };
-                req.tokenData = supabaseUser;
-                return next();
-            }
-            return res.status(403).json({ error: 'Authentication failed: Business not found or inactive' });
+            return res.status(404).json({ error: 'Account error, contact support' });
         }
         
         req.client = result.rows[0];
