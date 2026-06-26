@@ -54,13 +54,13 @@ export default function WaitlistSection() {
 
           {/* Subtext */}
           <p className="text-[#6B5A4C] text-[20px] font-normal leading-[1.7] max-w-[720px] mx-auto font-sans mb-8">
-            We are onboarding businesses globally in batches to ensure premium service quality and low-latency performance. Get early access to the AI receptionist that never misses a call.
+            We are onboarding Indian businesses in batches to guarantee low-latency telephony and perfect voice quality. Secure your spot now to claim your dedicated AI receptionist.
           </p>
 
           {/* Action Button */}
           <Link
             href="/signup"
-            className="bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
+            className="bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-bold px-10 py-4 rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
           >
             <span>Join Waitlist</span>
             <ArrowRight className="w-4 h-4" />

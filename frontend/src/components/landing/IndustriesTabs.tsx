@@ -2,15 +2,15 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Stethoscope, Briefcase, ShoppingBag, CheckCircle, Zap } from "lucide-react";
+import { Home, Stethoscope, Utensils, GraduationCap, Calendar, Phone, CheckCircle, Clock } from "lucide-react";
 
 const tabList = [
   {
     id: "real-estate",
     label: "Real Estate",
     icon: Home,
-    title: "Customer Inquiry Management Dashboard",
-    desc: "Bavio captures house hunters looking for immediate property listings 24/7. Logs budgets, property specifications, and coordinates viewings directly.",
+    title: "Real Estate Property Matching Log",
+    desc: "Bavio captures house hunters looking for immediate property listings 24/7. Logs budgets, BHK configurations, and coordinates viewings directly.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
@@ -21,26 +21,26 @@ const tabList = [
           <table className="w-full text-left">
             <thead>
               <tr className="text-[9px] text-[#6E6256]/60 font-bold uppercase tracking-wider border-b border-[#F3E4D4]/40">
-                <th className="pb-2">Contact Name</th>
-                <th className="pb-2">Location</th>
-                <th className="pb-2">Property Type</th>
+                <th className="pb-2">Buyer Name</th>
+                <th className="pb-2">Area</th>
+                <th className="pb-2">BHK</th>
                 <th className="pb-2">Budget</th>
                 <th className="pb-2 text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F3E4D4]/40">
               <tr>
-                <td className="py-2 font-bold text-[#140A02]">Sarah Johnson</td>
-                <td className="py-2 text-[#6E6256]">Downtown NYC</td>
-                <td className="py-2 text-[#140A02]">3BR</td>
-                <td className="py-2 text-[#F97316] font-bold">$450,000</td>
+                <td className="py-2 font-bold text-[#140A02]">Rahul Sharma</td>
+                <td className="py-2 text-[#6E6256]">Gachibowli</td>
+                <td className="py-2 text-[#140A02]">3BHK</td>
+                <td className="py-2 text-[#F97316] font-bold">₹90 Lakhs</td>
                 <td className="py-2 text-right"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[9px]">Qualified</span></td>
               </tr>
               <tr>
-                <td className="py-2 font-bold text-[#140A02]">Michael Chen</td>
-                <td className="py-2 text-[#6E6256]">San Francisco</td>
-                <td className="py-2 text-[#140A02]">2BR</td>
-                <td className="py-2 text-[#F97316] font-bold">$375,000</td>
+                <td className="py-2 font-bold text-[#140A02]">Anil Kumar</td>
+                <td className="py-2 text-[#6E6256]">HSR Layout</td>
+                <td className="py-2 text-[#140A02]">2BHK</td>
+                <td className="py-2 text-[#F97316] font-bold">₹75 Lakhs</td>
                 <td className="py-2 text-right"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[9px]">Qualified</span></td>
               </tr>
             </tbody>
@@ -50,29 +50,29 @@ const tabList = [
     )
   },
   {
-    id: "healthcare",
-    label: "Healthcare",
+    id: "clinic",
+    label: "Clinic",
     icon: Stethoscope,
-    title: "Patient Scheduling & Intake",
+    title: "Patient Appointment Calendar & Triage",
     desc: "Patients looking to schedule appointments get routed through Bavio. Collects symptoms, triages urgency level, and updates calendars dynamically.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Patient Intake Desk</span>
+          <span className="font-bold text-[#140A02]">Doctor Triage Desk</span>
           <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">4 Slots Reserved</span>
         </div>
         <div className="space-y-3">
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Sarah Jenkins (Dental Intake)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Routine cleanup and cosmetic consultation</div>
+              <div className="font-bold text-[#140A02]">Siddharth Roy (Orthodontic Checkup)</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptoms: Severe jaw pain, routine triage check</div>
             </div>
             <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Friday 4 PM</span>
           </div>
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Robert Miller (General Medicine)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Follow-up on blood pressure monitoring</div>
+              <div className="font-bold text-[#140A02]">Nisha Kapoor (General Consultation)</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptoms: Chronic cough & high fever, urgent care needed</div>
             </div>
             <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Today 6 PM</span>
           </div>
@@ -81,62 +81,62 @@ const tabList = [
     )
   },
   {
-    id: "consulting",
-    label: "Consulting",
-    icon: Briefcase,
-    title: "Consultation Booking Log",
-    desc: "Clients calling for strategy or advisory sessions get booked by Bavio instantly. Confirms agenda, duration, and logs requirements.",
+    id: "restaurant",
+    label: "Restaurant",
+    icon: Utensils,
+    title: "Restaurant Seat Planner & Reservations",
+    desc: "Diners calling for evening bookings get answered by Bavio within one ring. Confirms table size, seat location, and logs special requests.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Consultation Booking Log</span>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">{"Today's Schedule"}</span>
+          <span className="font-bold text-[#140A02]">Diner Reservation Log</span>
+          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Tonight Queue</span>
         </div>
         <div className="space-y-3">
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div className="text-left">
-              <div className="font-bold text-[#140A02]">Johnathan Doe &bull; 60 Min Strategy</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Reviewing marketing proposal prior to call</div>
+              <div className="font-bold text-[#140A02]">Amit Patel &bull; Party of 6</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: High chair for children near window</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Today 8 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Tonight 8 PM</span>
           </div>
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div className="text-left">
-              <div className="font-bold text-[#140A02]">Emily Watson &bull; 30 Min Discovery</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Needs NDA signed beforehand</div>
+              <div className="font-bold text-[#140A02]">Sagarika Sen &bull; Party of 2</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Quiet corner table preferred for anniversary dinner</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Today 9 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Tonight 9 PM</span>
           </div>
         </div>
       </div>
     )
   },
   {
-    id: "ecommerce",
-    label: "E-Commerce",
-    icon: ShoppingBag,
-    title: "Order Support & Returns Log",
-    desc: "Bavio handles customer calls about order status, tracking updates, and refunds. Qualifies return requests and escalates tickets instantly.",
+    id: "coaching",
+    label: "Coaching",
+    icon: GraduationCap,
+    title: "Academy Enrollment Triage Queue",
+    desc: "Bavio handles parents calling about batch size, schedules, and pricing. Qualifies prospective students and texts brochure files instantly.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Order Support Log</span>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Active Tickets</span>
+          <span className="font-bold text-[#140A02]">Student Enrollment Desk</span>
+          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">CBSE Grade 10</span>
         </div>
         <div className="space-y-3">
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Marcus Vance (Return Inquiry)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Order: #9281-EC &bull; Prefers return label emailed</div>
+              <div className="font-bold text-[#140A02]">Ananya Desai (Science & Math Batch)</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Board: CBSE Board Exams &bull; Parents requested weekend slot</div>
             </div>
-            <span className="bg-[#F97316] text-white font-bold px-2 py-1 rounded text-[9px]">Return Initiated</span>
+            <span className="bg-[#F97316] text-white font-bold px-2 py-1 rounded text-[9px]">Syllabus Sent</span>
           </div>
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Jessica Vance (Delivery Issue)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Order: #8392-EC &bull; Inquiry regarding delayed delivery</div>
+              <div className="font-bold text-[#140A02]">Rohan Joshi (Foundation Batch)</div>
+              <div className="text-[9px] text-[#6E6256] mt-0.5">Board: ICSE Board Exam Prep &bull; Demo class requested</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Ticket Escalated</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Demo Booked</span>
           </div>
         </div>
       </div>
@@ -202,9 +202,9 @@ export default function IndustriesTabs() {
             </p>
             <div className="text-[#F97316] font-mono text-base font-bold">
               {activeTab.id === "real-estate" ? "4.8x more site visits booked" : 
-               activeTab.id === "healthcare" ? "95% front-desk call reduction" : 
-               activeTab.id === "consulting" ? "100% booking capture rate" : 
-               "40% support ticket resolution jump"}
+               activeTab.id === "clinic" ? "95% front-desk call reduction" : 
+               activeTab.id === "restaurant" ? "100% reservation capture rate" : 
+               "40% enrollment conversion jump"}
             </div>
           </div>
 

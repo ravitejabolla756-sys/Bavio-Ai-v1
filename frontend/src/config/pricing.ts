@@ -9,17 +9,17 @@ export interface PricingTierData {
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  IN: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  US: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  CA: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  GB: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  AU: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  AE: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  DE: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  FR: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  SG: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  NZ: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  DEFAULT: { currency: "$", currencyCode: "USD", starter: 49, growth: 99, scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
+  IN: { currency: "₹",  currencyCode: "INR", starter: 1999, growth: 3999, scale: 7999, overageRate: "₹8/min",   mostPopularBadge: "Most popular" },
+  US: { currency: "$",  currencyCode: "USD", starter: 39,   growth: 79,   scale: 149,  overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
+  CA: { currency: "C$", currencyCode: "CAD", starter: 49,   growth: 99,   scale: 189,  overageRate: "C$0.13/min",mostPopularBadge: "Most popular" },
+  GB: { currency: "£",  currencyCode: "GBP", starter: 29,   growth: 59,   scale: 99,   overageRate: "£0.08/min", mostPopularBadge: "Most popular" },
+  AU: { currency: "A$", currencyCode: "AUD", starter: 49,   growth: 99,   scale: 199,  overageRate: "A$0.12/min",mostPopularBadge: "Most popular" },
+  AE: { currency: "AED ",currencyCode: "AED",starter: 149,  growth: 299,  scale: 499,  overageRate: "AED 0.40/min",mostPopularBadge: "Most popular" },
+  DE: { currency: "€",  currencyCode: "EUR", starter: 35,   growth: 69,   scale: 129,  overageRate: "€0.09/min", mostPopularBadge: "Most popular" },
+  FR: { currency: "€",  currencyCode: "EUR", starter: 35,   growth: 69,   scale: 129,  overageRate: "€0.09/min", mostPopularBadge: "Most popular" },
+  SG: { currency: "S$", currencyCode: "SGD", starter: 49,   growth: 99,   scale: 189,  overageRate: "S$0.13/min",mostPopularBadge: "Most popular" },
+  NZ: { currency: "NZ$",currencyCode: "NZD", starter: 59,   growth: 119,  scale: 219,  overageRate: "NZ$0.15/min",mostPopularBadge: "Most popular" },
+  DEFAULT: { currency: "$", currencyCode: "USD", starter: 39, growth: 79, scale: 149,  overageRate: "$0.10/min", mostPopularBadge: "Most popular" },
 };
 
 export interface PlanFeature {
@@ -41,7 +41,7 @@ export const PLANS: PlanDetails[] = [
     key: "starter",
     description: "For small businesses starting with voice automation.",
     features: [
-      { text: "100 minutes/month", included: true },
+      { text: "250 minutes/month", included: true },
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
@@ -56,7 +56,7 @@ export const PLANS: PlanDetails[] = [
     key: "growth",
     description: "For growing teams that need full-stack voice AI.",
     features: [
-      { text: "300 minutes/month", included: true },
+      { text: "600 minutes/month", included: true },
       { text: "Unlimited agents", included: true },
       { text: "24/7 phone support", included: true },
       { text: "Full analytics + exports", included: true },
@@ -71,7 +71,7 @@ export const PLANS: PlanDetails[] = [
     key: "scale",
     description: "For enterprises that demand reliability and scale.",
     features: [
-      { text: "800 minutes/month", included: true },
+      { text: "2,000 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
       { text: "Dedicated account manager", included: true },
       { text: "Custom notification channels", included: true },
@@ -90,7 +90,7 @@ export interface ComparisonRow {
 }
 
 export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
-  { feature: "Minutes included", starter: "100", growth: "300", scale: "800" },
+  { feature: "Minutes included", starter: "250", growth: "600", scale: "2,000" },
   { feature: "AI agents", starter: "1", growth: "Unlimited", scale: "Unlimited" },
   { feature: "Support", starter: "Email", growth: "24/7 Phone", scale: "Priority + Dedicated" },
   { feature: "Analytics", starter: "Basic", growth: "Full + Export", scale: "Full + Custom" },

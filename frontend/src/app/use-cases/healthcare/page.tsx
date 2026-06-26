@@ -95,7 +95,7 @@ export default function HealthcareUseCase() {
                 href="/contact?vertical=healthcare"
                 className="mt-4 bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider py-3.5 px-4 rounded-xl text-center transition-colors flex items-center justify-center gap-2"
               >
-                Request Health Integration
+                Request Healthcare Demo
                 <ArrowRight className="w-3.5 h-3.5" weight="bold" />
               </Link>
             </div>

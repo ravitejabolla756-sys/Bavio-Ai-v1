@@ -7,15 +7,15 @@ import { ChevronDown } from "lucide-react";
 const faqs = [
   {
     question: "How does Bavio work?",
-    answer: "Bavio provides you with a dedicated forwarding phone number. When customers call your number, Bavio's low-latency voice pipeline answers instantly, converses naturally in 20+ languages, qualifies their requirements, and sends you structured summaries via instant notifications and your dashboard."
+    answer: "Bavio provides you with a dedicated forwarding phone number. When customers call your number, Bavio's low-latency voice pipeline answers instantly, converses naturally (in English, Hindi, or Hinglish), qualifies their requirements, and sends you structured summaries via WhatsApp and your dashboard."
   },
   {
     question: "Can I keep my existing number?",
     answer: "Yes! You can easily set up conditional call forwarding (e.g. forward on busy or unanswered calls) from your existing mobile or landline number directly to your dedicated Bavio number."
   },
   {
-    question: "What languages are supported?",
-    answer: "Absolutely. Bavio is fully tuned for global markets. It supports English, Spanish, French, German, Mandarin, and 20+ other languages natively without complex configuration."
+    question: "Does it support Hindi?",
+    answer: "Absolutely. Bavio is fully tuned for Indian accents. It supports pure Hindi, neutral English, and fluent 'Hinglish' (the natural blend of Hindi and English words commonly used in daily conversations)."
   },
   {
     question: "Can it book appointments?",
@@ -31,11 +31,11 @@ const faqs = [
   },
   {
     question: "What happens if my business internet goes down?",
-    answer: "Since Bavio's telephone servers run entirely in the cloud, calls are processed and answered regardless of your office internet status. Leads will continue to be qualified and sent to your mobile phone via your preferred notification method."
+    answer: "Since Bavio's telephone servers run entirely in the cloud, calls are processed and answered regardless of your office internet status. Leads will continue to be qualified and sent to your mobile phone via WhatsApp."
   },
   {
     question: "How do payments work?",
-    answer: "Bavio offers monthly subscription packages starting at $49. Minutes are deducted based on active call talk-time. If you run out of minutes, you can easily top up from your dashboard at any time."
+    answer: "Bavio offers monthly subscription packages starting at ₹1,999. Minutes are deducted based on active call talk-time. If you run out of minutes, you can easily top up from your dashboard at any time."
   }
 ];
 
