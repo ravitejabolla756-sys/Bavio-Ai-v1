@@ -12,54 +12,111 @@ const DB_PLAN_MAP = {
 
 async function subscribe(req, res) {
     try {
-        const { plan } = req.body;
+        const { plan, billingCycle = 'monthly' } = req.body;
         const clientId = req.client.id;
-        // Auto-extract email from authenticated user — frontend no longer needs to send it
-        const email = req.body.email || req.client.email;
-
-        if (!plan) {
-            return res.status(400).json({ error: 'plan is required' });
-        }
+        const email = req.client.email;
 
         const validPlans = ['starter', 'growth', 'scale'];
-        if (!validPlans.includes(plan.toLowerCase())) {
-            return res.status(400).json({ error: `Invalid plan. Valid plans: ${validPlans.join(', ')}` });
+        if (!plan || !validPlans.includes(plan.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid plan selected' });
         }
 
-        if (!email) {
-            return res.status(400).json({ error: 'Could not determine email. Please provide email in request body.' });
+        const validCycles = ['monthly', 'annual'];
+        if (!validCycles.includes(billingCycle.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid billing cycle selected' });
         }
 
-        // Create subscription in Dodo
-        const subscription = await dodoService.createSubscription(clientId, plan, email);
+        // 3. Create default AI assistant for this business
+        const planName = plan.toUpperCase();
+        const assistantName = `AI Receptionist - ${planName}`;
+        const assistantLanguage = 'en';
+        const firstMessage = 'Hello! How can I help you?';
+        const systemPrompt = 'You are a helpful AI receptionist...';
+        const bizIndustry = req.client.industry || 'General';
 
-        // Update client record with subscription info
-        const minutesLimit = dodoService.getPlanMinutes(plan);
-        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
-        await db.query(
-            `UPDATE businesses 
-             SET dodo_subscription_id = $1,
-                 dodo_customer_id = $2,
-                 plan = $3,
-                 plan_name = $4,
-                 minutes_limit = $5
-             WHERE id = $6`,
-            [subscription.subscriptionId, subscription.customerId, dbPlan, plan, minutesLimit, clientId]
+        // Check if an assistant already exists for this business
+        console.log('[DEBUG] Querying existing assistant for client:', clientId);
+        const existingAssistant = await db.query(
+            'SELECT id FROM assistants WHERE business_id = $1',
+            [clientId]
         );
 
-        // Return `url` so the frontend can redirect to Dodo checkout
+        let assistantId;
+        if (existingAssistant.rows.length > 0) {
+            assistantId = existingAssistant.rows[0].id;
+            console.log('[DEBUG] Updating existing assistant:', assistantId);
+            await db.query(
+                `UPDATE assistants 
+                 SET name = $1, 
+                     agent_name = $2, 
+                     language = $3, 
+                     greeting = $4, 
+                     first_message = $5, 
+                     system_prompt = $6, 
+                     industry = $7,
+                     updated_at = NOW()
+                 WHERE id = $8`,
+                [assistantName, assistantName, assistantLanguage, firstMessage, firstMessage, systemPrompt, bizIndustry, assistantId]
+            );
+        } else {
+            console.log('[DEBUG] Inserting default assistant');
+            const insertResult = await db.query(
+                `INSERT INTO assistants
+                  (business_id, name, agent_name, language, greeting, first_message, system_prompt, industry, voice_id, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'meera', true)
+                 RETURNING id`,
+                [clientId, assistantName, assistantName, assistantLanguage, firstMessage, firstMessage, systemPrompt, bizIndustry]
+            );
+            assistantId = insertResult.rows[0].id;
+        }
+
+        // Link assistant to business if not already linked
+        console.log('[DEBUG] Linking assistant to business');
+        await db.query(
+            'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
+            [assistantId, clientId]
+        );
+
+        // 4. Update businesses record
+        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
+        console.log('[DEBUG] Updating business plan details:', [dbPlan, plan, billingCycle, clientId]);
+        await db.query(
+            `UPDATE businesses 
+             SET plan = $1,
+                 plan_name = $2,
+                 status = 'active',
+                 billing_cycle = $3,
+                 updated_at = NOW()
+             WHERE id = $4`,
+            [dbPlan, plan, billingCycle, clientId]
+        );
+
+        // 5. Create Dodo Payments checkout
+        let subscription;
+        try {
+            subscription = await dodoService.createSubscription(clientId, plan, email, billingCycle);
+        } catch (dodoErr) {
+            console.error('Dodo API Error:', dodoErr.message);
+            return res.status(500).json({ error: 'Payment system unavailable, try again' });
+        }
+
+        // 6. Store subscription intent in DB
+        await db.query(
+            `INSERT INTO subscription_intents (business_id, plan, billing_cycle, dodo_id, status)
+             VALUES ($1, $2, $3, $4, 'pending')`,
+            [clientId, plan, billingCycle, subscription.subscriptionId]
+        );
+
+        // Send JSON response
         res.status(201).json({
-            message: 'Subscription created successfully',
-            subscriptionId: subscription.subscriptionId,
-            url: subscription.checkoutUrl,
-            checkoutUrl: subscription.checkoutUrl,
-            status: subscription.status,
+            success: true,
+            checkout_url: subscription.checkoutUrl,
             plan: plan,
-            minutesLimit: minutesLimit
+            billingCycle: billingCycle
         });
     } catch (err) {
         console.error('Subscribe error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
 }
 
@@ -679,9 +736,9 @@ async function autoProvisionBusiness(clientId) {
             const insertResult = await db.query(
                 `INSERT INTO assistants
                   (business_id, name, agent_name, greeting, first_message, voice, voice_id, industry, language, system_prompt, is_active)
-                 VALUES ($1, $2, $2, $3, $3, $4, $4, $5, 'en-US', $6, true)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'en-US', $9, true)
                  RETURNING id, agent_name, voice, greeting`,
-                [clientId, agentName, defaultGreeting, voice, business.industry || 'other', defaultSystemPrompt]
+                [clientId, agentName, agentName, defaultGreeting, defaultGreeting, voice, voice, business.industry || 'other', defaultSystemPrompt]
             );
             assistant = insertResult.rows[0];
             

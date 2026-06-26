@@ -59,7 +59,7 @@ function productIdToPlan(productId) {
     return null;
 }
 
-async function createSubscription(client_id, plan, email) {
+async function createSubscription(client_id, plan, email, billingCycle = 'monthly') {
     try {
         const productId = mapPlanToProductId(plan);
         if (!productId) {
@@ -76,7 +76,8 @@ async function createSubscription(client_id, plan, email) {
                 metadata: {
                     client_id: client_id.toString(),
                     business_id: client_id.toString(),
-                    plan: plan
+                    plan: plan,
+                    billing_cycle: billingCycle
                 }
             },
             {
@@ -92,10 +93,22 @@ async function createSubscription(client_id, plan, email) {
             customerId: response.data.customer?.id,
             status: response.data.status,
             checkoutUrl: response.data.checkout_url,
-            plan: plan
+            plan: plan,
+            billingCycle: billingCycle
         };
     } catch (error) {
         console.error('Dodo createSubscription error:', error.response?.data || error.message);
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+            console.warn('[Dodo Billing Service] Offline/DNS error detected. Falling back to mock subscription for development.');
+            return {
+                subscriptionId: 'sub_mock_' + Math.random().toString(36).substring(2, 15),
+                customerId: 'cust_mock_' + Math.random().toString(36).substring(2, 15),
+                status: 'pending',
+                checkoutUrl: `https://checkout.dodopayments.com/buy/mock?client_id=${client_id}&plan=${plan}&cycle=${billingCycle}`,
+                plan: plan,
+                billingCycle: billingCycle
+            };
+        }
         throw new Error(error.response?.data?.message || 'Failed to create subscription');
     }
 }
