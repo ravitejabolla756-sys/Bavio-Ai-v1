@@ -60,7 +60,7 @@ export default function Navbar() {
           {/* CTA */}
           <div className="flex-1 hidden md:flex justify-end items-center gap-4">
             <Link
-              href="/pricing"
+              href="/signup"
               className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[44px]"
             >
               <GlareHover
@@ -121,9 +121,9 @@ export default function Navbar() {
 
             <div className="flex flex-col gap-3 pt-6 border-t border-[#F3E4D4]">
               <Link
-                href="/pricing"
+                href="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="w-full text-center bg-[#F97316] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98]"
+                className="w-full text-center bg-[#FF6B00] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98]"
               >
                 Get Started
               </Link>
