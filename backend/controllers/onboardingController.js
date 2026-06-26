@@ -32,8 +32,8 @@ async function saveStep(req, res) {
 
         await db.query(
           `UPDATE businesses SET
-            country_code = $1,
-            country = $1,
+            country_code = $1::varchar,
+            country = $1::text,
             updated_at = NOW()
           WHERE id = $2`,
           [countryCode, clientId]
@@ -299,11 +299,11 @@ async function setCountry(req, res) {
     }
 
     await db.query(
-      'UPDATE businesses SET country_code = $1, country = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE businesses SET country_code = $1::varchar, country = $1::text, updated_at = NOW() WHERE id = $2',
       [country_code, clientId]
     );
 
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true, country_code });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

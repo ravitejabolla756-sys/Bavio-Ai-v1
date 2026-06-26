@@ -16,24 +16,33 @@ async function signup(req, res) {
         const { 
             name, email, phone, password, country, country_code,
             business_description, industry, language,
-            agent_name, greeting, faqs
+            agent_name, greeting, faqs,
+            // New payload fields:
+            businessName, countryCode, dialCode, phoneNumber
         } = req.body;
+
+        const finalName = name || businessName;
+        const finalEmail = email;
+        const finalPassword = password;
+        const finalPhone = phone || (dialCode && phoneNumber ? (dialCode + phoneNumber) : null);
+        const finalCountryCode = (countryCode || country_code || inferCountry(finalPhone, country)).trim().toUpperCase().substring(0, 2);
+        const finalCountry = country || finalCountryCode;
         
         // 1. Validation
-        if (!name || !email || !phone || !password) {
-            return res.status(400).json({ success: false, error: 'Name, email, phone, and password are required' });
+        if (!finalName || !finalEmail || !finalPhone || !finalPassword) {
+            return res.status(400).json({ success: false, error: 'Name/Business name, email, phone, and password are required' });
         }
 
         // 2. Create user in Supabase Auth via Admin client (auto-confirm email and phone)
         const { data: authData, error: authError } = await db.supabase.auth.admin.createUser({
-            email: email,
-            password: password,
-            phone: phone,
+            email: finalEmail,
+            password: finalPassword,
+            phone: finalPhone,
             email_confirm: true,
             phone_confirm: true,
             user_metadata: {
-                full_name: name,
-                country: country
+                full_name: finalName,
+                country: finalCountry
             }
         });
 
@@ -49,9 +58,6 @@ async function signup(req, res) {
         
         // 3. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
-        
-        const inferredCountry = inferCountry(phone, country || country_code);
-        const finalCountryCode = (country_code || inferredCountry || 'US').trim().toUpperCase().substring(0, 2);
 
         const hasReceptionistData = agent_name && greeting;
         const onboardingStep = hasReceptionistData ? 3 : 0;
@@ -68,9 +74,9 @@ async function signup(req, res) {
              VALUES ($1, $2, $3, $4, $5, $6, 100, 0, 'active', $7, $8, $9, $10, $11, $12, $13, $14, $15)
              RETURNING *`,
             [
-                supabaseUser.id, name, email, phone, 'supabase_auth_placeholder', apiKey, 
-                inferredCountry, finalCountryCode, name, business_description || null, 
-                industry || null, language || 'hi-IN', phone, 
+                supabaseUser.id, finalName, finalEmail, finalPhone, 'supabase_auth_placeholder', apiKey, 
+                finalCountry, finalCountryCode, finalName, business_description || null, 
+                industry || null, language || 'hi-IN', finalPhone, 
                 onboardingStep, onboardingStatus
             ]
         );

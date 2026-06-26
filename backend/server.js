@@ -66,6 +66,7 @@ const onboardingRoutes = require('./routes/onboarding');
 const exotelRoutes = require('./routes/exotelRoutes');
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const vapiRoutes = require('./routes/vapi');
+const phoneRoutes = require('./routes/phone');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
@@ -82,6 +83,7 @@ app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/vapi', vapiRoutes);
+app.use('/phone', phoneRoutes);
 
 // ------- Health Check -------
 app.get('/health', (req, res) => {
