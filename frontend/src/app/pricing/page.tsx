@@ -70,19 +70,19 @@ export default function PricingPage() {
     {
       name: "Starter",
       key: "starter",
-      priceMonthly: 29,
-      priceAnnual: 23, // 20% discount ($276/year)
-      saves: 72,
-      minutes: "100",
-      overage: "$0.08",
+      priceMonthly: 49,
+      priceAnnual: 39, // 20% discount ($468/year)
+      saves: 120,
+      minutes: "200",
+      overage: "$0.25",
       ideal: "Solo agents, startups, and local business testing AI calls.",
       features: [
-        { text: "100 minutes/month included", included: true },
+        { text: "200 minutes/month included", included: true },
         { text: "1 Active AI Assistant", included: true },
         { text: "20+ Languages supported natively", included: true },
         { text: "Instant email & dashboard alerts", included: true },
         { text: "Real-time call transcripts & records", included: true },
-        { text: "7-day history storage", included: true },
+        { text: "30-day history storage", included: true },
         { text: "Custom appointment calendar booking", included: false },
         { text: "Advanced CRM integrations", included: false },
         { text: "Dedicated SIP Trunk number", included: false },
@@ -92,19 +92,19 @@ export default function PricingPage() {
     {
       name: "Growth",
       key: "growth",
-      priceMonthly: 59,
-      priceAnnual: 47, // 20% discount ($564/year)
-      saves: 144,
-      minutes: "300",
-      overage: "$0.06",
+      priceMonthly: 99,
+      priceAnnual: 79, // 20% discount ($948/year)
+      saves: 240,
+      minutes: "500",
+      overage: "$0.22",
       ideal: "Growing SMBs, agencies, and teams seeking CRM integrations.",
       features: [
-        { text: "300 minutes/month included", included: true },
-        { text: "Up to 3 Active AI Assistants", included: true },
+        { text: "500 minutes/month included", included: true },
+        { text: "Up to 2 Active AI Assistants", included: true },
         { text: "20+ Languages supported natively", included: true },
         { text: "Instant email, dashboard & WhatsApp alerts", included: true },
         { text: "Real-time call transcripts & records", included: true },
-        { text: "Unlimited history storage", included: true },
+        { text: "90-day history storage", included: true },
         { text: "Custom appointment calendar booking", included: true },
         { text: "Advanced CRM integrations (Salesforce, HubSpot)", included: true },
         { text: "Dedicated SIP Trunk number", included: false },
@@ -114,15 +114,15 @@ export default function PricingPage() {
     {
       name: "Scale",
       key: "scale",
-      priceMonthly: 99,
-      priceAnnual: 79, // 20% discount ($948/year)
-      saves: 240,
-      minutes: "800",
-      overage: "$0.04",
+      priceMonthly: 199,
+      priceAnnual: 159, // 20% discount ($1908/year)
+      saves: 480,
+      minutes: "1500",
+      overage: "$0.18",
       ideal: "High-volume teams, enterprise, and custom workflow requirements.",
       features: [
-        { text: "800 minutes/month included", included: true },
-        { text: "Unlimited Active AI Assistants", included: true },
+        { text: "1500 minutes/month included", included: true },
+        { text: "Up to 5 Active AI Assistants", included: true },
         { text: "20+ Languages supported natively", included: true },
         { text: "Instant email, dashboard, WhatsApp & SMS alerts", included: true },
         { text: "Real-time call transcripts & records", included: true },
@@ -170,6 +170,12 @@ export default function PricingPage() {
         throw new Error(text || `Server returned error status ${response.status}`);
       }
 
+      if (response.status === 401 || (body?.message && body.message.toLowerCase().includes("invalid or expired token"))) {
+        localStorage.removeItem("bavio_token");
+        window.location.href = `/signup?plan=${planKey}&cycle=${billingCycle}`;
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(body?.error || body?.message || "Failed to initiate subscription checkout.");
       }
@@ -191,7 +197,7 @@ export default function PricingPage() {
   const faqs = [
     {
       question: "How do overage minutes work?",
-      answer: "If you exceed your plan's included minutes, overage is charged automatically at the rate listed on your tier ($0.08/min for Starter, $0.06/min for Growth, and $0.04/min for Scale). We will send you dashboard notifications when you reach 80% and 100% of your limits.",
+      answer: "If you exceed your plan's included minutes, overage is charged automatically at the rate listed on your tier ($0.25/min for Starter, $0.22/min for Growth, and $0.18/min for Scale). We will send you dashboard notifications when you reach 80% and 100% of your limits.",
     },
     {
       question: "Can I upgrade or downgrade my plan later?",
@@ -215,7 +221,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#FCF8F3] text-[#140B06] font-sans antialiased selection:bg-[#FF6B00]/15 selection:text-[#FF6B00] relative overflow-hidden noise-overlay flex flex-col w-full">
       <Navbar />
 
-      <main className="flex-grow pt-32 lg:pt-40">
+      <main className="flex-grow pt-40 lg:pt-48">
         
         {/* ─── Hero Section ─── */}
         <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-12 text-center relative">
