@@ -1049,5 +1049,7 @@ module.exports = {
     getInvoice,
     handleWebhook,
     createRazorpayOrder,
-    verifyRazorpayPayment
+    verifyRazorpayPayment,
+    autoProvisionBusiness
 };
+
