@@ -71,12 +71,24 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to assign virtual phone number.");
+      let data: any;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(
+          response.status === 500 || response.status === 502
+            ? "Cannot connect to the backend server. Please ensure the backend API is running."
+            : text || `Server returned status ${response.status}`
+        );
       }
 
-      setPhoneNumber(data.data.phone_number);
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to assign virtual phone number.");
+      }
+
+      setPhoneNumber(data.data?.phone_number || data.phone_number);
     } catch (err: any) {
       console.error("Number assignment failed:", err);
       setError(err.message || "An unexpected error occurred during telephony allocation.");
@@ -98,9 +110,21 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
         }
       });
 
-      const data = await response.json();
+      let data: any;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(
+          response.status === 500 || response.status === 502
+            ? "Cannot connect to the backend server. Please ensure the backend API is running."
+            : text || `Server returned status ${response.status}`
+        );
+      }
+
       if (!response.ok) {
-        throw new Error(data.error || "Verification failed");
+        throw new Error(data?.error || "Verification failed");
       }
       setVerified(true);
       console.log("[PhoneSetup] Forwarding successfully verified via backend.");
