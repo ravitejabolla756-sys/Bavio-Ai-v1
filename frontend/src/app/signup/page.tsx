@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,42 +27,233 @@ import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
 const industryOptions = [
   {
-    value: "real_estate",
+    value: "Real Estate",
     label: "Real Estate",
     icon: "🏠",
     description: "Property sales, rentals, site visits, and lead qualification.",
   },
   {
-    value: "healthcare",
+    value: "Healthcare",
     label: "Healthcare",
     icon: "🏥",
     description: "Patient triage, appointment bookings, and clinical inquiry routing.",
   },
   {
-    value: "legal",
+    value: "Legal Services",
     label: "Legal Services",
     icon: "⚖️",
     description: "Case consultation bookings, legal intake, and document processing.",
   },
   {
-    value: "finance",
+    value: "Finance & Banking",
     label: "Finance & Banking",
     icon: "💰",
     description: "Loan processing, wealth advisory, and account setup inquiries.",
   },
   {
-    value: "retail",
-    label: "Retail & E-commerce",
-    icon: "🛒",
-    description: "Order tracking, returns, product catalogs, and support.",
+    value: "E-Commerce",
+    label: "E-Commerce",
+    icon: "🛍️",
+    description: "Order tracking, returns, product inquiries, and customer support.",
   },
   {
-    value: "other",
-    label: "Other Industry",
-    icon: "🏢",
-    description: "General administrative routing and custom webhook actions.",
+    value: "Education & Coaching",
+    label: "Education & Coaching",
+    icon: "📚",
+    description: "Course enrollments, demo scheduling, and student inquiries.",
+  },
+  {
+    value: "Restaurants & Food",
+    label: "Restaurants & Food",
+    icon: "🍽️",
+    description: "Reservations, menu inquiries, delivery orders, and feedback.",
+  },
+  {
+    value: "Field Services (Plumbing, AC, etc.)",
+    label: "Field Services (Plumbing, AC, etc.)",
+    icon: "🔧",
+    description: "Service appointment booking, emergency calls, and price inquiries.",
+  },
+  {
+    value: "Hotels & Hospitality",
+    label: "Hotels & Hospitality",
+    icon: "🏨",
+    description: "Room bookings, guest inquiries, and concierge services.",
+  },
+  {
+    value: "Fitness & Wellness",
+    label: "Fitness & Wellness",
+    icon: "💪",
+    description: "Class scheduling, membership inquiries, and trainer consultations.",
+  },
+  {
+    value: "Insurance",
+    label: "Insurance",
+    icon: "📋",
+    description: "Policy inquiries, claims processing, and quote requests.",
+  },
+  {
+    value: "Automotive",
+    label: "Automotive",
+    icon: "🚗",
+    description: "Service appointments, sales inquiries, and financing.",
+  },
+  {
+    value: "Retail",
+    label: "Retail",
+    icon: "🏪",
+    description: "Store hours, product availability, and customer support.",
+  },
+  {
+    value: "Telecommunications",
+    label: "Telecommunications",
+    icon: "📱",
+    description: "Plan inquiries, billing support, and service upgrades.",
+  },
+  {
+    value: "Other",
+    label: "Other",
+    icon: "⭐",
+    description: "Select if your industry isn't listed above.",
   },
 ];
+
+interface PremiumIndustryDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function PremiumIndustryDropdown({ value, onChange }: PremiumIndustryDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filter options based on search query
+  const filteredOptions = useMemo(() => {
+    return industryOptions.filter((opt) =>
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      opt.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
+  const selectedOption = useMemo(() => {
+    return industryOptions.find((opt) => opt.value === value) || industryOptions[0];
+  }, [value]);
+
+  return (
+    <div ref={containerRef} className="relative w-full text-left font-sans">
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between bg-white border transition-all duration-200 outline-none rounded-[20px] py-4 px-5 text-body-xs text-[#14141A] select-none ${
+          isOpen
+            ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10 shadow-[0_4px_12px_rgba(255,107,0,0.08)]"
+            : "border-[#E5E0D8] hover:border-[#FF6B00]"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-[24px] leading-none shrink-0 select-none">{selectedOption.icon}</span>
+          <span className="font-semibold text-body-xs text-[#1a1a1a]">
+            {selectedOption.label}
+          </span>
+        </div>
+        <CaretDown
+          className={`w-4 h-4 text-[#8A8A96] transition-transform duration-200 shrink-0 ${
+            isOpen ? "rotate-180 text-[#14141A]" : ""
+          }`}
+        />
+      </button>
+
+      {/* Dropdown Floating Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ borderRadius: "20px" }}
+            className="absolute left-0 right-0 mt-2 z-50 bg-white border border-[#E0E0E0] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
+          >
+            {/* Search Input */}
+            <div className="p-3.5 border-b border-[#E0E0E0] flex items-center gap-2 bg-[#FAF9F6] mb-3">
+              <MagnifyingGlass className="w-4 h-4 text-[#8A8A96] shrink-0" />
+              <input
+                type="text"
+                placeholder="Search industries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-body-xs font-semibold text-[#1a1a1a] placeholder-[#8A8A96] p-0"
+                style={{ outline: "none", boxShadow: "none" }}
+              />
+            </div>
+
+            {/* Options List */}
+            <div className="p-3 max-h-[400px] overflow-y-auto scrollbar-thin flex flex-col gap-3">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt) => {
+                  const isSelected = opt.value === value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(opt.value);
+                        setIsOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className={`w-full text-left p-4 transition-all duration-200 flex items-center gap-4 rounded-[12px] border focus:outline-none focus:ring-0 ${
+                        isSelected
+                          ? "bg-[#FFF5E6]/40 border-[#FF6B00] shadow-sm"
+                          : "bg-white border-[#E0E0E0] hover:bg-[#FFF5E6] hover:scale-[1.02] hover:border-[#FF6B00]/45"
+                      }`}
+                      style={{ maxWidth: "500px" }}
+                    >
+                      <span className="text-[32px] leading-none shrink-0 select-none">
+                        {opt.icon}
+                      </span>
+                      <div className="flex flex-col text-left flex-1 min-w-0">
+                        <span
+                          className={`text-[16px] font-bold leading-tight ${
+                            isSelected ? "text-[#FF6B00]" : "text-[#1a1a1a]"
+                          }`}
+                        >
+                          {opt.label}
+                        </span>
+                        <span className="text-[14px] text-[#666666] leading-relaxed mt-1 break-words">
+                          {opt.description}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-5 h-5 text-[#FF6B00] shrink-0" weight="bold" />
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold">
+                  No matching industries
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -100,7 +291,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
-  const [industry, setIndustry] = useState("real_estate");
+  const [industry, setIndustry] = useState("Real Estate");
 
   // Country selector states
   const [countriesList, setCountriesList] = useState<any[]>([]);
@@ -123,16 +314,11 @@ export default function SignUpPage() {
         }
         const data = await response.json();
         setCountriesList(data);
-        // Default to United States (US) if available
-        const us = data.find((c: any) => c.code === "US");
-        if (us) {
-          setSelectedCountry(us);
-        } else if (data.length > 0) {
-          setSelectedCountry(data[0]);
-        }
+        // Initialize to null (instead of defaulting) to force user to choose a country
+        setSelectedCountry(null);
       } catch (err: any) {
         console.error("Failed to fetch phone countries:", err);
-        setCountriesError(err.message || "Failed to load countries.");
+        setCountriesError("Unable to load countries. Refresh page.");
       } finally {
         setIsLoadingCountries(false);
       }
@@ -152,12 +338,20 @@ export default function SignUpPage() {
   }, []);
 
   // Filter countries by search term
-  const filteredCountries = countriesList.filter(
-    (c) =>
-      c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-      c.dialCode.includes(countrySearch) ||
-      c.code.toLowerCase().includes(countrySearch.toLowerCase())
-  );
+  const filteredCountries = countriesList.filter((c) => {
+    const searchLower = countrySearch.toLowerCase().trim();
+    if (!searchLower) return true;
+    
+    // Clean query and dialCode for matching (e.g. "+54" or "54")
+    const cleanSearch = searchLower.replace("+", "");
+    const cleanDialCode = c.dialCode.replace("+", "");
+    
+    return (
+      c.name.toLowerCase().includes(searchLower) ||
+      cleanDialCode.includes(cleanSearch) ||
+      c.code.toLowerCase().includes(searchLower)
+    );
+  });
 
   // Validation & Loading states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -184,11 +378,13 @@ export default function SignUpPage() {
     }
 
     if (!selectedCountry) {
-      tempErrors.country = "Country selection is required";
+      tempErrors.country = "Please select a country";
     }
 
     if (!businessPhone.trim()) {
-      tempErrors.businessPhone = "Business phone number is required";
+      tempErrors.businessPhone = "Please enter your phone number";
+    } else if (businessPhone.trim().replace(/\D/g, "").length < 6 || businessPhone.trim().replace(/\D/g, "").length > 15) {
+      tempErrors.businessPhone = "Invalid phone number";
     }
 
     setErrors(tempErrors);
@@ -429,19 +625,24 @@ export default function SignUpPage() {
                       <button
                         type="button"
                         onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-                        className={`w-full flex items-center justify-between bg-[#FAF7F2] border transition-all duration-200 outline-none rounded-xl py-3 px-4 text-body-xs text-[#14141A] text-left ${
+                        className={`w-full flex items-center justify-between bg-white border transition-all duration-200 outline-none rounded-[20px] py-3.5 px-5 text-body-xs text-[#14141A] text-left ${
                           isCountryDropdownOpen
                             ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10"
-                            : "border-[#E5E0D8] hover:border-[#FF6B00]/65"
+                            : "border-[#E5E0D8] hover:border-[#FF6B00]"
                         }`}
                       >
                         {selectedCountry ? (
-                          <span className="font-semibold flex items-center gap-2">
-                            <span>{selectedCountry.flag}</span>
-                            <span>{selectedCountry.name} ({selectedCountry.dialCode})</span>
+                          <span className="flex items-center gap-3">
+                            <span className="text-[24px] leading-none shrink-0 select-none">{selectedCountry.flag}</span>
+                            <span className="font-serif font-bold text-body-xs text-[#14141A]">
+                              {selectedCountry.name}
+                            </span>
+                            <span className="font-sans font-normal text-xs text-[#8A8A96]">
+                              ({selectedCountry.dialCode})
+                            </span>
                           </span>
                         ) : (
-                          <span className="text-[#8A8A96]">Select your country...</span>
+                          <span className="text-[#8A8A96] font-sans font-medium">Select your country...</span>
                         )}
                         <CaretDown
                           className={`w-4 h-4 text-[#8A8A96] transition-transform duration-200 shrink-0 ${
@@ -457,11 +658,11 @@ export default function SignUpPage() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 8, scale: 0.96 }}
                             transition={{ duration: 0.18, ease: "easeOut" }}
-                            style={{ borderRadius: "16px" }}
-                            className="absolute left-0 right-0 mt-1 z-50 bg-white border border-[#FF6B00] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
+                            style={{ borderRadius: "20px" }}
+                            className="absolute left-0 right-0 mt-1.5 z-50 bg-white border border-[#E5E0D8] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
                           >
                             {/* Search Input */}
-                            <div className="p-3 border-b border-[#EBE6DD]/60 flex items-center gap-2 bg-[#FAF9F6]">
+                            <div className="p-3.5 border-b border-[#EBE6DD]/60 flex items-center gap-2 bg-[#FAF9F6]">
                               <MagnifyingGlass className="w-4 h-4 text-[#8A8A96] shrink-0" />
                               <input
                                 type="text"
@@ -474,9 +675,9 @@ export default function SignUpPage() {
                             </div>
 
                             {/* Options List */}
-                            <div className="py-1.5 max-h-[200px] overflow-y-auto scrollbar-thin">
+                            <div className="py-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
                               {isLoadingCountries ? (
-                                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold">
+                                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold animate-pulse">
                                   Loading countries...
                                 </div>
                               ) : countriesError ? (
@@ -495,14 +696,20 @@ export default function SignUpPage() {
                                           setIsCountryDropdownOpen(false);
                                           setCountrySearch("");
                                         }}
-                                        className={`w-full text-left px-3.5 py-2 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] ${
+                                        className={`w-full text-left px-3.5 py-2.5 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] ${
                                           isSelected
                                             ? "bg-[#FF6B00]/8 text-[#FF6B00] font-bold"
                                             : "bg-transparent hover:bg-[#FAF7F2] text-[#14141A]"
                                         }`}
                                       >
-                                        <span className="text-body-xs truncate">
-                                          {c.flag} {c.name} ({c.dialCode})
+                                        <span className="flex items-center gap-3 truncate">
+                                          <span className="text-[24px] leading-none shrink-0 select-none">{c.flag}</span>
+                                          <span className="font-serif font-bold text-body-xs truncate">
+                                            {c.name}
+                                          </span>
+                                          <span className="font-sans font-normal text-xs text-[#8A8A96]">
+                                            +({c.dialCode.replace("+", "")})
+                                          </span>
                                         </span>
                                         {isSelected && <Check className="w-4 h-4 text-[#FF6B00]" weight="bold" />}
                                       </button>
@@ -523,47 +730,55 @@ export default function SignUpPage() {
                   </div>
 
                   {/* Business Phone Number */}
-                  <div>
-                    <label htmlFor="business-phone-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Business Phone Number
-                    </label>
-                    <div
-                      className={`w-full flex items-center bg-[#FAF7F2] border ${
-                        errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus-within:border-[#FF6B00]"
-                      } focus-within:ring-4 focus-within:ring-[#FF6B00]/10 rounded-xl transition-all duration-200 overflow-hidden`}
-                    >
-                      {selectedCountry && (
-                        <div className="bg-[#FAF7F2] border-r border-[#E5E0D8] py-3 px-4 text-body-xs text-[#8A8A96] font-semibold select-none shrink-0 flex items-center gap-1.5">
-                          <span>{selectedCountry.flag}</span>
-                          <span>{selectedCountry.dialCode}</span>
+                  <AnimatePresence>
+                    {selectedCountry && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="relative mt-2">
+                          <label className="absolute left-4 -top-2 bg-white px-1 text-[11px] font-semibold text-[#8A8A96] z-10">
+                            Phone number
+                          </label>
+                          <div
+                            className={`w-full flex items-center bg-white border ${
+                              errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus-within:border-[#FF6B00] focus-within:ring-4 focus-within:ring-[#FF6B00]/10"
+                            } rounded-[20px] transition-all duration-200 overflow-hidden`}
+                          >
+                            <span className="py-3.5 pl-5 pr-1.5 text-body-xs text-[#8A8A96] font-sans font-normal select-none shrink-0">
+                              {selectedCountry.dialCode}
+                            </span>
+                            <input
+                              id="business-phone-input"
+                              type="tel"
+                              disabled={!selectedCountry}
+                              placeholder="e.g., 2615550123"
+                              value={businessPhone}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, "");
+                                setBusinessPhone(val);
+                              }}
+                              className="w-full bg-transparent border-none outline-none py-3.5 pl-1 pr-5 text-body-xs text-[#14141A] placeholder-[#8A8A96]/60"
+                              style={{ outline: "none", boxShadow: "none" }}
+                            />
+                          </div>
+                          {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                         </div>
-                      )}
-                      <input
-                        id="business-phone-input"
-                        type="text"
-                        placeholder="e.g., 4155550123"
-                        value={businessPhone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^\d\s\-]/g, "");
-                          setBusinessPhone(val);
-                        }}
-                        className="w-full bg-transparent border-none outline-none py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96]"
-                        style={{ outline: "none", boxShadow: "none" }}
-                      />
-                    </div>
-                    {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
-                  </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Industry Sector */}
                   <div>
                     <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Industry Sector
                     </label>
-                    <SearchableDropdown
-                      options={industryOptions}
+                    <PremiumIndustryDropdown
                       value={industry}
                       onChange={(val) => setIndustry(val)}
-                      placeholder="Select your industry"
                     />
                   </div>
 
