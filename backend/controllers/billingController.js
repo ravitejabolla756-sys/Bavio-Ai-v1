@@ -533,14 +533,6 @@ async function handleWebhook(req, res) {
         }
         const event = req.body;
         const eventType = event.event;
-        const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
-
-        // Verify webhook secret if configured
-        const providedSecret = req.headers['x-webhook-secret'];
-        if (webhookSecret && providedSecret !== webhookSecret) {
-            console.error('Invalid webhook secret');
-            return res.status(401).json({ error: 'Invalid webhook secret' });
-        }
 
         console.log(`Received Dodo webhook: ${eventType}`, event);
 
