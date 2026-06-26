@@ -103,6 +103,10 @@ export interface SignupPayload {
   business_name?: string;
   business_phone?: string;
   industry?: string;
+  businessName?: string;
+  countryCode?: string;
+  dialCode?: string;
+  phoneNumber?: string;
 }
 
 export interface LoginPayload {
