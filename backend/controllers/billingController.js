@@ -1,6 +1,8 @@
 const db = require('../database/db');
 const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
+const emailService = require('../services/emailService');
+const axios = require('axios');
 
 // Map user-facing subscription plan name to the plan_type enum used in DB
 const DB_PLAN_MAP = {
@@ -522,8 +524,15 @@ async function getInvoice(req, res) {
 
 async function handleWebhook(req, res) {
     try {
+        // Verify webhook signature
+        const providedSecret = req.headers['x-webhook-secret'];
+        const expectedSecret = process.env.DODO_WEBHOOK_SECRET;
+        if (expectedSecret && providedSecret !== expectedSecret) {
+            console.error('Invalid webhook secret');
+            return res.status(401).json({ error: 'Invalid webhook secret' });
+        }
         const event = req.body;
-        const eventType = event.event_type;
+        const eventType = event.event;
         const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
 
         // Verify webhook secret if configured
@@ -607,6 +616,8 @@ async function handleWebhook(req, res) {
                 // Resolve business_id from metadata or customer mapping
                 const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
                 const planName = payment.metadata?.plan || null;
+                const countryCode = payment.metadata?.country_code || null;
+                const dialCode = payment.metadata?.dial_code || null;
 
                 // Log payment in database with enhanced fields
                 await db.query(
@@ -627,12 +638,38 @@ async function handleWebhook(req, res) {
                 
                 console.log(`Logged successful payment: ${payment.id} for business ${businessId}`);
                 
-                // Trigger auto-provisioning if business_id is available
                 if (businessId) {
-                    console.log(`[AUTO-PROVISION] Starting for business ${businessId}`);
-                    autoProvisionBusiness(businessId).catch(err => {
-                        console.error('[AUTO-PROVISION] Failed:', err.message);
-                    });
+                    // Update business subscription status
+                    await db.query(
+                        `UPDATE businesses SET plan = $1, plan_name = $1, status = 'active', subscription_active = true, billing_cycle = $2 WHERE id = $3`,
+                        [planName || 'starter', payment.billing_cycle || 'monthly', businessId]
+                    );
+                    // Provision phone number via internal endpoint
+                    try {
+                        await axios.post(`${process.env.INTERNAL_API_BASE_URL || ''}/api/phone/provision`, {
+                            businessId,
+                            countryCode,
+                            dialCode
+                        });
+                        console.log('Provisioned phone number for business', businessId);
+                    } catch (provErr) {
+                        console.error('Phone provisioning failed:', provErr.message);
+                    }
+                    // Mark intent completed if exists
+                    await db.query(
+                        `UPDATE subscription_intents SET status = 'completed' WHERE business_id = $1`,
+                        [businessId]
+                    );
+                    // Send success email
+                    try {
+                        await emailService.sendMail(
+                            payment.customer_email || payment.email || payment.metadata?.customer_email,
+                            'Payment Successful',
+                            `Your payment of ${payment.amount} ${payment.currency} was successful. Your virtual number is being set up.`
+                        );
+                    } catch (emailErr) {
+                        console.error('Failed to send success email:', emailErr.message);
+                    }
                 }
                 break;
             }
@@ -641,14 +678,19 @@ async function handleWebhook(req, res) {
                 const payment = event.data;
                 const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
                 console.error(`Payment failed: ${payment.id}`, payment.failure_reason);
-                
-                // Log failed payment too
+                // Update intent status to failed
+                if (businessId) {
+                    await db.query(
+                        `UPDATE subscription_intents SET status = 'failed' WHERE business_id = $1`,
+                        [businessId]
+                    );
+                }
+                // Log failed payment
                 try {
                     await db.query(
                         `INSERT INTO payment_logs 
                          (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, metadata)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7)
-                         ON CONFLICT DO NOTHING`,
+                         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                         [
                             payment.id,
                             payment.customer_id,
@@ -661,6 +703,16 @@ async function handleWebhook(req, res) {
                     );
                 } catch (logErr) {
                     console.error('Failed to log failed payment:', logErr.message);
+                }
+                // Send failure email
+                try {
+                    await emailService.sendMail(
+                        payment.customer_email || payment.email || payment.metadata?.customer_email,
+                        'Payment Failed',
+                        `Your payment of ${payment.amount} ${payment.currency} failed. Please try again.`
+                    );
+                } catch (emailErr) {
+                    console.error('Failed to send failure email:', emailErr.message);
                 }
                 break;
             }

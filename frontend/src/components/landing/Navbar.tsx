@@ -29,27 +29,31 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[1150px] transition-all duration-300 h-[58px] rounded-full px-6 flex items-center justify-between bg-[#FFFFFF]/95 backdrop-blur-md border border-[#EADFD3] shadow-[0_4px_20px_rgba(20,10,2,0.05)]`}
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+          scrolled
+            ? "bg-[#FFFDF8]/75 backdrop-blur-lg py-3"
+            : "bg-transparent py-5"
+        }`}
       >
-        <div className="flex items-center justify-between w-full h-full">
+        <div className="max-w-[1150px] mx-auto px-6 md:px-8 flex items-center justify-between w-full">
           {/* Logo */}
           <div className="flex-1 flex justify-start">
             <Link href="/" className="flex items-center gap-3 group shrink-0">
-              <Logo className="w-9 h-9 transition-transform duration-300 group-hover:scale-105" />
-              <span className="font-display text-2xl font-normal tracking-tight text-[#140B06] transition-colors duration-200">
+              <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105" />
+              <span className="font-display text-2xl font-extrabold tracking-tight text-[#140A02] transition-colors duration-200 group-hover:text-[#F97316]">
                 Bavio
               </span>
             </Link>
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="flex-1 hidden md:flex justify-center h-full items-center">
-            <nav className="flex items-center gap-1 h-full">
+          <div className="flex-1 hidden md:flex justify-center">
+            <nav className="flex items-center gap-1 bg-[#FFFFFF]/80 backdrop-blur-md border border-[#F3E4D4]/80 rounded-full px-6 py-2 shadow-sm">
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="px-4 py-1 text-[15px] font-semibold text-[#6E6256] hover:text-[#FF6B00] transition-colors duration-200 whitespace-nowrap font-sans"
+                  className="px-4 py-1 text-sm font-medium text-[#6E6256] hover:text-[#F97316] transition-colors duration-200 whitespace-nowrap"
                 >
                   {link.label}
                 </Link>
@@ -60,8 +64,8 @@ export default function Navbar() {
           {/* CTA */}
           <div className="flex-1 hidden md:flex justify-end items-center gap-4">
             <Link
-              href="/signup"
-              className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[44px]"
+              href="/pricing"
+              className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
             >
               <GlareHover
                 glareColor="#ffffff"
@@ -69,7 +73,7 @@ export default function Navbar() {
                 glareAngle={-30}
                 glareSize={200}
                 borderRadius="9999px"
-                className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-6 py-2 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
+                className="w-full h-full bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-bold px-6 py-2.5 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(249,115,22,0.25)] inline-flex items-center justify-center gap-2 border-none"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-4 h-4" />
@@ -81,10 +85,10 @@ export default function Navbar() {
           <div className="md:hidden flex justify-end items-center flex-1">
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-1.5 text-[#6E6256] hover:text-[#FF6B00] transition-colors bg-[#FFFFFF]/90 border border-[#EADFD3] rounded-full"
+              className="p-2 text-[#6E6256] hover:text-[#F97316] transition-colors bg-[#FFFFFF]/90 border border-[#F3E4D4]/80 rounded-full"
               aria-label="Toggle menu"
             >
-              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -121,9 +125,9 @@ export default function Navbar() {
 
             <div className="flex flex-col gap-3 pt-6 border-t border-[#F3E4D4]">
               <Link
-                href="/signup"
+                href="/pricing"
                 onClick={() => setMobileOpen(false)}
-                className="w-full text-center bg-[#FF6B00] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98]"
+                className="w-full text-center bg-[#F97316] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98]"
               >
                 Get Started
               </Link>

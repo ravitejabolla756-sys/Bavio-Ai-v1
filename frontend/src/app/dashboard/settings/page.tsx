@@ -147,7 +147,7 @@ export default function WorkspaceSettings() {
                     </div>
                   </div>
                   <span className="text-[9px] text-ink-muted hidden sm:inline whitespace-nowrap">
-                    Since {profile.created_at ? new Date(profile.created_at).toLocaleDateString("en-US") : "—"}
+                    Since {profile.created_at ? new Date(profile.created_at).toLocaleDateString("en-IN") : "—"}
                   </span>
                 </div>
               ) : (

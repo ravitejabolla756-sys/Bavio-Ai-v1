@@ -11,6 +11,27 @@ const requireAuth = async (req, res, next) => {
         }
         
         const token = authHeader.substring(7);
+        
+        // Try local system JWT verification first
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            if (decoded && (decoded.id || decoded.sub)) {
+                const userId = decoded.id || decoded.sub;
+                const result = await db.query('SELECT * FROM businesses WHERE id = $1', [userId]);
+                if (result.rows.length > 0) {
+                    req.client = result.rows[0];
+                    req.user = {
+                        id: req.client.id,
+                        email: req.client.email
+                    };
+                    req.tokenData = decoded;
+                    return next();
+                }
+            }
+        } catch (localJwtErr) {
+            // Local JWT verification failed, proceed to Supabase authentication
+        }
+        
         const authClient = db.createAuthClient();
         const { data, error } = await authClient.auth.getUser(token);
         

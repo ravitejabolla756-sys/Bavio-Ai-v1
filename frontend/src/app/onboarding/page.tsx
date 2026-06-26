@@ -2,349 +2,554 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CountryProvider, useCountry } from "@/components/shared/CountryContext";
-import { PricingSelector } from "@/components/pricing/PricingSelector";
-import { PhoneSetup } from "@/components/numbers/PhoneSetup";
+import { 
+  Check, 
+  WarningCircle, 
+  Spinner, 
+  CheckCircle,
+  ArrowRight,
+  Upload,
+  Globe,
+  Briefcase,
+  User,
+  ShieldCheck
+} from "@phosphor-icons/react";
 import { authApi, onboardingApi, billingApi } from "@/lib/api";
-import { PRICING_BY_COUNTRY } from "@/config/pricing";
 import Logo from "@/components/Logo";
-import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
-const countryOptions = [
-  { value: "US", label: "United States", icon: "🇺🇸" },
-  { value: "CA", label: "Canada", icon: "🇨🇦" },
-  { value: "GB", label: "United Kingdom", icon: "🇬🇧" },
-  { value: "AU", label: "Australia", icon: "🇦🇺" },
-  { value: "AE", label: "United Arab Emirates", icon: "🇦🇪" },
+const COUNTRY_OPTIONS = [
+  { code: "US", label: "United States", flag: "🇺🇸", currency: "USD", symbol: "$" },
+  { code: "IN", label: "India", flag: "🇮🇳", currency: "INR", symbol: "₹" },
+  { code: "GB", label: "United Kingdom", flag: "🇬🇧", currency: "GBP", symbol: "£" }
 ];
 
-function OnboardingContent() {
+const PRICING_BY_COUNTRY: Record<string, Record<string, string>> = {
+  IN: { starter: "₹2,999", growth: "₹6,999", scale: "₹18,999" },
+  US: { starter: "$35", growth: "$79", scale: "$219" },
+  GB: { starter: "£29", growth: "£69", symbol: "£189" }
+};
+
+export default function OnboardingPage() {
   const router = useRouter();
-  const { country, setCountry, loading: countryLoading } = useCountry();
-  const [step, setStep] = useState<number>(1); // 1 = Pricing Selection, 2 = Phone Setup, 3 = Success
+  
+  // Steps: 1 = Country, 2 = Plan, 3 = Business Setup, 4 = Payment, 5 = Success
+  const [step, setStep] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // User auth and profile states
-  const [userId, setUserId] = useState<string>("");
-  const [userEmail, setUserEmail] = useState<string>("");
-  const [profileLoading, setProfileLoading] = useState<boolean>(true);
-  const [profileError, setProfileError] = useState<string | null>(null);
-
-  // Selection states
+  // Form States
+  const [selectedCountry, setSelectedCountry] = useState<string>("US");
   const [selectedPlan, setSelectedPlan] = useState<string>("starter");
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [planPrice, setPlanPrice] = useState<number>(0);
+  
+  // Step 3 States
+  const [businessName, setBusinessName] = useState<string>("");
+  const [industry, setIndustry] = useState<string>("other");
+  const [ownerMobile, setOwnerMobile] = useState<string>("");
+  const [agentName, setAgentName] = useState<string>("Sarah");
+  const [voice, setVoice] = useState<string>("meera");
+  const [uploadedPdfs, setUploadedPdfs] = useState<{ name: string; content?: string }[]>([]);
+
+  // Response Success State (Step 5)
   const [assignedNumber, setAssignedNumber] = useState<string>("");
 
-  // Setup / Redirection loader states
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-
-  // Fetch authenticated profile on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        setProfileLoading(true);
+        setLoading(true);
         const user = await authApi.getProfile();
-        setUserId(user.id);
-        setUserEmail(user.email);
-        if (user.country) {
-          setCountry(user.country);
+        
+        // If they already finished, direct to workspace
+        if (user.onboarding_status === "ready") {
+          document.cookie = "bavio_onboarding_completed=true; path=/";
+          router.push("/workspace");
+          return;
         }
+
+        // Prepopulate if exists
+        if (user.country) {
+          setSelectedCountry(user.country);
+        }
+        if (user.plan_name) {
+          setSelectedPlan(user.plan_name);
+        }
+        if (user.name) {
+          setBusinessName(user.name);
+        }
+        if (user.phone) {
+          setOwnerMobile(user.phone);
+        }
+        
       } catch (err: any) {
-        console.error("Failed to load user profile in onboarding:", err);
-        setProfileError(err.message || "Failed to load account profile. Please log in.");
+        console.error("Failed to load profile:", err);
       } finally {
-        setProfileLoading(false);
+        setLoading(false);
       }
     };
-
     fetchProfile();
-  }, [setCountry]);
+  }, [router]);
 
-  // Handle plan select updates from selector component
-  const handleSelectPlan = (planName: string, cycle: "monthly" | "annual", price: number) => {
-    setSelectedPlan(planName);
-    setBillingCycle(cycle);
-    setPlanPrice(price);
-    setActionError(null);
-  };
-
-  // Process selected plan setup action (Continue Setup)
-  const handleContinueSetup = async () => {
-    if (actionLoading) return;
-    setActionLoading(true);
-    setActionError(null);
-
+  // Handle Step 1 — Save Country
+  const handleSaveCountry = async () => {
     try {
-      if (selectedPlan === "starter") {
-        // Starter Plan: Create trial workspace with 100 free minutes
-        const result = await onboardingApi.completeTrial();
-        console.log("Starter trial workspace activated:", result);
-        setStep(2); // Advance to Phone Setup
-      } else {
-        // Growth or Scale: Create subscription and redirect to Dodo Payments checkout
-        console.log(`Initiating checkout for plan: ${selectedPlan}`);
-        const result = await billingApi.subscribe(selectedPlan);
-        if (result.checkoutUrl || result.url) {
-          window.location.href = result.checkoutUrl || result.url;
-        } else {
-          throw new Error("Billing API did not return a valid checkout redirect URL.");
-        }
-      }
+      setActionLoading(true);
+      setErrorMsg(null);
+      await onboardingApi.saveStep({
+        step: 1,
+        data: { country_code: selectedCountry }
+      });
+      setStep(2);
     } catch (err: any) {
-      console.error("Continue Setup failed:", err);
-      setActionError(err.message || "A network or system error occurred. Please try again.");
+      setErrorMsg(err.message || "Failed to save country.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Handle Phone allocation completion in Step 2
-  const handlePhoneComplete = (num: string) => {
-    setAssignedNumber(num);
-    setStep(3); // Advance to success activation screen
+  // Handle Step 2 — Save Subscription Plan
+  const handleSavePlan = async () => {
+    try {
+      setActionLoading(true);
+      setErrorMsg(null);
+      await onboardingApi.saveStep({
+        step: 2,
+        data: { plan: selectedPlan }
+      });
+      setStep(3);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to save plan.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  if (profileLoading || countryLoading) {
+  // Handle PDF file selections
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const newPdfs = filesArray.map(file => ({
+        name: file.name,
+        content: `Uploaded PDF text description for ${file.name}`
+      }));
+      setUploadedPdfs(prev => [...prev, ...newPdfs].slice(0, 5));
+    }
+  };
+
+  // Handle Step 3 — Business Setup
+  const handleSaveBusinessSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setActionLoading(true);
+      setErrorMsg(null);
+      await onboardingApi.saveStep({
+        step: 3,
+        data: {
+          businessName,
+          industry,
+          ownerMobile,
+          agentName,
+          voice,
+          pdfs: uploadedPdfs
+        }
+      });
+      setStep(4);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to save business setup.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle Step 4 — Payment & Checkout
+  const handleTriggerPayment = async () => {
+    try {
+      setActionLoading(true);
+      setErrorMsg(null);
+      
+      // Starter is a trial for testing/instant checkout setup simulation
+      if (selectedPlan === "starter") {
+        await onboardingApi.completeTrial();
+        // Fetch status to load assigned number
+        const user = await authApi.getProfile();
+        setAssignedNumber(user.phone || "+18005550199");
+        setStep(5);
+      } else {
+        const result = await billingApi.subscribe(selectedPlan, selectedCountry);
+        if (result.checkoutUrl || result.url) {
+          window.location.href = result.checkoutUrl || result.url;
+        } else {
+          throw new Error("Could not redirect to Dodo checkout.");
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Checkout failed. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-center items-center">
-        <div className="w-12 h-12 border-4 border-saffron/25 border-t-saffron rounded-full animate-spin mb-4" />
-        <p className="text-body-sm text-[#5A5A66] font-medium animate-pulse">Initializing your onboarding workspace...</p>
+      <div className="min-h-screen bg-[#FAF9F6] text-[#14141A] flex flex-col justify-center items-center">
+        <Spinner className="w-12 h-12 text-[#FF6B00] animate-spin mb-4" />
+        <p className="text-body-xs font-mono font-bold uppercase tracking-wider text-ink-muted">Initializing Setup Wizard...</p>
       </div>
     );
   }
 
-  if (profileError) {
-    return (
-      <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-center items-center p-6 text-center">
-        <div className="w-16 h-16 bg-red-50 border border-red-200 text-red-500 rounded-full flex items-center justify-center mb-6">
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h2 className="text-heading-sm font-bold mb-2">Session Authentication Error</h2>
-        <p className="text-body-xs text-[#5A5A66] max-w-sm mb-6 leading-relaxed">{profileError}</p>
-        <button
-          type="button"
-          onClick={() => {
-            localStorage.removeItem("bavio_token");
-            window.location.href = "/login";
-          }}
-          className="px-6 py-2.5 bg-saffron hover:bg-saffron-hover text-white rounded-xl text-body-xs font-bold transition-all duration-300"
-        >
-          Sign In Again
-        </button>
-      </div>
-    );
-  }
-
-  // Calculate configuration details for the sticky summary section
-  const activeCountry = country || "US";
-  const countryPricing = PRICING_BY_COUNTRY[activeCountry] || PRICING_BY_COUNTRY.DEFAULT;
-  const overageRate = countryPricing.overageRate;
-  const includedMinutes = selectedPlan === "starter" ? 100 : (selectedPlan === "growth" ? 500 : 1500);
-  const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
+  const countryPricing = PRICING_BY_COUNTRY[selectedCountry] || PRICING_BY_COUNTRY.US;
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-between overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#FAF9F6] text-[#14141A] flex flex-col justify-between overflow-x-hidden">
       {/* Background ambient lighting */}
-      <div className="absolute w-[500px] h-[500px] bg-saffron/5 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
-      <div className="absolute w-[600px] h-[600px] bg-saffron/3 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
-
+      <div className="absolute w-[500px] h-[500px] bg-[#FF6B00]/3 rounded-full blur-[100px] pointer-events-none top-1/4 left-1/10" />
+      
       {/* Header bar */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#E5E0D8] relative z-20">
+      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#EBE6DD]/60 relative z-20">
         <div className="flex items-center gap-3">
-          <Logo className="w-12 h-12 transition-transform duration-300 ease-premium hover:scale-105" color="text-saffron" />
-          <span className="font-display text-2xl font-black tracking-tight text-[#140A02]">Bavio AI</span>
+          <Logo className="w-10 h-10" color="text-saffron" />
+          <span className="font-display text-xl font-black tracking-tight">Bavio AI</span>
         </div>
 
-        {/* Stepper Progress bar */}
-        {step < 3 && (
+        {step < 5 && (
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider hidden sm:inline">
-              Step {step} of 2
+            <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider">
+              Step {step} of 4
             </span>
-            <div className="w-24 sm:w-40 h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
+            <div className="w-24 sm:w-40 h-1 bg-[#E5E0D8] rounded-full overflow-hidden">
               <div
-                className="h-full bg-saffron rounded-full transition-all duration-300"
-                style={{ width: `${(step / 2) * 100}%` }}
+                className="h-full bg-[#FF6B00] rounded-full transition-all duration-500"
+                style={{ width: `${(step / 4) * 100}%` }}
               />
             </div>
           </div>
         )}
       </header>
 
-      {/* Main Content Area */}
-      <main className={`flex-grow flex items-center justify-center p-6 relative z-10 my-4 ${step === 1 ? "pb-24" : ""}`}>
-        {step === 1 && (
-          <div className="w-full max-w-5xl text-center py-6">
-            <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
-              Simple, regional SaaS pricing
-            </h1>
-            <p className="text-body-md text-darkTextMuted max-w-lg mx-auto mb-10">
-              Answer customer phone calls instantly. Choose a subscription package adapted to your workspace.
-            </p>
-            
-
-
-            {/* Pricing Selector Grid */}
-            <PricingSelector 
-              selectedPlan={selectedPlan} 
-              onSelectPlan={handleSelectPlan}
-              billingCycle={billingCycle}
-              setBillingCycle={setBillingCycle}
-            />
-
-            {/* Error messaging inside the selector view */}
-            {actionError && (
-              <div className="max-w-md mx-auto mt-8 p-4 bg-red-950/20 border border-red-900/50 rounded-xl text-body-xs text-red-400 font-semibold animate-fade-in">
-                {actionError}
-              </div>
-            )}
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="w-full max-w-2xl py-4">
-            <PhoneSetup onComplete={handlePhoneComplete} userId={userId} />
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="w-full max-w-lg bg-white border border-[#E5E0D8] rounded-[24px] p-8 md:p-10 shadow-premium animate-fade-in text-center">
-            {/* Success icon */}
-            <div className="w-16 h-16 bg-saffron/10 border border-saffron/20 text-saffron rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+      {/* Main Wizard */}
+      <main className="flex-grow flex items-center justify-center p-6 relative z-10 my-4">
+        <div className="w-full max-w-xl bg-white border border-[#E5E0D8] rounded-[24px] p-8 md:p-10 shadow-premium">
+          
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 font-bold text-body-xs flex items-center gap-2 mb-6 text-left">
+              <WarningCircle className="w-5 h-5 shrink-0" />
+              <span>{errorMsg}</span>
             </div>
+          )}
 
-            <h2 className="text-heading-sm font-bold text-[#140A02] mb-3">AI Call Receptionist Activated!</h2>
-            <p className="text-body-xs text-[#5A5A66] mb-8 leading-relaxed">
-              Congratulations! Your virtual routing line is configured, and call forwarding is active. Your Bavio voice assistant is officially online to handle calls.
-            </p>
+          {/* STEP 1 — Country */}
+          {step === 1 && (
+            <div className="text-center animate-fade-in">
+              <h1 className="font-display text-2xl font-bold tracking-tight mb-3">Where is your business based?</h1>
+              <p className="text-body-xs text-[#5A5A66] mb-8">We will adjust pricing plans and phone routing pools based on your region.</p>
 
-            <div className="p-5 rounded-2xl bg-[#FAF9F6] border border-[#E5E0D8] text-left mb-8 space-y-3">
-              <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-[#8A8A96]">Active Plan:</span>
-                <span className="font-bold text-[#140A02] capitalize">{selectedPlan}</span>
+              <div className="flex flex-col gap-3 mb-8">
+                {COUNTRY_OPTIONS.map((c) => {
+                  const isSelected = selectedCountry === c.code;
+                  return (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => setSelectedCountry(c.code)}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
+                        isSelected 
+                          ? "border-[#FF6B00] bg-[#FF6B00]/5 ring-2 ring-[#FF6B00]/10" 
+                          : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{c.flag}</span>
+                        <span className="text-body-xs font-bold text-[#14141A]">{c.label}</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase text-[#8A8A96]">{c.currency}</span>
+                    </button>
+                  );
+                })}
               </div>
-              {assignedNumber && (
-                <div className="flex justify-between text-body-xs">
-                  <span className="font-semibold text-[#8A8A96]">Virtual Phone Number:</span>
-                  <span className="font-bold text-[#140A02] font-mono">{assignedNumber}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-[#8A8A96]">Workspace Owner:</span>
-                <span className="font-bold text-[#140A02]">{userEmail}</span>
-              </div>
-              <div className="flex justify-between text-body-xs">
-                <span className="font-semibold text-[#8A8A96]">Billing Country:</span>
-                <span className="font-bold text-[#140A02]">{country || "US"}</span>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                // Set onboarding completed cookie and route to dashboard
-                document.cookie = "bavio_onboarding_completed=true; path=/";
-                router.push("/workspace");
-              }}
-              className="w-full bg-saffron hover:bg-saffron-hover text-white py-4 rounded-button text-body-xs font-bold transition-all duration-300 shadow-sm"
-            >
-              Go to Workspace Dashboard
-            </button>
-          </div>
-        )}
-      </main>
-
-      {/* Sticky Bottom Plan Summary Section */}
-      {step === 1 && (
-        <div className="sticky bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] py-4.5 px-6 shadow-[0_-8px_32px_rgba(20,10,2,0.05)] z-30 transition-all duration-300">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            {/* Metadata info */}
-            <div className="flex flex-wrap items-center justify-start gap-y-3 gap-x-6 text-left">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Selected Plan</span>
-                <span className="text-body-xs font-black text-[#140A02] capitalize">{selectedPlan}</span>
-              </div>
-              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Billing Cycle</span>
-                <span className="text-body-xs font-black text-[#140A02] capitalize">{billingCycle} Billing</span>
-              </div>
-              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Included Minutes</span>
-                <span className="text-body-xs font-black text-[#140A02]">{includedMinutes} mins</span>
-              </div>
-              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Overage Rate</span>
-                <span className="text-body-xs font-black text-[#140A02]">{overageRate}</span>
-              </div>
-              <div className="h-8 w-px bg-[#E5E0D8]/60 hidden md:block" />
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8A96] tracking-wider block mb-0.5">Trial Status</span>
-                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
-                  selectedPlan === "starter"
-                    ? "bg-saffron/15 text-saffron"
-                    : "bg-[#FAF9F6] text-[#140A02] border border-[#E5E0D8]"
-                }`}>
-                  {trialStatus}
-                </span>
-              </div>
-            </div>
-
-            {/* Primary Action Button */}
-            <div className="shrink-0 flex items-center">
               <button
                 type="button"
-                onClick={handleContinueSetup}
+                onClick={handleSaveCountry}
                 disabled={actionLoading}
-                className="w-full md:w-auto min-w-[200px] h-12 bg-saffron hover:bg-saffron-hover disabled:bg-[#FAF9F6]/45 text-white disabled:text-[#8A8A96] rounded-xl text-body-xs font-bold transition-all duration-300 shadow-sm disabled:shadow-none inline-flex items-center justify-center gap-2"
+                className="w-full bg-[#14141A] hover:bg-[#2A2A35] text-white py-3.5 rounded-xl text-body-xs font-bold transition-all flex items-center justify-center gap-2"
               >
-                {actionLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-[#8A8A96]/25 border-t-[#8A8A96] rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Continue Setup
-                    <svg className="w-4 h-4 translate-y-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </>
-                )}
+                <span>Continue</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Screen action loading overlay */}
-      {actionLoading && (
-        <div className="fixed inset-0 bg-[#FFFDF8]/80 backdrop-blur-xs flex flex-col justify-center items-center z-50 animate-fade-in">
-          <div className="w-12 h-12 border-4 border-saffron/25 border-t-saffron rounded-full animate-spin mb-4" />
-          <p className="text-body-sm text-saffron font-bold">Creating your secure workspace redirect...</p>
+          {/* STEP 2 — Subscription Plan */}
+          {step === 2 && (
+            <div className="text-center animate-fade-in">
+              <h1 className="font-display text-2xl font-bold tracking-tight mb-3">Select your subscription plan</h1>
+              <p className="text-body-xs text-[#5A5A66] mb-8">Choose the plan matching your monthly talk-time requirements.</p>
+
+              <div className="flex flex-col gap-3 mb-8">
+                {[
+                  { id: "starter", name: "Starter", price: countryPricing.starter },
+                  { id: "growth", name: "Growth", price: countryPricing.growth },
+                  { id: "scale", name: "Scale", price: countryPricing.scale }
+                ].map((p) => {
+                  const isSelected = selectedPlan === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPlan(p.id)}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
+                        isSelected 
+                          ? "border-[#FF6B00] bg-[#FF6B00]/5 ring-2 ring-[#FF6B00]/10" 
+                          : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50"
+                      }`}
+                    >
+                      <div>
+                        <span className="text-body-xs font-bold text-[#14141A] block">{p.name} Plan</span>
+                        <span className="text-[10px] text-[#8A8A96] mt-0.5 block">Standard monthly limits</span>
+                      </div>
+                      <span className="text-body-xs font-bold font-mono text-[#FF6B00]">{p.price}/mo</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="w-1/3 bg-white border border-[#E5E0D8] text-ink-secondary py-3.5 rounded-xl text-body-xs font-bold transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePlan}
+                  disabled={actionLoading}
+                  className="w-2/3 bg-[#14141A] hover:bg-[#2A2A35] text-white py-3.5 rounded-xl text-body-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 — Business Setup */}
+          {step === 3 && (
+            <form onSubmit={handleSaveBusinessSetup} className="text-left animate-fade-in">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-center mb-3">Business & Receptionist Setup</h1>
+              <p className="text-body-xs text-[#5A5A66] text-center mb-8">Customize your virtual assistant details.</p>
+
+              <div className="flex flex-col gap-4 mb-8">
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">Business Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="e.g. Sunstar Real Estate"
+                    className="w-full bg-[#FAF9F6] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">Industry</label>
+                    <select
+                      value={industry}
+                      onChange={(e) => setIndustry(e.target.value)}
+                      className="w-full bg-[#FAF9F6] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs outline-none transition-colors"
+                    >
+                      <option value="restaurant">Restaurant</option>
+                      <option value="clinic">Clinic</option>
+                      <option value="real-estate">Real Estate</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">AI Agent Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={agentName}
+                      onChange={(e) => setAgentName(e.target.value)}
+                      placeholder="e.g. Sarah"
+                      className="w-full bg-[#FAF9F6] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">Owner Mobile Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={ownerMobile}
+                    onChange={(e) => setOwnerMobile(e.target.value)}
+                    placeholder="e.g. +1 (512) 555-0199"
+                    className="w-full bg-[#FAF9F6] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">Voice Accent</label>
+                    <select
+                      value={voice}
+                      onChange={(e) => setVoice(e.target.value)}
+                      className="w-full bg-[#FAF9F6] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs outline-none transition-colors"
+                    >
+                      <option value="meera">Female (Meera)</option>
+                      <option value="rohan">Male (Rohan)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#8A8A96] block mb-1">Knowledge base PDF</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        multiple
+                        accept="application/pdf"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        disabled={uploadedPdfs.length >= 5}
+                      />
+                      <div className="w-full bg-[#FAF9F6] border border-[#E5E0D8] hover:border-[#FF6B00] rounded-xl py-2.5 px-3 text-body-xs flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                        <Upload className="w-4 h-4 text-saffron" />
+                        <span>Upload ({uploadedPdfs.length}/5)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {uploadedPdfs.length > 0 && (
+                  <div className="mt-1 space-y-1">
+                    {uploadedPdfs.map((pdf, idx) => (
+                      <span key={idx} className="block text-[10px] font-mono text-ink-muted truncate">
+                        ✓ {pdf.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-1/3 bg-white border border-[#E5E0D8] text-ink-secondary py-3.5 rounded-xl text-body-xs font-bold transition-all text-center"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="w-2/3 bg-[#14141A] hover:bg-[#2A2A35] text-white py-3.5 rounded-xl text-body-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 4 — Payment */}
+          {step === 4 && (
+            <div className="text-center animate-fade-in">
+              <ShieldCheck className="w-16 h-16 text-saffron mx-auto mb-6" />
+              <h1 className="font-display text-2xl font-bold tracking-tight mb-3">Secure Workspace Billing</h1>
+              <p className="text-body-xs text-[#5A5A66] mb-8">
+                Setup your monthly subscription using our secure checkout portal.
+              </p>
+
+              <div className="bg-[#FAF9F6] border border-[#E5E0D8] p-5 rounded-2xl text-left mb-8 space-y-3">
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Selected Tier:</span>
+                  <span className="font-bold text-[#14141A] capitalize">{selectedPlan}</span>
+                </div>
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Monthly Price:</span>
+                  <span className="font-bold text-[#14141A]">{countryPricing[selectedPlan]}/month</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="w-1/3 bg-white border border-[#E5E0D8] text-ink-secondary py-3.5 rounded-xl text-body-xs font-bold transition-all"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTriggerPayment}
+                  disabled={actionLoading}
+                  className="w-2/3 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white py-3.5 rounded-xl text-body-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  {actionLoading ? <Spinner className="w-4 h-4 animate-spin" /> : null}
+                  <span>Pay & Activate</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5 — Success */}
+          {step === 5 && (
+            <div className="text-center animate-fade-in">
+              <div className="w-16 h-16 bg-green-50 border border-green-200 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-8 h-8" weight="fill" />
+              </div>
+
+              <h2 className="text-heading-sm font-bold text-[#14141A] mb-3">AI Receptionist Live!</h2>
+              <p className="text-body-xs text-[#5A5A66] mb-8 leading-relaxed">
+                Your dedicated business line is configured and your assistant is officially online to handle calls.
+              </p>
+
+              <div className="p-5 rounded-2xl bg-[#FAF9F6] border border-[#E5E0D8] text-left mb-8 space-y-3">
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Assistant Name:</span>
+                  <span className="font-bold text-[#14141A]">{agentName}</span>
+                </div>
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Dedicated Number:</span>
+                  <span className="font-bold text-[#14141A] font-mono">{assignedNumber}</span>
+                </div>
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Owner Mobile Number:</span>
+                  <span className="font-bold text-[#14141A] font-mono">{ownerMobile}</span>
+                </div>
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Subscription Plan:</span>
+                  <span className="font-bold text-[#14141A] capitalize">{selectedPlan}</span>
+                </div>
+                <div className="flex justify-between text-body-xs">
+                  <span className="font-semibold text-[#8A8A96]">Status:</span>
+                  <span className="text-state-success font-bold">Active</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  document.cookie = "bavio_onboarding_completed=true; path=/";
+                  router.push("/workspace");
+                }}
+                className="w-full bg-[#14141A] hover:bg-[#2A2A35] text-white py-4 rounded-xl text-body-xs font-bold transition-all shadow-sm"
+              >
+                Go to Workspace Dashboard
+              </button>
+            </div>
+          )}
+
         </div>
-      )}
+      </main>
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#E5E0D8] flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20 mt-10">
+      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#EBE6DD]/60 flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20">
         <span>© 2026 Bavio AI Inc. All rights reserved.</span>
       </footer>
     </div>
-  );
-}
-
-export default function OnboardingPage() {
-  return (
-    <CountryProvider>
-      <OnboardingContent />
-    </CountryProvider>
   );
 }
