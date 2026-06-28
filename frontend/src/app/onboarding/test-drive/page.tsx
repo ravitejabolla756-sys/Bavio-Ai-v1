@@ -252,10 +252,10 @@ export default function OnboardingTestDrivePage() {
 
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D1A] flex items-center justify-center font-sans text-white">
+      <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center font-sans text-[#140A02]">
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin mx-auto" />
-          <p className="text-body-xs text-[#B4A8D4] font-semibold">Configuring testing environment...</p>
+          <p className="text-body-xs text-[#5A5A66] font-semibold">Configuring testing environment...</p>
         </div>
       </div>
     );
@@ -264,23 +264,23 @@ export default function OnboardingTestDrivePage() {
   const twilioNumber = profile?.twilio_number || "+919876543210";
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0D0D1A] text-[#F9F6FF] font-sans flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col items-center justify-center p-4 md:p-8">
       
       {/* Background glow filters */}
       <div className="absolute w-[400px] h-[400px] bg-[#FF6B00]/5 rounded-full blur-[100px] pointer-events-none top-1/10 left-1/4" />
-      <div className="absolute w-[550px] h-[550px] bg-[#2D2560]/10 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
+      <div className="absolute w-[550px] h-[550px] bg-[#FF6B00]/3 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
 
       {/* Progress Bar (Step 3 of 6) */}
       <div className="w-full max-w-[700px] mb-8 relative z-20">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[11px] uppercase tracking-wider text-[#B4A8D4] font-bold">
+          <span className="text-[11px] uppercase tracking-wider text-[#8A8A96] font-bold">
             Step 3 of 6: Test Your AI
           </span>
           <span className="text-[11px] uppercase tracking-wider text-[#FF6B00] font-black">
             50% COMPLETE
           </span>
         </div>
-        <div className="w-full h-1 bg-[#2D2560] rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#FF6B00] transition-all duration-500 ease-out" 
             style={{ width: "50%" }}
@@ -289,44 +289,44 @@ export default function OnboardingTestDrivePage() {
       </div>
 
       {/* Main card */}
-      <div className="w-full max-w-[700px] bg-[#12102B] border border-[#2D2560] rounded-[24px] p-6 md:p-10 shadow-2xl relative z-20">
+      <div className="w-full max-w-[700px] bg-white border border-[#E5E0D8] rounded-[24px] p-6 md:p-10 shadow-premium relative z-20">
         
         {/* Logo block */}
         <div className="flex items-center gap-2 mb-6">
-          <Logo className="w-7 h-7" />
-          <span className="font-display text-md font-black tracking-tight text-[#F9F6FF]">
+          <Logo className="w-7 h-7" color="text-[#FF6B00]" />
+          <span className="font-display text-md font-black tracking-tight text-[#140A02]">
             Bavio AI
           </span>
         </div>
 
         <h1 
-          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#F9F6FF", marginBottom: "12px" }}
+          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#140A02", marginBottom: "12px" }}
           className="tracking-tight leading-tight"
         >
           Test Your AI
         </h1>
 
         <p 
-          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#B4A8D4", lineHeight: 1.6, marginBottom: "32px" }}
+          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "32px" }}
         >
           Call this number &amp; talk to your AI receptionist
         </p>
 
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/50 text-red-400 font-semibold text-xs">
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-500 font-semibold text-xs">
             {errorMsg}
           </div>
         )}
 
         {/* SECTION 1: YOUR TEST CALL NUMBER */}
         <div className="mb-8">
-          <div className="p-8 rounded-2xl border-2 border-[#FF6B00] bg-[#12102B] flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(255,107,0,0.15)] relative overflow-hidden">
+          <div className="p-8 rounded-2xl border-2 border-[#FF6B00] bg-white flex flex-col items-center justify-center text-center shadow-premium relative overflow-hidden">
             
             <div className="absolute top-0 right-0 bg-[#FF6B00]/10 text-[#FF6B00] px-3.5 py-1 text-[9px] uppercase tracking-widest font-black rounded-bl-xl border-l border-b border-[#FF6B00]/30 select-none">
               TEST LINE
             </div>
 
-            <span className="text-xs uppercase font-bold text-[#B4A8D4] tracking-widest mb-3 block">
+            <span className="text-xs uppercase font-bold text-[#8A8A96] tracking-widest mb-3 block">
               Call From Your Phone
             </span>
 
@@ -355,7 +355,7 @@ export default function OnboardingTestDrivePage() {
             </div>
 
             {/* Instruction Steps */}
-            <div className="mt-8 text-left w-full border-t border-[#2D2560]/40 pt-6 space-y-2.5 text-xs text-[#B4A8D4]">
+            <div className="mt-8 text-left w-full border-t border-[#E5E0D8] pt-6 space-y-2.5 text-xs text-[#5A5A66]">
               <div className="flex gap-2">
                 <span className="text-[#FF6B00] font-black">1.</span>
                 <span>Call the number from your mobile device.</span>
@@ -375,18 +375,18 @@ export default function OnboardingTestDrivePage() {
 
         {/* SECTION 2: CALL STATUS INDICATOR */}
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#F9F6FF] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+          <label className="block text-sm font-semibold text-[#140A02] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
             Call Status
           </label>
 
           {/* STATE 1: WAITING */}
           {callState === "waiting" && (
-            <div className="p-8 rounded-xl border border-[#2D2560] bg-[#12102B] flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 rounded-full bg-[#2D2560]/50 flex items-center justify-center text-[#B4A8D4] mb-3 animate-pulse">
+            <div className="p-8 rounded-xl border border-[#E5E0D8] bg-[#FAF9F6] flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-full bg-[#E5E0D8]/50 flex items-center justify-center text-[#5A5A66] mb-3 animate-pulse">
                 <Phone className="w-6 h-6" />
               </div>
-              <span className="text-sm font-bold text-[#F9F6FF]">Ready to test</span>
-              <p className="text-xs text-[#B4A8D4] mt-1.5 leading-relaxed max-w-xs">
+              <span className="text-sm font-bold text-[#140A02]">Ready to test</span>
+              <p className="text-xs text-[#5A5A66] mt-1.5 leading-relaxed max-w-xs">
                 Call your number from your phone and talk to your AI receptionist.
               </p>
             </div>
@@ -394,14 +394,14 @@ export default function OnboardingTestDrivePage() {
 
           {/* STATE 2: RINGING */}
           {callState === "ringing" && (
-            <div className="p-8 rounded-xl border border-[#FF6B00]/40 bg-[#1A1640] flex flex-col items-center justify-center text-center">
+            <div className="p-8 rounded-xl border border-[#FF6B00]/40 bg-[#FFF8F0] flex flex-col items-center justify-center text-center">
               <div className="w-12 h-12 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00] mb-3 animate-bounce">
                 <Phone className="w-6 h-6 animate-pulse" weight="fill" />
               </div>
               <span className="text-sm font-black text-[#FF6B00] animate-pulse">
                 🔴 Live Call in Progress (Ringing)
               </span>
-              <p className="text-xs text-[#B4A8D4] mt-1.5">
+              <p className="text-xs text-[#5A5A66] mt-1.5">
                 Connecting... Please pick up if not already on the call.
               </p>
             </div>
@@ -429,7 +429,7 @@ export default function OnboardingTestDrivePage() {
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
                 🟢 Call Connected
               </span>
-              <span className="text-xs text-[#B4A8D4] mt-1.5 font-mono">
+              <span className="text-xs text-[#5A5A66] mt-1.5 font-mono">
                 Duration: {formatTime(durationSeconds)}
               </span>
             </div>
@@ -444,7 +444,7 @@ export default function OnboardingTestDrivePage() {
               <span className="text-sm font-black text-[#10B981]">
                 ✓ Call Completed
               </span>
-              <div className="flex gap-4 mt-2 text-xs text-[#B4A8D4] font-mono">
+              <div className="flex gap-4 mt-2 text-xs text-[#5A5A66] font-mono">
                 <span>Duration: {formatTime(durationSeconds)}</span>
                 <span>•</span>
                 <span>Sentiment: Positive ✓</span>
@@ -460,26 +460,26 @@ export default function OnboardingTestDrivePage() {
         {/* SECTION 3: LIVE TRANSCRIPT (Connected or ended states) */}
         {(callState === "connected" || callState === "ended" || transcript.length > 0) && (
           <div className="mb-8">
-            <label className="block text-sm font-semibold text-[#F9F6FF] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+            <label className="block text-sm font-semibold text-[#140A02] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
               📝 Transcript
             </label>
 
-            <div className="p-4 rounded-xl border border-[#2D2560] bg-[#12102B] max-h-[260px] overflow-y-auto space-y-4 scrollbar-thin">
+            <div className="p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF9F6] max-h-[260px] overflow-y-auto space-y-4 scrollbar-thin">
               {transcript.length === 0 ? (
-                <div className="py-6 text-center text-xs text-[#B4A8D4] italic animate-pulse">
+                <div className="py-6 text-center text-xs text-[#5A5A66] italic animate-pulse">
                   Waiting for speak events...
                 </div>
               ) : (
                 transcript.map((seg, idx) => (
                   <div key={idx} className="flex gap-2.5 items-start text-xs">
-                    <span className="text-[#7A6E5F] font-mono shrink-0 select-none pt-0.5">
+                    <span className="text-[#8A8A96] font-mono shrink-0 select-none pt-0.5">
                       [{seg.timestamp}]
                     </span>
                     <div className="leading-relaxed">
-                      <span className={`font-bold mr-1.5 ${seg.speaker === "AI" ? "text-[#10B981]" : "text-[#B4A8D4]"}`}>
+                      <span className={`font-bold mr-1.5 ${seg.speaker === "AI" ? "text-[#10B981]" : "text-[#5A5A66]"}`}>
                         {seg.speaker}:
                       </span>
-                      <span className={seg.speaker === "AI" ? "text-[#F9F6FF]" : "text-[#B4A8D4]"}>
+                      <span className={seg.speaker === "AI" ? "text-[#140A02]" : "text-[#5A5A66]"}>
                         {seg.text}
                       </span>
                     </div>
@@ -493,9 +493,9 @@ export default function OnboardingTestDrivePage() {
 
         {/* SECTION 4: AFTER CALL ENDS - LEAD EXTRACTION DETAILS */}
         {callState === "ended" && (
-          <div className="mb-8 p-5 rounded-2xl bg-[#12102B] border border-[#2D2560] space-y-4">
-            <div className="flex justify-between items-center border-b border-[#2D2560] pb-3">
-              <span className="text-sm font-bold text-[#F9F6FF] flex items-center gap-2">
+          <div className="mb-8 p-5 rounded-2xl bg-white border border-[#E5E0D8] space-y-4">
+            <div className="flex justify-between items-center border-b border-[#E5E0D8] pb-3">
+              <span className="text-sm font-bold text-[#140A02] flex items-center gap-2">
                 <User className="w-4 h-4 text-[#FF6B00]" weight="fill" />
                 <span>Lead Captured Details</span>
               </span>
@@ -504,21 +504,21 @@ export default function OnboardingTestDrivePage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-y-3.5 text-xs text-[#B4A8D4]">
+            <div className="grid grid-cols-2 gap-y-3.5 text-xs text-[#5A5A66]">
               <div>
-                <span className="block font-bold text-white">Name</span>
+                <span className="block font-bold text-[#140A02]">Name</span>
                 <span className="block mt-0.5">{lead?.name || "Rajesh Kumar"}</span>
               </div>
               <div>
-                <span className="block font-bold text-white">Phone</span>
+                <span className="block font-bold text-[#140A02]">Phone</span>
                 <span className="block mt-0.5">{lead?.phone || "+919876543210"}</span>
               </div>
               <div>
-                <span className="block font-bold text-white">Intent</span>
+                <span className="block font-bold text-[#140A02]">Intent</span>
                 <span className="block mt-0.5">{lead?.intent || "Property viewing / site visit"}</span>
               </div>
               <div>
-                <span className="block font-bold text-white">Budget</span>
+                <span className="block font-bold text-[#140A02]">Budget</span>
                 <span className="block mt-0.5">{lead?.budget || "₹50 lakhs"}</span>
               </div>
             </div>
@@ -527,12 +527,12 @@ export default function OnboardingTestDrivePage() {
 
         {/* SECTION 5: DEMO VIDEO FALLBACK */}
         {showVideoFallback && callState === "waiting" && (
-          <div className="mb-8 p-6 rounded-2xl bg-[#12102B]/80 border border-[#2D2560] space-y-4">
-            <p className="text-xs text-[#B4A8D4] leading-relaxed">
+          <div className="mb-8 p-6 rounded-2xl bg-[#FAF9F6] border border-[#E5E0D8] space-y-4">
+            <p className="text-xs text-[#5A5A66] leading-relaxed">
               Didn&apos;t want to make a phone call? Watch this 30-second demo video of a real call in action:
             </p>
             
-            <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-[#2D2560] relative flex items-center justify-center">
+            <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-[#E5E0D8] relative flex items-center justify-center">
               {!videoPlayed ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                   <button
@@ -544,7 +544,7 @@ export default function OnboardingTestDrivePage() {
                   >
                     <Play className="w-6 h-6 ml-0.5" weight="fill" />
                   </button>
-                  <span className="text-[10px] text-[#B4A8D4] font-bold">PLAY 30-SEC DEMO VIDEO</span>
+                  <span className="text-[10px] text-[#5A5A66] font-bold">PLAY 30-SEC DEMO VIDEO</span>
                 </div>
               ) : (
                 <video
@@ -566,7 +566,7 @@ export default function OnboardingTestDrivePage() {
         <button
           onClick={handleContinue}
           disabled={callState !== "ended"}
-          className="w-full h-12 mt-4 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 select-none cursor-pointer"
+          className="w-full h-12 mt-4 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 select-none cursor-pointer"
           style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
           title={callState !== "ended" ? "Complete a test call first" : undefined}
         >
@@ -575,12 +575,12 @@ export default function OnboardingTestDrivePage() {
 
         {/* Navigation below CTA */}
         <div 
-          className="mt-6 flex justify-between items-center text-xs font-bold text-[#B4A8D4]"
+          className="mt-6 flex justify-between items-center text-xs font-bold text-[#8A8A96]"
           style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
         >
           <button
             onClick={() => router.push("/onboarding/ai-setup")}
-            className="hover:text-white flex items-center gap-1.5 transition-colors"
+            className="hover:text-[#140A02] flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
@@ -588,7 +588,7 @@ export default function OnboardingTestDrivePage() {
           
           <button
             onClick={handleSkip}
-            className="hover:text-white transition-colors"
+            className="hover:text-[#140A02] transition-colors"
           >
             Skip for now
           </button>

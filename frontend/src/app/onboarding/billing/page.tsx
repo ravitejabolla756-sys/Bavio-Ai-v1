@@ -199,10 +199,10 @@ export default function OnboardingBillingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D1A] flex items-center justify-center font-sans text-white">
+      <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center font-sans text-[#140A02]">
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin mx-auto" />
-          <p className="text-body-xs text-[#B4A8D4] font-semibold">Configuring secure checkout portal...</p>
+          <p className="text-body-xs text-[#5A5A66] font-semibold">Configuring secure checkout portal...</p>
         </div>
       </div>
     );
@@ -211,23 +211,23 @@ export default function OnboardingBillingPage() {
   const plans = pricing?.plans || [];
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0D0D1A] text-[#F9F6FF] font-sans flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col items-center justify-center p-4 md:p-8">
       
       {/* Background glow filters */}
       <div className="absolute w-[400px] h-[400px] bg-[#FF6B00]/5 rounded-full blur-[100px] pointer-events-none top-1/10 left-1/4" />
-      <div className="absolute w-[600px] h-[600px] bg-[#2D2560]/10 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
+      <div className="absolute w-[600px] h-[600px] bg-[#FF6B00]/3 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
 
       {/* Progress Bar (Step 6 of 6) */}
       <div className="w-full max-w-[800px] mb-8 relative z-20">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[11px] uppercase tracking-wider text-[#B4A8D4] font-bold">
+          <span className="text-[11px] uppercase tracking-wider text-[#8A8A96] font-bold">
             Step 6 of 6: Choose Your Plan
           </span>
           <span className="text-[11px] uppercase tracking-wider text-[#FF6B00] font-black">
             100% COMPLETE
           </span>
         </div>
-        <div className="w-full h-1 bg-[#2D2560] rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#FF6B00] transition-all duration-500 ease-out" 
             style={{ width: "100%" }}
@@ -236,40 +236,40 @@ export default function OnboardingBillingPage() {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-[800px] bg-[#12102B] border border-[#2D2560] rounded-[24px] p-6 md:p-10 shadow-2xl relative z-20">
+      <div className="w-full max-w-[800px] bg-white border border-[#E5E0D8] rounded-[24px] p-6 md:p-10 shadow-premium relative z-20">
         
         {/* Logo block */}
         <div className="flex items-center gap-2 mb-6">
-          <Logo className="w-7 h-7" />
-          <span className="font-display text-md font-black tracking-tight text-[#F9F6FF]">
+          <Logo className="w-7 h-7" color="text-[#FF6B00]" />
+          <span className="font-display text-md font-black tracking-tight text-[#140A02]">
             Bavio AI
           </span>
         </div>
 
         <h1 
-          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#F9F6FF", marginBottom: "8px" }}
+          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#140A02", marginBottom: "8px" }}
           className="tracking-tight leading-tight text-center sm:text-left"
         >
           Your Trial Ends in 14 Days
         </h1>
 
         <p 
-          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#B4A8D4", lineHeight: 1.6, marginBottom: "32px" }}
+          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "32px" }}
           className="text-center sm:text-left"
         >
           Choose a plan to continue using Bavio after your trial.
         </p>
 
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/50 text-red-400 font-semibold text-xs">
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-500 font-semibold text-xs">
             {errorMsg}
           </div>
         )}
 
         {/* TRIAL USAGE SUMMARY */}
         {trial && (
-          <div className="mb-8 p-5 rounded-xl bg-[#12102B] border border-[#2D2560] space-y-2 text-xs text-[#B4A8D4] leading-relaxed">
-            <span className="block font-bold text-white uppercase tracking-wider text-[10px] mb-1">
+          <div className="mb-8 p-5 rounded-xl bg-[#FAF9F6] border border-[#E5E0D8] space-y-2 text-xs text-[#5A5A66] leading-relaxed">
+            <span className="block font-bold text-[#140A02] uppercase tracking-wider text-[10px] mb-1">
               You&apos;ve tested Bavio with:
             </span>
             <div className="space-y-1 pl-2.5 font-bold">
@@ -285,13 +285,13 @@ export default function OnboardingBillingPage() {
 
         {/* BILLING PERIOD SELECTOR */}
         <div className="flex justify-center mb-8">
-          <div className="bg-[#12102B] border border-[#2D2560] rounded-xl p-1 flex gap-1 select-none">
+          <div className="bg-[#FAF9F6] border border-[#E5E0D8] rounded-xl p-1 flex gap-1 select-none">
             <button
               onClick={() => handlePeriodToggle("monthly")}
               className={`py-2 px-5 rounded-lg text-xs font-bold transition-all ${
                 billingPeriod === "monthly"
-                  ? "bg-[#1A1640] border border-[#FF6B00] text-white shadow-[0_0_10px_rgba(255,107,0,0.1)]"
-                  : "bg-transparent text-[#B4A8D4] border border-transparent hover:text-white"
+                  ? "bg-[#FFF8F0] border border-[#FF6B00] text-[#140A02] shadow-sm"
+                  : "bg-transparent text-[#5A5A66] border border-transparent hover:text-[#140A02]"
               }`}
             >
               Monthly
@@ -301,8 +301,8 @@ export default function OnboardingBillingPage() {
               onClick={() => handlePeriodToggle("yearly")}
               className={`py-2 px-5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 billingPeriod === "yearly"
-                  ? "bg-[#1A1640] border border-[#FF6B00] text-white shadow-[0_0_10px_rgba(255,107,0,0.1)]"
-                  : "bg-transparent text-[#B4A8D4] border border-transparent hover:text-white"
+                  ? "bg-[#FFF8F0] border border-[#FF6B00] text-[#140A02] shadow-sm"
+                  : "bg-transparent text-[#5A5A66] border border-transparent hover:text-[#140A02]"
               }`}
             >
               <span>Yearly</span>
@@ -331,10 +331,10 @@ export default function OnboardingBillingPage() {
                 onClick={() => handlePlanSelect(plan.id)}
                 className={`relative flex flex-col justify-between p-6 md:p-8 rounded-2xl border transition-all duration-200 cursor-pointer select-none ${
                   isGrowth 
-                    ? "md:w-[35%] bg-[#1A1640] border-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.1)] md:-translate-y-2" 
-                    : "md:w-[32%] bg-[#12102B] border-[#2D2560] hover:border-[#FF6B00]/70"
+                    ? "md:w-[35%] bg-[#FFF8F0] border-[#FF6B00] shadow-sm md:-translate-y-2" 
+                    : "md:w-[32%] bg-white border border-[#E5E0D8] hover:border-[#FF6B00]/70"
                 } ${
-                  isSelected && !isGrowth ? "border-[#FF6B00] shadow-[0_0_15px_rgba(255,107,0,0.08)]" : ""
+                  isSelected && !isGrowth ? "border-[#FF6B00] shadow-sm" : ""
                 }`}
                 style={{
                   order: isGrowth ? -1 : 0 // Displays popular card first on mobile stack
@@ -350,19 +350,19 @@ export default function OnboardingBillingPage() {
 
                 <div>
                   <span className={`block text-[10px] uppercase font-black tracking-widest ${
-                    isGrowth ? "text-[#FF6B00]" : "text-[#B4A8D4]"
+                    isGrowth ? "text-[#FF6B00]" : "text-[#8A8A96]"
                   }`}>
                     {plan.name}
                   </span>
 
                   <div className="mt-4 flex items-baseline gap-1">
                     <span 
-                      style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: isGrowth ? "40px" : "36px", color: "#F9F6FF" }}
+                      style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: isGrowth ? "40px" : "36px", color: "#140A02" }}
                       className="tracking-tight"
                     >
                       ₹{cardPrice.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-[11px] text-[#B4A8D4]">
+                    <span className="text-[11px] text-[#5A5A66]">
                       /{billingPeriod === "monthly" ? "mo" : "yr"}
                     </span>
                   </div>
@@ -375,11 +375,11 @@ export default function OnboardingBillingPage() {
                   )}
 
                   {/* Features list */}
-                  <div className="mt-6 space-y-2 text-xs text-[#B4A8D4]">
+                  <div className="mt-6 space-y-2 text-xs text-[#5A5A66]">
                     {plan.features.map((feature, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0" weight="bold" />
-                        <span className="text-[#F9F6FF]">{feature}</span>
+                        <span className="text-[#140A02]">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -396,7 +396,7 @@ export default function OnboardingBillingPage() {
                     className={`w-full h-11 rounded-lg text-xs font-bold transition-all ${
                       isGrowth
                         ? "bg-[#FF6B00] hover:bg-[#FF8C3A] text-white"
-                        : "bg-[#12102B] border border-[#2D2560] hover:border-[#FF6B00] text-[#B4A8D4] hover:text-[#FF6B00]"
+                        : "bg-white border border-[#E5E0D8] hover:border-[#FF6B00] text-[#5A5A66] hover:text-[#FF6B00]"
                     } ${
                       isSelected && !isGrowth ? "border-[#FF6B00] text-[#FF6B00]" : ""
                     }`}
@@ -412,9 +412,9 @@ export default function OnboardingBillingPage() {
         </div>
 
         {/* FAQ SECTION (ACCORDION) */}
-        <div className="mb-10 border-t border-[#2D2560]/40 pt-8">
+        <div className="mb-10 border-t border-[#E5E0D8] pt-8">
           <h3 
-            style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "20px", color: "#F9F6FF", marginBottom: "20px" }}
+            style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "20px", color: "#140A02", marginBottom: "20px" }}
             className="tracking-tight"
           >
             Frequently Asked Questions
@@ -447,18 +447,18 @@ export default function OnboardingBillingPage() {
               return (
                 <div
                   key={idx}
-                  className="border border-[#2D2560] rounded-xl overflow-hidden bg-[#12102B]"
+                  className="border border-[#E5E0D8] rounded-xl overflow-hidden bg-white"
                 >
                   <button
                     onClick={() => handleFaqToggle(idx)}
-                    className="w-full flex items-center justify-between p-4 text-xs font-bold text-white hover:text-[#FF6B00] text-left transition-colors"
+                    className="w-full flex items-center justify-between p-4 text-xs font-bold text-[#140A02] hover:text-[#FF6B00] text-left transition-colors"
                   >
                     <span>{faq.q}</span>
                     {isOpen ? <CaretUp className="w-4 h-4" /> : <CaretDown className="w-4 h-4" />}
                   </button>
 
                   {isOpen && (
-                    <div className="p-4 pt-0 text-[11px] text-[#B4A8D4] leading-relaxed border-t border-[#2D2560]/40 bg-[#12102B]/60">
+                    <div className="p-4 pt-0 text-[11px] text-[#5A5A66] leading-relaxed border-t border-[#E5E0D8] bg-[#FAF9F6]/60">
                       {faq.a}
                     </div>
                   )}
@@ -485,7 +485,7 @@ export default function OnboardingBillingPage() {
           <button
             onClick={handleCheckout}
             disabled={isProcessing}
-            className="w-full max-w-[600px] h-12 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 select-none cursor-pointer"
+            className="w-full max-w-[600px] h-12 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 select-none cursor-pointer"
             style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
           >
             {isProcessing ? (
@@ -500,7 +500,7 @@ export default function OnboardingBillingPage() {
 
           <button
             onClick={() => router.push("/dashboard")}
-            className="mt-4 text-xs font-bold text-[#B4A8D4] hover:text-white hover:underline cursor-pointer bg-transparent border-none outline-none"
+            className="mt-4 text-xs font-bold text-[#8A8A96] hover:text-[#140A02] hover:underline cursor-pointer bg-transparent border-none outline-none"
           >
             Go to Trial Dashboard
           </button>

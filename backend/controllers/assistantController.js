@@ -1,5 +1,6 @@
 const assistantService = require('../services/assistantService');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
+const vapiService = require('../services/vapiService');
 
 async function createAssistant(req, res) {
     try {
@@ -151,6 +152,9 @@ async function updateAssistantById(req, res) {
       'UPDATE businesses SET onboarding_step = 5, updated_at = NOW() WHERE id = $1',
       [businessId]
     );
+
+    // Sync changes to Vapi platform
+    await vapiService.syncVapiAssistantAndPhone(businessId);
 
     return res.status(200).json({
       success: true,

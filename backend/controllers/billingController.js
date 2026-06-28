@@ -3,6 +3,7 @@ const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
 const emailService = require('../services/emailService');
 const axios = require('axios');
+const vapiService = require('../services/vapiService');
 
 // Map user-facing subscription plan name to the plan_type enum used in DB
 const DB_PLAN_MAP = {
@@ -778,11 +779,10 @@ async function handleWebhook(req, res) {
 async function autoProvisionBusiness(clientId) {
     try {
         console.log(`[AUTO-PROVISION] Starting for business ${clientId}`);
-        const axios = require('axios');
         
         // 1. Get business details
         const businessResult = await db.query(
-            `SELECT id, name, email, industry, country_code, owner_mobile FROM businesses WHERE id = $1`,
+            `SELECT id, name, email, industry, country_code, owner_mobile, twilio_number, phone_number_id FROM businesses WHERE id = $1`,
             [clientId]
         );
         if (businessResult.rows.length === 0) {
@@ -826,119 +826,50 @@ async function autoProvisionBusiness(clientId) {
             assistant = assistantResult.rows[0];
         }
         
-        // 3. Auto-generate Greeting
-        const greeting = `Hello. This is ${assistant.agent_name || 'Sarah'} from ${business.name || 'Bavio'}. How may I assist you today?`;
-        
-        // 4. Generate system prompt
-        const systemPrompt = onboardingController.buildSystemPrompt({
-            agent_name: assistant.agent_name,
-            greeting: greeting,
-            industry: business.industry,
-            language: 'en-US'
-        });
-        
-        // 5. Create Vapi Assistant via POST API
-        let vapiAssistantId = 'vapi_asst_mock_' + Math.random().toString(36).substring(2, 15);
-        if (process.env.VAPI_API_KEY) {
-            try {
-                const response = await axios.post('https://api.vapi.ai/assistant', {
-                    name: assistant.agent_name,
-                    firstMessage: greeting,
-                    model: {
-                        provider: 'openai',
-                        model: 'gpt-4o',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: systemPrompt
-                            }
-                        ]
-                    },
-                    voice: {
-                        provider: '11labs',
-                        voiceId: assistant.voice || '21m00Tcm4TlvDq8ikWAM'
-                    }
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.VAPI_API_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (response.data && response.data.id) {
-                    vapiAssistantId = response.data.id;
-                    console.log(`[AUTO-PROVISION] Created Vapi assistant: ${vapiAssistantId}`);
-                }
-            } catch (vapiErr) {
-                console.error('[AUTO-PROVISION] Vapi API creation failed, using mock ID:', vapiErr.message);
-            }
-        }
-        
-        // Update assistant record in DB
-        await db.query(
-            `UPDATE assistants SET
-                vapi_assistant_id = $1,
-                greeting = $2,
-                system_prompt = $3,
-                is_active = true,
-                updated_at = NOW()
-             WHERE id = $4`,
-            [vapiAssistantId, greeting, systemPrompt, assistant.id]
-        );
-        
-        // 6. Automated Phone Number Purchase from Twilio and registration on Vapi
-        const twilioProvider = require('../providers/twilio');
-        const countryCode = (business.country_code === 'IN' || !business.country_code) ? 'US' : business.country_code;
-        
-        let assignedNumber = null;
+        // 3. Automated Phone Number Purchase from Twilio (if not already set)
+        let assignedNumber = business.twilio_number || null;
+        let numberId = business.phone_number_id || null;
         let isMock = false;
-        
-        try {
-            console.log(`[AUTO-PROVISION] Attempting to buy local Twilio number for country: ${countryCode}...`);
-            assignedNumber = await twilioProvider.buyNumber(countryCode);
-            console.log(`[AUTO-PROVISION] ✅ Twilio purchase success: ${assignedNumber}`);
-        } catch (buyErr) {
-            console.warn('[AUTO-PROVISION] ⚠️ Twilio purchase failed, using mock fallback:', buyErr.message);
-            assignedNumber = '+1' + Math.floor(2000000000 + Math.random() * 8000000000);
-            isMock = true;
-        }
 
-        // Register the purchased number on Vapi and link it to the Vapi Assistant
-        let vapiPhoneNumberId = null;
-        if (process.env.VAPI_API_KEY && !isMock && !vapiAssistantId.startsWith('vapi_asst_mock_')) {
+        if (!assignedNumber) {
+            const twilioProvider = require('../providers/twilio');
+            const countryCode = (business.country_code === 'IN' || !business.country_code) ? 'US' : business.country_code;
+            
             try {
-                console.log(`[AUTO-PROVISION] Linking number ${assignedNumber} to Vapi assistant: ${vapiAssistantId}...`);
-                const vapiPhoneRes = await axios.post('https://api.vapi.ai/phone-number', {
-                    provider: 'twilio',
-                    number: assignedNumber,
-                    twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
-                    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
-                    name: `${business.name || 'Bavio'} Inbound Line`,
-                    assistantId: vapiAssistantId
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.VAPI_API_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                if (vapiPhoneRes.data && vapiPhoneRes.data.id) {
-                    vapiPhoneNumberId = vapiPhoneRes.data.id;
-                    console.log(`[AUTO-PROVISION] ✅ Registered on Vapi: ${vapiPhoneNumberId}`);
-                }
-            } catch (vapiPhoneErr) {
-                console.error('[AUTO-PROVISION] ❌ Vapi phone link failed:', vapiPhoneErr.message);
+                console.log(`[AUTO-PROVISION] Attempting to buy local Twilio number for country: ${countryCode}...`);
+                assignedNumber = await twilioProvider.buyNumber(countryCode);
+                console.log(`[AUTO-PROVISION] ✅ Twilio purchase success: ${assignedNumber}`);
+            } catch (buyErr) {
+                console.warn('[AUTO-PROVISION] ⚠️ Twilio purchase failed, using mock fallback:', buyErr.message);
+                assignedNumber = '+1' + Math.floor(2000000000 + Math.random() * 8000000000);
+                isMock = true;
             }
+
+            // Store number in phone_numbers table
+            const insertNumRes = await db.query(
+                `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
+                 VALUES ($1, $2, $3, 'twilio', 'active')
+                 RETURNING id`,
+                [clientId, assistant.id, assignedNumber]
+            );
+            numberId = insertNumRes.rows[0].id;
+
+            // Update business record with phone number details
+            await db.query(
+                `UPDATE businesses SET
+                    twilio_number = $1,
+                    phone_number_id = $2
+                 WHERE id = $3`,
+                [assignedNumber, numberId, clientId]
+            );
+        } else {
+            console.log(`[AUTO-PROVISION] Business already has a Twilio number assigned: ${assignedNumber}`);
         }
 
-        // Store number in phone_numbers table
-        const insertNumRes = await db.query(
-            `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
-             VALUES ($1, $2, $3, 'twilio', 'active')
-             RETURNING id`,
-            [clientId, assistant.id, assignedNumber]
-        );
-        const numberId = insertNumRes.rows[0].id;
+        // 4. Create Vapi Assistant and map Twilio phone number on the Vapi platform
+        await vapiService.syncVapiAssistantAndPhone(clientId);
         
-        // 7. Update business state
+        // 5. Update business state
         await db.query(
             `UPDATE businesses SET
                 assistant_id = $1,
