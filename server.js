@@ -63,17 +63,17 @@ const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
-const phoneRoutes = require('./routes/phoneRoutes');
 const exotelRoutes = require('./routes/exotelRoutes');
-const integrationsRoutes = require('./routes/integrations');
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const vapiRoutes = require('./routes/vapi');
+const phoneRoutes = require('./routes/phone');
+const demoRoutes = require('./routes/demo');
+const webhookRoutes = require('./routes/webhook');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
 app.use('/calls/exotel', exotelRoutes);
 app.use('/onboarding', onboardingRoutes);
-app.use('/phone', phoneRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
@@ -83,9 +83,11 @@ app.use('/telephony', telephonyRoutes);
 app.use('/leads', apiLimiter, leadsRoutes);
 app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
-app.use('/integrations', integrationsRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/vapi', vapiRoutes);
+app.use('/phone', phoneRoutes);
+app.use('/demo', demoRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 // ------- Health Check -------
 app.get('/health', (req, res) => {
@@ -128,7 +130,7 @@ app.use((err, req, res, next) => {
 });
 
 // ------- Start Server -------
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Bavio AI Backend running on port ${PORT}`);
 
   // ── Supabase Storage Cleanup Cron ──────────────────────────────────────
@@ -179,6 +181,43 @@ app.listen(PORT, '0.0.0.0', () => {
   checkMonthlyReset();
   
   console.log('[CRON] Monthly minutes reset scheduled (checks hourly, runs on 1st)');
+});
+
+// ------- WebSocket Server Setup -------
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ noServer: true });
+const wsClients = new Map();
+app.set('wsClients', wsClients);
+
+wss.on('connection', (ws, req, businessId) => {
+  console.log(`[WS] Client connected for business ${businessId}`);
+  wsClients.set(businessId, ws);
+
+  ws.on('close', () => {
+    console.log(`[WS] Client disconnected for business ${businessId}`);
+    if (wsClients.get(businessId) === ws) {
+      wsClients.delete(businessId);
+    }
+  });
+});
+
+server.on('upgrade', (request, socket, head) => {
+  try {
+    const pathname = new URL(request.url, `http://${request.headers.host || 'localhost'}`).pathname;
+    const match = pathname.match(/^\/ws\/onboarding\/([^/]+)$/);
+
+    if (match) {
+      const businessId = match[1];
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request, businessId);
+      });
+    } else {
+      socket.destroy();
+    }
+  } catch (err) {
+    console.error('[WS UPGRADE] Upgrade handling error:', err);
+    socket.destroy();
+  }
 });
 
 module.exports = app;

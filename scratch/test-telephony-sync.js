@@ -85,7 +85,7 @@ async function runTests() {
 
     // ── TEST 3: handleTelephonySync via Virtual Number ─────────────────────────
     console.log('\nTEST 3: Simulating handleTelephonySync end-of-call webhook (virtual number call)...');
-    const callSid1 = `sync_vapi_${Date.now()}`;
+    const callSid1 = `sync_Bavio Voice_${Date.now()}`;
     const syncReq1 = {
       body: {
         message: {
@@ -155,7 +155,7 @@ async function runTests() {
     }
     console.log(`✅ Call successfully mapped via original number: user_id=${checkCall2.rows[0].user_id}, country_code=${checkCall2.rows[0].country_code}`);
 
-    // ── TEST 5: handleSaveLeadTool (Vapi tool call) ───────────────────────────
+    // ── TEST 5: handleSaveLeadTool (Bavio Voice tool call) ───────────────────────────
     console.log('\nTEST 5: Simulating handleSaveLeadTool tool call webhook...');
     const callSid3 = `save_lead_tool_${Date.now()}`;
     const leadReq = {

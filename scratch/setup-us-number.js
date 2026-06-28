@@ -10,25 +10,25 @@ async function main() {
     try {
         const usBusinessId = 'c395088d-1334-400b-9f4f-69f87024a619'; // ravitejabolla756@gmail.com
         const twilioNumber = '+12526508586';
-        const vapiAssistantId = '3620fd61-1b85-41f8-a8ff-f6f2edd4e508';
+        const Bavio VoiceAssistantId = '3620fd61-1b85-41f8-a8ff-f6f2edd4e508';
 
         console.log("=== Setting up US Phone Number mapping ===");
 
-        // 1. Upsert assistant record in database with the exact Vapi Assistant ID first!
-        console.log("Upserting assistant record with Vapi Assistant ID:", vapiAssistantId);
-        const assistantCheck = await pool.query('SELECT * FROM assistants WHERE id = $1 OR business_id = $2', [vapiAssistantId, usBusinessId]);
+        // 1. Upsert assistant record in database with the exact Bavio Voice Assistant ID first!
+        console.log("Upserting assistant record with Bavio Voice Assistant ID:", Bavio VoiceAssistantId);
+        const assistantCheck = await pool.query('SELECT * FROM assistants WHERE id = $1 OR business_id = $2', [Bavio VoiceAssistantId, usBusinessId]);
         if (assistantCheck.rows.length > 0) {
             await pool.query(
                 `UPDATE assistants 
                  SET id = $1, name = 'Riley', agent_name = 'Riley', is_active = true, language = 'en-US'
                  WHERE id = $2 OR business_id = $3`,
-                [vapiAssistantId, assistantCheck.rows[0].id, usBusinessId]
+                [Bavio VoiceAssistantId, assistantCheck.rows[0].id, usBusinessId]
             );
         } else {
             await pool.query(
                 `INSERT INTO assistants (id, business_id, client_id, name, agent_name, is_active, language)
                  VALUES ($1, $2, $2, 'Riley', 'Riley', true, 'en-US')`,
-                [vapiAssistantId, usBusinessId]
+                [Bavio VoiceAssistantId, usBusinessId]
             );
         }
 
@@ -40,14 +40,14 @@ async function main() {
                 `UPDATE phone_numbers 
                  SET business_id = $1, client_id = $1, assistant_id = $2, country_code = 'US', provider = 'twilio', type = 'forwarding', status = 'active'
                  WHERE phone_number = $3`,
-                [usBusinessId, vapiAssistantId, twilioNumber]
+                [usBusinessId, Bavio VoiceAssistantId, twilioNumber]
             );
         } else {
             console.log("Inserting new phone number mapping for business:", usBusinessId);
             await pool.query(
                 `INSERT INTO phone_numbers (business_id, client_id, assistant_id, phone_number, number, provider, status, type, country_code)
                  VALUES ($1, $1, $2, $3, $3, 'twilio', 'active', 'forwarding', 'US')`,
-                [usBusinessId, vapiAssistantId, twilioNumber]
+                [usBusinessId, Bavio VoiceAssistantId, twilioNumber]
             );
         }
 
@@ -67,7 +67,7 @@ async function main() {
         const verifyPhone = await pool.query('SELECT * FROM phone_numbers WHERE phone_number = $1', [twilioNumber]);
         console.log("Phone number mapping:", verifyPhone.rows[0]);
 
-        const verifyAssistant = await pool.query('SELECT * FROM assistants WHERE id = $1', [vapiAssistantId]);
+        const verifyAssistant = await pool.query('SELECT * FROM assistants WHERE id = $1', [Bavio VoiceAssistantId]);
         console.log("Assistant record:", verifyAssistant.rows[0]);
 
         console.log("🎉 US Phone Setup complete and verified successfully!");

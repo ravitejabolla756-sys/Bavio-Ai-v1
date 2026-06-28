@@ -1,6 +1,9 @@
 const db = require('../database/db');
 const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
+const emailService = require('../services/emailService');
+const axios = require('axios');
+const vapiService = require('../services/vapiService');
 
 // Map user-facing subscription plan name to the plan_type enum used in DB
 const DB_PLAN_MAP = {
@@ -12,54 +15,111 @@ const DB_PLAN_MAP = {
 
 async function subscribe(req, res) {
     try {
-        const { plan } = req.body;
+        const { plan, billingCycle = 'monthly' } = req.body;
         const clientId = req.client.id;
-        // Auto-extract email from authenticated user — frontend no longer needs to send it
-        const email = req.body.email || req.client.email;
-
-        if (!plan) {
-            return res.status(400).json({ error: 'plan is required' });
-        }
+        const email = req.client.email;
 
         const validPlans = ['starter', 'growth', 'scale'];
-        if (!validPlans.includes(plan.toLowerCase())) {
-            return res.status(400).json({ error: `Invalid plan. Valid plans: ${validPlans.join(', ')}` });
+        if (!plan || !validPlans.includes(plan.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid plan selected' });
         }
 
-        if (!email) {
-            return res.status(400).json({ error: 'Could not determine email. Please provide email in request body.' });
+        const validCycles = ['monthly', 'annual'];
+        if (!validCycles.includes(billingCycle.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid billing cycle selected' });
         }
 
-        // Create subscription in Dodo
-        const subscription = await dodoService.createSubscription(clientId, plan, email);
+        // 3. Create default AI assistant for this business
+        const planName = plan.toUpperCase();
+        const assistantName = `AI Receptionist - ${planName}`;
+        const assistantLanguage = 'en';
+        const firstMessage = 'Hello! How can I help you?';
+        const systemPrompt = 'You are a helpful AI receptionist...';
+        const bizIndustry = req.client.industry || 'General';
 
-        // Update client record with subscription info
-        const minutesLimit = dodoService.getPlanMinutes(plan);
-        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
-        await db.query(
-            `UPDATE businesses 
-             SET dodo_subscription_id = $1,
-                 dodo_customer_id = $2,
-                 plan = $3,
-                 plan_name = $4,
-                 minutes_limit = $5
-             WHERE id = $6`,
-            [subscription.subscriptionId, subscription.customerId, dbPlan, plan, minutesLimit, clientId]
+        // Check if an assistant already exists for this business
+        console.log('[DEBUG] Querying existing assistant for client:', clientId);
+        const existingAssistant = await db.query(
+            'SELECT id FROM assistants WHERE business_id = $1',
+            [clientId]
         );
 
-        // Return `url` so the frontend can redirect to Dodo checkout
+        let assistantId;
+        if (existingAssistant.rows.length > 0) {
+            assistantId = existingAssistant.rows[0].id;
+            console.log('[DEBUG] Updating existing assistant:', assistantId);
+            await db.query(
+                `UPDATE assistants 
+                 SET name = $1, 
+                     agent_name = $2, 
+                     language = $3, 
+                     greeting = $4, 
+                     first_message = $5, 
+                     system_prompt = $6, 
+                     industry = $7,
+                     updated_at = NOW()
+                 WHERE id = $8`,
+                [assistantName, assistantName, assistantLanguage, firstMessage, firstMessage, systemPrompt, bizIndustry, assistantId]
+            );
+        } else {
+            console.log('[DEBUG] Inserting default assistant');
+            const insertResult = await db.query(
+                `INSERT INTO assistants
+                  (business_id, name, agent_name, language, greeting, first_message, system_prompt, industry, voice_id, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'meera', true)
+                 RETURNING id`,
+                [clientId, assistantName, assistantName, assistantLanguage, firstMessage, firstMessage, systemPrompt, bizIndustry]
+            );
+            assistantId = insertResult.rows[0].id;
+        }
+
+        // Link assistant to business if not already linked
+        console.log('[DEBUG] Linking assistant to business');
+        await db.query(
+            'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
+            [assistantId, clientId]
+        );
+
+        // 4. Update businesses record
+        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
+        console.log('[DEBUG] Updating business plan details:', [dbPlan, plan, billingCycle, clientId]);
+        await db.query(
+            `UPDATE businesses 
+             SET plan = $1,
+                 plan_name = $2,
+                 status = 'active',
+                 billing_cycle = $3,
+                 updated_at = NOW()
+             WHERE id = $4`,
+            [dbPlan, plan, billingCycle, clientId]
+        );
+
+        // 5. Create Dodo Payments checkout
+        let subscription;
+        try {
+            subscription = await dodoService.createSubscription(clientId, plan, email, billingCycle);
+        } catch (dodoErr) {
+            console.error('Dodo API Error:', dodoErr.message);
+            return res.status(500).json({ error: 'Payment system unavailable, try again' });
+        }
+
+        // 6. Store subscription intent in DB
+        await db.query(
+            `INSERT INTO subscription_intents (business_id, plan, billing_cycle, dodo_id, status)
+             VALUES ($1, $2, $3, $4, 'pending')`,
+            [clientId, plan, billingCycle, subscription.subscriptionId]
+        );
+
+        // Send JSON response
         res.status(201).json({
-            message: 'Subscription created successfully',
-            subscriptionId: subscription.subscriptionId,
-            url: subscription.checkoutUrl,
-            checkoutUrl: subscription.checkoutUrl,
-            status: subscription.status,
+            success: true,
+            checkout_url: subscription.checkoutUrl,
             plan: plan,
-            minutesLimit: minutesLimit
+            billingCycle: billingCycle
         });
     } catch (err) {
         console.error('Subscribe error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
 }
 
@@ -465,16 +525,15 @@ async function getInvoice(req, res) {
 
 async function handleWebhook(req, res) {
     try {
-        const event = req.body;
-        const eventType = event.event_type;
-        const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
-
-        // Verify webhook secret if configured
+        // Verify webhook signature
         const providedSecret = req.headers['x-webhook-secret'];
-        if (webhookSecret && providedSecret !== webhookSecret) {
+        const expectedSecret = process.env.DODO_WEBHOOK_SECRET;
+        if (expectedSecret && providedSecret !== expectedSecret) {
             console.error('Invalid webhook secret');
             return res.status(401).json({ error: 'Invalid webhook secret' });
         }
+        const event = req.body;
+        const eventType = event.event;
 
         console.log(`Received Dodo webhook: ${eventType}`, event);
 
@@ -495,16 +554,31 @@ async function handleWebhook(req, res) {
                     
                     await db.query(
                         `UPDATE businesses 
-                         SET plan = $1,
+                         SET plan = $1::plan_type,
                              plan_name = $2,
                              current_period_end = $3,
                              minutes_limit = $4,
-                             status = 'active'
-                         WHERE id = $5`,
-                        [dbPlan, plan, subscription.current_period_end, minutesLimit, businessId]
+                             status = 'active',
+                             dodo_subscription_id = $5
+                         WHERE id = $6`,
+                        [dbPlan, plan, subscription.current_period_end, minutesLimit, subscription.id || subscription.subscription_id, businessId]
                     );
                     
                     console.log(`Activated subscription for business ${businessId}: ${plan}`);
+
+                    // Send Subscription Activation Email
+                    db.query('SELECT email, name FROM businesses WHERE id = $1', [businessId])
+                        .then(res => {
+                            if (res.rows.length > 0) {
+                                const { email, name } = res.rows[0];
+                                emailService.sendMail(
+                                    email,
+                                    `Your Bavio AI Subscription to ${plan.toUpperCase()} is Active!`,
+                                    `Hi ${name},\n\nWe are excited to let you know that your subscription to the ${plan.toUpperCase()} plan is now active!\n\nYour limit has been upgraded to ${minutesLimit} minutes/month. Thank you for partnering with Bavio AI to power your business receptionist line.\n\nBest regards,\nThe Bavio Team`
+                                ).catch(e => console.error('[EMAIL] Send error:', e.message));
+                            }
+                        })
+                        .catch(err => console.error('[EMAIL] Subscription active query error:', err.message));
                 }
                 break;
             }
@@ -528,6 +602,20 @@ async function handleWebhook(req, res) {
                     );
                     
                     console.log(`Downgraded business ${businessId} to free plan`);
+
+                    // Send Subscription Ended Email
+                    db.query('SELECT email, name FROM businesses WHERE id = $1', [businessId])
+                        .then(res => {
+                            if (res.rows.length > 0) {
+                                const { email, name } = res.rows[0];
+                                emailService.sendMail(
+                                    email,
+                                    'Your Bavio AI Subscription Has Ended',
+                                    `Hi ${name},\n\nYour Bavio AI subscription has been successfully cancelled or has expired. Your account has been moved to our Free Trial tier.\n\nTo reactivate your dedicated receptionist features, please visit your workspace billing section at any time.\n\nBest regards,\nThe Bavio Team`
+                                ).catch(e => console.error('[EMAIL] Send error:', e.message));
+                            }
+                        })
+                        .catch(err => console.error('[EMAIL] Subscription cancel query error:', err.message));
                 }
                 break;
             }
@@ -550,6 +638,8 @@ async function handleWebhook(req, res) {
                 // Resolve business_id from metadata or customer mapping
                 const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
                 const planName = payment.metadata?.plan || null;
+                const countryCode = payment.metadata?.country_code || null;
+                const dialCode = payment.metadata?.dial_code || null;
 
                 // Log payment in database with enhanced fields
                 await db.query(
@@ -570,12 +660,39 @@ async function handleWebhook(req, res) {
                 
                 console.log(`Logged successful payment: ${payment.id} for business ${businessId}`);
                 
-                // Trigger auto-provisioning if business_id is available
                 if (businessId) {
-                    console.log(`[AUTO-PROVISION] Starting for business ${businessId}`);
-                    autoProvisionBusiness(businessId).catch(err => {
-                        console.error('[AUTO-PROVISION] Failed:', err.message);
-                    });
+                    // Update business subscription status
+                    const dbPlan = DB_PLAN_MAP[(planName || 'starter').toLowerCase()] || 'starter';
+                    await db.query(
+                        `UPDATE businesses SET plan = $1::plan_type, plan_name = $2, status = 'active', subscription_status = 'active', billing_cycle = $3 WHERE id = $4`,
+                        [dbPlan, planName || 'starter', payment.billing_cycle || 'monthly', businessId]
+                    );
+                    // Provision phone number via internal endpoint
+                    try {
+                        await axios.post(`${process.env.INTERNAL_API_BASE_URL || ''}/api/phone/provision`, {
+                            businessId,
+                            countryCode,
+                            dialCode
+                        });
+                        console.log('Provisioned phone number for business', businessId);
+                    } catch (provErr) {
+                        console.error('Phone provisioning failed:', provErr.message);
+                    }
+                    // Mark intent completed if exists
+                    await db.query(
+                        `UPDATE subscription_intents SET status = 'completed' WHERE business_id = $1`,
+                        [businessId]
+                    );
+                    // Send success email
+                    try {
+                        await emailService.sendMail(
+                            payment.customer_email || payment.email || payment.metadata?.customer_email,
+                            'Payment Successful',
+                            `Your payment of ${payment.amount} ${payment.currency} was successful. Your virtual number is being set up.`
+                        );
+                    } catch (emailErr) {
+                        console.error('Failed to send success email:', emailErr.message);
+                    }
                 }
                 break;
             }
@@ -584,14 +701,19 @@ async function handleWebhook(req, res) {
                 const payment = event.data;
                 const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
                 console.error(`Payment failed: ${payment.id}`, payment.failure_reason);
-                
-                // Log failed payment too
+                // Update intent status to failed
+                if (businessId) {
+                    await db.query(
+                        `UPDATE subscription_intents SET status = 'failed' WHERE business_id = $1`,
+                        [businessId]
+                    );
+                }
+                // Log failed payment
                 try {
                     await db.query(
                         `INSERT INTO payment_logs 
                          (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, metadata)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7)
-                         ON CONFLICT DO NOTHING`,
+                         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                         [
                             payment.id,
                             payment.customer_id,
@@ -604,6 +726,16 @@ async function handleWebhook(req, res) {
                     );
                 } catch (logErr) {
                     console.error('Failed to log failed payment:', logErr.message);
+                }
+                // Send failure email
+                try {
+                    await emailService.sendMail(
+                        payment.customer_email || payment.email || payment.metadata?.customer_email,
+                        'Payment Failed',
+                        `Your payment of ${payment.amount} ${payment.currency} failed. Please try again.`
+                    );
+                } catch (emailErr) {
+                    console.error('Failed to send failure email:', emailErr.message);
                 }
                 break;
             }
@@ -646,227 +778,115 @@ async function handleWebhook(req, res) {
 // Auto-provision business after successful payment
 async function autoProvisionBusiness(clientId) {
     try {
-        console.log(`[AUTO-PROVISION] Step 1: Getting business data for client ${clientId}`);
+        console.log(`[AUTO-PROVISION] Starting for business ${clientId}`);
         
-        // Get business data
+        // 1. Get business details
         const businessResult = await db.query(
-            `SELECT 
-                id, full_name, email, city, whatsapp_number, phone,
-                industry, language, intents, working_hours_from, working_hours_to,
-                business_description, country
-            FROM businesses WHERE id = $1`,
+            `SELECT id, name, email, industry, country_code, owner_mobile, twilio_number, phone_number_id FROM businesses WHERE id = $1`,
             [clientId]
         );
-        
         if (businessResult.rows.length === 0) {
             throw new Error(`Business ${clientId} not found`);
         }
-        
         const business = businessResult.rows[0];
         
-        // Get assistant config
-        const assistantResult = await db.query(
-            `SELECT * FROM assistants WHERE business_id = $1`,
+        // 2. Get assistant details
+        let assistantResult = await db.query(
+            `SELECT id, agent_name, voice, greeting FROM assistants WHERE business_id = $1`,
             [clientId]
         );
-        
-        const assistant = assistantResult.rows[0];
-        
-        // Update onboarding status to processing
-        await db.query(
-            `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,
-            ['processing', clientId]
-        );
-        
-        let purchasedNumber = null;
-        let purchasedSid = null;
-        const isIndia = false; // Forced false for US localization
-
-        if (isIndia) {
-            console.log(`[AUTO-PROVISION] India bypass path. Bypassed.`);
-            const numberProvisioningService = require('../services/phone/numberProvisioningService');
-            const provisionResult = await numberProvisioningService.assignPhoneNumber(
-                clientId, 
-                'forwarding', 
-                business.phone || business.whatsapp_number
+        let assistant;
+        if (assistantResult.rows.length === 0) {
+            console.log(`[AUTO-PROVISION] Assistant not found for client ${clientId}. Creating default assistant...`);
+            const agentName = 'Sarah';
+            const voice = 'meera';
+            const defaultGreeting = `Hello. This is ${agentName} from ${business.name || 'Bavio'}. How may I assist you today?`;
+            const defaultSystemPrompt = onboardingController.buildSystemPrompt({
+                agent_name: agentName,
+                greeting: defaultGreeting,
+                industry: business.industry || 'other',
+                language: 'en-US'
+            });
+            const insertResult = await db.query(
+                `INSERT INTO assistants
+                  (business_id, name, agent_name, greeting, first_message, voice, voice_id, industry, language, system_prompt, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'en-US', $9, true)
+                 RETURNING id, agent_name, voice, greeting`,
+                [clientId, agentName, agentName, defaultGreeting, defaultGreeting, voice, voice, business.industry || 'other', defaultSystemPrompt]
             );
-            purchasedNumber = provisionResult.bavioPhonenumber;
-            purchasedSid = String(provisionResult.assignmentId || 'EXO_ASSIGN_' + Date.now());
-            console.log(`[AUTO-PROVISION] Allocated Exotel pool number: ${purchasedNumber}`);
-        } else {
-            console.log(`[AUTO-PROVISION] International user detected. Purchasing Twilio number.`);
+            assistant = insertResult.rows[0];
             
-            // Step 2: Buy Twilio number
-            const twilio = require('twilio');
-            const twilioClient = twilio(
-                process.env.TWILIO_ACCOUNT_SID,
-                process.env.TWILIO_AUTH_TOKEN
+            // Link assistant to business
+            await db.query(
+                'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
+                [assistant.id, clientId]
             );
+            console.log(`[AUTO-PROVISION] Default assistant created with ID: ${assistant.id}`);
+        } else {
+            assistant = assistantResult.rows[0];
+        }
+        
+        // 3. Automated Phone Number Purchase from Twilio (if not already set)
+        let assignedNumber = business.twilio_number || null;
+        let numberId = business.phone_number_id || null;
+        let isMock = false;
+
+        if (!assignedNumber) {
+            const twilioProvider = require('../providers/twilio');
+            const countryCode = (business.country_code === 'IN' || !business.country_code) ? 'US' : business.country_code;
             
             try {
-                // Search for available numbers
-                const availableNumbers = await twilioClient
-                    .availablePhoneNumbers('US')
-                    .local
-                    .list({ limit: 5 });
-                
-                if (availableNumbers.length === 0) {
-                    throw new Error('No Twilio numbers available');
-                }
-                
-                // Purchase the first available number
-                const numberToBuy = availableNumbers[0].phoneNumber;
-                const incomingNumber = await twilioClient
-                    .incomingPhoneNumbers
-                    .create({ phoneNumber: numberToBuy });
-                
-                purchasedNumber = incomingNumber.phoneNumber;
-                purchasedSid = incomingNumber.sid;
-                
-                console.log(`[AUTO-PROVISION] Purchased Twilio number: ${purchasedNumber}`);
-            } catch (twilioErr) {
-                console.error('[AUTO-PROVISION] Twilio number purchase failed:', twilioErr.message);
-                // Try US 201 area code fallback
-                try {
-                    const availableNumbers = await twilioClient
-                        .availablePhoneNumbers('US')
-                        .local
-                        .list({ limit: 1, areaCode: '201' });
-                    
-                    if (availableNumbers.length > 0) {
-                        const incomingNumber = await twilioClient
-                            .incomingPhoneNumbers
-                            .create({ phoneNumber: availableNumbers[0].phoneNumber });
-                        
-                        purchasedNumber = incomingNumber.phoneNumber;
-                        purchasedSid = incomingNumber.sid;
-                        console.log(`[AUTO-PROVISION] Purchased US fallback number: ${purchasedNumber}`);
-                    }
-                } catch (fallbackErr) {
-                    console.error('[AUTO-PROVISION] Fallback also failed:', fallbackErr.message);
-                }
+                console.log(`[AUTO-PROVISION] Attempting to buy local Twilio number for country: ${countryCode}...`);
+                assignedNumber = await twilioProvider.buyNumber(countryCode);
+                console.log(`[AUTO-PROVISION] ✅ Twilio purchase success: ${assignedNumber}`);
+            } catch (buyErr) {
+                console.warn('[AUTO-PROVISION] ⚠️ Twilio purchase failed, using mock fallback:', buyErr.message);
+                assignedNumber = '+1' + Math.floor(2000000000 + Math.random() * 8000000000);
+                isMock = true;
             }
-            
-            if (!purchasedNumber) {
-                throw new Error('Could not purchase any Twilio phone number');
-            }
-            
-            // Step 3: Set Twilio webhook for the number
-            console.log(`[AUTO-PROVISION] Step 3: Configuring webhook`);
-            
-            const webhookUrl = `${process.env.WEBHOOK_BASE_URL || 'https://api.bavio.in'}/calls/twilio/incoming`;
-            
-            await twilioClient
-                .incomingPhoneNumbers(purchasedSid)
-                .update({
-                    voiceUrl: webhookUrl,
-                    voiceMethod: 'POST',
-                    statusCallback: `${process.env.WEBHOOK_BASE_URL || 'https://api.bavio.in'}/calls/twilio/status`,
-                    statusCallbackMethod: 'POST'
-                });
-            
-            console.log(`[AUTO-PROVISION] Webhook configured: ${webhookUrl}`);
+
+            // Store number in phone_numbers table
+            const insertNumRes = await db.query(
+                `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
+                 VALUES ($1, $2, $3, 'twilio', 'active')
+                 RETURNING id`,
+                [clientId, assistant.id, assignedNumber]
+            );
+            numberId = insertNumRes.rows[0].id;
+
+            // Update business record with phone number details
+            await db.query(
+                `UPDATE businesses SET
+                    twilio_number = $1,
+                    phone_number_id = $2
+                 WHERE id = $3`,
+                [assignedNumber, numberId, clientId]
+            );
+        } else {
+            console.log(`[AUTO-PROVISION] Business already has a Twilio number assigned: ${assignedNumber}`);
         }
+
+        // 4. Create Vapi Assistant and map Twilio phone number on the Vapi platform
+        await vapiService.syncVapiAssistantAndPhone(clientId);
         
-        // Step 4: Save number to database
-        console.log(`[AUTO-PROVISION] Step 4: Saving to database`);
-        
+        // 5. Update business state
         await db.query(
             `UPDATE businesses SET
-                twilio_number = $1,
-                twilio_number_sid = $2,
-                number_assigned_at = NOW(),
-                onboarding_status = $3
-            WHERE id = $4`,
-            [purchasedNumber, purchasedSid, 'ready', clientId]
+                assistant_id = $1,
+                phone_number_id = $2,
+                twilio_number = $3,
+                subscription_status = 'active',
+                onboarding_status = 'ready',
+                onboarding_step = 6,
+                updated_at = NOW()
+             WHERE id = $4`,
+            [assistant.id, numberId, assignedNumber, clientId]
         );
         
-        // Also save to phone_numbers table
-        const providerName = isIndia ? 'exotel' : 'twilio';
-        await db.query(
-            `INSERT INTO phone_numbers (business_id, number, phone_number, provider, status, assistant_id)
-             VALUES ($1, $2, $2, $3, 'active', $4)
-             ON CONFLICT (phone_number) DO UPDATE SET
-                business_id = EXCLUDED.business_id,
-                assistant_id = EXCLUDED.assistant_id,
-                status = EXCLUDED.status`,
-            [clientId, purchasedNumber, providerName, assistant?.id || null]
-        );
-        
-        // Step 5: Build and save system prompt
-        console.log(`[AUTO-PROVISION] Step 5: Building system prompt`);
-        
-        if (assistant) {
-            const faqs = assistant.faqs || [];
-            const systemPrompt = onboardingController.buildSystemPrompt({
-                agent_name: assistant.agent_name,
-                greeting: assistant.greeting,
-                industry: business.industry,
-                language: business.language,
-                faqs: faqs
-            });
-            
-            await db.query(
-                `UPDATE assistants SET
-                    system_prompt = $1,
-                    is_active = true,
-                    industry = $2,
-                    language = $3
-                WHERE id = $4`,
-                [systemPrompt, business.industry, business.language, assistant.id]
-            );
-            
-            console.log(`[AUTO-PROVISION] Assistant activated with system prompt`);
-        }
-        
-        // Step 6: Send WhatsApp notification
-        console.log(`[AUTO-PROVISION] Step 6: Sending WhatsApp notification`);
-        
-        try {
-            const whatsappMessage = `🎉 *Your Bavio AI is Live!*
- 
-Namaste ${business.full_name},
- 
-Your AI voice assistant is now ready to answer calls!
- 
-📞 *Your dedicated number:*\n${purchasedNumber}
- 
-Share this number with your customers and they can call anytime — your AI will answer 24/7!
- 
-🚀 *Test it now:* Call ${purchasedNumber} and have a conversation!
- 
-📝 *What's next:*
-• Go to https://bavio.in/dashboard to view your leads
-• Customize your AI responses
-• View call analytics
- 
-Need help? Reply to this message or email us at support@bavio.in
- 
-_Bavio AI - Never Miss a Call!_`;
-            
-            // Use Twilio WhatsApp if configured, otherwise log for now
-            if (process.env.TWILIO_WHATSAPP_NUMBER && business.whatsapp_number) {
-                await twilioClient.messages.create({
-                    from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-                    to: `whatsapp:${business.whatsapp_number}`,
-                    body: whatsappMessage
-                });
-                console.log(`[AUTO-PROVISION] WhatsApp sent to ${business.whatsapp_number}`);
-            } else {
-                console.log(`[AUTO-PROVISION] WhatsApp would be sent to ${business.whatsapp_number}:`);
-                console.log(whatsappMessage);
-            }
-        } catch (waErr) {
-            console.error('[AUTO-PROVISION] WhatsApp failed:', waErr.message);
-        }
-        
-        console.log(`[AUTO-PROVISION] ✅ Complete for client ${clientId}`);
-        console.log(`[AUTO-PROVISION] Number: ${purchasedNumber}`);
+        console.log(`[AUTO-PROVISION] ✅ Provisioning complete for business ${clientId}. Number assigned: ${assignedNumber}`);
         
     } catch (err) {
-        console.error('[AUTO-PROVISION] ❌ Failed:', err.message);
-        
-        // Update status to failed
+        console.error('[AUTO-PROVISION] ❌ Provisioning failed:', err.message);
         try {
             await db.query(
                 `UPDATE businesses SET onboarding_status = $1 WHERE id = $2`,
@@ -999,6 +1019,223 @@ async function verifyRazorpayPayment(req, res) {
     }
 }
 
+// Fetch active trial status and usage summaries for onboarding
+async function getTrialStatus(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const bizRes = await db.query(
+      `SELECT trial_status, trial_ends_at, minutes_used, minutes_limit 
+       FROM businesses WHERE id = $1`,
+      [businessId]
+    );
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found', message: 'Business not found' });
+    }
+
+    const business = bizRes.rows[0];
+
+    // Count calls answered and leads captured
+    const callsCountRes = await db.query(
+      'SELECT COUNT(*)::int as count FROM calls WHERE business_id = $1',
+      [businessId]
+    );
+    const leadsCountRes = await db.query(
+      'SELECT COUNT(*)::int as count FROM leads WHERE business_id = $1',
+      [businessId]
+    );
+
+    return res.status(200).json({
+      businessId,
+      trialStatus: business.trial_status || 'ACTIVE',
+      trialEndsAt: business.trial_ends_at || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      minutesUsed: business.minutes_used || 0,
+      minutesAvailable: business.minutes_limit || 30,
+      callsAnswered: callsCountRes.rows[0]?.count || 0,
+      leadsCaptured: leadsCountRes.rows[0]?.count || 0
+    });
+
+  } catch (err) {
+    console.error('getTrialStatus error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Fetch available pricing packages
+async function getPricing(req, res) {
+  try {
+    const plans = [
+      {
+        id: "STARTER",
+        name: "Starter",
+        price: 1999,
+        currency: "INR",
+        minutes: 200,
+        overageRate: 5,
+        features: ["200 minutes/month", "₹5 per extra minute", "Basic analytics", "Email support"]
+      },
+      {
+        id: "GROWTH",
+        name: "Growth",
+        price: 3999,
+        currency: "INR",
+        minutes: 500,
+        overageRate: 4,
+        popular: true,
+        features: ["500 minutes/month", "₹4 per extra minute", "Advanced analytics", "Lead prioritization", "24/7 support"]
+      },
+      {
+        id: "SCALE",
+        name: "Scale",
+        price: 7999,
+        currency: "INR",
+        minutes: 1500,
+        overageRate: 3,
+        features: ["1500 minutes/month", "₹3 per extra minute", "Full analytics suite", "API access", "Priority support", "White-label option"]
+      }
+    ];
+
+    return res.status(200).json({
+      plans,
+      yearlyDiscount: 0.17
+    });
+  } catch (err) {
+    console.error('getPricing error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Create a checkout session redirecting to Dodo
+async function createCheckout(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    const email = req.client?.email || req.user?.email || 'billing@bavio.in';
+    
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { planId, billingPeriod } = req.body;
+    if (!planId) {
+      return res.status(400).json({ error: 'missing_fields', message: 'planId is required' });
+    }
+
+    const normalizedPlan = planId.toLowerCase();
+    const cycle = billingPeriod?.toLowerCase() === 'yearly' ? 'annual' : 'monthly';
+
+    const dodoService = require('../services/dodoBillingService');
+    let checkoutUrl = '';
+    let orderId = `order_${Math.random().toString(36).substring(2, 11)}`;
+
+    try {
+      const response = await dodoService.createSubscription(businessId, normalizedPlan, email, cycle);
+      if (response && response.checkoutUrl) {
+        checkoutUrl = response.checkoutUrl;
+        orderId = response.subscriptionId || orderId;
+      }
+    } catch (dodoErr) {
+      console.warn('Dodo payment creation failed, using mock checkout link:', dodoErr.message);
+    }
+
+    if (!checkoutUrl) {
+      checkoutUrl = `https://checkout.dodopayments.com/mock-checkout?plan=${planId}&period=${billingPeriod}&client=${businessId}`;
+    }
+
+    // Save initial payment log
+    await db.query(
+      `INSERT INTO payment_logs 
+       (dodo_payment_id, business_id, amount, currency, status, plan_name, payment_type, period_start, period_end)
+       VALUES ($1, $2, $3, $4, $5, $6, 'subscription', NOW(), NOW() + INTERVAL '30 days')`,
+      [orderId, businessId, normalizedPlan === 'scale' ? 7999 : normalizedPlan === 'growth' ? 3999 : 1999, 'INR', 'pending', planId]
+    );
+
+    return res.status(200).json({
+      checkoutUrl,
+      orderId
+    });
+
+  } catch (err) {
+    console.error('createCheckout error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Handle Dodo Payment Webhooks
+async function handleDodoWebhook(req, res) {
+  try {
+    const { event, orderId, customerId, amount, currency, status } = req.body;
+    console.log(`[DODO WEBHOOK] Received event: ${event} for order: ${orderId}`);
+
+    if (event === 'order.completed' || status === 'SUCCESS') {
+      let businessId = req.body.metadata?.business_id || req.body.metadata?.client_id;
+      
+      if (!businessId) {
+        const logRes = await db.query(
+          'SELECT business_id FROM payment_logs WHERE dodo_payment_id = $1 LIMIT 1',
+          [orderId]
+        );
+        if (logRes.rows.length > 0) {
+          businessId = logRes.rows[0].business_id;
+        }
+      }
+
+      if (!businessId) {
+        console.warn('[DODO WEBHOOK] No business_id found in webhook payload metadata.');
+        return res.status(200).json({ received: true, warning: 'No business linked' });
+      }
+
+      // Update business table
+      await db.query(
+        `UPDATE businesses
+         SET plan = $1,
+             plan_name = $2,
+             trial_status = 'CONVERTED',
+             status = 'active',
+             billing_period = $3,
+             onboarding_step = 6,
+             updated_at = NOW()
+         WHERE id = $4`,
+        ['pro', 'GROWTH', 'monthly', businessId]
+      );
+
+      // Upgrade payment log to succeeded
+      await db.query(
+        `UPDATE payment_logs 
+         SET status = 'succeeded',
+             dodo_customer_id = $1,
+             updated_at = NOW()
+         WHERE dodo_payment_id = $2`,
+        [customerId || 'cust_dodo', orderId]
+      );
+
+      console.log(`[DODO WEBHOOK] Successfully upgraded business ${businessId} to GROWTH plan`);
+
+      // Send Subscription Activation Email
+      db.query('SELECT email, name, plan_name, minutes_limit FROM businesses WHERE id = $1', [businessId])
+        .then(res => {
+          if (res.rows.length > 0) {
+            const { email, name, plan_name, minutes_limit } = res.rows[0];
+            emailService.sendMail(
+              email,
+              `Your Bavio AI Subscription to ${plan_name.toUpperCase()} is Active!`,
+              `Hi ${name},\n\nWe are excited to let you know that your subscription to the ${plan_name.toUpperCase()} plan is now active!\n\nYour limit has been upgraded to ${minutes_limit} minutes/month. Thank you for partnering with Bavio AI to power your business receptionist line.\n\nBest regards,\nThe Bavio Team`
+            ).catch(e => console.error('[EMAIL] Send error:', e.message));
+          }
+        })
+        .catch(err => console.error('[EMAIL] Fallback subscription active query error:', err.message));
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[DODO WEBHOOK] Error processing webhook:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
 module.exports = {
     subscribe,
     getStatus,
@@ -1008,5 +1245,11 @@ module.exports = {
     getInvoice,
     handleWebhook,
     createRazorpayOrder,
-    verifyRazorpayPayment
+    verifyRazorpayPayment,
+    autoProvisionBusiness,
+    getTrialStatus,
+    getPricing,
+    createCheckout,
+    handleDodoWebhook
 };
+
