@@ -564,6 +564,20 @@ async function handleWebhook(req, res) {
                     );
                     
                     console.log(`Activated subscription for business ${businessId}: ${plan}`);
+
+                    // Send Subscription Activation Email
+                    db.query('SELECT email, name FROM businesses WHERE id = $1', [businessId])
+                        .then(res => {
+                            if (res.rows.length > 0) {
+                                const { email, name } = res.rows[0];
+                                emailService.sendMail(
+                                    email,
+                                    `Your Bavio AI Subscription to ${plan.toUpperCase()} is Active!`,
+                                    `Hi ${name},\n\nWe are excited to let you know that your subscription to the ${plan.toUpperCase()} plan is now active!\n\nYour limit has been upgraded to ${minutesLimit} minutes/month. Thank you for partnering with Bavio AI to power your business receptionist line.\n\nBest regards,\nThe Bavio Team`
+                                ).catch(e => console.error('[EMAIL] Send error:', e.message));
+                            }
+                        })
+                        .catch(err => console.error('[EMAIL] Subscription active query error:', err.message));
                 }
                 break;
             }
@@ -587,6 +601,20 @@ async function handleWebhook(req, res) {
                     );
                     
                     console.log(`Downgraded business ${businessId} to free plan`);
+
+                    // Send Subscription Ended Email
+                    db.query('SELECT email, name FROM businesses WHERE id = $1', [businessId])
+                        .then(res => {
+                            if (res.rows.length > 0) {
+                                const { email, name } = res.rows[0];
+                                emailService.sendMail(
+                                    email,
+                                    'Your Bavio AI Subscription Has Ended',
+                                    `Hi ${name},\n\nYour Bavio AI subscription has been successfully cancelled or has expired. Your account has been moved to our Free Trial tier.\n\nTo reactivate your dedicated receptionist features, please visit your workspace billing section at any time.\n\nBest regards,\nThe Bavio Team`
+                                ).catch(e => console.error('[EMAIL] Send error:', e.message));
+                            }
+                        })
+                        .catch(err => console.error('[EMAIL] Subscription cancel query error:', err.message));
                 }
                 break;
             }
@@ -1254,6 +1282,20 @@ async function handleDodoWebhook(req, res) {
       );
 
       console.log(`[DODO WEBHOOK] Successfully upgraded business ${businessId} to GROWTH plan`);
+
+      // Send Subscription Activation Email
+      db.query('SELECT email, name, plan_name, minutes_limit FROM businesses WHERE id = $1', [businessId])
+        .then(res => {
+          if (res.rows.length > 0) {
+            const { email, name, plan_name, minutes_limit } = res.rows[0];
+            emailService.sendMail(
+              email,
+              `Your Bavio AI Subscription to ${plan_name.toUpperCase()} is Active!`,
+              `Hi ${name},\n\nWe are excited to let you know that your subscription to the ${plan_name.toUpperCase()} plan is now active!\n\nYour limit has been upgraded to ${minutes_limit} minutes/month. Thank you for partnering with Bavio AI to power your business receptionist line.\n\nBest regards,\nThe Bavio Team`
+            ).catch(e => console.error('[EMAIL] Send error:', e.message));
+          }
+        })
+        .catch(err => console.error('[EMAIL] Fallback subscription active query error:', err.message));
     }
 
     return res.status(200).json({ success: true });
