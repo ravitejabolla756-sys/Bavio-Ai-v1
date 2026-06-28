@@ -104,6 +104,7 @@ export interface SignupPayload {
   business_phone?: string;
   industry?: string;
   businessName?: string;
+  businessPhone?: string;
   countryCode?: string;
   dialCode?: string;
   phoneNumber?: string;
@@ -126,7 +127,14 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-  signup: (data: SignupPayload) =>
+  checkEmail: (email: string) =>
+    apiFetch<{ available: boolean; email: string; message?: string }>('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      skipAuth: true,
+    }),
+
+  signup: (data: SignupPayload & { demoCompleted?: boolean }) =>
     apiFetch<AuthResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(data),

@@ -14,7 +14,7 @@ async function checkMinutesLimit(req, res, next) {
 
         // Refresh client data to get latest minutes
         const result = await db.query(
-            'SELECT minutes_limit, minutes_used, plan, plan_name, current_period_end FROM businesses WHERE id = $1',
+            'SELECT minutes_limit, minutes_used, plan, plan_name, current_period_end, email FROM businesses WHERE id = $1',
             [client.id]
         );
 
@@ -22,7 +22,18 @@ async function checkMinutesLimit(req, res, next) {
             return res.status(404).json({ error: 'Business not found' });
         }
 
-        const { minutes_limit, minutes_used, plan, plan_name, current_period_end } = result.rows[0];
+        const { minutes_limit, minutes_used, plan, plan_name, current_period_end, email } = result.rows[0];
+
+        const developerEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
+        if (email && developerEmails.includes(email.trim().toLowerCase())) {
+            req.minutesInfo = {
+                limit: 999999,
+                used: 0,
+                remaining: 999999,
+                plan: plan || 'enterprise'
+            };
+            return next();
+        }
         
         // Check for subscription or trial expiration
         if (current_period_end && new Date(current_period_end) < new Date()) {

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PhoneCall,
@@ -9,8 +10,6 @@ import {
   Check,
   Play,
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
   Download,
   Info,
   Clock,
@@ -21,1084 +20,950 @@ import {
   User,
   Mail,
   Smartphone,
+  Phone
 } from "lucide-react";
-import Navbar from "@/components/landing/Navbar";
-import Footer from "@/components/landing/Footer";
+import Logo from "@/components/Logo";
+import Navbar from "@/components/Navbar";
 import { setCookie } from "@/lib/auth-utils";
-import { setAuthData, leadsApi, demoApi, apiFetch } from "@/lib/api";
+import { setAuthData, leadsApi, demoApi } from "@/lib/api";
 
-// FAQ type
-interface FaqItemProps {
-  question: string;
-  answer: string;
-}
-
-function FaqItem({ question, answer }: FaqItemProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="border-b border-[#F3E4D4] py-4 last:border-b-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center text-left py-2 font-bold text-base text-[#140A02] hover:text-[#FF6B00] transition-colors"
-      >
-        <span>{question}</span>
-        {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-[#FF6B00]" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-[#6B5A4C]" />
-        )}
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <p className="text-sm text-[#6B5A4C] leading-relaxed pt-2 pb-3 font-normal">
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// Conversation transcript steps for simulation
-const transcriptTimeline = [
+const demoTimeline = [
   {
-    time: 0,
-    speaker: "system",
-    text: "Initiating demo call to your number...",
-    leadUpdate: {},
-  },
-  {
-    time: 3,
-    speaker: "system",
-    text: "📞 Call Connected! Agent speaking...",
-    leadUpdate: {},
+    time: 2,
+    speaker: "ai",
+    text: "Namaste! Welcome to our demo. How can I help you today?",
   },
   {
     time: 6,
-    speaker: "ai",
-    text: "Hello! Welcome to Bavio. I'm your AI assistant. How can I help you today?",
-    leadUpdate: { status: "connecting" },
-  },
-  {
-    time: 11,
     speaker: "user",
-    text: "Hi, I'd like to inquire about a 3-bedroom home available in Downtown NYC.",
-    leadUpdate: { intent: "Enquiry: 3BR Home" },
+    text: "Hi, I'm looking for a property in Bangalore",
   },
   {
-    time: 17,
+    time: 10,
     speaker: "ai",
-    text: "Great! We have some beautiful properties available in that area. What would be your approximate budget range?",
-    leadUpdate: { location: "Downtown NYC" },
+    text: "Great! What's your budget range?",
   },
   {
-    time: 23,
+    time: 14,
     speaker: "user",
-    text: "My budget limit is around $450,000.",
-    leadUpdate: { budget: "$450,000" },
+    text: "Around 50 lakhs",
   },
   {
-    time: 29,
+    time: 18,
     speaker: "ai",
-    text: "Got it, a $450,000 budget. We have two excellent properties in that range. Would you be available for a site viewing tomorrow at 11 AM?",
-    leadUpdate: {},
+    text: "Perfect. Let me note that down. What location interests you?",
   },
   {
-    time: 35,
+    time: 22,
     speaker: "user",
-    text: "Yes, tomorrow at 11 AM works perfectly for me.",
-    leadUpdate: { schedule: "Tomorrow 11:00 AM" },
+    text: "Whitefield area",
   },
   {
-    time: 41,
+    time: 26,
     speaker: "ai",
-    text: "Perfect! I've noted down your details: a 3-bedroom home in Downtown NYC with a $450,000 budget and a viewing scheduled for tomorrow at 11 AM. I've sent you the confirmation details via your preferred notification channel. Thank you!",
-    leadUpdate: { status: "complete", whatsappSent: true },
-  },
-  {
-    time: 47,
-    speaker: "system",
-    text: "📞 Call disconnected by remote agent.",
-    leadUpdate: {},
+    text: "Excellent choice! I've captured your details. You'll receive a WhatsApp message shortly.",
   },
 ];
 
 export default function DemoPage() {
-  // Wizard steps
-  const [signedIn, setSignedIn] = useState(false);
-  const [googleModalOpen, setGoogleModalOpen] = useState(false);
+  const router = useRouter();
+
+  // Step and auth states
+  const [step, setStep] = useState(1); // 1 = Google Sign-in, 2 = Phone Form
+  const [googleUser, setGoogleUser] = useState<{ name: string; email: string; avatar?: string } | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googlePopupRef = useRef<Window | null>(null);
+
+  // Phone input states
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [googleName, setGoogleName] = useState("");
-  const [googleEmail, setGoogleEmail] = useState("");
-  
+  const [actionLoading, setActionLoading] = useState(false);
+
   // Call stages: 'form' | 'calling' | 'result'
   const [callStage, setCallStage] = useState<"form" | "calling" | "result">("form");
-  
-  // Simulation states
-  const [simIndex, setSimIndex] = useState(0);
-  const [transcript, setTranscript] = useState<Array<{ speaker: string; text: string }>>([]);
-  const [leadCard, setLeadCard] = useState({
-    name: "Sarah Johnson",
-    phone: "",
-    intent: "Extracting...",
-    budget: "Waiting...",
-    location: "Waiting...",
-    schedule: "Waiting...",
-    status: "Waiting...",
-    whatsappSent: false,
-  });
+
+  // Call connection states
+  const [isCallConnected, setIsCallConnected] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const [transcript, setTranscript] = useState<Array<{ speaker: string; text: string; time: number }>>([]);
   const [isSavingData, setIsSavingData] = useState(false);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Form validations
-  const isPhoneValid = phoneNumber.replace(/\D/g, "").length === 10;
+  // Conversion Modal states
+  const [showConversionModal, setShowConversionModal] = useState(false);
+  const [callEndTime, setCallEndTime] = useState<number | null>(null);
+  const [maybeLaterCount, setMaybeLaterCount] = useState(0);
+  const [showEmailFallback, setShowEmailFallback] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
 
-  // Handle Google Sign-in Mock Submit
-  const handleGoogleMockSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!googleName || !googleEmail) return;
+  // Track session ID
+  const sessionId = useMemo(() => {
+    return `demo_sess_${Math.random().toString(36).substring(2, 15)}`;
+  }, []);
 
-    setIsSavingData(true);
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToastMessage(message);
+    setToastType(type);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  // Validate 10 digit phone number (e.g. 10+ digits, numbers only)
+  const cleanPhone = phoneNumber.replace(/\D/g, "");
+  const isPhoneValid = cleanPhone.length >= 10;
+
+  // Sign in anonymously skip
+  const handleSkipOauth = () => {
+    setGoogleUser(null);
+    setStep(2);
+  };
+
+  // Real Google OAuth via Supabase popup
+  const handleGoogleSignIn = async () => {
+    if (isGoogleLoading) return;
+    setIsGoogleLoading(true);
+
     try {
-      // Create user account on backend so they have a real client record!
-      const tempPhone = "+1" + Math.floor(1000000000 + Math.random() * 9000000000);
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: googleName,
-          email: googleEmail,
-          phone: tempPhone,
-          password: "google_demo_pass_123", // standard mock fallback password
-        }),
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,  // gives us the URL without navigating
+        }
       });
 
-      const data = await res.json();
-      if (res.ok && data.token) {
-        setAuthData(data.token, data.client_id, googleName);
-        setCookie("bavio_auth", "true");
-        setCookie("bavio_onboarding_completed", "false");
-      } else if (res.status === 409) {
-        // If account already exists, attempt to log in using the fallback password
-        const loginRes = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: googleEmail,
-            password: "google_demo_pass_123",
-          }),
-        });
-        const loginData = await loginRes.json();
-        if (loginRes.ok && loginData.token) {
-          setAuthData(loginData.token, loginData.client_id, googleName);
-          setCookie("bavio_auth", "true");
-        } else {
-          // If login fails, just mock locally to not block the demo
-          localStorage.setItem("bavio_token", "mock_demo_token");
-          localStorage.setItem("bavio_client_id", "mock_demo_client_id");
-          localStorage.setItem("bavio_name", googleName);
-          setCookie("bavio_auth", "true");
-        }
-      } else {
-        // Local simulation fallback
-        localStorage.setItem("bavio_token", "mock_demo_token");
-        localStorage.setItem("bavio_client_id", "mock_demo_client_id");
-        localStorage.setItem("bavio_name", googleName);
-        setCookie("bavio_auth", "true");
+      if (error || !data?.url) throw error || new Error('No OAuth URL returned');
+
+      // Open as a centered popup
+      const w = 500, h = 620;
+      const left = window.screenX + (window.outerWidth - w) / 2;
+      const top = window.screenY + (window.outerHeight - h) / 2;
+      const popup = window.open(
+        data.url,
+        'google_oauth',
+        `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+      );
+      googlePopupRef.current = popup;
+
+      if (!popup) {
+        // Popup blocked — fallback to redirect
+        window.location.href = data.url;
+        return;
       }
-    } catch (err) {
-      console.warn("Sign-up API fallback enabled:", err);
-      localStorage.setItem("bavio_token", "mock_demo_token");
-      localStorage.setItem("bavio_client_id", "mock_demo_client_id");
-      localStorage.setItem("bavio_name", googleName);
-      setCookie("bavio_auth", "true");
-    } finally {
-      setIsSavingData(false);
-      setSignedIn(true);
-      setGoogleModalOpen(false);
-      setLeadCard((prev) => ({ ...prev, name: googleName }));
+
+      // Listen for postMessage from /auth/callback
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          const { name, email, avatar } = event.data.user;
+          setGoogleUser({ name, email, avatar });
+          setStep(2);
+          window.removeEventListener('message', handleMessage);
+          setIsGoogleLoading(false);
+        } else if (event.data?.type === 'GOOGLE_AUTH_CANCELLED' || event.data?.type === 'GOOGLE_AUTH_ERROR') {
+          window.removeEventListener('message', handleMessage);
+          setIsGoogleLoading(false);
+        }
+      };
+      window.addEventListener('message', handleMessage);
+
+      // Also stop loading if popup is closed manually
+      const pollClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollClosed);
+          window.removeEventListener('message', handleMessage);
+          setIsGoogleLoading(false);
+        }
+      }, 500);
+
+    } catch (err: any) {
+      console.error('Google OAuth failed:', err);
+      setIsGoogleLoading(false);
     }
   };
 
-  // Trigger call simulation
+  // Start outbound call simulation
   const startCallDemo = () => {
     if (!isPhoneValid) return;
     setCallStage("calling");
     setSecondsElapsed(0);
-    setSimIndex(0);
-    setTranscript([transcriptTimeline[0]]);
-    setLeadCard((prev) => ({
-      ...prev,
-      phone: "+1 " + phoneNumber.replace(/\D/g, ""),
-      intent: "Extracting...",
-      budget: "Waiting...",
-      location: "Waiting...",
-      schedule: "Waiting...",
-      status: "Initiating...",
-    }));
+    setIsCallConnected(false);
+    setTranscript([]);
 
-    // Start elapsed timer
     timerRef.current = setInterval(() => {
       setSecondsElapsed((prev) => prev + 1);
     }, 1000);
   };
 
-  // Handle call timeline advances
-  useEffect(() => {
-    if (callStage !== "calling") return;
+  // Simulate call connected (pickup)
+  const simulateCallAnswer = () => {
+    setIsCallConnected(true);
+    // Adjust timer slightly to let transcript flow immediately
+    setSecondsElapsed(0);
+  };
 
-    const nextMilestone = transcriptTimeline.find((x) => x.time === secondsElapsed);
-    if (nextMilestone) {
-      setTranscript((prev) => [...prev, nextMilestone]);
-      
-      // Update Lead Card
-      if (Object.keys(nextMilestone.leadUpdate).length > 0) {
-        setLeadCard((prev) => ({
-          ...prev,
-          ...nextMilestone.leadUpdate,
-        }));
-      }
-
-      // Auto scroll transcript
-      setTimeout(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-        }
-      }, 50);
-    }
-
-    // Auto end call when timeline finishes
-    if (secondsElapsed >= 50) {
-      endCall();
-    }
-  }, [secondsElapsed, callStage]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  // End Call & Save Data to DB
-  const endCall = async () => {
+  // End Call and Sync Lead logs
+  const endCall = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setCallStage("result");
-    
-    // Fill remaining fields if ended prematurely
-    setLeadCard((prev) => ({
-      ...prev,
-      name: googleName || "Sarah Johnson",
-      phone: "+1 " + phoneNumber.replace(/\D/g, ""),
-      intent: "Enquiry: 3BR Home",
-      budget: "$450,000",
-      location: "Downtown NYC",
-      schedule: "Tomorrow 11:00 AM",
-      status: "Qualified",
-      whatsappSent: true,
-    }));
 
-    // Send completed call log and lead to postgres database!
+    // Save end time and trigger post-demo conversion modal in 2 seconds
+    const endTimestamp = Date.now();
+    setCallEndTime(endTimestamp);
+    
+    setTimeout(() => {
+      setShowConversionModal(true);
+      console.log("[Analytics] modal_shown");
+    }, 2000);
+
+    const fullTranscriptText = demoTimeline
+      .map((x) => `${x.speaker === "ai" ? "AI" : "User"}: "${x.text}"`)
+      .join("\n");
+
     setIsSavingData(true);
     try {
-      const fullTranscriptText = transcript
-        .map((x) => `${x.speaker === "ai" ? "AI" : x.speaker === "user" ? "User" : "System"}: ${x.text}`)
-        .join("\n");
-
       // Save call via backend
       await demoApi.saveCall({
-        caller_number: "+1" + phoneNumber.replace(/\D/g, ""),
-        duration: secondsElapsed || 150,
+        caller_number: "+1" + cleanPhone,
+        duration: 163, // 2:43 duration mock
         call_status: "completed",
         transcript: fullTranscriptText,
       });
 
       // Save lead via backend
       await leadsApi.create({
-        phone: "+1" + phoneNumber.replace(/\D/g, ""),
-        name: googleName || "Sarah Johnson",
-        intent: "Enquiry: 3BR Home in Downtown NYC",
-        budget: "$450,000", // $450,000
-        location: "Downtown NYC",
-        notes: "Demo call site viewing scheduled for tomorrow 11:00 AM.",
+        phone: "+1" + cleanPhone,
+        name: googleUser?.name || "Anonymous User",
+        intent: "Property Inquiry",
+        budget: "Around 50 lakhs",
+        location: "Whitefield area",
+        notes: "Inbound call completed. Inquired about Bangalore property in Whitefield area.",
       });
-
     } catch (err) {
-      console.warn("Failed to store demo data in database:", err);
+      console.warn("Failed to store lead data in database:", err);
     } finally {
       setIsSavingData(false);
     }
-  };
+  }, [cleanPhone, googleUser]);
 
-  // Download transcript handler
-  const downloadTranscript = () => {
-    const text = transcript
-      .map((x) => `[${x.speaker.toUpperCase()}] ${x.text}`)
-      .join("\n");
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Bavio-Demo-Call-${phoneNumber}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
+  // Live call timeline advance
+  useEffect(() => {
+    if (callStage !== "calling") return;
 
+    // Handle automatically answering call on screen after 6 seconds of ringing
+    if (!isCallConnected && secondsElapsed >= 6) {
+      simulateCallAnswer();
+      return;
+    }
+
+    if (isCallConnected) {
+      const nextMessage = demoTimeline.find((x) => x.time === secondsElapsed);
+      if (nextMessage) {
+        setTranscript((prev) => [...prev, { ...nextMessage, time: secondsElapsed }]);
+
+        // Auto-scroll transcript container
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          }
+        }, 50);
+      }
+
+      // Automatically end call 4 seconds after the last message is sent
+      if (secondsElapsed >= 30) {
+        endCall();
+      }
+    }
+  }, [secondsElapsed, callStage, isCallConnected, endCall]);
+
+  // Clean up timers
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Format MM:SS
   const formatTime = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const faqs = [
-    {
-      question: "Is this call free?",
-      answer: "Yes, completely free. No charges, no credit card required, and absolutely no commitment.",
-    },
-    {
-      question: "What if I don't want to receive a phone call?",
-      answer: "No problem at all. You can skip the calling demo entirely and go straight to the free signup.",
-    },
-    {
-      question: "Can I try multiple times?",
-      answer: "Absolutely. You can call and interact with Bavio as many times as you like to get comfortable with its performance.",
-    },
-    {
-      question: "What if the call doesn't come through?",
-      answer: "If you don't receive a call within 60 seconds, check if your phone is in DND mode or try again. You can also contact support at hello@bavio.in.",
-    },
-    {
-      question: "Is my phone number safe?",
-      answer: "Yes. We only use your phone number to connect this live demo. We never spam, sell, or use your number for marketing.",
-    },
-  ];
+  // Reset page for another call
+  const resetCall = () => {
+    setCallStage("form");
+    setPhoneNumber("");
+    setSecondsElapsed(0);
+    setIsCallConnected(false);
+    setTranscript([]);
+    setMaybeLaterCount(0);
+    setShowEmailFallback(false);
+    setEmailInput("");
+  };
+
+  const handleCreateReceptionist = () => {
+    console.log("[Analytics] cta_clicked");
+    if (callEndTime) {
+      const conversionSpeed = (Date.now() - callEndTime) / 1000;
+      console.log(`[Analytics] time_from_call_end_to_cta_click: ${conversionSpeed.toFixed(2)}s`);
+    }
+
+    setActionLoading(true);
+    try {
+      router.push(`/signup?phone=${encodeURIComponent(cleanPhone)}&demo_completed=true`);
+    } catch (err) {
+      console.error("Navigation failed:", err);
+      showToast("Unable to redirect. Please refresh the page.", "error");
+      setActionLoading(false);
+    }
+  };
+
+  const handleMaybeLaterClick = () => {
+    console.log("[Analytics] maybe_later_clicked");
+    const nextCount = maybeLaterCount + 1;
+    setMaybeLaterCount(nextCount);
+
+    if (nextCount >= 2) {
+      setShowEmailFallback(true);
+    } else {
+      setShowConversionModal(false);
+    }
+  };
+
+  const handleEmailSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput) return;
+
+    setIsSubmittingEmail(true);
+    console.log("[Analytics] email_submitted");
+
+    try {
+      const response = await fetch("/api/demo/subscribe-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailInput,
+          sessionId: sessionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast("We'll email you soon", "success");
+        setShowConversionModal(false);
+      } else {
+        showToast(data.message || "Failed to save email. Try again.", "error");
+      }
+    } catch (err) {
+      console.error("Email subscribe exception:", err);
+      showToast("Failed to save email. Try again.", "error");
+    } finally {
+      setIsSubmittingEmail(false);
+    }
+  };
+
+  // Setup Call status string based on wait states
+  const getCallStatusString = () => {
+    if (secondsElapsed < 30) {
+      return "Connecting...";
+    } else if (secondsElapsed < 60) {
+      return "Ringing...";
+    } else {
+      return "Still ringing...";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] text-[#140A02] font-sans antialiased selection:bg-[#FF6B00]/15 selection:text-[#FF6B00] relative overflow-hidden noise-overlay flex flex-col w-full">
+    <>
       <Navbar />
-
-      <main className="flex-grow pt-32 lg:pt-40">
-        {/* Hero Section */}
-        <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-12 text-center max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      <div className="h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col md:flex-row overflow-hidden relative">
+        
+        {/* ────────────────────────────────────────
+            LEFT SIDE: EXPERIENTIAL PANEL (50% Width, Non-scrolling)
+        ──────────────────────────────────────── */}
+        <section className="w-full md:w-1/2 bg-[#FFFDF8] text-[#140A02] pt-24 pb-6 px-6 md:px-8 lg:px-12 flex flex-col justify-between relative h-full max-h-screen overflow-y-auto md:overflow-hidden border-r border-[#E5E0D8]">
+          
+          {/* Narrative & expectations block */}
+          <div className="relative z-10 my-auto max-w-xl py-6">
+          {/* Pill Badge */}
+          <div 
+            style={{ 
+              height: '32px', 
+              backgroundColor: 'rgba(255,107,0,0.08)', 
+              color: '#FF6B00', 
+              border: '1px solid rgba(255,107,0,0.12)' 
+            }}
+            className="inline-flex items-center gap-2 px-4 rounded-full text-[10px] font-black uppercase tracking-widest mb-6"
           >
-            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-3 py-1 rounded-full border border-[#FF6B00]/10 w-fit mx-auto mb-6 block">
-              Bavio Playground
-            </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
-              Talk to Bavio. <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">{"It's Just a Phone Call Away."}</span>
-            </h1>
-            <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl mx-auto">
-              {"Call now and see Bavio's AI in action. Real conversation, real results, in just 2.5 minutes."}
-            </p>
-          </motion.div>
-        </section>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0" />
+            <span>LIVE AI CALL EXPERIENCE</span>
+          </div>
 
-        {/* SECTION 1: DEMO FORM & CALL FLOW (Form State) */}
-        {callStage === "form" && (
-          <section className="border-t border-[#F3E4D4] py-16 bg-white/40">
-            <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-                
-                {/* LEFT COLUMN - FORM */}
-                <div className="lg:col-span-6 bg-white border border-[#F3E4D4] p-8 rounded-3xl shadow-sm space-y-8">
-                  {/* Step 1: Google Sign-in */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-[#140A02] flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center text-xs font-bold">
-                        1
-                      </span>
-                      Step 1: Sign in with Google
-                    </h3>
+          <h1 className="font-display text-4xl lg:text-[2.75rem] leading-[1.1] font-bold text-[#140A02] mb-3 tracking-tight">
+            Talk to <span className="text-[#FF6B00]">Bavio</span>
+          </h1>
 
-                    {signedIn ? (
-                      <div className="flex items-center justify-between bg-[#FF6B00]/5 border border-[#FF6B00]/15 p-4 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#E05E00] flex items-center justify-center text-white font-bold text-lg">
-                            {googleName ? googleName.charAt(0).toUpperCase() : "G"}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-[#140A02]">{googleName}</div>
-                            <div className="text-xs text-[#6B5A4C]">{googleEmail}</div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setSignedIn(false)}
-                          className="text-xs font-semibold text-[#FF6B00] hover:text-[#E05E00] underline"
-                        >
-                          Change
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <button
-                          type="button"
-                          onClick={() => setGoogleModalOpen(true)}
-                          className="w-full flex items-center justify-center gap-3 border border-[#E5E0D8] hover:border-[#FF6B00]/30 hover:bg-[#FFFDF8] bg-white text-[#140A02] py-3.5 rounded-xl font-bold text-sm transition-all duration-200"
-                        >
-                          {/* Standard Google Icon SVG */}
-                          <svg className="w-5 h-5" viewBox="0 0 24 24">
-                            <path
-                              fill="#4285F4"
-                              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69c-.29 1.5-.1.3-1.18 2.01L20.89 20.2c2.44-2.24 3.86-5.58 3.86-9.28z"
-                            />
-                            <path
-                              fill="#34A853"
-                              d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.89-3.02c-1.08.72-2.47 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96L1.22 17.2C3.21 21.14 7.28 24 12 24z"
-                            />
-                            <path
-                              fill="#FBBC05"
-                              d="M5.27 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26L1.22 6.8C.44 8.36 0 10.13 0 12s.44 3.64 1.22 5.2l4.05-2.94z"
-                            />
-                            <path
-                              fill="#EA4335"
-                              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.22 0 12 0 7.28 0 3.21 2.86 1.22 6.8l4.05 2.94c.95-2.85 3.6-4.99 6.73-4.99z"
-                            />
-                          </svg>
-                          Sign In with Google
-                        </button>
-                        <p className="text-[11px] text-[#6B5A4C] text-center font-normal">
-                          We use this to identify you and track your call results.
-                        </p>
-                      </div>
-                    )}
+          <p className="text-[#5A5A66] text-xs md:text-sm leading-relaxed mb-8 font-semibold">
+            Call now and see Bavio&apos;s AI in action. Real conversation, real results, in just 2.5 minutes.
+          </p>
+
+          <div className="space-y-3">
+            <h3 className="text-[10px] uppercase font-black tracking-wider text-[#8A8A96]">
+              Here&apos;s What to Expect
+            </h3>
+            <div className="space-y-2">
+              {[
+                { step: 1, text: "Hang tight! Bavio will connect the call in ~30 seconds" },
+                { step: 2, text: "Say hello. Tell Bavio what you're looking for (business inquiry, booking, etc.)" },
+                { step: 3, text: "Chat naturally in English, Hindi, or Hinglish. No rigid scripts" },
+                { step: 4, text: "Bavio captures your info, asks qualifying questions, and logs details" },
+                { step: 5, text: "Call ends. View a transcript and results on your screen instantly" }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-xl hover:border-[#FF6B00]/40 transition-colors duration-200">
+                  <div className="w-5 h-5 rounded bg-[#FF6B00] flex items-center justify-center text-white text-[11px] font-black shrink-0">
+                    {item.step}
                   </div>
+                  <p className="text-xs text-[#140A02]/85 leading-normal font-bold">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-                  {/* Step 2: Enter Phone Number */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-[#140A02] flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center text-xs font-bold">
-                        2
-                      </span>
-                      Step 2: Enter Your Phone Number
-                    </h3>
+        {/* Left footer commitment details */}
+        <div className="relative z-10 grid grid-cols-3 gap-4 pt-4 border-t border-[#E5E0D8] mt-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-[#FF6B00]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">~2.5 Minutes</span>
+              <span className="text-[10px] text-[#8A8A96] font-bold">Call Duration</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
+              <span className="text-sm font-black text-[#FF6B00] select-none">₹</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">Free</span>
+              <span className="text-[10px] text-[#8A8A96] font-bold">Try at No Cost</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
+              <Check className="w-5 h-5 text-[#FF6B00]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">No Commitment</span>
+              <span className="text-[10px] text-[#8A8A96] font-bold">Cancel Anytime</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────────────────────────────────
+          RIGHT SIDE: DEMO WORKSPACE CARD PANEL (50%)
+      ──────────────────────────────────────── */}
+      <section className="w-full md:w-1/2 pt-24 pb-6 px-8 md:px-12 lg:px-20 flex flex-col justify-center items-center bg-[#FFFDF8] relative h-full overflow-y-auto">
+        <div className="absolute w-[300px] h-[300px] bg-[#FF6B00]/5 rounded-full blur-[80px] pointer-events-none top-1/4 right-1/10" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[460px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-20"
+        >
+          <AnimatePresence mode="wait">
+            
+            {/* ── STATE 1: FORM FLOW ── */}
+            {callStage === "form" && (
+              <motion.div
+                key="form-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {/* Step 1: Google OAuth optional */}
+                {step === 1 && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block">Step 1 of 2</span>
+                      <h2 className="text-xl font-bold text-[#140A02] tracking-tight">Step 1: Sign in with Google</h2>
+                      <p className="text-xs text-[#6B5A4C] leading-relaxed font-semibold">
+                        We use this to identify you and track your call results.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isGoogleLoading}
+                      className="w-full flex items-center justify-center gap-3 border border-[#E5E0D8] hover:border-[#FF6B00]/40 bg-white text-[#140A02] py-3.5 rounded-[20px] font-bold text-sm transition-all duration-200 hover:shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isGoogleLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
+                          <span>Opening Google...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69c-.29 1.5-.1.3-1.18 2.01L20.89 20.2c2.44-2.24 3.86-5.58 3.86-9.28z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.89-3.02c-1.08.72-2.47 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96L1.22 17.2C3.21 21.14 7.28 24 12 24z" />
+                            <path fill="#FBBC05" d="M5.27 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26L1.22 6.8C.44 8.36 0 10.13 0 12s.44 3.64 1.22 5.2l4.05-2.94z" />
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.22 0 12 0 7.28 0 3.21 2.86 1.22 6.8l4.05 2.94z" />
+                          </svg>
+                          <span>Sign In with Google</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex flex-col items-center py-2 w-full">
+                      <div className="w-full flex items-center justify-between gap-4 mb-4">
+                        <div className="h-px bg-[#E5E0D8]/60 flex-1" />
+                        <span className="text-[9px] text-[#8A8A96] font-bold tracking-wider">OR</span>
+                        <div className="h-px bg-[#E5E0D8]/60 flex-1" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSkipOauth}
+                        className="text-[#FF6B00] hover:text-[#FF8C3A] font-bold text-xs uppercase tracking-wider transition-colors hover:underline"
+                      >
+                        skip and continue anonymously
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Phone number Form */}
+                {step === 2 && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block">Step 2 of 2</span>
+                        {googleUser && (
+                          <span className="text-[10px] bg-[#FF6B00]/8 text-[#FF6B00] font-bold px-2.5 py-0.5 rounded-md">
+                            Signed in as {googleUser.name.split(" ")[0]}
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="text-xl font-bold text-[#140A02] tracking-tight">Step 2: Enter Your Phone Number</h2>
+                      <p className="text-xs text-[#6B5A4C] leading-relaxed font-semibold">
+                        You&apos;ll receive a mock preview call on your screen instantly.
+                      </p>
+                    </div>
 
                     <div className="space-y-4">
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6B5A4C]">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6B5A4C] select-none">
                           +1
                         </span>
                         <input
                           type="tel"
-                          disabled={!signedIn}
                           value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/\D/g, "");
+                            setPhoneNumber(cleaned);
+                          }}
                           placeholder="Enter 10-digit mobile number"
-                          className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl pl-14 pr-4 py-3.5 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all font-semibold"
+                          className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-[20px] pl-12 pr-11 py-4 text-sm text-[#14141A] placeholder-[#8A8A96] font-semibold outline-none transition-all duration-200"
                         />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                          {phoneNumber.length > 0 && (
+                            isPhoneValid ? (
+                              <span className="text-green-500 font-bold text-sm select-none">✓</span>
+                            ) : (
+                              <span className="text-red-500 font-bold text-sm select-none">✗</span>
+                            )
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[11px] text-[#6B5A4C] font-normal">
-                        {"You'll receive a mock preview call on your screen instantly."}
-                      </p>
 
                       <button
                         type="button"
                         onClick={startCallDemo}
-                        disabled={!signedIn || !isPhoneValid}
-                        className="w-full bg-[#FF6B00] hover:bg-[#FF7C32] disabled:bg-[#FF6B00]/50 text-white font-bold py-4 rounded-xl text-sm transition-all duration-200 shadow-sm disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        disabled={!isPhoneValid || actionLoading}
+                        className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#E5E0D8] disabled:text-[#8A8A96] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2"
                       >
-                        Call Me Now
-                        <ArrowRight className="w-4 h-4" />
+                        {actionLoading ? (
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            Call Me Now
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+
+                      {!googleUser && (
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="text-xs text-[#8A8A96] hover:text-[#1a1a1a] font-bold block mx-auto pt-2 hover:underline"
+                        >
+                          &larr; Back to Step 1
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── STATE 2: CALLING STATE ── */}
+            {callStage === "calling" && (
+              <motion.div
+                key="calling-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center text-center space-y-6"
+              >
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-[#140A02]">Connecting your call...</h3>
+                  <p className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
+                    Status: {isCallConnected ? "Connected" : getCallStatusString()}
+                  </p>
+                </div>
+
+                {/* Animated pulse circle */}
+                <div className="relative w-28 h-28 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]">
+                  <span className="absolute inset-0 rounded-full bg-[#FF6B00] animate-ping opacity-25" />
+                  <span className="absolute inset-2 rounded-full bg-[#FF6B00] animate-ping opacity-15" style={{ animationDelay: "150ms" }} />
+                  <Phone className="w-9 h-9 relative z-10 animate-bounce" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-3xl font-black font-mono text-[#140A02] tracking-tight">
+                    {formatTime(secondsElapsed)}
+                  </div>
+                  {!isCallConnected && (
+                    <p className="text-xs font-semibold text-[#FF6B00] animate-pulse">
+                      Please pick up your phone.
+                    </p>
+                  )}
+                </div>
+
+                {/* Simulated wait state controls */}
+                <div className="w-full space-y-3 pt-4">
+                  {secondsElapsed >= 120 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-red-500 font-bold">Call failed. Try again</p>
+                      <button
+                        onClick={resetCall}
+                        className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-[20px] transition-all"
+                      >
+                        Retry Call
                       </button>
                     </div>
-                  </div>
-                </div>
-
-                {/* RIGHT COLUMN - WHAT HAPPENS NEXT */}
-                <div className="lg:col-span-6 space-y-6">
-                  <h3 className="text-xl font-bold text-[#140A02]">
-                    {"Here's What to Expect"}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {[
-                      { icon: "1️⃣", text: "Hang tight! Bavio will connect the call in ~30 seconds" },
-                      { icon: "2️⃣", text: "Say hello. Tell Bavio what you're looking for (business inquiry, booking, etc.)" },
-                      { icon: "3️⃣", text: "Chat naturally in English, Spanish, or French. No rigid scripts" },
-                      { icon: "4️⃣", text: "Bavio captures your info, asks qualifying questions, and logs details" },
-                      { icon: "5️⃣", text: "Call ends. View a transcript and results on your screen instantly" },
-                    ].map((step, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-4 bg-white border border-[#F3E4D4] p-4 rounded-2xl shadow-sm hover:border-[#FF6B00]/25 transition-all duration-300"
+                  ) : (
+                    <div className="space-y-3 w-full">
+                      {!isCallConnected && (
+                        <button
+                          onClick={simulateCallAnswer}
+                          className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold text-sm rounded-[20px] transition-all hover:shadow-[0_8px_24px_rgba(34,197,94,0.25)] active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                          <Play className="w-4 h-4 fill-white" />
+                          Answer Call on Screen 📞
+                        </button>
+                      )}
+                      <button
+                        onClick={endCall}
+                        className="w-full py-3.5 border border-[#E5E0D8] hover:border-red-500 hover:text-red-500 text-[#8A8A96] font-bold text-xs rounded-[20px] transition-all"
                       >
-                        <span className="text-lg shrink-0 mt-0.5">{step.icon}</span>
-                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-semibold">
-                          {step.text}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-[#F3E4D4] pt-4 text-xs text-[#6B5A4C] flex justify-between font-medium">
-                    <span>Call duration: ~2.5 minutes</span>
-                    <span>Free | No commitment</span>
-                  </div>
+                        {isCallConnected ? "End Call" : "Cancel Call"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* SECTION 2: LIVE CALL STATUS (Active Call State) */}
-        {callStage === "calling" && (
-          <section className="border-t border-[#F3E4D4] py-16 bg-white/40">
-            <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                
-                {/* Left Side: Call Stream & Live Transcript */}
-                <div className="lg:col-span-8 flex flex-col justify-between bg-white border border-[#F3E4D4] rounded-3xl p-6 md:p-8 shadow-sm h-[500px]">
-                  
-                  {/* Active call indicator */}
-                  <div className="flex justify-between items-center border-b border-[#F3E4D4] pb-4">
-                    <div className="flex items-center gap-3">
-                      {/* Pulse circle */}
-                      <div className="relative w-10 h-10 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]">
-                        <span className="absolute inset-0 rounded-full bg-[#FF6B00] animate-ping opacity-20" />
-                        <PhoneCall className="w-5 h-5 relative z-10" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-[#140A02]">
-                          📞 Live Call Simulation
-                        </div>
-                        <div className="text-xs text-[#6B5A4C] font-semibold">
-                          Connected with {leadCard.phone}
-                        </div>
-                      </div>
+                {/* Real-time transcript screen simulator (only visible when call is connected) */}
+                {isCallConnected && (
+                  <div className="w-full border border-[#E5E0D8] rounded-[20px] p-4.5 bg-[#FAF9F6] text-left mt-6 flex flex-col h-[260px] overflow-hidden">
+                    <div className="flex justify-between items-center border-b border-[#E5E0D8]/60 pb-2 mb-3 shrink-0">
+                      <span className="text-[9px] uppercase font-bold text-[#FF6B00] tracking-wider animate-pulse flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 bg-[#FF6B00] rounded-full animate-ping" />
+                        Live Conversation Stream
+                      </span>
                     </div>
-
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] px-3 py-1 rounded-full text-xs font-bold font-mono">
-                      {formatTime(secondsElapsed)} / 02:30
-                    </div>
-                  </div>
-
-                  {/* Transcript scrolling area */}
-                  <div
-                    ref={scrollContainerRef}
-                    className="flex-grow my-6 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-neutral-200"
-                  >
-                    {transcript.map((msg, idx) => {
-                      if (msg.speaker === "system") {
+                    <div ref={scrollContainerRef} className="flex-grow overflow-y-auto space-y-3 pr-2 scrollbar-thin text-xs">
+                      {transcript.map((msg, idx) => {
+                        const isAi = msg.speaker === "ai";
                         return (
-                          <div key={idx} className="flex justify-center my-2">
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-[#6B5A4C] bg-neutral-100 border border-neutral-200 px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                              <Info className="w-3 h-3 text-[#FF6B00]" />
+                          <div key={idx} className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
+                            <div className={`max-w-[85%] p-3.5 rounded-2xl ${isAi ? "bg-[#FF6B00]/8 text-[#140A02] rounded-tl-none font-bold" : "bg-white border border-[#E5E0D8]/70 text-[#140A02] rounded-tr-none font-normal"}`}>
+                              <span className="text-[8px] uppercase tracking-wider block font-bold text-[#FF6B00] mb-1">{isAi ? "Bavio AI Assistant" : googleUser?.name || "You"}</span>
                               {msg.text}
-                            </span>
+                            </div>
                           </div>
                         );
-                      }
+                      })}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-                      const isAi = msg.speaker === "ai";
+            {/* ── STATE 3: TRANSCRIPT SUMMARY RESULT ── */}
+            {callStage === "result" && (
+              <motion.div
+                key="result-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col items-center text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-green-50 text-green-500 border border-green-200 flex items-center justify-center">
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#140A02]">✅ Call Completed Successfully</h3>
+                </div>
+
+                <div className="h-px bg-[#E5E0D8]/60 w-full" />
+
+                {/* Call Metadata summary */}
+                <div className="bg-[#FAF9F6] border border-[#E5E0D8] rounded-[20px] p-5 space-y-3 font-semibold text-xs text-[#140A02]">
+                  <div className="flex justify-between">
+                    <span className="text-[#8A8A96] font-bold">Duration:</span>
+                    <span>2:43</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#8A8A96] font-bold">Caller:</span>
+                    <span>+1 {phoneNumber.replace(/\D/g, "") || "(555) 123-4567"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#8A8A96] font-bold">Intent:</span>
+                    <span className="text-[#FF6B00]">Property Inquiry</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#8A8A96] font-bold">Sentiment:</span>
+                    <span className="text-green-600 flex items-center gap-1">Positive ✓</span>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#E5E0D8]/60 w-full" />
+
+                {/* Scrollable full transcript logs */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold text-[#8A8A96] uppercase tracking-wider block">📝 Full Transcript:</span>
+                  <div className="border border-[#E5E0D8] rounded-[20px] p-4 max-h-[220px] overflow-y-auto bg-[#FAF9F6] space-y-3.5 text-xs scrollbar-thin">
+                    {demoTimeline.map((msg, idx) => {
+                      const speakerLabel = msg.speaker === "ai" ? "AI" : "User";
+                      const mockTime = `00:${(idx * 5).toString().padStart(2, "0")}`;
                       return (
-                        <div
-                          key={idx}
-                          className={`flex ${isAi ? "justify-start" : "justify-end"}`}
-                        >
-                          <div
-                            className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${
-                              isAi
-                                ? "bg-[#FF6B00]/5 text-[#140A02] border border-[#FF6B00]/10 rounded-tl-none font-semibold"
-                                : "bg-neutral-100 text-[#140A02] border border-[#E5E0D8] rounded-tr-none font-normal"
-                            }`}
-                          >
-                            <span className="text-[9px] font-bold uppercase tracking-wider block mb-1 text-[#FF6B00]">
-                              {isAi ? "Bavio AI Assistant" : googleName || "User"}
-                            </span>
-                            {msg.text}
-                          </div>
+                        <div key={idx} className="leading-relaxed">
+                          <span className="text-[#8A8A96] font-mono mr-1.5">[{mockTime}]</span>
+                          <span className={`font-bold ${msg.speaker === "ai" ? "text-[#FF6B00]" : "text-[#140A02]"}`}>{speakerLabel}: </span>
+                          <span className="text-[#140A02]">&ldquo;{msg.text}&rdquo;</span>
                         </div>
                       );
                     })}
                   </div>
+                </div>
 
-                  {/* Control panel */}
-                  <div className="border-t border-[#F3E4D4] pt-4 flex justify-between items-center">
-                    <p className="text-[11px] text-[#6B5A4C] flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#FF6B00] animate-spin" />
-                      Capturing conversation logs via advanced AI language processing
+                <div className="h-px bg-[#E5E0D8]/60 w-full" />
+
+                {/* Promotional banner and CTAs */}
+                <div className="space-y-4 pt-1.5 text-center">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-[#140A02] flex items-center justify-center gap-1.5">
+                      ✨ Ready to Answer All Your Calls Like This?
+                    </h4>
+                    <p className="text-[11px] text-[#6B5A4C] font-semibold">
+                      Get your own AI receptionist for your business.
                     </p>
-                    <button
-                      onClick={endCall}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs py-2 px-5 rounded-full transition-colors active:scale-95"
+                  </div>
+
+                  {/* Bullet perks */}
+                  <div className="grid grid-cols-2 gap-2 text-left text-[11px] text-[#6B5A4C] font-bold max-w-sm mx-auto pl-6 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-green-500 font-black">✓</span> 24/7 Call Answering
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-green-500 font-black">✓</span> Lead Qualification
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-green-500 font-black">✓</span> WhatsApp Alerts
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-green-500 font-black">✓</span> Starting at ₹1,999/mo
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <Link
+                      href={`/signup?email=${encodeURIComponent(googleUser?.email || '')}&name=${encodeURIComponent(googleUser?.name || '')}`}
+                      className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] text-white py-4 rounded-[20px] text-xs font-black uppercase tracking-wider transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      End Call &amp; Show Results
+                      CREATE YOUR RECEPTIONIST &rarr;
+                    </Link>
+                    <button
+                      onClick={resetCall}
+                      className="w-full border border-[#E5E0D8] hover:border-[#FF6B00]/40 text-[#140A02] py-3.5 rounded-[20px] text-xs font-bold transition-all"
+                    >
+                      Make Another Call
                     </button>
                   </div>
 
+                  <a href="mailto:hello@bavio.in" className="inline-block text-[11px] font-bold text-[#FF6B00] hover:underline pt-2">
+                    Questions? Chat with us &rarr;
+                  </a>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </section>
 
-                {/* Right Side: Lead Extracting Data Card */}
-                <div className="lg:col-span-4 bg-white border border-[#F3E4D4] rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 border-b border-[#F3E4D4] pb-4">
-                      <Sparkles className="w-5 h-5 text-[#FF6B00]" />
-                      <h4 className="text-base font-bold text-[#140A02] uppercase tracking-wide">
-                        Lead Being Captured
-                      </h4>
-                    </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Name
-                        </span>
-                        <div className="text-sm font-bold text-[#140A02]">
-                          {leadCard.name || "Rahul Sharma"}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Phone Number
-                        </span>
-                        <div className="text-sm font-semibold text-[#140A02]">
-                          {leadCard.phone}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Intent
-                        </span>
-                        <div className="text-sm font-bold text-[#FF6B00]">
-                          {leadCard.intent}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Budget
-                        </span>
-                        <div className="text-sm font-semibold text-[#140A02]">
-                          {leadCard.budget}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Location
-                        </span>
-                        <div className="text-sm font-semibold text-[#140A02]">
-                          {leadCard.location}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#6B5A4C] tracking-wider block mb-1">
-                          Schedule
-                        </span>
-                        <div className="text-sm font-semibold text-[#140A02]">
-                          {leadCard.schedule}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-[#F3E4D4] pt-4 mt-6">
-                    <div className="text-[10px] text-[#6B5A4C] flex justify-between font-medium">
-                      <span>Extraction Status:</span>
-                      <span className="text-[#FF6B00] font-bold uppercase">
-                        {leadCard.status}
-                      </span>
-                    </div>
-                  </div>
-
-                </div>
-
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* SECTION 3: CALL RESULT (Post Call state) */}
-        {callStage === "result" && (
-          <section className="border-t border-[#F3E4D4] py-16 bg-white/40">
-            <div className="max-w-[1440px] mx-auto px-6 md:px-8 max-w-4xl">
-              <div className="bg-white border border-[#F3E4D4] rounded-3xl p-8 shadow-sm space-y-8">
-                
-                {/* Header Success info */}
-                <div className="text-center space-y-2">
-                  <div className="w-16 h-16 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="w-8 h-8" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-extrabold text-[#140A02]">
-                    Your Demo Call is Complete!
-                  </h2>
-                  <p className="text-sm text-[#6B5A4C] max-w-md mx-auto font-medium">
-                    Bavio handled your inquiry, classified intent, and saved the lead. Here is the resulting structured record:
-                  </p>
-                </div>
-
-                {/* structured Lead card */}
-                <div className="border border-[#F3E4D4] rounded-2xl p-6 bg-[#FFFDF8] max-w-xl mx-auto space-y-4">
-                  <div className="flex justify-between items-center border-b border-[#F3E4D4] pb-3">
-                    <span className="text-xs uppercase font-bold text-[#FF6B00] tracking-wider">
-                      📝 Lead Captured
-                    </span>
-                    <span className="text-xs font-mono bg-[#FF6B00]/10 text-[#FF6B00] border border-[#FF6B00]/20 px-2 py-0.5 rounded-full font-bold">
-                      Qualified
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Name
-                      </span>
-                      {leadCard.name || "Rahul Sharma"}
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Phone Number
-                      </span>
-                      {leadCard.phone}
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Intent
-                      </span>
-                      Looking for 2BHK flat
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Budget
-                      </span>
-                      {leadCard.budget}
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Location
-                      </span>
-                      {leadCard.location}
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-[#6B5A4C] uppercase tracking-wider block font-bold">
-                        Schedule
-                      </span>
-                      {leadCard.schedule}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-[#F3E4D4] pt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-xs text-green-600 font-bold">
-                      <Check className="w-4 h-4 bg-green-100 rounded-full p-0.5" />
-                      Notification Sent
-                    </div>
-                    
-                    <button
-                      onClick={downloadTranscript}
-                      className="inline-flex items-center gap-1.5 border border-[#F3E4D4] hover:border-[#FF6B00]/30 text-xs font-bold text-[#140A02] px-3.5 py-2 rounded-xl transition-all"
-                    >
-                      <Download className="w-3.5 h-3.5 text-[#FF6B00]" />
-                      Download Transcript
-                    </button>
-                  </div>
-                </div>
-
-                {/* Explanatory notes */}
-                <div className="border-t border-[#F3E4D4] pt-6 max-w-xl mx-auto space-y-4 text-center">
-                  <h4 className="text-base font-bold text-[#140A02]">
-                    What just happened?
-                  </h4>
-                  <ul className="text-sm text-[#6B5A4C] space-y-2.5 max-w-lg mx-auto leading-relaxed text-left pl-6 list-disc font-medium">
-                    <li>You experienced Bavio handling a real lead inquiry.</li>
-                    <li>All caller details were parsed and structured without any manual data entry.</li>
-                    <li>You can see this exact lead in your dashboard once you log in.</li>
-                    <li>This is how every inbound call is answered and captured 24/7.</li>
-                  </ul>
-                </div>
-
-                {/* See dashboard CTA */}
-                <div className="text-center pt-4">
-                  <Link
-                    href={`/signup?email=${encodeURIComponent(
-                      googleEmail
-                    )}&name=${encodeURIComponent(googleName)}`}
-                    className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white px-8 py-4 rounded-full text-base font-bold transition-all shadow-sm active:scale-95"
-                  >
-                    See This in Your Dashboard
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </div>
-
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* SECTION 4: FEATURES HIGHLIGHTED THROUGH THE DEMO */}
-        <section className="py-20 border-t border-[#F3E4D4]">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Card 1: Multilingual */}
-              <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl hover:shadow-sm transition-all duration-300">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-[#140A02] mb-3">
-                  Natural Voice Conversations
-                </h3>
-                <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  No rigid scripts or IVR menus. Bavio understands customer
-                  intent natively in 20+ languages and responds fluidly.
-                </p>
-              </div>
-
-              {/* Card 2: Capture */}
-              <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl hover:shadow-sm transition-all duration-300">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-[#140A02] mb-3">
-                  Instant Lead Capture
-                </h3>
-                <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  Name, budget, intent, location — all extracted and structured in
-                  real-time from conversational audio.
-                </p>
-              </div>
-
-              {/* Card 3: Notifications */}
-              <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl hover:shadow-sm transition-all duration-300">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
-                  <Smartphone className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-[#140A02] mb-3">
-                  Instant Notifications
-                </h3>
-                <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  Get details delivered instantly to your WhatsApp, email, or SMS
-                  without checking delay.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 5: FAQ - DEMO QUESTIONS */}
-        <section className="py-20 border-t border-[#F3E4D4] bg-white/40">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-              <div className="lg:col-span-4">
-                <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                  Questions
-                </span>
-                <h2 className="text-3xl font-extrabold text-[#140A02] mt-2">
-                  Demo FAQs
-                </h2>
-                <p className="text-[#6B5A4C] text-sm mt-3 leading-relaxed">
-                  Everything you need to know about the live playground and connecting demo calls.
-                </p>
-              </div>
-
-              <div className="lg:col-span-8 bg-white border border-[#F3E4D4] p-8 rounded-3xl shadow-sm">
-                <div className="divide-y divide-[#F3E4D4]">
-                  {faqs.map((faq, idx) => (
-                    <FaqItem
-                      key={idx}
-                      question={faq.question}
-                      answer={faq.answer}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 6: NOT READY FOR A CALL? NO PROBLEM. */}
-        <section className="py-20 border-t border-[#F3E4D4]">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <h2 className="text-3xl font-extrabold text-[#140A02]">
-                Prefer to watch instead?
-              </h2>
-              <p className="text-[#6B5A4C] text-sm mt-2 font-medium">
-                Watch a quick demo showing a real AI conversation handled by Bavio.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              <div className="lg:col-span-7 bg-[#140A02] rounded-3xl overflow-hidden aspect-video relative group shadow-premium border border-[#F3E4D4]">
-                <video
-                  src="/bavio-brand-video.mp4"
-                  controls
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="lg:col-span-5 space-y-6">
-                <h3 className="text-2xl font-bold text-[#140A02]">
-                  How Bavio Works Under the Hood
-                </h3>
-                <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                  Bavio bridges the gap between traditional phone networks (enterprise-grade voice infrastructure)
-                  and high-speed LLM nodes. Our pipeline performs speech-to-text,
-                  intelligent prompt responses, and structured data parsing within
-                  milliseconds.
-                </p>
-                <div>
-                  <Link
-                    href="/how-it-works"
-                    className="inline-flex items-center gap-1.5 text-sm font-bold text-[#FF6B00] hover:text-[#E05E00]"
-                  >
-                    Read how it works
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 7: BOTTOM CTA */}
-        <section className="py-24 border-t border-[#F3E4D4] bg-[#FF6B00]/5 relative overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF6B00]/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center relative z-10">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] tracking-tight mb-4">
-              Still not convinced?
-            </h2>
-            <p className="text-base md:text-lg text-[#6B5A4C] mb-8 max-w-xl mx-auto font-medium">
-              Join 50+ businesses already using Bavio to capture every lead.
-            </p>
-
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto inline-flex items-center justify-center bg-[#FF6B00] hover:bg-[#FF7C32] text-white px-8 py-4 rounded-full text-base font-bold transition-all duration-200 shadow-sm active:scale-[0.98]"
-              >
-                Start Free Trial &rarr;
-              </Link>
-              <Link
-                href="/company#contact-us"
-                className="w-full sm:w-auto inline-flex items-center justify-center bg-white border border-[#F3E4D4] hover:border-[#FF6B00]/30 text-[#140A02] px-8 py-4 rounded-full text-base font-bold transition-all duration-200 active:scale-[0.98]"
-              >
-                Talk to our team
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Google Sign-in Mock Modal */}
+      {/* ── POST-DEMO CONVERSION MODAL ── */}
       <AnimatePresence>
-        {googleModalOpen && (
-          <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setGoogleModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-
-            {/* Modal Box */}
+        {showConversionModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-[#0D0D1A]/80 backdrop-blur-[4px]"
+          >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="bg-white border border-[#E5E0D8] rounded-3xl p-6 md:p-8 max-w-md w-full relative z-10 shadow-premium"
+              transition={{ duration: 0.3 }}
+              style={{
+                background: "#F9F6FF",
+                borderRadius: "16px",
+                width: "100%",
+                maxWidth: "500px",
+                padding: "40px 32px",
+                border: "1px solid #E5E7EB",
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+              }}
+              className="relative flex flex-col text-center"
             >
-              <div className="text-center space-y-4">
-                {/* Google Logo */}
-                <svg className="w-10 h-10 mx-auto" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69c-.29 1.5-.1.3-1.18 2.01L20.89 20.2c2.44-2.24 3.86-5.58 3.86-9.28z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.89-3.02c-1.08.72-2.47 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96L1.22 17.2C3.21 21.14 7.28 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.27 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26L1.22 6.8C.44 8.36 0 10.13 0 12s.44 3.64 1.22 5.2l4.05-2.94z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.22 0 12 0 7.28 0 3.21 2.86 1.22 6.8l4.05 2.94c.95-2.85 3.6-4.99 6.73-4.99z"
-                  />
-                </svg>
+              {/* Close Button */}
+              <button
+                onClick={handleMaybeLaterClick}
+                className="absolute top-4 right-4 bg-transparent border-none text-[#9CA3AF] hover:text-[#6B7280] text-2xl cursor-pointer p-2 transition-colors duration-200 outline-none leading-none select-none"
+              >
+                &times;
+              </button>
 
-                <div>
-                  <h4 className="text-lg font-bold text-[#140A02]">
-                    Sign In with Google
-                  </h4>
-                  <p className="text-xs text-[#6B5A4C]">
-                    Choose an account to continue to Bavio
-                  </p>
-                </div>
+              <h2 
+                style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "24px", color: "#1F2937", marginBottom: "16px" }}
+                className="tracking-tight"
+              >
+                ✨ Ready to Answer All Your Calls Like This?
+              </h2>
 
-                <form onSubmit={handleGoogleMockSubmit} className="space-y-4 text-left pt-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#140A02] uppercase tracking-wider">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-[#6B5A4C] absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required
-                        value={googleName}
-                        onChange={(e) => setGoogleName(e.target.value)}
-                        placeholder="Rahul Sharma"
-                        className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] transition-all font-semibold"
-                      />
-                    </div>
-                  </div>
+              <p 
+                style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "16px", color: "#6B7280", lineHeight: 1.6, marginBottom: "24px" }}
+              >
+                Get your own AI receptionist for your business.
+              </p>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#140A02] uppercase tracking-wider">
-                      Google Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-[#6B5A4C] absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        required
-                        value={googleEmail}
-                        onChange={(e) => setGoogleEmail(e.target.value)}
-                        placeholder="rahul@gmail.com"
-                        className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] transition-all font-semibold"
-                      />
-                    </div>
-                  </div>
+              {/* Feature List */}
+              <ul 
+                style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500, fontSize: "14px", color: "#374151", marginBottom: "32px" }}
+                className="space-y-3 text-left max-w-xs mx-auto list-none pl-0"
+              >
+                <li>✓ 24/7 Call Answering</li>
+                <li>✓ Lead Qualification</li>
+                <li>✓ WhatsApp Alerts</li>
+                <li>✓ Starting at ₹1,999/month</li>
+              </ul>
 
-                  <button
-                    type="submit"
-                    disabled={isSavingData}
-                    className="w-full bg-[#FF6B00] hover:bg-[#FF7C32] disabled:bg-[#FF6B00]/60 text-white font-bold py-3 px-4 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 mt-4"
+              {showEmailFallback ? (
+                <div className="space-y-4 border-t border-[#E5E7EB] pt-6 text-left">
+                  <h4 
+                    style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 700, fontSize: "12px", color: "#6B7280" }}
+                    className="uppercase tracking-wider block"
                   >
-                    {isSavingData ? "Connecting..." : "Continue"}
+                    Stay Updated
+                  </h4>
+                  <form onSubmit={handleEmailSubscribe} className="space-y-3">
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="w-full bg-[#F9F0E8] border border-[#E5E7EB] px-4 py-3 rounded-[6px] text-xs text-[#1F2937] outline-none focus:border-[#FF6B00] transition-colors font-semibold"
+                      style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmittingEmail}
+                      className="w-full h-12 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center cursor-pointer"
+                      style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+                    >
+                      {isSubmittingEmail ? (
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        "Subscribe"
+                      )}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4 w-full">
+                  <button
+                    onClick={handleCreateReceptionist}
+                    disabled={actionLoading}
+                    className="w-full h-12 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white font-bold text-sm rounded-lg transition-colors duration-200 cursor-pointer flex items-center justify-center gap-2 select-none"
+                    style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
+                  >
+                    {actionLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      "CREATE YOUR RECEPTIONIST"
+                    )}
                   </button>
-                </form>
-              </div>
+                  <button
+                    onClick={handleMaybeLaterClick}
+                    className="w-full h-12 bg-transparent border border-[#D1D5DB] hover:bg-[#F3F4F6] text-[#6B7280] font-bold text-sm rounded-lg transition-all duration-200 cursor-pointer select-none"
+                    style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 500 }}
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              )}
+
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      <Footer />
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div 
+          className={`fixed bottom-6 right-6 z-[4000] px-6 py-3 rounded-xl text-xs font-bold text-white shadow-lg animate-fade-in ${
+            toastType === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+          style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+        >
+          {toastMessage}
+        </div>
+      )}
     </div>
+    </>
   );
 }

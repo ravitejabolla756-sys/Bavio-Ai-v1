@@ -98,7 +98,8 @@ async function runBillingTests() {
       throw new Error(`Subscribe failed: ${JSON.stringify(subscribeRes.body)}`);
     }
 
-    const subscriptionId = subscribeRes.body.subscriptionId;
+    const intentRes = await db.query('SELECT dodo_id FROM subscription_intents WHERE business_id = $1 LIMIT 1', [testBusiness.id]);
+    const subscriptionId = intentRes.rows[0]?.dodo_id || 'sub_test_12345';
 
     // 3. Test GetStatus Endpoint
     console.log('\n3. Testing /billing/status/:client_id endpoint...');
@@ -125,7 +126,7 @@ async function runBillingTests() {
     console.log('\n4. Testing /billing/webhook (subscription.active)...');
     const activeWebhookReq = {
       body: {
-        event_type: 'subscription.active',
+        event: 'subscription.active',
         data: {
           subscription_id: subscriptionId,
           product_id: 'pdt_0NdJCmLQ4vEu1ozciOnzC', // starter product id
@@ -135,7 +136,9 @@ async function runBillingTests() {
           }
         }
       },
-      headers: {}
+      headers: {
+        'x-webhook-secret': process.env.DODO_WEBHOOK_SECRET || ''
+      }
     };
     const activeWebhookRes = mockResponse();
     await billingController.handleWebhook(activeWebhookReq, activeWebhookRes);
@@ -177,7 +180,7 @@ async function runBillingTests() {
 
     const paymentWebhookReq = {
       body: {
-        event_type: 'payment.succeeded',
+        event: 'payment.succeeded',
         data: {
           id: `pay_${Date.now()}`,
           customer_id: 'cust_test123',
@@ -188,7 +191,9 @@ async function runBillingTests() {
           }
         }
       },
-      headers: {}
+      headers: {
+        'x-webhook-secret': process.env.DODO_WEBHOOK_SECRET || ''
+      }
     };
     const paymentWebhookRes = mockResponse();
     await billingController.handleWebhook(paymentWebhookReq, paymentWebhookRes);

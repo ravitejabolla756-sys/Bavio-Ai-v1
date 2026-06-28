@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const twilioProvider = require('../providers/twilio');
 
 // Comprehensive static mapping of country codes to name, flag emoji, and dial code
 const countryMap = {
   US: { name: 'United States', flag: '🇺🇸', dialCode: '+1' },
   CA: { name: 'Canada', flag: '🇨🇦', dialCode: '+1' },
   GB: { name: 'United Kingdom', flag: '🇬🇧', dialCode: '+44' },
+  IN: { name: 'India', flag: '🇮🇳', dialCode: '+91' },
   AU: { name: 'Australia', flag: '🇦🇺', dialCode: '+61' },
   NZ: { name: 'New Zealand', flag: '🇳🇿', dialCode: '+64' },
   SG: { name: 'Singapore', flag: '🇸🇬', dialCode: '+65' },
@@ -51,42 +51,22 @@ const countryMap = {
   VN: { name: 'Vietnam', flag: '🇻🇳', dialCode: '+84' }
 };
 
-router.get('/countries', async (req, res) => {
+// Serve static country list — no Twilio API call (avoids network hang in dev)
+router.get('/countries', (req, res) => {
   try {
-    let twilioCodes = [];
-    try {
-      const client = twilioProvider.client;
-      // Fetch available phone number countries from Twilio
-      const availableCountries = await client.availablePhoneNumbers.list({ limit: 100 });
-      twilioCodes = availableCountries.map(c => c.countryCode.toUpperCase());
-    } catch (twilioErr) {
-      console.warn('[PHONE] Failed to fetch countries from Twilio API, falling back to static list:', twilioErr.message);
-      // Fallback list of Twilio-supported countries
-      twilioCodes = Object.keys(countryMap);
-    }
-
-    // Enrich and format country data
-    const result = twilioCodes
-      .map(code => {
-        const info = countryMap[code];
-        if (info) {
-          return {
-            code: code,
-            name: info.name,
-            flag: info.flag,
-            dialCode: info.dialCode
-          };
-        }
-        return null;
-      })
-      .filter(Boolean)
-      // Sort alphabetically by country name
+    const result = Object.entries(countryMap)
+      .map(([code, info]) => ({
+        code,
+        name: info.name,
+        flag: info.flag,
+        dialCode: info.dialCode
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     res.status(200).json(result);
   } catch (err) {
-    console.error('[PHONE] Failed to get Twilio countries:', err.message);
-    res.status(500).json({ error: 'Failed to get Twilio countries: ' + err.message });
+    console.error('[PHONE] Failed to get countries:', err.message);
+    res.status(500).json({ error: 'Failed to get countries: ' + err.message });
   }
 });
 
