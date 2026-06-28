@@ -24,7 +24,6 @@ import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
-import IndustrySelector from "@/components/IndustrySelector";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -288,8 +287,8 @@ export default function SignUpPage() {
       }
     }
     
-    if (!industry) {
-      temp.industry = "Please select an industry";
+    if (!industry.trim()) {
+      temp.industry = "Industry is required";
     }
 
     return temp;
@@ -814,13 +813,32 @@ export default function SignUpPage() {
                     </div>
                   )}
 
-                  {/* Industry Sector Selector */}
-                  <IndustrySelector
-                    value={industry}
-                    onChange={(val) => setIndustry(val)}
-                    error={blurredFields.industry ? clientErrors.industry : ""}
-                    required
-                  />
+                  {/* Industry Sector Input */}
+                  <div>
+                    <label htmlFor="industry-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
+                      Industry Sector <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="industry-input"
+                      type="text"
+                      required
+                      aria-required="true"
+                      aria-describedby={blurredFields.industry && clientErrors.industry ? "industry-error" : undefined}
+                      placeholder="e.g. Healthcare, Real Estate"
+                      value={industry}
+                      onFocus={() => handleFieldFocus("industry")}
+                      onBlur={() => markBlurred("industry")}
+                      onChange={(e) => setIndustry(e.target.value)}
+                      className={`w-full bg-[#FAF7F2] border ${
+                        blurredFields.industry && clientErrors.industry ? "border-red-500" : "border-[#E5E0D8] focus:border-[#FF6B00]"
+                      } focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 min-h-[44px]`}
+                    />
+                    {blurredFields.industry && clientErrors.industry && (
+                      <p id="industry-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">
+                        • {clientErrors.industry}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Submit CTA */}
                   <button
