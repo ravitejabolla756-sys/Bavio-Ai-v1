@@ -42,9 +42,33 @@ router.post('/webhook', async (req, res) => {
   console.log('[VAPI] Parsed → caller:', callerNumber, '| callId:', vapiCallId, '| duration:', duration);
   console.log('[VAPI] Lead data → name:', name, '| intent:', intent, '| budget:', budget, '| location:', location);
 
-  // ── Temporary business_id for testing ───────────────────────────────────
-  // TODO: replace with real lookup once assistant-to-business mapping is live
-  const TEST_BUSINESS_ID = process.env.VAPI_TEST_BUSINESS_ID || null;
+  // ── Dynamic business_id lookup from assistant ID ────────────────────────
+  const vapiAssistantId = call.assistantId || message.assistantId || null;
+  let businessId = null;
+
+  if (vapiAssistantId) {
+    try {
+      const { data: assistantRecord, error: astError } = await supabase
+        .from('assistants')
+        .select('business_id')
+        .eq('vapi_assistant_id', vapiAssistantId)
+        .maybeSingle();
+
+      if (astError) {
+        console.error('[VAPI] Error looking up business by assistant ID:', astError.message);
+      } else if (assistantRecord) {
+        businessId = assistantRecord.business_id;
+        console.log('[VAPI] Found business matching assistant ID:', businessId);
+      }
+    } catch (err) {
+      console.error('[VAPI] Exception looking up assistant:', err.message);
+    }
+  }
+
+  // Fallback to test business ID if lookup fails
+  if (!businessId) {
+    businessId = process.env.VAPI_TEST_BUSINESS_ID || null;
+  }
 
   // ── Build calls insert — only include business_id when set ──────────────
   // Omitting it when null avoids Supabase schema cache errors on nullable FK columns
@@ -59,7 +83,7 @@ router.post('/webhook', async (req, res) => {
     direction:        'inbound',
     transcript:       message.transcript ? [{ text: message.transcript }] : []
   };
-  if (TEST_BUSINESS_ID) callPayload.business_id = TEST_BUSINESS_ID;
+  if (businessId) callPayload.business_id = businessId;
 
   // ── 1. Insert into calls ─────────────────────────────────────────────────
   let callRowId = null;
@@ -92,7 +116,7 @@ router.post('/webhook', async (req, res) => {
     summary:       summary,
     status:        'new'
   };
-  if (TEST_BUSINESS_ID) leadPayload.business_id = TEST_BUSINESS_ID;
+  if (businessId) leadPayload.business_id = businessId;
 
   // ── 2. Insert into leads ─────────────────────────────────────────────────
   try {
