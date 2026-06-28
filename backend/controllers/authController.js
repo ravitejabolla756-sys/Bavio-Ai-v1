@@ -88,6 +88,10 @@ async function signup(req, res) {
 
         if (authError) {
             if (authError.message && (authError.message.includes('already registered') || authError.status === 422)) {
+                const msg = authError.message.toLowerCase();
+                if (msg.includes('phone')) {
+                    return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
+                }
                 return res.status(409).json({ success: false, error: 'A business with that email already exists' });
             }
             console.error('Supabase Auth signup error:', authError);
@@ -244,6 +248,10 @@ async function signup(req, res) {
         });
     } catch (err) {
         if (err.code === '23505') {
+            const detail = String(err.detail || '').toLowerCase();
+            if (detail.includes('phone') || detail.includes('mobile')) {
+                return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
+            }
             return res.status(409).json({ success: false, error: 'A business with that email already exists' });
         }
         console.error('signup error:', err);
