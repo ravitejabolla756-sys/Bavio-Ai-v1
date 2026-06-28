@@ -84,19 +84,19 @@ export function PricingSelector({
   return (
     <div className="w-full flex flex-col items-center">
       {/* Currency indicator */}
-      <div className="mb-4 px-4 py-2 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl text-[11px] font-semibold text-[#8A8A96] inline-flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+      <div className="mb-2 px-3 py-1 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl text-[10px] font-semibold text-[#8A8A96] inline-flex items-center gap-1.5">
+        <span className="w-1.2 h-1.2 rounded-full bg-green-500 inline-block" />
         Prices shown in{" "}
         <span className="font-black text-[#14141A]">{pricing.currencyCode}</span>
         {" "}for {resolvedCountry}
       </div>
 
       {/* Billing Switcher */}
-      <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E5E0D8] rounded-2xl p-1 mb-12 shadow-sm">
+      <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl p-0.5 mb-6 shadow-sm">
         <button
           type="button"
           onClick={() => setBillingCycle("monthly")}
-          className={`px-6 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 ${
+          className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${
             billingCycle === "monthly"
               ? "bg-[#14141A] text-white shadow-sm"
               : "text-[#8A8A96] hover:text-[#14141A]"
@@ -107,21 +107,21 @@ export function PricingSelector({
         <button
           type="button"
           onClick={() => setBillingCycle("annual")}
-          className={`px-6 py-2.5 rounded-xl text-body-xs font-bold transition-all duration-200 inline-flex items-center gap-2 ${
+          className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 inline-flex items-center gap-1.5 ${
             billingCycle === "annual"
               ? "bg-[#14141A] text-white shadow-sm"
               : "text-[#8A8A96] hover:text-[#14141A]"
           }`}
         >
           Annual Billing
-          <span className="text-[9px] font-black uppercase tracking-widest bg-[#FF6B00]/15 text-[#FF6B00] py-0.5 px-2 rounded-md">
+          <span className="text-[8px] font-black uppercase tracking-widest bg-[#FF6B00]/15 text-[#FF6B00] py-0.5 px-1.5 rounded-md">
             Save 20%
           </span>
         </button>
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-5xl items-stretch">
         {(["starter", "growth", "scale"] as const).map((planName) => {
           const isSelected = selectedPlan === planName;
           const isGrowth = planName === "growth";
@@ -133,7 +133,7 @@ export function PricingSelector({
             <div
               key={planName}
               onClick={() => onSelectPlan(planName, billingCycle, finalPrice)}
-              className={`relative rounded-[28px] border-2 transition-all duration-300 flex flex-col justify-between overflow-hidden bg-white cursor-pointer ${
+              className={`relative rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between overflow-hidden bg-white cursor-pointer ${
                 isSelected
                   ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10 shadow-[0_12px_32px_rgba(255,107,0,0.08)] scale-[1.02]"
                   : "border-[#EBE6DD] shadow-sm hover:border-[#FF6B00]/50 hover:shadow-md hover:scale-[1.01]"
@@ -141,43 +141,43 @@ export function PricingSelector({
             >
               {/* Top Status Badges */}
               {isSelected ? (
-                <div className="absolute top-4 right-4 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm">
-                  Current Plan Selected
+                <div className="absolute top-3 right-3 bg-[#FF6B00] text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                  Selected
                 </div>
               ) : isGrowth && pricing.mostPopularBadge ? (
-                <div className="absolute top-4 right-4 bg-[#14141A] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm">
-                  {pricing.mostPopularBadge}
+                <div className="absolute top-3 right-3 bg-[#14141A] text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                  Popular
                 </div>
               ) : null}
 
-              <div className="p-8 flex-1 flex flex-col justify-between">
+              <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-heading-sm font-bold text-[#14141A] capitalize mb-1 mt-2">
+                  <h3 className="text-heading-xs font-bold text-[#14141A] capitalize mb-0.5 mt-1">
                     {planName}
                   </h3>
-                  <p className="text-body-xs text-[#8A8A96] mb-6 min-h-[40px] leading-relaxed">
+                  <p className="text-[11px] text-[#8A8A96] mb-3 min-h-[32px] leading-relaxed">
                     {PLAN_DESCRIPTIONS[planName]}
                   </p>
 
-                  <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-display-md font-bold text-[#14141A]">
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-heading-lg font-bold text-[#14141A]">
                       {pricing.currency}
                       {formatPrice(finalPrice)}
                     </span>
-                    <span className="text-body-xs text-[#8A8A96]">
+                    <span className="text-[11px] text-[#8A8A96]">
                       {billingCycle === "annual" ? "/year" : "/month"}
                     </span>
                   </div>
 
-                  <ul className="flex flex-col gap-3.5 mb-8">
+                  <ul className="flex flex-col gap-2 mb-4">
                     {features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-body-xs text-[#4A4A57]">
+                      <li key={idx} className="flex items-start gap-2 text-[11px] text-[#4A4A57]">
                         <svg
-                          className="w-4 h-4 text-[#FF6B00] shrink-0 mt-0.5"
+                          className="w-3.5 h-3.5 text-[#FF6B00] shrink-0 mt-0.5"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          strokeWidth="3"
+                          strokeWidth="3.5"
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
@@ -187,10 +187,10 @@ export function PricingSelector({
                   </ul>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <button
                     type="button"
-                    className={`w-full h-12 rounded-xl text-body-xs font-bold transition-all duration-300 inline-flex items-center justify-center gap-1.5 border ${
+                    className={`w-full h-10 rounded-xl text-body-xs font-bold transition-all duration-300 inline-flex items-center justify-center gap-1.5 border ${
                       isSelected
                         ? "bg-[#FF6B00] border-[#FF6B00] text-white shadow-[0_4px_12px_rgba(255,107,0,0.15)]"
                         : "bg-white border-[#EBE6DD] hover:border-[#14141A] text-[#14141A] hover:bg-[#FAF9F6]"
