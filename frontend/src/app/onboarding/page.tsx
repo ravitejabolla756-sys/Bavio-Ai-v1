@@ -152,10 +152,10 @@ function OnboardingContent() {
       <div className="absolute w-[600px] h-[600px] bg-saffron/3 rounded-full blur-[120px] pointer-events-none bottom-10 right-1/10" />
 
       {/* Header bar */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#E5E0D8] relative z-20">
-        <div className="flex items-center gap-3">
-          <Logo className="w-12 h-12 transition-transform duration-300 ease-premium hover:scale-105" color="text-saffron" />
-          <span className="font-display text-2xl font-black tracking-tight text-[#140A02]">Bavio AI</span>
+      <header className="w-full max-w-7xl mx-auto px-6 py-3 flex items-center justify-between border-b border-[#E5E0D8] relative z-20">
+        <div className="flex items-center gap-2">
+          <Logo className="w-9 h-9 transition-transform duration-300 ease-premium hover:scale-105" color="text-saffron" />
+          <span className="font-display text-xl font-black tracking-tight text-[#140A02]">Bavio AI</span>
         </div>
 
         {/* Stepper Progress bar */}
@@ -175,13 +175,13 @@ function OnboardingContent() {
       </header>
 
       {/* Main Content Area */}
-      <main className={`flex-grow flex items-center justify-center p-6 relative z-10 my-4 ${step === 1 ? "pb-24" : ""}`}>
+      <main className={`flex-grow flex items-center justify-center px-6 py-2 relative z-10 my-0 ${step === 1 ? "pb-20" : ""}`}>
         {step === 1 && (
-          <div className="w-full max-w-5xl text-center py-6">
-            <h1 className="font-display text-display-lg font-bold tracking-tight mb-3">
+          <div className="w-full max-w-5xl text-center py-2">
+            <h1 className="font-display text-3xl font-bold tracking-tight mb-1 text-[#140A02]">
               Simple, regional SaaS pricing
             </h1>
-            <p className="text-body-md text-darkTextMuted max-w-lg mx-auto mb-10">
+            <p className="text-body-xs text-darkTextMuted max-w-lg mx-auto mb-4 leading-relaxed">
               Answer customer phone calls instantly. Choose a subscription package adapted to your workspace.
             </p>
             
@@ -334,7 +334,7 @@ function OnboardingContent() {
       )}
 
       {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#E5E0D8] flex items-center justify-center text-[#8A8A96] text-body-xs font-semibold relative z-20 mt-10">
+      <footer className="w-full max-w-7xl mx-auto px-6 py-3 border-t border-[#E5E0D8] flex items-center justify-center text-[#8A8A96] text-[10px] font-semibold relative z-20 mt-2">
         <span>© 2026 Bavio AI Inc. All rights reserved.</span>
       </footer>
     </div>
