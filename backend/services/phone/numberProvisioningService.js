@@ -171,6 +171,7 @@ async function assignDedicatedNumber(businessId) {
     return {
       setupType: 'dedicated',
       phoneNumber: existing.phone_number,
+      bavioPhonenumber: existing.phone_number,
       status: existing.status,
       message: 'You already have a dedicated number.'
     };
@@ -188,7 +189,7 @@ async function assignDedicatedNumber(businessId) {
 
   if (!unassigned) {
     throw new Error(
-      'No dedicated numbers available. Choose forwarding or contact support.'
+      'No dedicated numbers available. Contact support.'
     );
   }
 
@@ -212,6 +213,7 @@ async function assignDedicatedNumber(businessId) {
   return {
     setupType: 'dedicated',
     phoneNumber: unassigned.phone_number,
+    bavioPhonenumber: unassigned.phone_number,
     status: 'active',
     message: `Your Bavio number: ${unassigned.phone_number}. Share with customers.`
   };
@@ -220,14 +222,8 @@ async function assignDedicatedNumber(businessId) {
 // ── assignPhoneNumber ─────────────────────────────────────────────────
 async function assignPhoneNumber(businessId, setupType, userOriginalNumber = null) {
   try {
-    console.log(`[PROVISION] Business: ${businessId}, Type: ${setupType}`);
-    if (setupType === 'forwarding') {
-      return await assignForwardingNumber(businessId, userOriginalNumber);
-    } else if (setupType === 'dedicated') {
-      return await assignDedicatedNumber(businessId);
-    } else {
-      throw new Error(`Unknown setup type: ${setupType}`);
-    }
+    console.log(`[PROVISION] Business: ${businessId}, Forcing Dedicated (No shared pool loops)`);
+    return await assignDedicatedNumber(businessId);
   } catch (err) {
     console.error('[PROVISION] Error:', err.message);
     throw err;
