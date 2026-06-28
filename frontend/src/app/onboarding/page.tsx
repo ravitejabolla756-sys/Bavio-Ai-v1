@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CountryProvider, useCountry } from "@/components/shared/CountryContext";
 import { PricingSelector } from "@/components/pricing/PricingSelector";
 import { PhoneSetup } from "@/components/numbers/PhoneSetup";
-import { authApi, onboardingApi, billingApi } from "@/lib/api";
+import { authApi, onboardingApi } from "@/lib/api";
 import { PRICING_BY_COUNTRY } from "@/config/pricing";
 import Logo from "@/components/Logo";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
@@ -70,27 +70,19 @@ function OnboardingContent() {
   };
 
   // Process selected plan setup action (Continue Setup)
+  // TODO: After Dodo Payments integration is complete, reinstate payment flow here.
+  //       Flow will be: Pricing → Dodo Payments checkout → Phone Number Allocation
   const handleContinueSetup = async () => {
     if (actionLoading) return;
     setActionLoading(true);
     setActionError(null);
 
     try {
-      if (selectedPlan === "starter") {
-        // Starter Plan: Create trial workspace with 100 free minutes
-        const result = await onboardingApi.completeTrial();
-        console.log("Starter trial workspace activated:", result);
-        setStep(2); // Advance to Phone Setup
-      } else {
-        // Growth or Scale: Create subscription and redirect to Dodo Payments checkout
-        console.log(`Initiating checkout for plan: ${selectedPlan}`);
-        const result = await billingApi.subscribe(selectedPlan);
-        if (result.checkoutUrl || result.url) {
-          window.location.href = result.checkoutUrl || result.url;
-        } else {
-          throw new Error("Billing API did not return a valid checkout redirect URL.");
-        }
-      }
+      // All plans bypass payment for now — payments will be added after Dodo Payments is integrated.
+      // This activates a trial/demo workspace and advances to phone number allocation.
+      const result = await onboardingApi.completeTrial();
+      console.log(`Plan selected: ${selectedPlan} (${billingCycle}). Trial workspace activated:`, result);
+      setStep(2); // Advance to Phone Setup
     } catch (err: any) {
       console.error("Continue Setup failed:", err);
       setActionError(err.message || "A network or system error occurred. Please try again.");
