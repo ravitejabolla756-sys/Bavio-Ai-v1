@@ -164,33 +164,33 @@ export default function OnboardingCustomizePage() {
 
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D1A] flex items-center justify-center font-sans text-white">
+      <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center font-sans text-[#140A02]">
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin mx-auto" />
-          <p className="text-body-xs text-[#B4A8D4] font-semibold">Loading configuration profiles...</p>
+          <p className="text-body-xs text-[#5A5A66] font-semibold">Loading configuration profiles...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#0D0D1A] text-[#F9F6FF] font-sans flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col items-center justify-center p-4 md:p-8">
       
       {/* Background glow effects */}
       <div className="absolute w-[400px] h-[400px] bg-[#FF6B00]/5 rounded-full blur-[100px] pointer-events-none top-1/10 left-1/4" />
-      <div className="absolute w-[500px] h-[500px] bg-[#2D2560]/10 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
+      <div className="absolute w-[500px] h-[500px] bg-[#FF6B00]/3 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
 
       {/* Progress Bar (Step 5 of 6) */}
       <div className="w-full max-w-[700px] mb-8 relative z-20">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[11px] uppercase tracking-wider text-[#B4A8D4] font-bold">
+          <span className="text-[11px] uppercase tracking-wider text-[#8A8A96] font-bold">
             Step 5 of 6: Customize AI (Optional)
           </span>
           <span className="text-[11px] uppercase tracking-wider text-[#FF6B00] font-black">
             83% COMPLETE
           </span>
         </div>
-        <div className="w-full h-1 bg-[#2D2560] rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#FF6B00] transition-all duration-500 ease-out" 
             style={{ width: "83%" }}
@@ -199,42 +199,42 @@ export default function OnboardingCustomizePage() {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-[700px] bg-[#12102B] border border-[#2D2560] rounded-[24px] p-6 md:p-10 shadow-2xl relative z-20">
+      <div className="w-full max-w-[700px] bg-white border border-[#E5E0D8] rounded-[24px] p-6 md:p-10 shadow-premium relative z-20">
         
         {/* Logo block */}
         <div className="flex items-center gap-2 mb-6">
-          <Logo className="w-7 h-7" />
-          <span className="font-display text-md font-black tracking-tight text-[#F9F6FF]">
+          <Logo className="w-7 h-7" color="text-[#FF6B00]" />
+          <span className="font-display text-md font-black tracking-tight text-[#140A02]">
             Bavio AI
           </span>
         </div>
 
         <h1 
-          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#F9F6FF", marginBottom: "8px" }}
+          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#140A02", marginBottom: "8px" }}
           className="tracking-tight leading-tight"
         >
           Make it Yours (Optional)
         </h1>
 
         <p 
-          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#B4A8D4", lineHeight: 1.6, marginBottom: "32px" }}
+          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "32px" }}
         >
           Fine-tune how your AI behaves. Skip if you&apos;re happy with defaults.
         </p>
 
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/50 text-red-400 font-semibold text-xs">
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-500 font-semibold text-xs">
             {errorMsg}
           </div>
         )}
 
         {/* SECTION 1: SYSTEM PROMPT CUSTOMIZATION */}
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#F9F6FF] mb-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+          <label className="block text-sm font-semibold text-[#140A02] mb-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
             System Prompt (Advanced)
           </label>
           
-          <p className="text-xs text-[#B4A8D4] mb-3 leading-relaxed">
+          <p className="text-xs text-[#5A5A66] mb-3 leading-relaxed">
             Tell your AI how to behave during calls. This is optional — default settings work great for most businesses.
           </p>
 
@@ -244,7 +244,7 @@ export default function OnboardingCustomizePage() {
             placeholder="You are a professional AI receptionist for a business in India..."
             rows={6}
             maxLength={1000}
-            className="w-full bg-[#12102B] border border-[#2D2560] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 text-xs text-[#F9F6FF] placeholder-[#B4A8D4]/40 outline-none transition-all duration-200 resize-none leading-relaxed"
+            className="w-full bg-white border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 text-xs text-[#140A02] placeholder-[#5A5A66]/40 outline-none transition-all duration-200 resize-none leading-relaxed"
           />
 
           <div className="flex justify-between items-center mt-2">
@@ -260,14 +260,14 @@ export default function OnboardingCustomizePage() {
                   key={tpl.type}
                   type="button"
                   onClick={() => handleApplyTemplate(tpl.type as any)}
-                  className="bg-[#12102B] border border-[#2D2560] hover:border-[#FF6B00] text-[#B4A8D4] hover:text-[#FF6B00] text-[10px] font-bold py-1.5 px-3 rounded-full transition-all"
+                  className="bg-white border border-[#E5E0D8] hover:border-[#FF6B00] text-[#5A5A66] hover:text-[#FF6B00] text-[10px] font-bold py-1.5 px-3 rounded-full transition-all"
                 >
                   {tpl.label}
                 </button>
               ))}
             </div>
 
-            <span className="text-[10px] font-bold text-[#B4A8D4] shrink-0 ml-4">
+            <span className="text-[10px] font-bold text-[#5A5A66] shrink-0 ml-4">
               {systemPrompt.length}/1000 characters
             </span>
           </div>
@@ -275,11 +275,11 @@ export default function OnboardingCustomizePage() {
 
         {/* SECTION 2: FOLLOW-UP QUESTIONS */}
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#F9F6FF] mb-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+          <label className="block text-sm font-semibold text-[#140A02] mb-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
             Questions to Ask (Optional)
           </label>
           
-          <p className="text-xs text-[#B4A8D4] mb-4 leading-relaxed">
+          <p className="text-xs text-[#5A5A66] mb-4 leading-relaxed">
             Which of these should your AI ask callers?
           </p>
 
@@ -298,20 +298,20 @@ export default function OnboardingCustomizePage() {
                   onClick={() => handleCheckboxToggle(question.code)}
                   className={`p-4 rounded-xl border flex items-start gap-4 transition-all duration-150 cursor-pointer select-none ${
                     isChecked
-                      ? "border-[#FF6B00] bg-[#1A1640]/50"
-                      : "border-[#2D2560] bg-[#12102B] hover:border-[#FF6B00]/70"
+                      ? "border-[#FF6B00] bg-[#FFF8F0] shadow-sm"
+                      : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50"
                   }`}
                 >
                   <div className={`w-4 h-4 rounded mt-0.5 border flex items-center justify-center shrink-0 transition-colors ${
-                    isChecked ? "bg-[#FF6B00] border-[#FF6B00]" : "border-[#2D2560] bg-[#12102B]"
+                    isChecked ? "bg-[#FF6B00] border-[#FF6B00]" : "border-[#E5E0D8] bg-white"
                   }`}>
                     {isChecked && <Check className="w-3 h-3 text-white" weight="bold" />}
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold text-white">
+                    <span className="block text-xs font-semibold text-[#140A02]">
                       {question.title}
                     </span>
-                    <span className="block text-[11px] text-[#B4A8D4] mt-0.5">
+                    <span className="block text-[11px] text-[#5A5A66] mt-0.5">
                       {question.desc}
                     </span>
                   </div>
@@ -323,19 +323,19 @@ export default function OnboardingCustomizePage() {
 
         {/* SECTION 3: INTEGRATIONS (TEASER) */}
         <div className="mb-10">
-          <label className="block text-sm font-semibold text-[#F9F6FF] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+          <label className="block text-sm font-semibold text-[#140A02] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
             Auto-Sync Leads (Coming Next)
           </label>
 
-          <div className="p-5 rounded-xl border border-dashed border-[#2D2560] bg-[#12102B] space-y-3">
-            <div className="flex gap-2.5 items-start text-xs text-[#B4A8D4]">
+          <div className="p-5 rounded-xl border border-dashed border-[#E5E0D8] bg-[#FAF9F6] space-y-3">
+            <div className="flex gap-2.5 items-start text-xs text-[#5A5A66]">
               <span className="text-[#FF6B00] text-sm shrink-0">⚡</span>
               <p className="leading-relaxed">
                 Connect your CRM or spreadsheet to auto-sync captured leads. Available after trial starts.
               </p>
             </div>
             
-            <div className="pl-6 text-[11px] text-[#B4A8D4] space-y-1 font-bold">
+            <div className="pl-6 text-[11px] text-[#5A5A66] space-y-1 font-bold">
               <div>✓ Google Sheets</div>
               <div>✓ HubSpot</div>
               <div>✓ Salesforce</div>
@@ -370,12 +370,12 @@ export default function OnboardingCustomizePage() {
 
         {/* Navigation below CTA */}
         <div 
-          className="mt-6 flex justify-start items-center text-xs font-bold text-[#B4A8D4]"
+          className="mt-6 flex justify-start items-center text-xs font-bold text-[#8A8A96]"
           style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
         >
           <button
             onClick={() => router.push("/onboarding/first-lead")}
-            className="hover:text-white flex items-center gap-1.5 transition-colors"
+            className="hover:text-[#140A02] flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
