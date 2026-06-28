@@ -175,7 +175,7 @@ export default function WorkspaceSubscription() {
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold font-mono text-saffron">
-                  {profile?.plan_name === "starter" ? "$35" : profile?.plan_name === "growth" ? "$79" : profile?.plan_name === "scale" ? "$219" : "Free"}
+                  {profile?.plan_name === "starter" ? "$49" : profile?.plan_name === "growth" ? "$99" : profile?.plan_name === "scale" ? "$199" : "Free"}
                 </span>
                 <span className="text-[10px] text-ink-muted block font-semibold">/month</span>
               </div>
@@ -223,7 +223,7 @@ export default function WorkspaceSubscription() {
               <div>
                 <h3 className="font-bold text-body-sm text-ink mb-1">Starter</h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-xl font-bold font-mono text-ink">$35</span>
+                  <span className="text-xl font-bold font-mono text-ink">$49</span>
                   <span className="text-[10px] text-ink-muted">/mo</span>
                 </div>
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
@@ -261,7 +261,7 @@ export default function WorkspaceSubscription() {
               <div>
                 <h3 className="font-bold text-body-sm text-ink mb-1">Growth</h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-xl font-bold font-mono text-ink">$79</span>
+                  <span className="text-xl font-bold font-mono text-ink">$99</span>
                   <span className="text-[10px] text-ink-muted">/mo</span>
                 </div>
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
@@ -299,7 +299,7 @@ export default function WorkspaceSubscription() {
               <div>
                 <h3 className="font-bold text-body-sm text-ink mb-1">Scale</h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-xl font-bold font-mono text-ink">$219</span>
+                  <span className="text-xl font-bold font-mono text-ink">$199</span>
                   <span className="text-[10px] text-ink-muted">/mo</span>
                 </div>
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
