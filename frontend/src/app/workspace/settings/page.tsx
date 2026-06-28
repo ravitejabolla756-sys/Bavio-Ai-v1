@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   Gear, 
@@ -14,21 +14,27 @@ import {
   ClipboardText,
   Clock,
   Sparkle,
-  Warning
+  Warning,
+  Brain,
+  FileText,
+  UploadSimple,
+  ArrowsClockwise,
+  X,
+  CheckFat,
+  File
 } from "@phosphor-icons/react";
-import { authApi, BusinessProfile } from "@/lib/api";
+import { authApi, BusinessProfile, knowledgeBaseApi, KnowledgeDoc } from "@/lib/api";
 
 function WorkspaceSettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // Tab states: general, team, api
+  // Tab states: general, team, api, knowledge
   const [activeTab, setActiveTab] = useState("general");
 
-  // Sync tab state from query parameter if present
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["general", "team", "api"].includes(tabParam)) {
+    if (tabParam && ["general", "team", "api", "knowledge"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -38,7 +44,6 @@ function WorkspaceSettingsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Editable form state
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -135,6 +140,117 @@ function WorkspaceSettingsContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Knowledge Base states ─────────────────────────────────────────────────
+  const [kbDocs, setKbDocs] = useState<KnowledgeDoc[]>([]);
+  const [kbLoading, setKbLoading] = useState(false);
+  const [kbError, setKbError] = useState<string | null>(null);
+  const [kbSuccess, setKbSuccess] = useState<string | null>(null);
+
+  // New doc form
+  const [newDocName, setNewDocName] = useState("");
+  const [newDocContent, setNewDocContent] = useState("");
+  const [addingDoc, setAddingDoc] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // Sync state
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ vapiSynced: boolean; message: string } | null>(null);
+
+  // File upload ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load docs when tab is active
+  useEffect(() => {
+    if (activeTab === "knowledge") {
+      loadKbDocs();
+    }
+  }, [activeTab]);
+
+  async function loadKbDocs() {
+    setKbLoading(true);
+    setKbError(null);
+    try {
+      const docs = await knowledgeBaseApi.list();
+      setKbDocs(Array.isArray(docs) ? docs : []);
+    } catch (err: any) {
+      setKbError(err.message || "Failed to load knowledge base");
+    } finally {
+      setKbLoading(false);
+    }
+  }
+
+  async function handleAddDoc(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newDocName.trim() || !newDocContent.trim()) return;
+    setAddingDoc(true);
+    setKbError(null);
+    try {
+      const doc = await knowledgeBaseApi.create({ name: newDocName.trim(), content: newDocContent.trim() });
+      setKbDocs(prev => [doc, ...prev]);
+      setNewDocName("");
+      setNewDocContent("");
+      setShowAddForm(false);
+      setKbSuccess("Document added successfully!");
+      setTimeout(() => setKbSuccess(null), 3000);
+    } catch (err: any) {
+      setKbError(err.message || "Failed to add document");
+    } finally {
+      setAddingDoc(false);
+    }
+  }
+
+  async function handleDeleteDoc(id: string) {
+    if (!confirm("Delete this knowledge document?")) return;
+    try {
+      await knowledgeBaseApi.delete(id);
+      setKbDocs(prev => prev.filter(d => d.id !== id));
+      setKbSuccess("Document deleted.");
+      setTimeout(() => setKbSuccess(null), 2000);
+    } catch (err: any) {
+      setKbError(err.message || "Failed to delete document");
+    }
+  }
+
+  async function handleSyncToVapi() {
+    setSyncing(true);
+    setSyncResult(null);
+    setKbError(null);
+    try {
+      const result = await knowledgeBaseApi.syncToVapi();
+      setSyncResult({ vapiSynced: result.vapiSynced, message: result.message });
+    } catch (err: any) {
+      setKbError(err.message || "Sync failed. Please try again.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // File upload handler — reads .txt / .md files as plain text
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    
+    const allowedTypes = ["text/plain", "text/markdown", "application/pdf"];
+    const isText = file.type.startsWith("text/") || file.name.endsWith(".md") || file.name.endsWith(".txt");
+    
+    if (!isText) {
+      setKbError("Only .txt and .md files are supported for direct upload. Copy-paste content for other formats.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      setNewDocName(file.name.replace(/\.[^.]+$/, ""));
+      setNewDocContent(text);
+      setShowAddForm(true);
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
@@ -153,7 +269,7 @@ function WorkspaceSettingsContent() {
       {/* Header */}
       <div className="text-left">
         <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Workspace Settings</h1>
-        <p className="text-body-xs text-ink-tertiary mt-1">Configure workspace parameters, audit security scopes, and sync API pipelines.</p>
+        <p className="text-body-xs text-ink-tertiary mt-1">Configure workspace parameters, audit security scopes, and sync AI knowledge.</p>
       </div>
 
       {error && (
@@ -164,11 +280,12 @@ function WorkspaceSettingsContent() {
       )}
 
       {/* Tabs Row */}
-      <div className="flex gap-2 border-b border-line pb-px">
+      <div className="flex gap-2 border-b border-line pb-px overflow-x-auto">
         {[
           { id: "general", label: "General details", icon: SlidersHorizontal },
           { id: "team", label: "Team credentials", icon: Users },
-          { id: "api", label: "API & Webhooks", icon: Key }
+          { id: "api", label: "API & Webhooks", icon: Key },
+          { id: "knowledge", label: "Knowledge Base", icon: Brain }
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -176,10 +293,9 @@ function WorkspaceSettingsContent() {
               key={tab.id}
               onClick={() => {
                 setActiveTab(tab.id);
-                // Update URL to match tab for deep linking
                 router.replace(`/workspace/settings?tab=${tab.id}`);
               }}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all uppercase tracking-wider ${
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all uppercase tracking-wider whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-saffron text-saffron"
                   : "border-transparent text-ink-tertiary hover:text-ink hover:border-line"
@@ -427,6 +543,200 @@ function WorkspaceSettingsContent() {
             </div>
           )}
 
+          {/* ── Knowledge Base Tab ────────────────────────────────────────── */}
+          {activeTab === "knowledge" && (
+            <div className="flex flex-col gap-6">
+
+              {/* Alerts */}
+              {kbError && (
+                <div className="bg-state-error/10 border border-state-error/20 p-4 rounded-xl flex items-start gap-3">
+                  <Warning className="w-4 h-4 text-state-error shrink-0 mt-0.5" />
+                  <p className="text-body-xs text-state-error">{kbError}</p>
+                  <button onClick={() => setKbError(null)} className="ml-auto text-state-error/60 hover:text-state-error">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              {kbSuccess && (
+                <div className="bg-state-success/10 border border-state-success/30 p-4 rounded-xl flex items-center gap-3">
+                  <CheckFat className="w-4 h-4 text-state-success shrink-0" />
+                  <p className="text-body-xs text-state-success font-bold">{kbSuccess}</p>
+                </div>
+              )}
+              {syncResult && (
+                <div className={`p-4 rounded-xl border flex items-start gap-3 ${syncResult.vapiSynced ? "bg-saffron/5 border-saffron/20" : "bg-surface-raised border-line"}`}>
+                  <ArrowsClockwise className={`w-4 h-4 shrink-0 mt-0.5 ${syncResult.vapiSynced ? "text-saffron" : "text-ink-tertiary"}`} />
+                  <div>
+                    <p className="text-body-xs font-bold text-ink">{syncResult.message}</p>
+                    {syncResult.vapiSynced && (
+                      <p className="text-[10px] text-ink-muted mt-0.5">Your AI assistant will now use this knowledge when answering calls.</p>
+                    )}
+                  </div>
+                  <button onClick={() => setSyncResult(null)} className="ml-auto text-ink-muted hover:text-ink">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Header actions */}
+              <div className="card-bezel">
+                <div className="card-bezel-inner p-6 text-left">
+                  <div className="flex items-start justify-between mb-5 pb-3 border-b border-line">
+                    <div>
+                      <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Business Knowledge Base</h3>
+                      <p className="text-[10px] text-ink-muted mt-1">
+                        Add information about your business — services, FAQs, pricing, hours — and sync it to your AI assistant.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                      {/* File upload button */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".txt,.md"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border border-line bg-surface-raised hover:bg-canvas text-ink-secondary py-2 px-3 rounded-lg transition-colors"
+                        title="Upload .txt or .md file"
+                      >
+                        <UploadSimple className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Upload File</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setShowAddForm(true); setNewDocName(""); setNewDocContent(""); }}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-saffron hover:bg-saffron-hover text-white py-2 px-3 rounded-lg transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Text</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Add / Edit form */}
+                  {showAddForm && (
+                    <form onSubmit={handleAddDoc} className="mb-6 p-4 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">New Knowledge Document</span>
+                        <button type="button" onClick={() => setShowAddForm(false)} className="text-ink-muted hover:text-ink">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Document title (e.g. Services & Pricing, Business Hours, FAQs)"
+                        value={newDocName}
+                        onChange={e => setNewDocName(e.target.value)}
+                        className="w-full bg-white border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors"
+                        required
+                        maxLength={200}
+                      />
+                      <textarea
+                        placeholder="Paste or type your business information here. The AI will use this when answering customer calls..."
+                        value={newDocContent}
+                        onChange={e => setNewDocContent(e.target.value)}
+                        rows={8}
+                        className="w-full bg-white border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors resize-y font-mono leading-relaxed"
+                        required
+                        maxLength={500000}
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] text-ink-muted">{newDocContent.length.toLocaleString()} / 500,000 characters</span>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setShowAddForm(false)} className="text-[10px] font-bold border border-line text-ink-secondary py-2 px-4 rounded-lg hover:bg-canvas transition-colors">
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={addingDoc || !newDocName.trim() || !newDocContent.trim()}
+                            className="text-[10px] font-bold bg-saffron hover:bg-saffron-hover text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {addingDoc ? "Saving..." : "Save Document"}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Docs list */}
+                  {kbLoading ? (
+                    <div className="flex items-center gap-3 py-8 text-ink-muted">
+                      <div className="w-4 h-4 border-2 border-saffron/30 border-t-saffron rounded-full animate-spin" />
+                      <span className="text-xs font-medium">Loading knowledge base...</span>
+                    </div>
+                  ) : kbDocs.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <Brain className="w-10 h-10 text-ink-muted/40 mx-auto mb-3" />
+                      <p className="text-xs font-bold text-ink-secondary">No documents yet</p>
+                      <p className="text-[10px] text-ink-muted mt-1">Add text documents or upload .txt files about your business to train your AI assistant.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {kbDocs.map((doc) => (
+                        <div key={doc.id} className="flex items-start gap-3 p-3.5 border border-line rounded-xl hover:border-saffron/30 transition-colors group">
+                          <FileText className="w-4 h-4 text-saffron shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-bold text-ink block truncate">{doc.name}</span>
+                            <span className="text-[10px] text-ink-muted block mt-0.5 line-clamp-2 leading-relaxed">
+                              {doc.content.slice(0, 120)}{doc.content.length > 120 ? "..." : ""}
+                            </span>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              {doc.word_count && (
+                                <span className="text-[9px] font-mono text-ink-muted bg-canvas border border-line px-1.5 py-0.5 rounded">
+                                  {doc.word_count.toLocaleString()} words
+                                </span>
+                              )}
+                              <span className="text-[9px] text-ink-muted">
+                                {new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteDoc(doc.id)}
+                            className="p-1.5 text-ink-muted/50 hover:text-state-error opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                            title="Delete document"
+                          >
+                            <Trash className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sync to VAPI panel */}
+              {kbDocs.length > 0 && (
+                <div className="border border-saffron/20 bg-saffron/3 rounded-[20px] p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-saffron/10 border border-saffron/20 rounded-xl flex items-center justify-center shrink-0">
+                      <Sparkle className="w-5 h-5 text-saffron" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xs font-bold text-ink mb-1">Sync Knowledge to AI Assistant</h4>
+                      <p className="text-[10px] text-ink-muted leading-relaxed">
+                        Compile all {kbDocs.length} document{kbDocs.length !== 1 ? "s" : ""} and push them into your VAPI assistant&apos;s system prompt.
+                        Your AI will use this information when answering customer calls.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleSyncToVapi}
+                      disabled={syncing}
+                      className="shrink-0 flex items-center gap-2 bg-saffron hover:bg-saffron-hover disabled:opacity-60 text-white text-[10px] font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all"
+                    >
+                      <ArrowsClockwise className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                      {syncing ? "Syncing..." : "Sync to Assistant"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
         </div>
 
         {/* Right Column: Security Audits & Stats (4 cols) */}
@@ -454,6 +764,16 @@ function WorkspaceSettingsContent() {
                   <span className="text-[10px] text-ink-muted block mt-0.5">Configured successfully</span>
                 </div>
               </div>
+
+              {activeTab === "knowledge" && (
+                <div className="flex items-center gap-3">
+                  <Brain className="w-5 h-5 text-saffron shrink-0" />
+                  <div>
+                    <span className="font-bold text-ink block leading-none">Knowledge Base</span>
+                    <span className="text-[10px] text-ink-muted block mt-0.5">{kbDocs.length} document{kbDocs.length !== 1 ? "s" : ""} stored</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
