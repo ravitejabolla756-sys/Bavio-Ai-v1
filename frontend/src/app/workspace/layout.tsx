@@ -40,7 +40,7 @@ export default function WorkspaceLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("Sunstar Real Estate");
+  const [workspace, setWorkspace] = useState("");
   const [planName, setPlanName] = useState("Free Trial");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -190,22 +190,23 @@ export default function WorkspaceLayout({
                     exit={{ opacity: 0, y: 5 }}
                     className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border border-line rounded-xl p-1.5 shadow-premium z-20"
                   >
-                    {["Sunstar Real Estate", "Apex Healthcare", "Bavio Dev Space"].map((name) => (
-                      <button
-                        key={name}
-                        onClick={() => {
-                          setWorkspace(name);
-                          setShowWorkspaceDropdown(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          workspace === name 
-                            ? "bg-saffron/10 text-saffron" 
-                            : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
+                    {/* Only show the user's own real workspace — no mock workspaces */}
+                    <div className="px-3 py-2 rounded-lg bg-saffron/10">
+                      <span className="text-xs font-bold text-saffron block">{workspace || "My Workspace"}</span>
+                      <span className="text-[9px] text-ink-muted mt-0.5 block">{planName} · Active</span>
+                    </div>
+                    <div className="border-t border-line my-1.5" />
+                    <button
+                      onClick={() => {
+                        setShowWorkspaceDropdown(false);
+                        localStorage.removeItem("bavio_token");
+                        window.location.href = "/login";
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-ink-secondary hover:bg-line-subtle/50 hover:text-state-error transition-all flex items-center gap-2"
+                    >
+                      <SignOut className="w-3.5 h-3.5" />
+                      Sign out
+                    </button>
                   </motion.div>
                 </>
               )}
