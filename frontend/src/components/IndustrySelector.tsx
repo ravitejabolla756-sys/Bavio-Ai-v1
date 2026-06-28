@@ -279,11 +279,11 @@ export default function IndustrySelector({
         // Adjust for sticky header
         const container = scrollContainerRef.current;
         const relativeTop = activeEl.offsetTop - container.offsetTop;
-        const isAbove = relativeTop < container.scrollTop + 48; // sticky search input height offset
+        const isAbove = relativeTop < container.scrollTop + 30; // sticky category header height offset
         const isBelow = relativeTop + activeEl.offsetHeight > container.scrollTop + container.clientHeight;
         
         if (isAbove) {
-          container.scrollTop = relativeTop - 48;
+          container.scrollTop = relativeTop - 30;
         } else if (isBelow) {
           container.scrollTop = relativeTop + activeEl.offsetHeight - container.clientHeight;
         }
@@ -395,7 +395,7 @@ export default function IndustrySelector({
                 filteredCategories.map((cat) => (
                   <div key={cat.category} className="flex flex-col">
                     {/* Category Header */}
-                    <div className="px-4 py-2 font-sans font-bold text-[10px] text-[#8A8A96] uppercase tracking-wider bg-[#FAF8F5]/90 backdrop-blur-sm sticky top-[48px] z-10 border-b border-[#E8DDD1]/40 select-none">
+                    <div className="px-4 py-2 font-sans font-bold text-[10px] text-[#8A8A96] uppercase tracking-wider bg-[#FAF8F5]/95 backdrop-blur-sm sticky top-0 z-10 border-b border-[#E8DDD1]/40 select-none">
                       {cat.category}
                     </div>
 
