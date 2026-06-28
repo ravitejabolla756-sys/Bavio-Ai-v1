@@ -38,7 +38,6 @@ function AuthCallback() {
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
-          // Check if onboarding is completed by looking at phone number fallback
           const isOnboardingComplete = user.phone && !user.phone.startsWith('google_oauth_fallback');
           
           if (isOnboardingComplete) {
@@ -71,17 +70,36 @@ function AuthCallback() {
       try {
         const { supabase } = await import('@/lib/supabase');
         
-        // Try getting session from hash (handled automatically by Supabase SDK)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) throw sessionError;
-        
+
+        // ─── POPUP MODE: send result back to opener and close ───
+        if (window.opener && !window.opener.closed) {
+          if (session?.user) {
+            const user = session.user;
+            window.opener.postMessage({
+              type: 'GOOGLE_AUTH_SUCCESS',
+              user: {
+                name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                email: user.email || '',
+                avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
+                accessToken: session.access_token,
+              }
+            }, window.location.origin);
+          } else {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_CANCELLED' }, window.location.origin);
+          }
+          window.close();
+          return;
+        }
+
+        // ─── NORMAL MODE: redirect as usual ───
         if (session) {
           await fetchProfileAndLogin(session.access_token);
           return;
         }
 
-        // Fallback to query param
         const token = searchParams.get('token');
         if (token) {
           await fetchProfileAndLogin(token);
@@ -89,6 +107,12 @@ function AuthCallback() {
           throw new Error('No authentication session or token found in URL.');
         }
       } catch (err: any) {
+        // If in popup, send error back and close
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: err.message }, window.location.origin);
+          setTimeout(() => window.close(), 1500);
+          return;
+        }
         console.error('[OAuth Callback] Session error:', err.message);
         setError(err.message || 'Error occurred while establishing session.');
         setStatus('');

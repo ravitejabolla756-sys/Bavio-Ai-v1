@@ -24,236 +24,7 @@ import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
-
-const industryOptions = [
-  {
-    value: "Real Estate",
-    label: "Real Estate",
-    icon: "🏠",
-    description: "Property sales, rentals, site visits, and lead qualification.",
-  },
-  {
-    value: "Healthcare",
-    label: "Healthcare",
-    icon: "🏥",
-    description: "Patient triage, appointment bookings, and clinical inquiry routing.",
-  },
-  {
-    value: "Legal Services",
-    label: "Legal Services",
-    icon: "⚖️",
-    description: "Case consultation bookings, legal intake, and document processing.",
-  },
-  {
-    value: "Finance & Banking",
-    label: "Finance & Banking",
-    icon: "💰",
-    description: "Loan processing, wealth advisory, and account setup inquiries.",
-  },
-  {
-    value: "E-Commerce",
-    label: "E-Commerce",
-    icon: "🛍️",
-    description: "Order tracking, returns, product inquiries, and customer support.",
-  },
-  {
-    value: "Education & Coaching",
-    label: "Education & Coaching",
-    icon: "📚",
-    description: "Course enrollments, demo scheduling, and student inquiries.",
-  },
-  {
-    value: "Restaurants & Food",
-    label: "Restaurants & Food",
-    icon: "🍽️",
-    description: "Reservations, menu inquiries, delivery orders, and feedback.",
-  },
-  {
-    value: "Field Services (Plumbing, AC, etc.)",
-    label: "Field Services (Plumbing, AC, etc.)",
-    icon: "🔧",
-    description: "Service appointment booking, emergency calls, and price inquiries.",
-  },
-  {
-    value: "Hotels & Hospitality",
-    label: "Hotels & Hospitality",
-    icon: "🏨",
-    description: "Room bookings, guest inquiries, and concierge services.",
-  },
-  {
-    value: "Fitness & Wellness",
-    label: "Fitness & Wellness",
-    icon: "💪",
-    description: "Class scheduling, membership inquiries, and trainer consultations.",
-  },
-  {
-    value: "Insurance",
-    label: "Insurance",
-    icon: "📋",
-    description: "Policy inquiries, claims processing, and quote requests.",
-  },
-  {
-    value: "Automotive",
-    label: "Automotive",
-    icon: "🚗",
-    description: "Service appointments, sales inquiries, and financing.",
-  },
-  {
-    value: "Retail",
-    label: "Retail",
-    icon: "🏪",
-    description: "Store hours, product availability, and customer support.",
-  },
-  {
-    value: "Telecommunications",
-    label: "Telecommunications",
-    icon: "📱",
-    description: "Plan inquiries, billing support, and service upgrades.",
-  },
-  {
-    value: "Other",
-    label: "Other",
-    icon: "⭐",
-    description: "Select if your industry isn't listed above.",
-  },
-];
-
-interface PremiumIndustryDropdownProps {
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function PremiumIndustryDropdown({ value, onChange }: PremiumIndustryDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Filter options based on search query
-  const filteredOptions = useMemo(() => {
-    return industryOptions.filter((opt) =>
-      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opt.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
-
-  const selectedOption = useMemo(() => {
-    return industryOptions.find((opt) => opt.value === value) || industryOptions[0];
-  }, [value]);
-
-  return (
-    <div ref={containerRef} className="relative w-full text-left font-sans">
-      {/* Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between bg-white border transition-all duration-200 outline-none rounded-[20px] py-4 px-5 text-body-xs text-[#14141A] select-none ${
-          isOpen
-            ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10 shadow-[0_4px_12px_rgba(255,107,0,0.08)]"
-            : "border-[#E5E0D8] hover:border-[#FF6B00]"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-[24px] leading-none shrink-0 select-none">{selectedOption.icon}</span>
-          <span className="font-semibold text-body-xs text-[#1a1a1a]">
-            {selectedOption.label}
-          </span>
-        </div>
-        <CaretDown
-          className={`w-4 h-4 text-[#8A8A96] transition-transform duration-200 shrink-0 ${
-            isOpen ? "rotate-180 text-[#14141A]" : ""
-          }`}
-        />
-      </button>
-
-      {/* Dropdown Floating Panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            style={{ borderRadius: "20px" }}
-            className="absolute left-0 right-0 mt-2 z-50 bg-white border border-[#E0E0E0] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
-          >
-            {/* Search Input */}
-            <div className="p-3.5 border-b border-[#E0E0E0] flex items-center gap-2 bg-[#FAF9F6] mb-3">
-              <MagnifyingGlass className="w-4 h-4 text-[#8A8A96] shrink-0" />
-              <input
-                type="text"
-                placeholder="Search industries..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-body-xs font-semibold text-[#1a1a1a] placeholder-[#8A8A96] p-0"
-                style={{ outline: "none", boxShadow: "none" }}
-              />
-            </div>
-
-            {/* Options List */}
-            <div className="p-3 max-h-[400px] overflow-y-auto scrollbar-thin flex flex-col gap-3">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => {
-                  const isSelected = opt.value === value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        onChange(opt.value);
-                        setIsOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className={`w-full text-left p-4 transition-all duration-200 flex items-center gap-4 rounded-[12px] border focus:outline-none focus:ring-0 ${
-                        isSelected
-                          ? "bg-[#FFF5E6]/40 border-[#FF6B00] shadow-sm"
-                          : "bg-white border-[#E0E0E0] hover:bg-[#FFF5E6] hover:scale-[1.02] hover:border-[#FF6B00]/45"
-                      }`}
-                      style={{ maxWidth: "500px" }}
-                    >
-                      <span className="text-[32px] leading-none shrink-0 select-none">
-                        {opt.icon}
-                      </span>
-                      <div className="flex flex-col text-left flex-1 min-w-0">
-                        <span
-                          className={`text-[16px] font-bold leading-tight ${
-                            isSelected ? "text-[#FF6B00]" : "text-[#1a1a1a]"
-                          }`}
-                        >
-                          {opt.label}
-                        </span>
-                        <span className="text-[14px] text-[#666666] leading-relaxed mt-1 break-words">
-                          {opt.description}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <Check className="w-5 h-5 text-[#FF6B00] shrink-0" weight="bold" />
-                      )}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold">
-                  No matching industries
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+import IndustrySelector from "@/components/IndustrySelector";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -269,29 +40,17 @@ export default function SignUpPage() {
     }
   }, []);
 
-  // Navigation redirect parameter
-  const [redirectUrl, setRedirectUrl] = useState("/workspace");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const savedRedirect = params.get("redirect") || localStorage.getItem("bavio_auth_redirect");
-      if (savedRedirect) {
-        setRedirectUrl(savedRedirect);
-        localStorage.setItem("bavio_auth_redirect", savedRedirect);
-      }
-    }
-  }, []);
-
-  // Show/Hide password toggle
-  const [showPassword, setShowPassword] = useState(false);
-
   // Form input states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
-  const [industry, setIndustry] = useState("Real Estate");
+  const [industry, setIndustry] = useState("");
+  const [industryError, setIndustryError] = useState("");
+
+  // URL Parameter Detection States
+  const [isPhonePrefilled, setIsPhonePrefilled] = useState(false);
+  const [demoCompletedFlag, setDemoCompletedFlag] = useState(false);
 
   // Country selector states
   const [countriesList, setCountriesList] = useState<any[]>([]);
@@ -302,7 +61,54 @@ export default function SignUpPage() {
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const countryDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch countries list on mount
+  // Validation, dirty and blurred states
+  const [blurredFields, setBlurredFields] = useState<Record<string, boolean>>({});
+  const [emailError, setEmailError] = useState("");
+  const [isEmailUnique, setIsEmailUnique] = useState<boolean | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [serverError, setServerError] = useState("");
+
+  // Parse query parameters
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const phoneParam = params.get("phone");
+      const demoFlag = params.get("demo_completed") === "true";
+      const intentParam = params.get("intent");
+
+      if (phoneParam) {
+        setBusinessPhone(phoneParam);
+        setIsPhonePrefilled(true);
+      }
+      if (demoFlag) {
+        setDemoCompletedFlag(true);
+        console.log("[Analytics] signup_form_viewed with demo_completed=true");
+      } else {
+        console.log("[Analytics] signup_form_viewed");
+      }
+
+      // Pre-filled Industry selection logic from demo intent
+      if (intentParam) {
+        const intentLower = intentParam.toLowerCase();
+        if (intentLower.includes("property") || intentLower.includes("real")) {
+          setIndustry("Real Estate");
+        } else if (intentLower.includes("appoint") || intentLower.includes("clinic") || intentLower.includes("health")) {
+          setIndustry("Healthcare");
+        } else if (intentLower.includes("reserve") || intentLower.includes("restaurant") || intentLower.includes("food")) {
+          setIndustry("Restaurants & Hospitality");
+        } else {
+          setIndustry("");
+        }
+      } else if (demoFlag) {
+        // Standard demo is a Bangalore real estate property inquiry
+        setIndustry("Real Estate");
+      }
+    }
+  }, []);
+
+  // Fetch countries list on mount (for manual entry)
   useEffect(() => {
     async function fetchCountries() {
       setIsLoadingCountries(true);
@@ -314,7 +120,6 @@ export default function SignUpPage() {
         }
         const data = await response.json();
         setCountriesList(data);
-        // Initialize to null (instead of defaulting) to force user to choose a country
         setSelectedCountry(null);
       } catch (err: any) {
         console.error("Failed to fetch phone countries:", err);
@@ -341,11 +146,8 @@ export default function SignUpPage() {
   const filteredCountries = countriesList.filter((c) => {
     const searchLower = countrySearch.toLowerCase().trim();
     if (!searchLower) return true;
-    
-    // Clean query and dialCode for matching (e.g. "+54" or "54")
     const cleanSearch = searchLower.replace("+", "");
     const cleanDialCode = c.dialCode.replace("+", "");
-    
     return (
       c.name.toLowerCase().includes(searchLower) ||
       cleanDialCode.includes(cleanSearch) ||
@@ -353,74 +155,214 @@ export default function SignUpPage() {
     );
   });
 
-  // Validation & Loading states
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  // Real-time password strength meter calculation
+  const strength = useMemo(() => {
+    if (!password) return { label: "", color: "bg-gray-200", percent: 0 };
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[!@#$%^&*]/.test(password)) score++;
 
-  const validateForm = () => {
-    const tempErrors: Record<string, string> = {};
-    
-    if (!email.trim()) {
-      tempErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      tempErrors.email = "Enter a valid email address";
+    if (score <= 1) {
+      return { label: "Weak", color: "bg-[#EF4444]", percent: 33 };
+    } else if (score <= 3) {
+      return { label: "Fair", color: "bg-[#FBBF24]", percent: 66 };
+    } else {
+      return { label: "Strong", color: "bg-[#10B981]", percent: 100 };
     }
-    
+  }, [password]);
+
+  // Debounced email uniqueness check
+  useEffect(() => {
+    if (!email) {
+      setIsEmailUnique(null);
+      setEmailError("");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setIsEmailUnique(null);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setIsCheckingEmail(true);
+      try {
+        const res = await authApi.checkEmail(email);
+        if (res.available) {
+          setIsEmailUnique(true);
+          setEmailError("");
+        } else {
+          setIsEmailUnique(false);
+          setEmailError("Email already in use");
+        }
+      } catch (err: any) {
+        console.warn("Email uniqueness check failed:", err.message);
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [email]);
+
+  // Email check on blur
+  const handleEmailBlur = async () => {
+    markBlurred("email");
+    if (!email) {
+      setEmailError("Email is required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address");
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      const res = await authApi.checkEmail(email);
+      if (res.available) {
+        setIsEmailUnique(true);
+        setEmailError("");
+      } else {
+        setIsEmailUnique(false);
+        setEmailError("Email already in use");
+      }
+    } catch (err: any) {
+      console.warn("Email check on blur failed:", err.message);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // Blur state markers
+  const markBlurred = (field: string) => {
+    setBlurredFields((prev) => ({ ...prev, [field]: true }));
+  };
+
+  // Field focusing logger
+  const handleFieldFocus = (fieldName: string) => {
+    console.log(`[Analytics] field_focused: ${fieldName}`);
+  };
+
+  // Compute form dirty state
+  const isFormDirty = useMemo(() => {
+    return email.trim() !== "" || password !== "" || businessName.trim() !== "" || (!isPhonePrefilled && businessPhone.trim() !== "");
+  }, [email, password, businessName, businessPhone, isPhonePrefilled]);
+
+  // Compute validation errors
+  const clientErrors = useMemo(() => {
+    const temp: Record<string, string> = {};
+
+    if (!email.trim()) {
+      temp.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      temp.email = "Enter a valid email address";
+    } else if (isEmailUnique === false) {
+      temp.email = "Email already in use";
+    }
+
     if (!password) {
-      tempErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      tempErrors.password = "Password must be at least 6 characters";
+      temp.password = "Password is required";
+    } else if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*]/.test(password)) {
+      temp.password = "Password must have 8+ chars, 1 uppercase, 1 number, 1 special char";
     }
 
     if (!businessName.trim()) {
-      tempErrors.businessName = "Business or Company name is required";
+      temp.businessName = "Business name is required";
+    } else if (businessName.length > 100) {
+      temp.businessName = "Business name is required";
     }
 
-    if (!selectedCountry) {
-      tempErrors.country = "Please select a country";
+    if (!isPhonePrefilled) {
+      if (!selectedCountry) {
+        temp.country = "Please select your country";
+      }
+      if (!businessPhone.trim()) {
+        temp.businessPhone = "Enter a valid phone number";
+      } else {
+        const clean = businessPhone.replace(/\D/g, "");
+        if (clean.length < 10) {
+          temp.businessPhone = "Enter a valid phone number";
+        }
+      }
+    }
+    
+    if (!industry) {
+      temp.industry = "Please select an industry";
     }
 
-    if (!businessPhone.trim()) {
-      tempErrors.businessPhone = "Please enter your phone number";
-    } else if (businessPhone.trim().replace(/\D/g, "").length < 6 || businessPhone.trim().replace(/\D/g, "").length > 15) {
-      tempErrors.businessPhone = "Invalid phone number";
-    }
-
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
-  };
+    return temp;
+  }, [email, password, businessName, businessPhone, selectedCountry, isPhonePrefilled, isEmailUnique, industry]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
+    setServerError("");
+
+    // Mark all fields blurred on submit
+    setBlurredFields({
+      email: true,
+      password: true,
+      businessName: true,
+      businessPhone: true,
+      country: true,
+      industry: true
+    });
+
+    if (Object.keys(clientErrors).length > 0) {
+      console.log("[Analytics] signup_failed", clientErrors);
+      return;
+    }
+
     setIsLoading(true);
-    
+    console.log("[Analytics] signup_submitted");
+
+    // Force 2-3 seconds of loading feedback
+    const startTime = Date.now();
+
     try {
-      const selectedOption = industryOptions.find(opt => opt.value === industry);
-      const selectedIndustryLabel = selectedOption ? selectedOption.label : "Real Estate";
+      const selectedIndustryLabel = industry || "Real Estate";
+      
+      const payloadPhone = isPhonePrefilled 
+        ? businessPhone 
+        : (selectedCountry ? (selectedCountry.dialCode + businessPhone.trim().replace(/\D/g, "")) : businessPhone.trim());
 
       const result = await authApi.signup({
-        email,
+        email: email.trim(),
         password,
-        businessName,
-        countryCode: selectedCountry?.code || "US",
-        dialCode: selectedCountry?.dialCode || "+1",
-        phoneNumber: businessPhone.trim(),
+        businessName: businessName.trim(),
+        countryCode: isPhonePrefilled ? "IN" : (selectedCountry?.code || "IN"),
+        dialCode: isPhonePrefilled ? "+91" : (selectedCountry?.dialCode || "+91"),
+        phoneNumber: isPhonePrefilled ? businessPhone.replace("+91", "") : businessPhone.trim().replace(/\D/g, ""),
+        businessPhone: payloadPhone,
         industry: selectedIndustryLabel,
+        demoCompleted: demoCompletedFlag
       });
 
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(2500 - elapsed, 0);
+
+      // Delay success to ensure high-fidelity loading state
+      await new Promise(resolve => setTimeout(resolve, delay));
+
       if (result.success && result.token) {
-        // Store auth data using centralized helper
-        setAuthData(result.token, result.client_id, businessName);
+        setAuthData(result.token, result.client_id, businessName.trim());
         setCookie("bavio_auth", "true");
+        if (demoCompletedFlag) {
+          localStorage.setItem("bavio_demo_completed", "true");
+        } else {
+          localStorage.removeItem("bavio_demo_completed");
+        }
         setIsSubmitted(true);
+        console.log("[Analytics] signup_succeeded");
+        router.push("/confirm-email");
       } else {
-        throw new Error((result as any).error || "Signup failed");
+        throw new Error((result as any).error || "Failed to create account. Please try again.");
       }
     } catch (err: any) {
-      setErrors({ form: err.message || "Failed to create account. Please try again." });
+      console.error("Signup exception:", err);
+      setServerError(err.message || "Something went wrong. Our team has been notified. Try again.");
+      console.log("[Analytics] signup_failed", err.message);
     } finally {
       setIsLoading(false);
     }
@@ -430,14 +372,20 @@ export default function SignUpPage() {
     router.push("/onboarding");
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-x-hidden">
+    <div className="relative h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-hidden">
       
       {/* ────────────────────────────────────────
-          LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
+          LEFT SIDE: BRAND EXPERIENCE PANEL
+          Desktop (1440px): 60% Width
+          Tablet (1024px): 50% Width
+          Mobile (768px): Stacked
+          Mobile (375px): Removed
       ──────────────────────────────────────── */}
       <section 
-        className="hidden md:flex md:w-[60%] lg:w-[60%] md:h-screen md:sticky md:top-0 relative flex-col justify-between p-10 lg:p-14 overflow-hidden bg-black"
+        className="hidden xs:hidden md:flex md:w-[50%] lg:w-[60%] md:h-screen md:sticky md:top-0 relative flex-col justify-between p-10 lg:p-14 overflow-hidden bg-black"
         style={{ 
           borderTopRightRadius: "300px 50%", 
           borderBottomRightRadius: "300px 50%", 
@@ -510,9 +458,12 @@ export default function SignUpPage() {
       </section>
 
       {/* ────────────────────────────────────────
-          RIGHT SIDE: SIGNUP CARD PANEL (40%)
+          RIGHT SIDE: SIGNUP CARD PANEL
+          Desktop (1440px): 40% Width
+          Tablet (1024px): 50% Width
+          Mobile (768px): 100% Width (full width form)
       ──────────────────────────────────────── */}
-      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#F7F4EF] relative min-h-[100dvh]">
+      <section className="w-full md:w-[50%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#F7F4EF] relative h-full overflow-y-auto">
         
         <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
@@ -544,50 +495,85 @@ export default function SignUpPage() {
                     Create Workspace Account
                   </h1>
                   <p className="text-body-xs text-[#5A5A66]">
-                    Create your administrative credentials to configure call routing.
+                    Create your administrative credentials to configure your AI receptionist.
                   </p>
                 </div>
 
-                {errors.form && (
-                  <div className="mb-4 bg-state-error/10 border border-state-error/20 rounded-xl p-3 text-state-error text-body-xs font-semibold">
-                    {errors.form}
+                {/* Demo Completed Banner */}
+                {demoCompletedFlag && (
+                  <div className="flex items-center gap-2 bg-[#ECFDF5] border-l-4 border-[#10B981] p-3.5 rounded-[6px] mb-6 text-[#047857] text-xs font-semibold">
+                    <span className="text-base select-none">✓</span>
+                    <span>✨ We detected you just tested Bavio. Your phone number is pre-filled.</span>
+                  </div>
+                )}
+
+                {serverError && (
+                  <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-semibold">
+                    {serverError}
                   </div>
                 )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   
-
-
-                  {/* Work Email Address */}
+                  {/* Email Address */}
                   <div>
                     <label htmlFor="email-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Email Address
+                      Email Address <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      id="email-input"
-                      type="email"
-                      placeholder="Email Address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full bg-[#FAF7F2] border ${errors.email ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
-                    />
-                    {errors.email && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.email}</p>}
+                    <div className="relative">
+                      <input
+                        id="email-input"
+                        type="email"
+                        required
+                        aria-required="true"
+                        aria-describedby={blurredFields.email && clientErrors.email ? "email-error" : undefined}
+                        placeholder="Email Address"
+                        value={email}
+                        onFocus={() => handleFieldFocus("email")}
+                        onBlur={handleEmailBlur}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setIsEmailUnique(null);
+                        }}
+                        className={`w-full bg-[#FAF7F2] border ${
+                          blurredFields.email && clientErrors.email ? "border-red-500" : "border-[#E5E0D8] focus:border-[#FF6B00]"
+                        } focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-4 pr-10 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 min-h-[44px]`}
+                      />
+                      {isCheckingEmail && (
+                        <div className="absolute right-3.5 top-3.5">
+                          <div className="w-4 h-4 border-2 border-[#FF6B00]/30 border-t-[#FF6B00] rounded-full animate-spin" />
+                        </div>
+                      )}
+                      {!isCheckingEmail && isEmailUnique === true && (
+                        <Check className="w-4.5 h-4.5 text-[#10B981] absolute right-3.5 top-3.5" weight="bold" />
+                      )}
+                    </div>
+                    {blurredFields.email && clientErrors.email && (
+                      <p id="email-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.email}</p>
+                    )}
                   </div>
 
                   {/* Password */}
                   <div>
                     <label htmlFor="password-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Password
+                      Password <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
                         id="password-input"
                         type={showPassword ? "text" : "password"}
+                        required
+                        aria-required="true"
+                        aria-describedby={blurredFields.password && clientErrors.password ? "password-error" : undefined}
                         placeholder="••••••••"
                         value={password}
+                        onFocus={() => handleFieldFocus("password")}
+                        onBlur={() => markBlurred("password")}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`w-full bg-[#FAF7F2] border ${errors.password ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-4 pr-11 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
+                        className={`w-full bg-[#FAF7F2] border ${
+                          blurredFields.password && clientErrors.password ? "border-red-500" : "border-[#E5E0D8] focus:border-[#FF6B00]"
+                        } focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-4 pr-11 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 min-h-[44px]`}
                       />
                       <button
                         type="button"
@@ -597,204 +583,268 @@ export default function SignUpPage() {
                         {showPassword ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.password}</p>}
+                    
+                    {/* Password Strength Meter */}
+                    {password && (
+                      <div className="mt-2.5 px-1 space-y-1.5">
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${strength.color} transition-all duration-300`} 
+                            style={{ width: `${strength.percent}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-500">
+                          Strength: <span style={{ color: strength.color.includes("EF44") ? "#EF4444" : strength.color.includes("FBBF") ? "#D97706" : "#10B981" }}>{strength.label}</span>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {blurredFields.password && clientErrors.password && (
+                      <p id="password-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.password}</p>
+                    )}
                   </div>
 
                   {/* Business / Company Name */}
                   <div>
                     <label htmlFor="business-name-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Business / Company Name
+                      Business / Company Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="business-name-input"
                       type="text"
+                      required
+                      aria-required="true"
+                      aria-describedby={blurredFields.businessName && clientErrors.businessName ? "business-name-error" : undefined}
                       placeholder="Business / Company Name"
                       value={businessName}
+                      onFocus={() => handleFieldFocus("businessName")}
+                      onBlur={() => markBlurred("businessName")}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className={`w-full bg-[#FAF7F2] border ${errors.businessName ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
+                      className={`w-full bg-[#FAF7F2] border ${
+                        blurredFields.businessName && clientErrors.businessName ? "border-red-500" : "border-[#E5E0D8] focus:border-[#FF6B00]"
+                      } focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 min-h-[44px]`}
                     />
-                    {errors.businessName && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessName}</p>}
+                    {blurredFields.businessName && clientErrors.businessName && (
+                      <p id="business-name-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.businessName}</p>
+                    )}
                   </div>
 
-                  {/* Country Selector */}
-                  <div>
-                    <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Country
-                    </label>
-                    <div className="relative w-full" ref={countryDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-                        className={`w-full flex items-center justify-between bg-white border transition-all duration-200 outline-none rounded-[20px] py-3.5 px-5 text-body-xs text-[#14141A] text-left ${
-                          isCountryDropdownOpen
-                            ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10"
-                            : "border-[#E5E0D8] hover:border-[#FF6B00]"
-                        }`}
-                      >
-                        {selectedCountry ? (
-                          <span className="flex items-center gap-3">
-                            <span className="text-[24px] leading-none shrink-0 select-none">{selectedCountry.flag}</span>
-                            <span className="font-serif font-bold text-body-xs text-[#14141A]">
-                              {selectedCountry.name}
-                            </span>
-                            <span className="font-sans font-normal text-xs text-[#8A8A96]">
-                              ({selectedCountry.dialCode})
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-[#8A8A96] font-sans font-medium">Select your country...</span>
-                        )}
-                        <CaretDown
-                          className={`w-4 h-4 text-[#8A8A96] transition-transform duration-200 shrink-0 ${
-                            isCountryDropdownOpen ? "rotate-180 text-[#14141A]" : ""
-                          }`}
-                        />
-                      </button>
-
-                      <AnimatePresence>
-                        {isCountryDropdownOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
-                            style={{ borderRadius: "20px" }}
-                            className="absolute left-0 right-0 mt-1.5 z-50 bg-white border border-[#E5E0D8] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
+                  {/* Business Phone Number */}
+                  {isPhonePrefilled ? (
+                    <div>
+                      <label htmlFor="business-phone-disabled" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
+                        Business Phone Number
+                      </label>
+                      <input
+                        id="business-phone-disabled"
+                        type="tel"
+                        disabled
+                        value={businessPhone}
+                        className="w-full bg-[#F3F4F6] border border-[#E5E0D8] rounded-xl py-3 px-4 text-body-xs text-[#6B7280] cursor-not-allowed min-h-[44px] font-bold"
+                      />
+                      <p className="text-[10px] text-[#6B7280] mt-1.5 pl-1 font-bold">
+                        From your demo call. Contact support to change.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Country Selection Dropdown (Only for manual entry) */}
+                      <div>
+                        <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
+                          Country <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative w-full" ref={countryDropdownRef}>
+                          <button
+                            type="button"
+                            onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+                            className={`w-full flex items-center justify-between bg-white border transition-all duration-200 outline-none rounded-[20px] py-3.5 px-5 text-body-xs text-[#14141A] text-left min-h-[44px] ${
+                              isCountryDropdownOpen
+                                ? "border-[#FF6B00] ring-4 ring-[#FF6B00]/10"
+                                : "border-[#E5E0D8] hover:border-[#FF6B00]"
+                            }`}
                           >
-                            {/* Search Input */}
-                            <div className="p-3.5 border-b border-[#EBE6DD]/60 flex items-center gap-2 bg-[#FAF9F6]">
-                              <MagnifyingGlass className="w-4 h-4 text-[#8A8A96] shrink-0" />
-                              <input
-                                type="text"
-                                placeholder="Select your country..."
-                                value={countrySearch}
-                                onChange={(e) => setCountrySearch(e.target.value)}
-                                className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-body-xs font-semibold text-[#14141A] placeholder-[#8A8A96] p-0"
-                                style={{ outline: "none", boxShadow: "none" }}
-                              />
-                            </div>
+                            {selectedCountry ? (
+                              <span className="flex items-center gap-3">
+                                <span className="text-base leading-none shrink-0 select-none">{selectedCountry.flag}</span>
+                                <span className="font-sans font-medium text-sm text-[#14141A]">
+                                  {selectedCountry.name}
+                                </span>
+                                <span className="font-sans font-normal text-sm text-[#8A8A96]">
+                                  ({selectedCountry.dialCode})
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[#8A8A96] font-sans font-medium">Select your country...</span>
+                            )}
+                            <CaretDown
+                              className={`w-4 h-4 text-[#8A8A96] transition-transform duration-200 shrink-0 ${
+                                isCountryDropdownOpen ? "rotate-180 text-[#14141A]" : ""
+                              }`}
+                            />
+                          </button>
 
-                            {/* Options List */}
-                            <div className="py-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
-                              {isLoadingCountries ? (
-                                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold animate-pulse">
-                                  Loading countries...
+                          <AnimatePresence>
+                            {isCountryDropdownOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                transition={{ duration: 0.18, ease: "easeOut" }}
+                                style={{ borderRadius: "20px" }}
+                                className="absolute left-0 right-0 mt-1.5 z-50 bg-white border border-[#E5E0D8] shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden origin-top"
+                              >
+                                <div className="p-3.5 border-b border-[#EBE6DD]/60 flex items-center gap-2 bg-[#FAF9F6]">
+                                  <MagnifyingGlass className="w-4 h-4 text-[#8A8A96] shrink-0" />
+                                  <input
+                                    type="text"
+                                    placeholder="Select your country..."
+                                    value={countrySearch}
+                                    onChange={(e) => setCountrySearch(e.target.value)}
+                                    className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-body-xs font-semibold text-[#14141A] placeholder-[#8A8A96] p-0"
+                                    style={{ outline: "none", boxShadow: "none" }}
+                                  />
                                 </div>
-                              ) : countriesError ? (
-                                <div className="px-4 py-6 text-center text-body-xs text-state-error font-semibold">
-                                  {countriesError}
-                                </div>
-                              ) : filteredCountries.length > 0 ? (
-                                filteredCountries.map((c) => {
-                                  const isSelected = selectedCountry?.code === c.code;
-                                  return (
-                                    <div key={c.code} className="px-2 py-0.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedCountry(c);
-                                          setIsCountryDropdownOpen(false);
-                                          setCountrySearch("");
-                                        }}
-                                        className={`w-full text-left px-3.5 py-2.5 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] ${
-                                          isSelected
-                                            ? "bg-[#FF6B00]/8 text-[#FF6B00] font-bold"
-                                            : "bg-transparent hover:bg-[#FAF7F2] text-[#14141A]"
-                                        }`}
-                                      >
-                                        <span className="flex items-center gap-3 truncate">
-                                          <span className="text-[24px] leading-none shrink-0 select-none">{c.flag}</span>
-                                          <span className="font-serif font-bold text-body-xs truncate">
-                                            {c.name}
-                                          </span>
-                                          <span className="font-sans font-normal text-xs text-[#8A8A96]">
-                                            +({c.dialCode.replace("+", "")})
-                                          </span>
-                                        </span>
-                                        {isSelected && <Check className="w-4 h-4 text-[#FF6B00]" weight="bold" />}
-                                      </button>
+
+                                <div className="py-1.5 max-h-[260px] overflow-y-auto scrollbar-thin">
+                                  {isLoadingCountries ? (
+                                    <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold animate-pulse">
+                                      Loading countries...
                                     </div>
-                                  );
-                                })
-                              ) : (
-                                <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold">
-                                  No matching countries
+                                  ) : countriesError ? (
+                                    <div className="px-4 py-6 text-center text-body-xs text-red-500 font-semibold">
+                                      {countriesError}
+                                    </div>
+                                  ) : filteredCountries.length > 0 ? (
+                                    filteredCountries.map((c) => {
+                                      const isSelected = selectedCountry?.code === c.code;
+                                      return (
+                                        <div key={c.code} className="px-2 py-0.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedCountry(c);
+                                              setIsCountryDropdownOpen(false);
+                                              setCountrySearch("");
+                                            }}
+                                            className={`w-full text-left px-3.5 py-2.5 transition-all duration-150 flex items-center justify-between gap-3 rounded-[12px] ${
+                                              isSelected
+                                                ? "bg-[#FF6B00]/8 text-[#FF6B00] font-bold"
+                                                : "bg-transparent hover:bg-[#FAF7F2] text-[#14141A]"
+                                            }`}
+                                          >
+                                            <span className="flex items-center gap-3 truncate">
+                                              <span className="text-base leading-none shrink-0 select-none">{c.flag}</span>
+                                              <span className="font-sans font-medium text-sm text-[#14141A] truncate">
+                                                {c.name}
+                                              </span>
+                                              <span className="font-sans font-normal text-sm text-[#8A8A96]">
+                                                +({c.dialCode.replace("+", "")})
+                                              </span>
+                                            </span>
+                                            {isSelected && <Check className="w-4 h-4 text-[#FF6B00]" weight="bold" />}
+                                          </button>
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold">
+                                      No matching countries
+                                    </div>
+                                  )}
                                 </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        {blurredFields.country && clientErrors.country && (
+                          <p className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.country}</p>
+                        )}
+                      </div>
+
+                      {/* Phone Number Input */}
+                      <AnimatePresence>
+                        {selectedCountry && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <div className="relative mt-2">
+                              <label className="absolute left-4 -top-2 bg-white px-1 text-[11px] font-semibold text-[#8A8A96] z-10">
+                                Phone number <span className="text-red-500">*</span>
+                              </label>
+                              <div
+                                className={`w-full flex items-center bg-white border ${
+                                  blurredFields.businessPhone && clientErrors.businessPhone 
+                                    ? "border-red-500" 
+                                    : "border-[#E5E0D8] focus-within:border-[#FF6B00] focus-within:ring-4 focus-within:ring-[#FF6B00]/10"
+                                } rounded-[20px] transition-all duration-200 overflow-hidden min-h-[44px]`}
+                              >
+                                <span className="py-3.5 pl-5 pr-1.5 text-body-xs text-[#8A8A96] font-sans font-normal select-none shrink-0">
+                                  {selectedCountry.dialCode}
+                                </span>
+                                <input
+                                  id="business-phone-input"
+                                  type="tel"
+                                  required
+                                  aria-required="true"
+                                  aria-describedby={blurredFields.businessPhone && clientErrors.businessPhone ? "business-phone-error" : undefined}
+                                  disabled={!selectedCountry}
+                                  placeholder="Enter 10-digit mobile number"
+                                  value={businessPhone}
+                                  onFocus={() => handleFieldFocus("businessPhone")}
+                                  onBlur={() => markBlurred("businessPhone")}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "");
+                                    setBusinessPhone(val);
+                                  }}
+                                  className="w-full bg-transparent border-none outline-none py-3.5 pl-1 pr-5 text-body-xs text-[#14141A] placeholder-[#8A8A96]/60"
+                                  style={{ outline: "none", boxShadow: "none" }}
+                                />
+                              </div>
+                              {blurredFields.businessPhone && clientErrors.businessPhone && (
+                                <p id="business-phone-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.businessPhone}</p>
                               )}
                             </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </div>
-                    {errors.country && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.country}</p>}
-                  </div>
+                  )}
 
-                  {/* Business Phone Number */}
-                  <AnimatePresence>
-                    {selectedCountry && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                        animate={{ opacity: 1, height: "auto", marginTop: 16 }}
-                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <div className="relative mt-2">
-                          <label className="absolute left-4 -top-2 bg-white px-1 text-[11px] font-semibold text-[#8A8A96] z-10">
-                            Phone number
-                          </label>
-                          <div
-                            className={`w-full flex items-center bg-white border ${
-                              errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus-within:border-[#FF6B00] focus-within:ring-4 focus-within:ring-[#FF6B00]/10"
-                            } rounded-[20px] transition-all duration-200 overflow-hidden`}
-                          >
-                            <span className="py-3.5 pl-5 pr-1.5 text-body-xs text-[#8A8A96] font-sans font-normal select-none shrink-0">
-                              {selectedCountry.dialCode}
-                            </span>
-                            <input
-                              id="business-phone-input"
-                              type="tel"
-                              disabled={!selectedCountry}
-                              placeholder="e.g., 2615550123"
-                              value={businessPhone}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, "");
-                                setBusinessPhone(val);
-                              }}
-                              className="w-full bg-transparent border-none outline-none py-3.5 pl-1 pr-5 text-body-xs text-[#14141A] placeholder-[#8A8A96]/60"
-                              style={{ outline: "none", boxShadow: "none" }}
-                            />
-                          </div>
-                          {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Industry Sector */}
-                  <div>
-                    <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
-                      Industry Sector
-                    </label>
-                    <PremiumIndustryDropdown
-                      value={industry}
-                      onChange={(val) => setIndustry(val)}
-                    />
-                  </div>
+                  {/* Industry Sector Selector */}
+                  <IndustrySelector
+                    value={industry}
+                    onChange={(val) => setIndustry(val)}
+                    error={blurredFields.industry ? clientErrors.industry : ""}
+                    required
+                  />
 
                   {/* Submit CTA */}
                   <button
                     type="submit"
-                    disabled={isLoading}
-                    className="mt-2 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-400 text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98]"
+                    disabled={isLoading || !isFormDirty}
+                    aria-busy={isLoading}
+                    className="mt-4 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#CCCCCC] disabled:cursor-not-allowed text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] min-h-[48px]"
+                    style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
                   >
-                    <span>{isLoading ? "Creating Account..." : "Create Account"}</span>
-                    <ArrowRight className="w-4 h-4" weight="bold" />
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        [⏳ Creating Account...]
+                      </span>
+                    ) : (
+                      <>
+                        <span>CREATE ACCOUNT &rarr;</span>
+                      </>
+                    )}
                   </button>
                 </form>
 
                 {/* Form mode switcher */}
-                <div className="mt-6 text-center text-body-xs text-[#5A5A66]">
+                <div className="mt-6 text-center text-body-xs text-[#6B7280]" style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400 }}>
                   <span>Already have an account? </span>
                   <Link
                     href="/login"
@@ -848,7 +898,7 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={handleGoToOnboarding}
-                  className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] min-h-[48px]"
                 >
                   <span>Start Onboarding</span>
                   <ArrowRight className="w-4 h-4" weight="bold" />
@@ -859,9 +909,9 @@ export default function SignUpPage() {
         </motion.div>
 
         {/* Secure encryption footer */}
-        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative">
-          <ShieldCheck className="w-4 h-4 text-state-success" weight="fill" />
-          <span>Your data is secure and encrypted</span>
+        <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative select-none">
+          <ShieldCheck className="w-4 h-4 text-[#10B981]" weight="fill" />
+          <span>🔒 Your data is secure and encrypted</span>
         </div>
 
         {/* Need help? contact */}

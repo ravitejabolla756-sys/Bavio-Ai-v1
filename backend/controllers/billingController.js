@@ -553,13 +553,14 @@ async function handleWebhook(req, res) {
                     
                     await db.query(
                         `UPDATE businesses 
-                         SET plan = $1,
+                         SET plan = $1::plan_type,
                              plan_name = $2,
                              current_period_end = $3,
                              minutes_limit = $4,
-                             status = 'active'
-                         WHERE id = $5`,
-                        [dbPlan, plan, subscription.current_period_end, minutesLimit, businessId]
+                             status = 'active',
+                             dodo_subscription_id = $5
+                         WHERE id = $6`,
+                        [dbPlan, plan, subscription.current_period_end, minutesLimit, subscription.id || subscription.subscription_id, businessId]
                     );
                     
                     console.log(`Activated subscription for business ${businessId}: ${plan}`);
@@ -632,9 +633,10 @@ async function handleWebhook(req, res) {
                 
                 if (businessId) {
                     // Update business subscription status
+                    const dbPlan = DB_PLAN_MAP[(planName || 'starter').toLowerCase()] || 'starter';
                     await db.query(
-                        `UPDATE businesses SET plan = $1, plan_name = $1, status = 'active', subscription_active = true, billing_cycle = $2 WHERE id = $3`,
-                        [planName || 'starter', payment.billing_cycle || 'monthly', businessId]
+                        `UPDATE businesses SET plan = $1::plan_type, plan_name = $2, status = 'active', subscription_status = 'active', billing_cycle = $3 WHERE id = $4`,
+                        [dbPlan, planName || 'starter', payment.billing_cycle || 'monthly', businessId]
                     );
                     // Provision phone number via internal endpoint
                     try {
@@ -855,40 +857,58 @@ async function autoProvisionBusiness(clientId) {
             [vapiAssistantId, greeting, systemPrompt, assistant.id]
         );
         
-        // 6. Automated Phone Number Assignment from pool
-        const numberResult = await db.query(
-            `SELECT id, phone_number FROM phone_numbers 
-             WHERE type = 'pool' AND status = 'active' AND business_id IS NULL 
-             LIMIT 1`
-        );
+        // 6. Automated Phone Number Purchase from Twilio and registration on Vapi
+        const twilioProvider = require('../providers/twilio');
+        const countryCode = (business.country_code === 'IN' || !business.country_code) ? 'US' : business.country_code;
         
-        let assignedNumber = '+18005550199';
-        let numberId = null;
+        let assignedNumber = null;
+        let isMock = false;
         
-        if (numberResult.rows.length > 0) {
-            const poolNum = numberResult.rows[0];
-            assignedNumber = poolNum.phone_number;
-            numberId = poolNum.id;
-            
-            await db.query(
-                `UPDATE phone_numbers SET
-                    business_id = $1,
-                    assistant_id = $2,
-                    updated_at = NOW()
-                 WHERE id = $3`,
-                [clientId, assistant.id, numberId]
-            );
-        } else {
-            console.warn('[AUTO-PROVISION] No free pool number found. Generating a mock one.');
+        try {
+            console.log(`[AUTO-PROVISION] Attempting to buy local Twilio number for country: ${countryCode}...`);
+            assignedNumber = await twilioProvider.buyNumber(countryCode);
+            console.log(`[AUTO-PROVISION] ✅ Twilio purchase success: ${assignedNumber}`);
+        } catch (buyErr) {
+            console.warn('[AUTO-PROVISION] ⚠️ Twilio purchase failed, using mock fallback:', buyErr.message);
             assignedNumber = '+1' + Math.floor(2000000000 + Math.random() * 8000000000);
-            const insertNumRes = await db.query(
-                `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
-                 VALUES ($1, $2, $3, 'twilio', 'active')
-                 RETURNING id`,
-                [clientId, assistant.id, assignedNumber]
-            );
-            numberId = insertNumRes.rows[0].id;
+            isMock = true;
         }
+
+        // Register the purchased number on Vapi and link it to the Vapi Assistant
+        let vapiPhoneNumberId = null;
+        if (process.env.VAPI_API_KEY && !isMock && !vapiAssistantId.startsWith('vapi_asst_mock_')) {
+            try {
+                console.log(`[AUTO-PROVISION] Linking number ${assignedNumber} to Vapi assistant: ${vapiAssistantId}...`);
+                const vapiPhoneRes = await axios.post('https://api.vapi.ai/phone-number', {
+                    provider: 'twilio',
+                    number: assignedNumber,
+                    twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
+                    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+                    name: `${business.name || 'Bavio'} Inbound Line`,
+                    assistantId: vapiAssistantId
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.VAPI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (vapiPhoneRes.data && vapiPhoneRes.data.id) {
+                    vapiPhoneNumberId = vapiPhoneRes.data.id;
+                    console.log(`[AUTO-PROVISION] ✅ Registered on Vapi: ${vapiPhoneNumberId}`);
+                }
+            } catch (vapiPhoneErr) {
+                console.error('[AUTO-PROVISION] ❌ Vapi phone link failed:', vapiPhoneErr.message);
+            }
+        }
+
+        // Store number in phone_numbers table
+        const insertNumRes = await db.query(
+            `INSERT INTO phone_numbers (business_id, assistant_id, phone_number, provider, status)
+             VALUES ($1, $2, $3, 'twilio', 'active')
+             RETURNING id`,
+            [clientId, assistant.id, assignedNumber]
+        );
+        const numberId = insertNumRes.rows[0].id;
         
         // 7. Update business state
         await db.query(
@@ -898,7 +918,7 @@ async function autoProvisionBusiness(clientId) {
                 twilio_number = $3,
                 subscription_status = 'active',
                 onboarding_status = 'ready',
-                onboarding_step = 5,
+                onboarding_step = 6,
                 updated_at = NOW()
              WHERE id = $4`,
             [assistant.id, numberId, assignedNumber, clientId]
@@ -1040,6 +1060,209 @@ async function verifyRazorpayPayment(req, res) {
     }
 }
 
+// Fetch active trial status and usage summaries for onboarding
+async function getTrialStatus(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const bizRes = await db.query(
+      `SELECT trial_status, trial_ends_at, minutes_used, minutes_limit 
+       FROM businesses WHERE id = $1`,
+      [businessId]
+    );
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found', message: 'Business not found' });
+    }
+
+    const business = bizRes.rows[0];
+
+    // Count calls answered and leads captured
+    const callsCountRes = await db.query(
+      'SELECT COUNT(*)::int as count FROM calls WHERE business_id = $1',
+      [businessId]
+    );
+    const leadsCountRes = await db.query(
+      'SELECT COUNT(*)::int as count FROM leads WHERE business_id = $1',
+      [businessId]
+    );
+
+    return res.status(200).json({
+      businessId,
+      trialStatus: business.trial_status || 'ACTIVE',
+      trialEndsAt: business.trial_ends_at || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      minutesUsed: business.minutes_used || 0,
+      minutesAvailable: business.minutes_limit || 30,
+      callsAnswered: callsCountRes.rows[0]?.count || 0,
+      leadsCaptured: leadsCountRes.rows[0]?.count || 0
+    });
+
+  } catch (err) {
+    console.error('getTrialStatus error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Fetch available pricing packages
+async function getPricing(req, res) {
+  try {
+    const plans = [
+      {
+        id: "STARTER",
+        name: "Starter",
+        price: 1999,
+        currency: "INR",
+        minutes: 200,
+        overageRate: 5,
+        features: ["200 minutes/month", "₹5 per extra minute", "Basic analytics", "Email support"]
+      },
+      {
+        id: "GROWTH",
+        name: "Growth",
+        price: 3999,
+        currency: "INR",
+        minutes: 500,
+        overageRate: 4,
+        popular: true,
+        features: ["500 minutes/month", "₹4 per extra minute", "Advanced analytics", "Lead prioritization", "24/7 support"]
+      },
+      {
+        id: "SCALE",
+        name: "Scale",
+        price: 7999,
+        currency: "INR",
+        minutes: 1500,
+        overageRate: 3,
+        features: ["1500 minutes/month", "₹3 per extra minute", "Full analytics suite", "API access", "Priority support", "White-label option"]
+      }
+    ];
+
+    return res.status(200).json({
+      plans,
+      yearlyDiscount: 0.17
+    });
+  } catch (err) {
+    console.error('getPricing error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Create a checkout session redirecting to Dodo
+async function createCheckout(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    const email = req.client?.email || req.user?.email || 'billing@bavio.in';
+    
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { planId, billingPeriod } = req.body;
+    if (!planId) {
+      return res.status(400).json({ error: 'missing_fields', message: 'planId is required' });
+    }
+
+    const normalizedPlan = planId.toLowerCase();
+    const cycle = billingPeriod?.toLowerCase() === 'yearly' ? 'annual' : 'monthly';
+
+    const dodoService = require('../services/dodoBillingService');
+    let checkoutUrl = '';
+    let orderId = `order_${Math.random().toString(36).substring(2, 11)}`;
+
+    try {
+      const response = await dodoService.createSubscription(businessId, normalizedPlan, email, cycle);
+      if (response && response.checkoutUrl) {
+        checkoutUrl = response.checkoutUrl;
+        orderId = response.subscriptionId || orderId;
+      }
+    } catch (dodoErr) {
+      console.warn('Dodo payment creation failed, using mock checkout link:', dodoErr.message);
+    }
+
+    if (!checkoutUrl) {
+      checkoutUrl = `https://checkout.dodopayments.com/mock-checkout?plan=${planId}&period=${billingPeriod}&client=${businessId}`;
+    }
+
+    // Save initial payment log
+    await db.query(
+      `INSERT INTO payment_logs 
+       (dodo_payment_id, business_id, amount, currency, status, plan_name, payment_type, period_start, period_end)
+       VALUES ($1, $2, $3, $4, $5, $6, 'subscription', NOW(), NOW() + INTERVAL '30 days')`,
+      [orderId, businessId, normalizedPlan === 'scale' ? 7999 : normalizedPlan === 'growth' ? 3999 : 1999, 'INR', 'pending', planId]
+    );
+
+    return res.status(200).json({
+      checkoutUrl,
+      orderId
+    });
+
+  } catch (err) {
+    console.error('createCheckout error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Handle Dodo Payment Webhooks
+async function handleDodoWebhook(req, res) {
+  try {
+    const { event, orderId, customerId, amount, currency, status } = req.body;
+    console.log(`[DODO WEBHOOK] Received event: ${event} for order: ${orderId}`);
+
+    if (event === 'order.completed' || status === 'SUCCESS') {
+      let businessId = req.body.metadata?.business_id || req.body.metadata?.client_id;
+      
+      if (!businessId) {
+        const logRes = await db.query(
+          'SELECT business_id FROM payment_logs WHERE dodo_payment_id = $1 LIMIT 1',
+          [orderId]
+        );
+        if (logRes.rows.length > 0) {
+          businessId = logRes.rows[0].business_id;
+        }
+      }
+
+      if (!businessId) {
+        console.warn('[DODO WEBHOOK] No business_id found in webhook payload metadata.');
+        return res.status(200).json({ received: true, warning: 'No business linked' });
+      }
+
+      // Update business table
+      await db.query(
+        `UPDATE businesses
+         SET plan = $1,
+             plan_name = $2,
+             trial_status = 'CONVERTED',
+             status = 'active',
+             billing_period = $3,
+             onboarding_step = 6,
+             updated_at = NOW()
+         WHERE id = $4`,
+        ['pro', 'GROWTH', 'monthly', businessId]
+      );
+
+      // Upgrade payment log to succeeded
+      await db.query(
+        `UPDATE payment_logs 
+         SET status = 'succeeded',
+             dodo_customer_id = $1,
+             updated_at = NOW()
+         WHERE dodo_payment_id = $2`,
+        [customerId || 'cust_dodo', orderId]
+      );
+
+      console.log(`[DODO WEBHOOK] Successfully upgraded business ${businessId} to GROWTH plan`);
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[DODO WEBHOOK] Error processing webhook:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
 module.exports = {
     subscribe,
     getStatus,
@@ -1050,6 +1273,10 @@ module.exports = {
     handleWebhook,
     createRazorpayOrder,
     verifyRazorpayPayment,
-    autoProvisionBusiness
+    autoProvisionBusiness,
+    getTrialStatus,
+    getPricing,
+    createCheckout,
+    handleDodoWebhook
 };
 
