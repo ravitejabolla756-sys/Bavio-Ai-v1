@@ -1,4 +1,5 @@
 const db = require('../database/db');
+const axios = require('axios');
 
 // ── GET /knowledge-base — list all docs for the authenticated business ────────
 async function listDocs(req, res) {
@@ -91,7 +92,6 @@ async function searchDocs(req, res) {
 
     const query = q.trim();
 
-    // PostgreSQL full-text search
     const result = await db.query(
       `SELECT
          id,
@@ -122,9 +122,92 @@ async function searchDocs(req, res) {
   }
 }
 
+// ── POST /knowledge-base/sync-vapi — compile all KB docs and push to VAPI assistant ──
+async function syncToVapi(req, res) {
+  try {
+    const businessId = req.user.id;
+
+    // 1. Fetch all KB docs for this business
+    const docsResult = await db.query(
+      `SELECT name, content FROM knowledge_base_docs WHERE business_id = $1 ORDER BY created_at ASC`,
+      [businessId]
+    );
+
+    if (docsResult.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'No knowledge base documents found. Add at least one document before syncing.' });
+    }
+
+    // 2. Fetch the business assistant record (with vapi_assistant_id)
+    const assistantResult = await db.query(
+      `SELECT id, vapi_assistant_id, system_prompt FROM assistants WHERE business_id = $1 LIMIT 1`,
+      [businessId]
+    );
+
+    if (assistantResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'No AI assistant found for this workspace. Complete onboarding first.' });
+    }
+
+    const assistant = assistantResult.rows[0];
+
+    // 3. Build the knowledge base context block
+    const kbBlock = docsResult.rows
+      .map((doc, i) => `--- Source ${i + 1}: ${doc.name} ---\n${doc.content}`)
+      .join('\n\n');
+
+    // 4. Compose updated system prompt — strip any previous KB block first
+    const basePrompt = (assistant.system_prompt || 'You are a helpful, professional business assistant.')
+      .replace(/\n\n=== BUSINESS KNOWLEDGE BASE ===[\s\S]*?=== END KNOWLEDGE BASE ===/g, '')
+      .trim();
+
+    const updatedPrompt = `${basePrompt}\n\n=== BUSINESS KNOWLEDGE BASE ===\n${kbBlock}\n=== END KNOWLEDGE BASE ===`;
+
+    // 5. Update locally in DB
+    await db.query(
+      `UPDATE assistants SET system_prompt = $1, updated_at = NOW() WHERE id = $2`,
+      [updatedPrompt, assistant.id]
+    );
+
+    // 6. Sync to VAPI if a real VAPI assistant ID and API key are available
+    let vapiSynced = false;
+    const vapiAssistantId = assistant.vapi_assistant_id;
+    const vapiApiKey = process.env.VAPI_API_KEY;
+
+    if (vapiApiKey && vapiAssistantId && !String(vapiAssistantId).startsWith('vapi_asst_mock_')) {
+      try {
+        await axios.patch(
+          `https://api.vapi.ai/assistant/${vapiAssistantId}`,
+          { model: { messages: [{ role: 'system', content: updatedPrompt }] } },
+          { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
+        );
+        vapiSynced = true;
+        console.log(`[KB SYNC] ✅ Pushed to VAPI assistant ${vapiAssistantId} for business ${businessId}`);
+      } catch (vapiErr) {
+        // DB was updated; VAPI sync failed non-fatally
+        console.error('[KB SYNC] VAPI push failed (DB still updated):', vapiErr.message);
+      }
+    } else {
+      console.log(`[KB SYNC] No real VAPI assistant ID/key — DB updated only. vapiId: ${vapiAssistantId}`);
+    }
+
+    res.status(200).json({
+      success: true,
+      docsCount: docsResult.rows.length,
+      vapiSynced,
+      message: vapiSynced
+        ? `Knowledge base synced to your AI assistant (${docsResult.rows.length} document${docsResult.rows.length !== 1 ? 's' : ''}).`
+        : `Knowledge base saved to your AI assistant (${docsResult.rows.length} document${docsResult.rows.length !== 1 ? 's' : ''}). VAPI live-sync pending API key setup.`
+    });
+
+  } catch (err) {
+    console.error('[KB] syncToVapi error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 module.exports = {
   listDocs,
   createDoc,
   deleteDoc,
   searchDocs,
+  syncToVapi,
 };
