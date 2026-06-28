@@ -322,13 +322,6 @@ async function assignPhone(req, res) {
       return res.status(400).json({ error: 'invalid_country', message: 'Invalid or unsupported country' });
     }
 
-    if (country !== 'IN') {
-      return res.status(400).json({
-        error: 'invalid_country',
-        message: 'Phone numbers not available for this country yet'
-      });
-    }
-
     // 1. Get business info
     const bizRes = await db.query(
       'SELECT id, name, twilio_number, country_code, industry FROM businesses WHERE id = $1',
@@ -345,24 +338,48 @@ async function assignPhone(req, res) {
     if (business.twilio_number) {
       return res.status(200).json({
         phoneNumber: business.twilio_number,
-        country: business.country_code || 'IN',
-        provider: 'EXOTEL',
+        country: business.country_code || country,
+        provider: 'TWILIO',
         status: 'ACTIVE',
-        monthlyCharge: 499,
-        currency: 'INR'
+        monthlyCharge: 1,
+        currency: 'USD'
       });
     }
 
-    // 3. Select a random available number (Mocking Exotel query/reserve)
-    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000); // 10 digits
-    const assignedPhone = `+91${randomDigits}`;
+    // 3. Purchase dynamically from Twilio via API credentials (or fallback if unconfigured)
+    let assignedPhone = null;
+    let isMock = false;
 
-    // 4. Store in phone_numbers table
+    try {
+      const twilioProvider = require('../providers/twilio');
+      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${country}...`);
+      assignedPhone = await twilioProvider.buyNumber(country);
+      console.log(`[PROVISION] Successfully purchased dedicated number: ${assignedPhone}`);
+    } catch (e) {
+      isMock = true;
+      console.warn(`[PROVISION] Twilio purchase failed (${e.message}), using dedicated mock number fallback.`);
+      
+      // Generate a realistic dedicated mock number depending on the country
+      if (country === 'IN') {
+        const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
+        assignedPhone = `+91${randomDigits}`;
+      } else if (country === 'UK') {
+        const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
+        assignedPhone = `+44${randomDigits}`;
+      } else {
+        // US / default
+        const areaCode = [201, 302, 415, 512, 602, 702, 802, 902][Math.floor(Math.random() * 8)];
+        const randomDigits = Math.floor(1000000 + Math.random() * 8999999);
+        assignedPhone = `+1${areaCode}${randomDigits}`;
+      }
+    }
+
+    // 4. Store in phone_numbers table as dedicated
     const phoneNumRes = await db.query(
       `INSERT INTO phone_numbers (business_id, phone_number, country_code, provider, status, type, is_active)
-       VALUES ($1, $2, 'IN', 'EXOTEL', 'active', 'dedicated', true)
+       VALUES ($1, $2, $3, $4, 'active', 'dedicated', true)
        RETURNING id`,
-      [clientId, assignedPhone]
+      [clientId, assignedPhone, country, isMock ? 'mock' : 'twilio']
     );
     const phoneId = phoneNumRes.rows[0].id;
 
@@ -390,14 +407,14 @@ async function assignPhone(req, res) {
         agent_name: agentName,
         greeting: greeting,
         industry: industry,
-        language: 'hi-IN',
+        language: country === 'IN' ? 'hi-IN' : 'en-US',
       });
 
       const newAssistant = await db.query(
         `INSERT INTO assistants (business_id, name, agent_name, greeting, system_prompt, voice_id, language, is_active)
-         VALUES ($1, $2, $2, $3, $4, 'meera', 'hi-IN', true)
+         VALUES ($1, $2, $2, $3, $4, 'meera', $5, true)
          RETURNING id`,
-        [clientId, agentName, greeting, systemPrompt]
+        [clientId, agentName, greeting, systemPrompt, country === 'IN' ? 'hi-IN' : 'en-US']
       );
       
       const assistantId = newAssistant.rows[0].id;
@@ -411,11 +428,11 @@ async function assignPhone(req, res) {
     // Return response
     return res.status(200).json({
       phoneNumber: assignedPhone,
-      country: 'IN',
-      provider: 'EXOTEL',
+      country: country,
+      provider: isMock ? 'MOCK' : 'TWILIO',
       status: 'ACTIVE',
-      monthlyCharge: 499,
-      currency: 'INR'
+      monthlyCharge: 1,
+      currency: 'USD'
     });
 
   } catch (err) {
