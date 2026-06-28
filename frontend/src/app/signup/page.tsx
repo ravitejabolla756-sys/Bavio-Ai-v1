@@ -281,7 +281,13 @@ export default function SignUpPage() {
         temp.businessPhone = "Enter a valid phone number";
       } else {
         const clean = businessPhone.replace(/\D/g, "");
-        if (clean.length < 10) {
+        let minLength = 10;
+        if (selectedCountry?.code === "AU") {
+          minLength = 9;
+        } else if (selectedCountry?.code === "SG" || selectedCountry?.code === "NZ") {
+          minLength = 8;
+        }
+        if (clean.length < minLength) {
           temp.businessPhone = "Enter a valid phone number";
         }
       }
