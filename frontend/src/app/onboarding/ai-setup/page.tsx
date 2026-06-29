@@ -25,11 +25,43 @@ interface SaveSetupResponse {
   message: string;
 }
 
+const VAPI_LANGUAGES = [
+  { code: "en-US", name: "English (United States)", flag: "🇺🇸" },
+  { code: "en-GB", name: "English (United Kingdom)", flag: "🇬🇧" },
+  { code: "en-IN", name: "English (India)", flag: "🇮🇳" },
+  { code: "en-AU", name: "English (Australia)", flag: "🇦🇺" },
+  { code: "en-CA", name: "English (Canada)", flag: "🇨🇦" },
+  { code: "hi-IN", name: "Hindi (India)", flag: "🇮🇳" },
+  { code: "hinglish", name: "Hinglish (Hindi/English mix)", flag: "🇮🇳" },
+  { code: "es-ES", name: "Spanish (Spain)", flag: "🇪🇸" },
+  { code: "es-MX", name: "Spanish (Mexico)", flag: "🇲🇽" },
+  { code: "fr-FR", name: "French (France)", flag: "🇫🇷" },
+  { code: "de-DE", name: "German (Germany)", flag: "🇩🇪" },
+  { code: "it-IT", name: "Italian (Italy)", flag: "🇮🇹" },
+  { code: "pt-BR", name: "Portuguese (Brazil)", flag: "🇧🇷" },
+  { code: "pt-PT", name: "Portuguese (Portugal)", flag: "🇵🇹" },
+  { code: "ja-JP", name: "Japanese (Japan)", flag: "🇯🇵" },
+  { code: "zh-CN", name: "Chinese (Mandarin)", flag: "🇨🇳" },
+  { code: "ko-KR", name: "Korean (South Korea)", flag: "🇰🇷" },
+  { code: "ar-AE", name: "Arabic (UAE)", flag: "🇦🇪" },
+  { code: "nl-NL", name: "Dutch (Netherlands)", flag: "🇳🇱" },
+  { code: "pl-PL", name: "Polish (Poland)", flag: "🇵🇱" },
+  { code: "sv-SE", name: "Swedish (Sweden)", flag: "🇸🇪" },
+  { code: "tr-TR", name: "Turkish (Turkey)", flag: "🇹🇷" },
+  { code: "vi-VN", name: "Vietnamese (Vietnam)", flag: "🇻🇳" },
+  { code: "fil-PH", name: "Filipino (Philippines)", flag: "🇵🇭" },
+  { code: "el-GR", name: "Greek (Greece)", flag: "🇬🇷" },
+  { code: "da-DK", name: "Danish (Denmark)", flag: "🇩🇰" },
+  { code: "no-NO", name: "Norwegian (Norway)", flag: "🇳🇴" },
+  { code: "fi-FI", name: "Finnish (Finland)", flag: "🇫🇮" },
+  { code: "cs-CZ", name: "Czech (Czech Republic)", flag: "🇨🇿" }
+];
+
 export default function OnboardingAiSetupPage() {
   const router = useRouter();
 
   // Onboarding settings states
-  const [language, setLanguage] = useState<string>("ENGLISH");
+  const [language, setLanguage] = useState<string>("en-US");
   const [firstMessage, setFirstMessage] = useState<string>("");
   const [industry, setIndustry] = useState<string>("other");
 
@@ -62,19 +94,19 @@ export default function OnboardingAiSetupPage() {
 
         // Pre-select language based on industry mapping
         const indLower = userIndustry.toLowerCase();
-        let defaultLang = "ENGLISH";
+        let defaultLang = "en-US";
         if (indLower.includes("real") || indLower.includes("estate")) {
-          defaultLang = "HINDI";
+          defaultLang = "hi-IN";
         } else if (indLower.includes("restaurant") || indLower.includes("food")) {
-          defaultLang = "HINGLISH";
+          defaultLang = "hinglish";
         }
         setLanguage(defaultLang);
 
         // Pre-fill first message from default templates
         let initialMsg = "Hello! Welcome to our business. How can I help you today?";
-        if (defaultLang === "HINDI") {
+        if (defaultLang === "hi-IN") {
           initialMsg = "Namaste! Property ke baare mein puchhna hai?";
-        } else if (defaultLang === "HINGLISH") {
+        } else if (defaultLang === "hinglish") {
           initialMsg = "Namaste! Reservation ke liye call kiya?";
         } else {
           // Healthcare / clinic or other default
@@ -109,13 +141,13 @@ export default function OnboardingAiSetupPage() {
     let text = "";
     if (type === "real_estate") {
       text = "Namaste! Property ke baare mein puchhna hai?";
-      setLanguage("HINDI");
+      setLanguage("hi-IN");
     } else if (type === "healthcare") {
       text = "Namaste! Appointment book karna hai?";
-      setLanguage("ENGLISH");
+      setLanguage("en-US");
     } else if (type === "restaurant") {
       text = "Namaste! Reservation ke liye call kiya?";
-      setLanguage("HINGLISH");
+      setLanguage("hinglish");
     } else {
       text = "";
     }
@@ -347,28 +379,24 @@ export default function OnboardingAiSetupPage() {
             Language
           </label>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { code: "HINDI", label: "Hindi", sub: "हिंदी" },
-              { code: "ENGLISH", label: "English", sub: "English" },
-              { code: "HINGLISH", label: "Hinglish", sub: "हिंग्लिश" }
-            ].map((lang) => {
-              const isSelected = language === lang.code;
-              return (
-                <div
-                  key={lang.code}
-                  onClick={() => handleLanguageChange(lang.code)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border text-center transition-all duration-150 cursor-pointer ${
-                    isSelected
-                      ? "border-[#FF6B00] bg-[#FFF8F0] text-[#140A02] shadow-sm"
-                      : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50 text-[#5A5A66]"
-                  }`}
-                >
-                  <span className="block text-sm font-bold">{lang.label}</span>
-                  <span className="block text-xs mt-1 opacity-80">{lang.sub}</span>
-                </div>
-              );
-            })}
+          <div className="relative">
+            <select
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="w-full bg-white border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 pr-10 text-sm text-[#140A02] outline-none transition-all duration-200 cursor-pointer appearance-none font-bold"
+              style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+            >
+              {VAPI_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} &nbsp; {lang.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-[#5A5A66]">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
           <p className="text-[11px] text-[#5A5A66] mt-2.5 pl-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
             Your AI will speak naturally in this language during calls.
