@@ -44,7 +44,14 @@ const requireAuth = async (req, res, next) => {
         const result = await db.query('SELECT * FROM businesses WHERE id = $1', [supabaseUser.id]);
         
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Account error, contact support' });
+            // New Google/OAuth user — no business row yet.
+            // Populate req.user from Supabase so getProfile can auto-create it.
+            req.user = {
+                id: supabaseUser.id,
+                email: supabaseUser.email
+            };
+            req.tokenData = supabaseUser;
+            return next();
         }
         
         req.client = result.rows[0];
