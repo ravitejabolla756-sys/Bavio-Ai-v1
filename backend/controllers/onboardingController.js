@@ -319,9 +319,11 @@ async function assignPhone(req, res) {
     }
 
     const { country } = req.body;
-    if (!country || !['IN', 'US', 'UK'].includes(country)) {
+    if (!country || typeof country !== 'string' || country.trim().length !== 2) {
       return res.status(400).json({ error: 'invalid_country', message: 'Invalid or unsupported country' });
     }
+
+    const normCountry = country.trim().toUpperCase();
 
     // 1. Get business info
     const bizRes = await db.query(
@@ -339,7 +341,7 @@ async function assignPhone(req, res) {
     if (business.twilio_number) {
       return res.status(200).json({
         phoneNumber: business.twilio_number,
-        country: business.country_code || country,
+        country: business.country_code || normCountry,
         provider: 'TWILIO',
         status: 'ACTIVE',
         monthlyCharge: 1,
@@ -353,20 +355,29 @@ async function assignPhone(req, res) {
 
     try {
       const twilioProvider = require('../providers/twilio');
-      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${country}...`);
-      assignedPhone = await twilioProvider.buyNumber(country);
+      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${normCountry}...`);
+      assignedPhone = await twilioProvider.buyNumber(normCountry);
       console.log(`[PROVISION] Successfully purchased dedicated number: ${assignedPhone}`);
     } catch (e) {
       isMock = true;
       console.warn(`[PROVISION] Twilio purchase failed (${e.message}), using dedicated mock number fallback.`);
       
       // Generate a realistic dedicated mock number depending on the country
-      if (country === 'IN') {
+      if (normCountry === 'IN') {
         const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
         assignedPhone = `+91${randomDigits}`;
-      } else if (country === 'UK') {
-        const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
-        assignedPhone = `+44${randomDigits}`;
+      } else if (normCountry === 'UK') {
+        const randomDigits = Math.floor(700000000 + Math.random() * 299999999);
+        assignedPhone = `+447${randomDigits}`;
+      } else if (normCountry === 'AU') {
+        const randomDigits = Math.floor(400000000 + Math.random() * 599999999);
+        assignedPhone = `+61${randomDigits}`;
+      } else if (normCountry === 'SG') {
+        const randomDigits = Math.floor(80000000 + Math.random() * 19999999);
+        assignedPhone = `+65${randomDigits}`;
+      } else if (normCountry === 'NZ') {
+        const randomDigits = Math.floor(20000000 + Math.random() * 79999999);
+        assignedPhone = `+642${randomDigits}`;
       } else {
         // US / default
         const areaCode = [201, 302, 415, 512, 602, 702, 802, 902][Math.floor(Math.random() * 8)];

@@ -21,11 +21,28 @@ interface ProfileResponse {
   country_code?: string;
 }
 
+const getCountryDisplayInfo = (code: string) => {
+  const map: Record<string, { name: string; flag: string; desc: string; price: string }> = {
+    IN: { name: "India", flag: "🇮🇳", desc: "Your AI receptionist answers calls 24/7 in Hindi.", price: "₹499/mo" },
+    US: { name: "USA", flag: "🇺🇸", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$15/mo" },
+    UK: { name: "UK", flag: "🇬🇧", desc: "Your AI receptionist answers calls 24/7 in English.", price: "£12/mo" },
+    AU: { name: "Australia", flag: "🇦🇺", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$20/mo" },
+    SG: { name: "Singapore", flag: "🇸🇬", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$20/mo" },
+    NZ: { name: "New Zealand", flag: "🇳🇿", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$20/mo" }
+  };
+  return map[code.toUpperCase()] || {
+    name: code,
+    flag: "🌐",
+    desc: "Your AI receptionist answers calls 24/7.",
+    price: "$15/mo"
+  };
+};
+
 export default function OnboardingPhoneNumberPage() {
   const router = useRouter();
   
   // App states
-  const [selectedCountry, setSelectedCountry] = useState<string>("IN");
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [assignedNumber, setAssignedNumber] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -49,14 +66,14 @@ export default function OnboardingPhoneNumberPage() {
     async function loadCurrentStatus() {
       try {
         const profile = await apiFetch<ProfileResponse>("/auth/profile");
+        const userCountry = profile.country_code || "US";
+        setSelectedCountry(userCountry);
+
         if (profile.twilio_number) {
           setAssignedNumber(profile.twilio_number);
-          if (profile.country_code) {
-            setSelectedCountry(profile.country_code);
-          }
         } else {
-          // If no number, auto-assign for default country (India) on mount
-          await handleAssignNumber("IN");
+          // If no number, auto-assign for same country as profile on mount
+          await handleAssignNumber(userCountry);
         }
       } catch (err: any) {
         console.error("Failed to load profile onboarding status:", err);
@@ -70,11 +87,6 @@ export default function OnboardingPhoneNumberPage() {
 
   // Request number assignment from backend
   const handleAssignNumber = async (countryCode: string) => {
-    if (countryCode !== "IN") {
-      // Future placeholders are disabled, but safety check
-      return;
-    }
-    
     setIsLoading(true);
     setErrorMsg("");
     console.log(`[Analytics] country_selected: ${countryCode}`);
@@ -215,84 +227,39 @@ export default function OnboardingPhoneNumberPage() {
 
         {/* Radio Options Grid */}
         <div className="space-y-4">
-          
-          {/* India (Active) */}
-          <div 
-            onClick={() => !isLoading && selectedCountry !== "IN" && handleAssignNumber("IN")}
-            className={`relative flex items-center justify-between p-5 rounded-2xl border transition-all duration-200 cursor-pointer ${
-              selectedCountry === "IN" 
-                ? "border-[#FF6B00] bg-[#FFF8F0] shadow-sm"
-                : "border-[#E5E0D8] bg-white hover:border-[#FF6B00]/50"
-            }`}
-          >
-            <div className="flex gap-4 items-start select-none">
-              <div className="pt-1">
-                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                  selectedCountry === "IN" ? "border-[#FF6B00] bg-[#FF6B00]" : "border-[#E5E0D8] bg-transparent"
-                }`}>
-                  {selectedCountry === "IN" && <Check className="w-3.5 h-3.5 text-white" weight="bold" />}
+          {selectedCountry && (() => {
+            const info = getCountryDisplayInfo(selectedCountry);
+            return (
+              <div 
+                className="relative flex items-center justify-between p-5 rounded-2xl border border-[#FF6B00] bg-[#FFF8F0] shadow-sm cursor-default"
+              >
+                <div className="flex gap-4 items-start select-none">
+                  <div className="pt-1">
+                    <div className="w-5 h-5 rounded-full border border-[#FF6B00] bg-[#FF6B00] flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5 text-white" weight="bold" />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block font-bold text-sm text-[#140A02]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+                      {info.flag} {info.name} ({selectedCountry})
+                    </span>
+                    <span className="block text-xs text-[#5A5A66] mt-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+                      {info.desc}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right select-none shrink-0 ml-4">
+                  {isLoading ? (
+                    <Spinner className="w-5 h-5 text-[#FF6B00] animate-spin" />
+                  ) : (
+                    <span className="text-sm font-bold text-[#10B981]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+                      {info.price}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div>
-                <span className="block font-bold text-sm text-[#140A02]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  India (+91)
-                </span>
-                <span className="block text-xs text-[#5A5A66] mt-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  Your AI answers calls 24/7 in Hindi.
-                </span>
-              </div>
-            </div>
-            <div className="text-right select-none shrink-0 ml-4">
-              {isLoading && selectedCountry === "IN" ? (
-                <Spinner className="w-5 h-5 text-[#FF6B00] animate-spin" />
-              ) : (
-                <span className="text-sm font-bold text-[#10B981]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  ₹499/mo
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* USA (Placeholder) */}
-          <div className="relative flex items-center justify-between p-5 rounded-2xl border border-[#E5E0D8]/45 bg-[#FAF9F6] opacity-55 cursor-not-allowed select-none">
-            <div className="flex gap-4 items-start">
-              <div className="pt-1">
-                <div className="w-5 h-5 rounded-full border border-[#E5E0D8]/50 bg-transparent" />
-              </div>
-              <div>
-                <span className="block font-bold text-sm text-[#140A02]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  USA (+1)
-                </span>
-                <span className="block text-xs text-[#5A5A66] mt-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  Available Q3 2026
-                </span>
-              </div>
-            </div>
-            <span className="text-sm font-bold text-[#5A5A66]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-              $15/mo
-            </span>
-          </div>
-
-          {/* UK (Placeholder) */}
-          <div className="relative flex items-center justify-between p-5 rounded-2xl border border-[#E5E0D8]/45 bg-[#FAF9F6] opacity-55 cursor-not-allowed select-none">
-            <div className="flex gap-4 items-start">
-              <div className="pt-1">
-                <div className="w-5 h-5 rounded-full border border-[#E5E0D8]/50 bg-transparent" />
-              </div>
-              <div>
-                <span className="block font-bold text-sm text-[#140A02]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  UK (+44)
-                </span>
-                <span className="block text-xs text-[#5A5A66] mt-1" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                  Available Q3 2026
-                </span>
-              </div>
-            </div>
-            <span className="text-sm font-bold text-[#5A5A66]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-              £12/mo
-            </span>
-          </div>
-
+            );
+          })()}
         </div>
 
         {/* Assigned Number Output Panel */}
