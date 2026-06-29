@@ -897,7 +897,7 @@ export default function SignUpPage() {
                     Thank You for Registering!
                   </h2>
                   <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm">
-                    Your 14-day free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
+                    Your free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
                   </p>
                 </div>
 

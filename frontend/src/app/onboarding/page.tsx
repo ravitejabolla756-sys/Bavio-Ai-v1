@@ -134,8 +134,8 @@ function OnboardingContent() {
   const activeCountry = country || "US";
   const countryPricing = PRICING_BY_COUNTRY[activeCountry] || PRICING_BY_COUNTRY.DEFAULT;
   const overageRate = countryPricing.overageRate;
-  const includedMinutes = selectedPlan === "starter" ? 100 : (selectedPlan === "growth" ? 500 : 1500);
-  const trialStatus = selectedPlan === "starter" ? "14-Day Free Trial" : "Paid Subscription";
+  const includedMinutes = selectedPlan === "starter" ? 30 : (selectedPlan === "growth" ? 500 : 1500);
+  const trialStatus = selectedPlan === "starter" ? "Free Trial" : "Paid Subscription";
 
   return (
     <div className="relative min-h-[100dvh] bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col justify-between overflow-x-hidden">
