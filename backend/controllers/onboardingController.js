@@ -552,7 +552,16 @@ async function saveAiSetup(req, res) {
       [clientId]
     );
 
-    const mappedLanguage = language === 'HINDI' ? 'hi-IN' : language === 'ENGLISH' ? 'en-US' : 'hi-IN';
+    let mappedLanguage = 'en-US';
+    if (language === 'HINDI') {
+      mappedLanguage = 'hi-IN';
+    } else if (language === 'ENGLISH') {
+      mappedLanguage = 'en-US';
+    } else if (language === 'HINGLISH') {
+      mappedLanguage = 'hi-IN';
+    } else if (language) {
+      mappedLanguage = language;
+    }
 
     if (assistantResult.rows.length === 0) {
       const agentName = 'Bavio Assistant';

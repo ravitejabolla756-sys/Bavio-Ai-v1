@@ -61,7 +61,7 @@ async function syncVapiAssistantAndPhone(businessId) {
 
     // 2. Fetch assistant details
     const astRes = await db.query(
-      `SELECT id, agent_name, voice, greeting, first_message, system_prompt, vapi_assistant_id FROM assistants WHERE business_id = $1 LIMIT 1`,
+      `SELECT id, agent_name, voice, greeting, first_message, system_prompt, language, vapi_assistant_id FROM assistants WHERE business_id = $1 LIMIT 1`,
       [businessId]
     );
     if (astRes.rows.length === 0) {
@@ -102,6 +102,11 @@ async function syncVapiAssistantAndPhone(businessId) {
       voice: {
         provider: '11labs',
         voiceId: voiceId
+      },
+      transcriber: {
+        provider: 'deepgram',
+        model: 'nova-2',
+        language: assistant.language ? assistant.language.split('-')[0] : 'en'
       }
     };
 
