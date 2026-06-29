@@ -250,14 +250,14 @@ export default function OnboardingBillingPage() {
           style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#140A02", marginBottom: "8px" }}
           className="tracking-tight leading-tight text-center sm:text-left"
         >
-          Your Trial Ends in 14 Days
+          Your Free Trial is Active
         </h1>
 
         <p 
           style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "32px" }}
           className="text-center sm:text-left"
         >
-          Choose a plan to continue using Bavio after your trial.
+          Choose a plan to activate call forwarding and outbound lines.
         </p>
 
         {errorMsg && (
@@ -440,7 +440,7 @@ export default function OnboardingBillingPage() {
               },
               {
                 q: "Is there a free trial?",
-                a: "Yes! You already have 14 days free with 30 minutes of call answering. No credit card is required to start. If you choose to upgrade during your trial, we'll deduct unused trial value."
+                a: "Yes! You already have access to 30 free minutes of call answering to test Bavio. No credit card is required to start. You can choose to upgrade to a paid plan at any time."
               }
             ].map((faq, idx) => {
               const isOpen = openFaqIndex === idx;

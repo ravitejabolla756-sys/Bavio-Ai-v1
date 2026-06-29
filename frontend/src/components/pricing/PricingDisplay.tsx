@@ -183,7 +183,7 @@ const FAQS = [
 const TRUST_BADGES = [
   "SOC 2 Certified",
   "No Contracts",
-  "14-Day Free Trial",
+  "Free Trial Minutes",
   "Cancel Anytime",
   "Money-Back Guarantee",
 ];

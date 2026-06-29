@@ -112,7 +112,7 @@ async function signup(req, res) {
         const devEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
         const isDeveloper = finalEmail && devEmails.includes(finalEmail.trim().toLowerCase());
 
-        const finalMinutesLimit = isDeveloper ? 999999 : 100;
+        const finalMinutesLimit = isDeveloper ? 999999 : 30;
         const finalOnboardingStep = isDeveloper ? 6 : onboardingStep;
         const finalOnboardingStatus = isDeveloper ? 'ready' : onboardingStatus;
         const finalPlan = isDeveloper ? 'enterprise' : 'free';
@@ -341,7 +341,7 @@ async function getProfile(req, res) {
                     minutes_limit, minutes_used, status, country,
                     full_name, onboarding_step, onboarding_status
                  )
-                 VALUES ($1, $2, $3, $4, $5, $6, 100, 0, 'active', $7, $8, 0, 'pending')
+                 VALUES ($1, $2, $3, $4, $5, $6, 30, 0, 'active', $7, $8, 0, 'pending')
                  RETURNING *`,
                 [
                     req.user.id,

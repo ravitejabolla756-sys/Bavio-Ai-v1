@@ -141,7 +141,7 @@ export const FAQS = [
   },
   {
     q: "Is there a trial period?",
-    a: "14 days free trial on every plan. No credit card required. Full access to all features during the trial. Cancel anytime.",
+    a: "Free trial call answering minutes on every plan. No credit card required. Full access to all features during the trial. Cancel anytime.",
   },
   {
     q: "Which currencies do you support?",

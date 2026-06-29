@@ -240,7 +240,7 @@ export default function ConfirmEmailPage() {
               <p 
                 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "16px", color: "#6B7280", lineHeight: 1.6, marginBottom: "32px" }}
               >
-                Your 14-day free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
+                Your free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
               </p>
 
               {/* Trial Details Box */}
