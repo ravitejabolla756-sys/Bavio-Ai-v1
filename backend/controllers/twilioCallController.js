@@ -148,32 +148,19 @@ async function handleIncomingCall(req, res) {
     } catch (dbErr) {
       console.error('[TWILIO] Call record error:', dbErr.message);
     }
+    // ── Twilio Media Stream over WebSocket ──────────────────────────────
+    const host = req.headers.host || 'localhost:3000';
+    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const wsProtocol = isSsl ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?businessId=${businessId}`;
 
-    // ── TTS greeting → Supabase Storage → public URL ─────────────────────
-    let greetingUrl = null;
-    try {
-      const result = await generateAndUploadTts(firstMessage, language, CallSid, 0);
-      greetingUrl = result.audioUrl;
-    } catch (ttsErr) {
-      console.error('[TWILIO] TTS greeting failed:', ttsErr.message);
-      // Falls back to <Say> below
-    }
-
-    // ── TwiML: <Play public-url> or <Say> fallback ───────────────────────
-    const audioTag = buildAudioTag(greetingUrl, firstMessage, language);
+    console.log(`[TWILIO] Routing call to Media Stream WebSocket: ${wsUrl}`);
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather
-    input="speech"
-    action="/calls/twilio/recording"
-    method="POST"
-    language="${language}"
-    speechTimeout="auto"
-  >
-    ${audioTag}
-  </Gather>
-  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
+  <Connect>
+    <Stream url="${wsUrl}" />
+  </Connect>
 </Response>`;
 
     res.type('text/xml');
