@@ -4,19 +4,43 @@ const FormData = require('form-data');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
+/**
+ * Dynamically resolves the provider config.
+ * Groq keys start with 'gsk_' and use Groq's low-latency endpoints.
+ */
+function getProviderConfig(apiKey) {
+  const key = apiKey || OPENAI_API_KEY;
+  if (key && key.startsWith('gsk_')) {
+    return {
+      baseUrl: 'https://api.groq.com/openai/v1',
+      chatModel: process.env.GROQ_CHAT_MODEL || 'llama-3.3-70b-versatile',
+      sttModel: 'whisper-large-v3',
+      apiKey: key,
+      providerName: 'Groq'
+    };
+  }
+  return {
+    baseUrl: OPENAI_BASE_URL,
+    chatModel: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+    sttModel: 'whisper-1',
+    apiKey: key,
+    providerName: 'OpenAI'
+  };
+}
+
 // -- Whisper STT ---------------------------------------------------------------
 
 /**
- * Transcribe audio using OpenAI Whisper.
+ * Transcribe audio using Whisper (OpenAI or Groq).
  * @param {Buffer} audioBuffer - Raw audio buffer (WAV, MP3, etc.)
  * @param {string} language    - BCP-47 language code e.g. 'en-IN', 'hi-IN'
- * @param {string} apiKey      - Optional custom OpenAI API key
+ * @param {string} apiKey      - Optional custom API key (OpenAI or Groq)
  * @returns {Promise<{text: string, transcript: string, language_code: string}>}
  */
 async function transcribeAudio(audioBuffer, language = 'en', apiKey = null) {
-  const key = apiKey || OPENAI_API_KEY;
-  if (!key) {
-    throw new Error('[OpenAI STT] OpenAI API key is not configured.');
+  const config = getProviderConfig(apiKey);
+  if (!config.apiKey) {
+    throw new Error(`[${config.providerName} STT] API key is not configured.`);
   }
 
   const form = new FormData();
@@ -24,18 +48,18 @@ async function transcribeAudio(audioBuffer, language = 'en', apiKey = null) {
     filename: 'audio.wav',
     contentType: 'audio/wav'
   });
-  form.append('model', 'whisper-1');
+  form.append('model', config.sttModel);
   
   // Whisper accepts ISO-639-1 only (e.g. 'hi', 'en', 'es')
   const lang = language.split('-')[0].toLowerCase();
   form.append('language', lang);
   form.append('response_format', 'text');
 
-  console.log(`[OpenAI STT] Transcribing ${audioBuffer.length} bytes (lang: ${lang})`);
+  console.log(`[${config.providerName} STT] Transcribing ${audioBuffer.length} bytes (lang: ${lang})`);
 
-  const response = await axios.post(`${OPENAI_BASE_URL}/audio/transcriptions`, form, {
+  const response = await axios.post(`${config.baseUrl}/audio/transcriptions`, form, {
     headers: {
-      Authorization: `Bearer ${key}`,
+      Authorization: `Bearer ${config.apiKey}`,
       ...form.getHeaders()
     },
     timeout: 30000
@@ -46,7 +70,7 @@ async function transcribeAudio(audioBuffer, language = 'en', apiKey = null) {
     : response.data?.text || ''
   ).trim();
 
-  console.log(`[OpenAI STT] Transcript: "${transcript.slice(0, 120)}"`);
+  console.log(`[${config.providerName} STT] Transcript: "${transcript.slice(0, 120)}"`);
   return {
     text: transcript,
     transcript: transcript,
@@ -54,20 +78,20 @@ async function transcribeAudio(audioBuffer, language = 'en', apiKey = null) {
   };
 }
 
-// -- GPT-4o Chat ---------------------------------------------------------------
+// -- Chat Completions -----------------------------------------------------------
 
 /**
- * Generate a conversational AI response using GPT-4o.
+ * Generate a conversational AI response using LLM (GPT-4o or Llama 3.3).
  *
  * @param {string} systemPrompt          - System role instructions
  * @param {Array<{role,content}>} history - Conversation history (includes latest user msg)
- * @param {string} apiKey                - Optional custom OpenAI API key
+ * @param {string} apiKey                - Optional custom API key (OpenAI or Groq)
  * @returns {Promise<{response_text: string, lead_data: any, should_end: boolean}>}
  */
 async function chat(systemPrompt, history = [], apiKey = null) {
-  const key = apiKey || OPENAI_API_KEY;
-  if (!key) {
-    throw new Error('[OpenAI LLM] OpenAI API key is not configured.');
+  const config = getProviderConfig(apiKey);
+  if (!config.apiKey) {
+    throw new Error(`[${config.providerName} LLM] API key is not configured.`);
   }
 
   const messages = [
@@ -78,19 +102,19 @@ async function chat(systemPrompt, history = [], apiKey = null) {
     }))
   ];
 
-  console.log(`[OpenAI LLM] Sending ${messages.length} messages to GPT-4o`);
+  console.log(`[${config.providerName} LLM] Sending ${messages.length} messages to ${config.chatModel}`);
 
   const response = await axios.post(
-    `${OPENAI_BASE_URL}/chat/completions`,
+    `${config.baseUrl}/chat/completions`,
     {
-      model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+      model: config.chatModel,
       max_tokens: 256,
       temperature: 0.7,
       messages
     },
     {
       headers: {
-        Authorization: `Bearer ${key}`,
+        Authorization: `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json'
       },
       timeout: 20000
@@ -98,7 +122,7 @@ async function chat(systemPrompt, history = [], apiKey = null) {
   );
 
   let rawText = response.data?.choices?.[0]?.message?.content || '';
-  console.log(`[OpenAI LLM] Raw (${rawText.length} chars): "${rawText.slice(0, 120)}"`);
+  console.log(`[${config.providerName} LLM] Raw (${rawText.length} chars): "${rawText.slice(0, 120)}"`);
 
   // -- Extract lead data ------------------------------------------------------
   let lead_data = null;
@@ -107,10 +131,10 @@ async function chat(systemPrompt, history = [], apiKey = null) {
       const jsonMatch = rawText.match(/\[LEAD_CAPTURED\]\s*(\{[\s\S]*?\})/);
       if (jsonMatch) {
         lead_data = JSON.parse(jsonMatch[1]);
-        console.log('[OpenAI LLM] Lead captured:', lead_data);
+        console.log(`[${config.providerName} LLM] Lead captured:`, lead_data);
       }
     } catch (e) {
-      console.error('[OpenAI LLM] Failed to parse lead JSON:', e.message);
+      console.error(`[${config.providerName} LLM] Failed to parse lead JSON:`, e.message);
     }
     rawText = rawText.replace(/\[LEAD_CAPTURED\][\s\S]*?(\{[\s\S]*?\})?/g, '').trim();
   }
@@ -123,7 +147,7 @@ async function chat(systemPrompt, history = [], apiKey = null) {
       String(val).trim() !== ''
     );
     if (!hasRealData) {
-      console.log('[OpenAI LLM] Discarding placeholder lead data');
+      console.log(`[${config.providerName} LLM] Discarding placeholder lead data`);
       lead_data = null;
     }
   }
@@ -145,7 +169,7 @@ async function chat(systemPrompt, history = [], apiKey = null) {
     const isPremature = history.length <= 2 ||
       (rawText.includes('Thank you for calling') && !lead_data);
     if (isPremature) {
-      console.log('[OpenAI LLM] Ignoring premature END_CALL');
+      console.log(`[${config.providerName} LLM] Ignoring premature END_CALL`);
       should_end = false;
     }
     rawText = rawText.replace('[END_CALL]', '').trim();
