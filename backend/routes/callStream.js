@@ -2,6 +2,8 @@ const WebSocket = require('ws');
 const db = require('../database/db');
 const openAIService = require('../services/openAIService');
 const elevenLabsService = require('../services/elevenLabsService');
+const deepgramService = require('../services/deepgramService');
+const encryption = require('../utils/encryption');
 
 const twilioWss = new WebSocket.Server({ noServer: true });
 
@@ -84,6 +86,24 @@ twilioWss.on('connection', async (ws, request) => {
   const language = assistant.language || 'en-US';
   const systemPrompt = openAIService.buildSystemPrompt(assistant, business);
 
+  // Fetch client API keys if they exist
+  let clientKeys = { deepgram: null, openai: null, elevenlabs: null };
+  try {
+    const apiRes = await db.query(
+      'SELECT service_name, api_key_encrypted FROM api_integrations WHERE business_id = $1',
+      [businessId]
+    );
+    apiRes.rows.forEach(row => {
+      try {
+        clientKeys[row.service_name] = encryption.decrypt(row.api_key_encrypted);
+      } catch (decErr) {
+        console.error(`[Twilio Stream] Failed to decrypt ${row.service_name} API key:`, decErr.message);
+      }
+    });
+  } catch (dbErr) {
+    console.error('[Twilio Stream] Failed to fetch api_integrations:', dbErr.message);
+  }
+
   let streamSid = null;
   let callSid = null;
   let audioChunks = [];
@@ -162,7 +182,7 @@ twilioWss.on('connection', async (ws, request) => {
     conversationHistory.push({ role: 'assistant', content: greeting });
     console.log(`[Twilio Stream] Speaking Greeting: "${greeting}"`);
     try {
-      const mulawAudio = await elevenLabsService.textToSpeech(greeting, voiceId, language, 'ulaw_8000');
+      const mulawAudio = await elevenLabsService.textToSpeech(greeting, voiceId, language, 'ulaw_8000', clientKeys.elevenlabs);
       streamAudioToTwilio(mulawAudio);
     } catch (err) {
       console.error('[Twilio Stream] Failed to play greeting:', err.message);
@@ -176,12 +196,27 @@ twilioWss.on('connection', async (ws, request) => {
     stopPlayback(); // Stop any leftover speech if still playing
 
     try {
-      // 1. Convert raw mulaw to Whisper WAV format
+      // 1. Convert raw mulaw to WAV format
       const wavHeader = writeMulawWavHeader(mulawAudioBuffer.length);
       const wavBuffer = Buffer.concat([wavHeader, mulawAudioBuffer]);
 
-      // 2. Whisper STT
-      const transcript = await openAIService.transcribeAudio(wavBuffer, language);
+      // 2. Speech-to-Text (STT) - Try Deepgram if key is available, else fallback to Whisper
+      let transcript = '';
+      const dgKey = clientKeys.deepgram || process.env.DEEPGRAM_API_KEY;
+      if (dgKey) {
+        try {
+          transcript = await deepgramService.transcribeAudio(wavBuffer, language, dgKey);
+        } catch (dgErr) {
+          console.warn('[Twilio Stream] Deepgram transcription failed. Falling back to Whisper:', dgErr.message);
+        }
+      }
+
+      if (!transcript) {
+        // Fallback to Whisper
+        const whisperResult = await openAIService.transcribeAudio(wavBuffer, language, clientKeys.openai);
+        transcript = whisperResult.transcript || '';
+      }
+
       if (!transcript || transcript.trim().length === 0) {
         console.log('[Twilio Stream] Empty transcript. Skipping response.');
         isProcessing = false;
@@ -191,7 +226,7 @@ twilioWss.on('connection', async (ws, request) => {
       conversationHistory.push({ role: 'user', content: transcript });
 
       // 3. GPT-4o LLM
-      const llmResult = await openAIService.chat(systemPrompt, conversationHistory);
+      const llmResult = await openAIService.chat(systemPrompt, conversationHistory, clientKeys.openai);
       console.log(`[Twilio Stream] AI Reply: "${llmResult.response_text}"`);
 
       conversationHistory.push({ role: 'assistant', content: llmResult.response_text });
@@ -219,7 +254,7 @@ twilioWss.on('connection', async (ws, request) => {
       }
 
       // 4. ElevenLabs TTS
-      const replyAudio = await elevenLabsService.textToSpeech(llmResult.response_text, voiceId, language, 'ulaw_8000');
+      const replyAudio = await elevenLabsService.textToSpeech(llmResult.response_text, voiceId, language, 'ulaw_8000', clientKeys.elevenlabs);
       
       // 5. Stream back
       streamAudioToTwilio(replyAudio);

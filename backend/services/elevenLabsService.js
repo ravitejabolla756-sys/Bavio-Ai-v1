@@ -26,11 +26,13 @@ function pickModel(language = 'en-IN') {
  * @param {string} voiceId      - ElevenLabs voice ID (from assistants.voice column)
  * @param {string} language     - BCP-47 language code (e.g. 'hi-IN', 'en-US')
  * @param {string} outputFormat - Output format (e.g. 'ulaw_8000' or 'mp3_44100_128')
+ * @param {string} apiKey       - Optional custom ElevenLabs API key
  * @returns {Promise<Buffer>} - Audio buffer
  */
-async function textToSpeech(text, voiceId, language = 'en-IN', outputFormat = 'mp3_44100_128') {
-  if (!ELEVENLABS_API_KEY) {
-    throw new Error('[ElevenLabs TTS] ELEVENLABS_API_KEY is not set in .env');
+async function textToSpeech(text, voiceId, language = 'en-IN', outputFormat = 'mp3_44100_128', apiKey = null) {
+  const key = apiKey || ELEVENLABS_API_KEY;
+  if (!key) {
+    throw new Error('[ElevenLabs TTS] ElevenLabs API key is not configured.');
   }
   if (!text || text.trim().length === 0) {
     throw new Error('[ElevenLabs TTS] Empty text provided');
@@ -57,7 +59,7 @@ async function textToSpeech(text, voiceId, language = 'en-IN', outputFormat = 'm
     },
     {
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
+        'xi-api-key': key,
         'Content-Type': 'application/json'
       },
       responseType: 'arraybuffer',
@@ -74,8 +76,8 @@ async function textToSpeech(text, voiceId, language = 'en-IN', outputFormat = 'm
  * Synthesize speech - returns object compatible with Sarvam tts.synthesizeSpeech() callers.
  * Drop-in replacement: { audioBase64, audioBuffer }
  */
-async function synthesizeSpeech(text, language = 'en-IN', voiceId) {
-  const audioBuffer = await textToSpeech(text, voiceId, language);
+async function synthesizeSpeech(text, language = 'en-IN', voiceId, apiKey = null) {
+  const audioBuffer = await textToSpeech(text, voiceId, language, 'mp3_44100_128', apiKey);
   return {
     audioBuffer,
     audioBase64: audioBuffer.toString('base64')
