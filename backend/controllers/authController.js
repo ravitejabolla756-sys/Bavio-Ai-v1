@@ -162,8 +162,22 @@ async function signup(req, res) {
         const emailService = require('../services/emailService');
         emailService.sendMail(
             finalEmail,
-            'Welcome to Bavio AI!',
-            `Hi ${finalName},\n\nThank you for signing up with Bavio AI! Your account has been successfully created.\n\nGet started by setting up your dedicated receptionist virtual phone line to answer calls automatically 24/7.\n\nBest regards,\nThe Bavio Team`
+            'Welcome to Bavio! 30 minutes free starts now',
+            `Hi ${finalName},
+
+Your free trial is active. You have 30 minutes to test Bavio AI.
+
+What you can do:
+- Create your first AI agent
+- Get a dedicated phone number
+- Make test calls
+- Capture leads automatically
+
+Your trial expires in 30 minutes.
+
+Questions? Chat with us →
+
+Bavio Team`
         ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
         
         // 4.5 Auto-create receptionist assistant if demoCompleted is true
