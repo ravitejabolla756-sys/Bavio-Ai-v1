@@ -235,8 +235,8 @@ twilioWss.on('connection', async (ws, request) => {
       if (llmResult.lead_data) {
         try {
           await db.query(
-            `INSERT INTO leads (business_id, phone, name, intent, budget, location, notes, status, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', NOW())`,
+            `INSERT INTO leads (business_id, phone, name, intent, budget, location, notes, status, call_sid, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', $8, NOW())`,
             [
               businessId,
               llmResult.lead_data.phone || 'unknown',
@@ -244,7 +244,8 @@ twilioWss.on('connection', async (ws, request) => {
               llmResult.lead_data.intent || null,
               llmResult.lead_data.budget || null,
               llmResult.lead_data.location || null,
-              JSON.stringify(llmResult.lead_data)
+              JSON.stringify(llmResult.lead_data),
+              callSid || null
             ]
           );
           console.log('[Twilio Stream] Lead captured and saved to DB');
@@ -311,6 +312,14 @@ twilioWss.on('connection', async (ws, request) => {
            VALUES ($1, $2, $3, $4)`,
           [callId, businessId, JSON.stringify(conversationHistory), `${conversationHistory.length} turns.`]
         );
+
+        // Link captured leads to this callId
+        if (callSid) {
+          await db.query(
+            'UPDATE leads SET call_id = $1 WHERE call_sid = $2',
+            [callId, callSid]
+          );
+        }
       }
 
       // Charge minutes
