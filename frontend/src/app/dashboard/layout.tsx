@@ -32,6 +32,7 @@ const navigationItems = [
   { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
   { name: "Analytics", href: "/dashboard/analytics", icon: ChartBar },
+  { name: "Voice Pipeline", href: "/dashboard/integrations/voice-pipeline", icon: GitFork },
   { name: "Settings", href: "/dashboard/settings", icon: Gear },
 ];
 
