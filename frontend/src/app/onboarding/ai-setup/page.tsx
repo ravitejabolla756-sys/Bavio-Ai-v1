@@ -25,7 +25,7 @@ interface SaveSetupResponse {
   message: string;
 }
 
-const VAPI_LANGUAGES = [
+const SUPPORTED_LANGUAGES = [
   { code: "en-US", name: "English (United States)", flag: "🇺🇸" },
   { code: "en-GB", name: "English (United Kingdom)", flag: "🇬🇧" },
   { code: "en-IN", name: "English (India)", flag: "🇮🇳" },
@@ -386,7 +386,7 @@ export default function OnboardingAiSetupPage() {
               className="w-full bg-white border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 pr-10 text-sm text-[#140A02] outline-none transition-all duration-200 cursor-pointer appearance-none font-bold"
               style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
             >
-              {VAPI_LANGUAGES.map((lang) => (
+              {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>
                   {lang.flag} &nbsp; {lang.name}
                 </option>

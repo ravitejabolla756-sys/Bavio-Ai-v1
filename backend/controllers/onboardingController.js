@@ -1,6 +1,5 @@
 const db = require('../database/db');
 const axios = require('axios');
-const vapiService = require('../services/vapiService');
 
 // Save onboarding step data (Step 1, Step 2, Step 3)
 async function saveStep(req, res) {
@@ -437,9 +436,6 @@ async function assignPhone(req, res) {
       );
     }
 
-    // Sync to Vapi in background (or await it to ensure it is created on Vapi for testing step)
-    await vapiService.syncVapiAssistantAndPhone(clientId);
-
     // Return response
     return res.status(200).json({
       phoneNumber: assignedPhone,
@@ -611,9 +607,6 @@ async function saveAiSetup(req, res) {
        WHERE id = $2`,
       [assistantId, clientId]
     );
-
-    // Sync to Vapi in background (or await it to ensure it is created/updated on Vapi for testing step)
-    await vapiService.syncVapiAssistantAndPhone(clientId);
 
     return res.status(200).json({
       success: true,

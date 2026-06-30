@@ -356,9 +356,9 @@ export const knowledgeBaseApi = {
   search: (q: string) =>
     apiFetch<SearchResult[]>(`/knowledge-base/search?q=${encodeURIComponent(q)}`),
 
-  syncToVapi: () =>
-    apiFetch<{ docsCount: number; vapiSynced: boolean; message: string }>(
-      '/knowledge-base/sync-vapi',
+  syncToAssistant: () =>
+    apiFetch<{ docsCount: number; success: boolean; message: string }>(
+      '/knowledge-base/sync',
       { method: 'POST' }
     ),
 };

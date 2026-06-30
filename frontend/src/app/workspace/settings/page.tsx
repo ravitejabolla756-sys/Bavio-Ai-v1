@@ -154,7 +154,7 @@ function WorkspaceSettingsContent() {
 
   // Sync state
   const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ vapiSynced: boolean; message: string } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // File upload ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -211,13 +211,13 @@ function WorkspaceSettingsContent() {
     }
   }
 
-  async function handleSyncToVapi() {
+  async function handleSyncToAssistant() {
     setSyncing(true);
     setSyncResult(null);
     setKbError(null);
     try {
-      const result = await knowledgeBaseApi.syncToVapi();
-      setSyncResult({ vapiSynced: result.vapiSynced, message: result.message });
+      const result = await knowledgeBaseApi.syncToAssistant();
+      setSyncResult({ success: result.success, message: result.message });
     } catch (err: any) {
       setKbError(err.message || "Sync failed. Please try again.");
     } finally {
@@ -564,11 +564,11 @@ function WorkspaceSettingsContent() {
                 </div>
               )}
               {syncResult && (
-                <div className={`p-4 rounded-xl border flex items-start gap-3 ${syncResult.vapiSynced ? "bg-saffron/5 border-saffron/20" : "bg-surface-raised border-line"}`}>
-                  <ArrowsClockwise className={`w-4 h-4 shrink-0 mt-0.5 ${syncResult.vapiSynced ? "text-saffron" : "text-ink-tertiary"}`} />
+                <div className={`p-4 rounded-xl border flex items-start gap-3 ${syncResult.success ? "bg-saffron/5 border-saffron/20" : "bg-surface-raised border-line"}`}>
+                  <ArrowsClockwise className={`w-4 h-4 shrink-0 mt-0.5 ${syncResult.success ? "text-saffron" : "text-ink-tertiary"}`} />
                   <div>
                     <p className="text-body-xs font-bold text-ink">{syncResult.message}</p>
-                    {syncResult.vapiSynced && (
+                    {syncResult.success && (
                       <p className="text-[10px] text-ink-muted mt-0.5">Your AI assistant will now use this knowledge when answering calls.</p>
                     )}
                   </div>
@@ -718,12 +718,12 @@ function WorkspaceSettingsContent() {
                     <div className="flex-1">
                       <h4 className="text-xs font-bold text-ink mb-1">Sync Knowledge to AI Assistant</h4>
                       <p className="text-[10px] text-ink-muted leading-relaxed">
-                        Compile all {kbDocs.length} document{kbDocs.length !== 1 ? "s" : ""} and push them into your VAPI assistant&apos;s system prompt.
+                        Compile all {kbDocs.length} document{kbDocs.length !== 1 ? "s" : ""} and update your AI assistant&apos;s custom system prompt.
                         Your AI will use this information when answering customer calls.
                       </p>
                     </div>
                     <button
-                      onClick={handleSyncToVapi}
+                      onClick={handleSyncToAssistant}
                       disabled={syncing}
                       className="shrink-0 flex items-center gap-2 bg-saffron hover:bg-saffron-hover disabled:opacity-60 text-white text-[10px] font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all"
                     >

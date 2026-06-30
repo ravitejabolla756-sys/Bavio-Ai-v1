@@ -167,35 +167,10 @@ async function syncToVapi(req, res) {
       [updatedPrompt, assistant.id]
     );
 
-    // 6. Sync to VAPI if a real VAPI assistant ID and API key are available
-    let vapiSynced = false;
-    const vapiAssistantId = assistant.vapi_assistant_id;
-    const vapiApiKey = process.env.VAPI_API_KEY;
-
-    if (vapiApiKey && vapiAssistantId && !String(vapiAssistantId).startsWith('vapi_asst_mock_')) {
-      try {
-        await axios.patch(
-          `https://api.vapi.ai/assistant/${vapiAssistantId}`,
-          { model: { messages: [{ role: 'system', content: updatedPrompt }] } },
-          { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
-        );
-        vapiSynced = true;
-        console.log(`[KB SYNC] ✅ Pushed to VAPI assistant ${vapiAssistantId} for business ${businessId}`);
-      } catch (vapiErr) {
-        // DB was updated; VAPI sync failed non-fatally
-        console.error('[KB SYNC] VAPI push failed (DB still updated):', vapiErr.message);
-      }
-    } else {
-      console.log(`[KB SYNC] No real VAPI assistant ID/key — DB updated only. vapiId: ${vapiAssistantId}`);
-    }
-
     res.status(200).json({
       success: true,
       docsCount: docsResult.rows.length,
-      vapiSynced,
-      message: vapiSynced
-        ? `Knowledge base synced to your AI assistant (${docsResult.rows.length} document${docsResult.rows.length !== 1 ? 's' : ''}).`
-        : `Knowledge base saved to your AI assistant (${docsResult.rows.length} document${docsResult.rows.length !== 1 ? 's' : ''}). VAPI live-sync pending API key setup.`
+      message: `Knowledge base saved to your AI assistant (${docsResult.rows.length} document${docsResult.rows.length !== 1 ? 's' : ''}).`
     });
 
   } catch (err) {
