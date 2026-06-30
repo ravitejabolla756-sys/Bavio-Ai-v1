@@ -4,23 +4,26 @@ const DODO_API_KEY = process.env.DODO_API_KEY;
 const DODO_BASE_URL = 'https://api.dodopayments.com';
 
 const PRODUCT_IDS = {
-    starter: process.env.DODO_STARTER_PRODUCT_ID || 'pdt_0NdJCmLQ4vEu1ozciOnzC',
-    growth: process.env.DODO_GROWTH_PRODUCT_ID || 'pdt_0NdJCtm1chlF5sdwOymeu',
-    scale: process.env.DODO_SCALE_PRODUCT_ID || 'pdt_0NdJCytZyhPzdBuKpg4sz'
+    starter: process.env.DODO_STARTER_PRODUCT_ID || 'pdt_0NiAzNw5qQiVppDBGCML5',
+    growth: process.env.DODO_GROWTH_PRODUCT_ID || 'pdt_0NiB01ov80r9R8s3iOJws',
+    scale: process.env.DODO_SCALE_PRODUCT_ID || 'pdt_0NiB0gM8IBNoLarMfZRz0',
+    business: process.env.DODO_BUSINESS_PRODUCT_ID || 'pdt_0NiB1J7CBSXoZRsdlWgom'
 };
 
 const PLAN_LIMITS = {
     free: 30,
-    starter: 250,
-    growth: 600,
-    scale: 2000
+    starter: 200,
+    growth: 500,
+    scale: 1500,
+    business: 3000
 };
 
 const OVERAGE_RATES = {
     free: 0,
     starter: 10.40,
     growth: 8.60,
-    scale: 5.20
+    scale: 5.20,
+    business: 4.00
 };
 
 // Base costs in USD (paisa-free, display values)
@@ -28,7 +31,8 @@ const BASE_COSTS = {
     free: 0,
     starter: 2599,
     growth: 5199,
-    scale: 10399
+    scale: 10399,
+    business: 29900
 };
 
 // International pricing in USD
@@ -36,15 +40,17 @@ const BASE_COSTS_USD = {
     free: 0,
     starter: 19,
     growth: 39,
-    scale: 79
+    scale: 79,
+    business: 299
 };
 
 // Plan display names
 const PLAN_DISPLAY_NAMES = {
-    free: 'Free Tier',
+    free: 'Free Trial',
     starter: 'Starter',
     growth: 'Growth',
-    scale: 'Scale'
+    scale: 'Scale',
+    business: 'Business'
 };
 
 function mapPlanToProductId(plan) {
