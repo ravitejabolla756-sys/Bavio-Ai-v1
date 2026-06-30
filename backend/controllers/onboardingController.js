@@ -66,9 +66,10 @@ async function saveStep(req, res) {
             industry = $2,
             owner_mobile = $3,
             phone = $3,
+            business_description = COALESCE($5, business_description),
             updated_at = NOW()
           WHERE id = $4`,
-          [businessName, industry, ownerMobile, clientId]
+          [businessName, industry, ownerMobile, clientId, data.businessDescription]
         );
 
         // Check if assistant exists
@@ -602,7 +603,8 @@ async function saveAiSetup(req, res) {
     await db.query(
       `UPDATE businesses 
        SET assistant_id = $1, 
-           onboarding_step = 3,
+           onboarding_step = 6,
+           onboarding_status = 'ready',
            updated_at = NOW()
        WHERE id = $2`,
       [assistantId, clientId]

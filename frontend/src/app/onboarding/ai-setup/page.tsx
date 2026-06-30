@@ -295,7 +295,8 @@ export default function OnboardingAiSetupPage() {
 
       if (data && data.success) {
         console.log("[Analytics] setup_saved");
-        router.push("/onboarding/test"); // Onboarding step 3/4 test-drive
+        document.cookie = "bavio_onboarding_completed=true; path=/";
+        router.push("/workspace");
       } else {
         throw new Error("Failed to save onboarding settings");
       }
@@ -325,20 +326,20 @@ export default function OnboardingAiSetupPage() {
       <div className="absolute w-[400px] h-[400px] bg-[#FF6B00]/5 rounded-full blur-[100px] pointer-events-none top-1/10 left-1/4" />
       <div className="absolute w-[500px] h-[500px] bg-[#FF6B00]/3 rounded-full blur-[120px] pointer-events-none bottom-1/10 right-1/4" />
 
-      {/* Progress Bar (Step 2 of 6) */}
+      {/* Progress Bar (Step 2 of 2) */}
       <div className="w-full max-w-[600px] mb-8 relative z-20">
         <div className="flex justify-between items-center mb-2">
           <span className="text-[11px] uppercase tracking-wider text-[#8A8A96] font-bold">
-            Step 2 of 6: Personalize Your AI
+            Step 2 of 2: Personalize Your AI
           </span>
           <span className="text-[11px] uppercase tracking-wider text-[#FF6B00] font-black">
-            33% COMPLETE
+            100% COMPLETE
           </span>
         </div>
         <div className="w-full h-1 bg-[#E5E0D8]/60 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#FF6B00] transition-all duration-500 ease-out" 
-            style={{ width: "33%" }}
+            style={{ width: "100%" }}
           />
         </div>
       </div>
@@ -499,7 +500,7 @@ export default function OnboardingAiSetupPage() {
           {isSaving ? (
             <Spinner className="w-4 h-4 animate-spin" />
           ) : (
-            <span>Next: Test Drive &rarr;</span>
+            <span>Finish & Go to Dashboard &rarr;</span>
           )}
         </button>
 
@@ -509,7 +510,7 @@ export default function OnboardingAiSetupPage() {
           style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
         >
           <button
-            onClick={() => router.push("/onboarding/phone-number")}
+            onClick={() => router.push("/onboarding")}
             className="hover:text-[#140A02] flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -517,7 +518,10 @@ export default function OnboardingAiSetupPage() {
           </button>
           
           <button
-            onClick={() => router.push("/onboarding/test")} // Skip goes directly to Step 3 test
+            onClick={() => {
+              document.cookie = "bavio_onboarding_completed=true; path=/";
+              router.push("/workspace");
+            }}
             className="hover:text-[#140A02] transition-colors"
           >
             Skip for now
