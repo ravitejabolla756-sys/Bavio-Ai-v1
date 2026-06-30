@@ -141,6 +141,30 @@ export default function WorkspaceHome() {
         </div>
       </div>
 
+      {/* Warning/Action Banner if no number is assigned */}
+      {!profile.twilio_number && (
+        <div className="bg-amber-500/10 border border-amber-500/25 text-[#140A02] rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+              <Phone className="w-5.5 h-5.5" weight="bold" />
+            </div>
+            <div>
+              <h3 className="font-bold text-body-xs text-amber-900">No Dedicated Phone Number Assigned</h3>
+              <p className="text-[11px] text-amber-800/80 leading-relaxed mt-1">
+                You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/workspace/subscription"
+            className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-body-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>Choose a Plan</span>
+            <ArrowRight className="w-3.5 h-3.5" weight="bold" />
+          </Link>
+        </div>
+      )}
+
       {/* Grid HUD details */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
