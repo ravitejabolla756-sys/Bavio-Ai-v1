@@ -209,6 +209,11 @@ server.on('upgrade', (request, socket, head) => {
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request, businessId);
       });
+    } else if (pathname === '/api/call-stream/ws') {
+      const { twilioWss } = require('./routes/callStream');
+      twilioWss.handleUpgrade(request, socket, head, (ws) => {
+        twilioWss.emit('connection', ws, request);
+      });
     } else {
       socket.destroy();
     }

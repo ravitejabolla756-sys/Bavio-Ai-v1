@@ -6,12 +6,12 @@ const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
 // Default voice: Rachel (ElevenLabs ID 21m00Tcm4TlvDq8ikWAM)
 const DEFAULT_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 
-// Voice model to use — multilingual for non-English, turbo for English
+// Voice model to use - multilingual for non-English, turbo for English
 const MULTILINGUAL_MODEL = 'eleven_multilingual_v2';
 const TURBO_MODEL = 'eleven_turbo_v2_5';
 
 /**
- * ElevenLabs language ? voice model selection.
+ * ElevenLabs language -> voice model selection.
  * Multilingual model handles Hindi, Tamil, etc. Turbo is faster for English.
  */
 function pickModel(language = 'en-IN') {
@@ -22,12 +22,13 @@ function pickModel(language = 'en-IN') {
 /**
  * Convert text to speech using ElevenLabs.
  *
- * @param {string} text     - Text to synthesize
- * @param {string} voiceId  - ElevenLabs voice ID (from assistants.voice column)
- * @param {string} language - BCP-47 language code (e.g. 'hi-IN', 'en-US')
- * @returns {Promise<Buffer>} - MP3 audio buffer
+ * @param {string} text         - Text to synthesize
+ * @param {string} voiceId      - ElevenLabs voice ID (from assistants.voice column)
+ * @param {string} language     - BCP-47 language code (e.g. 'hi-IN', 'en-US')
+ * @param {string} outputFormat - Output format (e.g. 'ulaw_8000' or 'mp3_44100_128')
+ * @returns {Promise<Buffer>} - Audio buffer
  */
-async function textToSpeech(text, voiceId, language = 'en-IN') {
+async function textToSpeech(text, voiceId, language = 'en-IN', outputFormat = 'mp3_44100_128') {
   if (!ELEVENLABS_API_KEY) {
     throw new Error('[ElevenLabs TTS] ELEVENLABS_API_KEY is not set in .env');
   }
@@ -38,10 +39,12 @@ async function textToSpeech(text, voiceId, language = 'en-IN') {
   const vid = voiceId || DEFAULT_VOICE_ID;
   const model = pickModel(language);
 
-  console.log(`[ElevenLabs TTS] Synthesizing ${text.length} chars | voice: ${vid} | lang: ${language} | model: ${model}`);
+  console.log(`[ElevenLabs TTS] Synthesizing ${text.length} chars | voice: ${vid} | lang: ${language} | format: ${outputFormat}`);
+
+  const url = `${ELEVENLABS_BASE_URL}/text-to-speech/${vid}?output_format=${outputFormat}`;
 
   const response = await axios.post(
-    `${ELEVENLABS_BASE_URL}/text-to-speech/${vid}`,
+    url,
     {
       text: text.slice(0, 2500),  // ElevenLabs limit
       model_id: model,
@@ -55,8 +58,7 @@ async function textToSpeech(text, voiceId, language = 'en-IN') {
     {
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json',
-        Accept: 'audio/mpeg'
+        'Content-Type': 'application/json'
       },
       responseType: 'arraybuffer',
       timeout: 20000
@@ -64,12 +66,12 @@ async function textToSpeech(text, voiceId, language = 'en-IN') {
   );
 
   const audioBuffer = Buffer.from(response.data);
-  console.log(`[ElevenLabs TTS] Done — ${audioBuffer.length} bytes of MP3`);
+  console.log(`[ElevenLabs TTS] Done - ${audioBuffer.length} bytes`);
   return audioBuffer;
 }
 
 /**
- * Synthesize speech — returns object compatible with Sarvam tts.synthesizeSpeech() callers.
+ * Synthesize speech - returns object compatible with Sarvam tts.synthesizeSpeech() callers.
  * Drop-in replacement: { audioBase64, audioBuffer }
  */
 async function synthesizeSpeech(text, language = 'en-IN', voiceId) {
