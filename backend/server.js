@@ -185,6 +185,74 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   checkMonthlyReset();
   
   console.log('[CRON] Monthly minutes reset scheduled (checks hourly, runs on 1st)');
+
+  // ⏰ 5-Minute Free Trial Expiry Alert Cron ⏰
+  // Checks every 60 seconds for active trials that created 25-30 mins ago and haven't received an alert.
+  const checkTrialExpirations = async () => {
+    try {
+      const expiringList = await db.query(`
+        SELECT id, name, email, plan, plan_name, country_code, created_at
+        FROM businesses
+        WHERE plan_name = 'free_trial'
+          AND status = 'active'
+          AND trial_expiry_alert_sent = false
+          AND created_at <= NOW() - INTERVAL '25 minutes'
+          AND created_at >= NOW() - INTERVAL '30 minutes'
+      `);
+
+      if (expiringList.rows.length === 0) return;
+
+      const emailService = require('./services/emailService');
+      
+      for (const biz of expiringList.rows) {
+        try {
+          const planKey = (biz.plan || 'pro').toLowerCase();
+          const isIndia = (biz.country_code || 'IN').toUpperCase() === 'IN';
+          
+          let planName = 'Growth plan';
+          let planAmount = isIndia ? '₹2,999' : '$36';
+          
+          if (planKey === 'starter') {
+            planName = 'Starter plan';
+            planAmount = isIndia ? '₹1,499' : '$18';
+          } else if (planKey === 'enterprise' || planKey === 'scale') {
+            planName = 'Scale plan';
+            planAmount = isIndia ? '₹5,999' : '$72';
+          }
+
+          const subject = "⏰ Your free trial expires in 5 minutes";
+          const body = `Hi ${biz.name},
+
+Your 30-minute free trial is ending soon.
+
+In 5 minutes, we'll charge ${planAmount} for your ${planName}.
+
+If you need more time, [Extend Trial for 24h]
+
+Otherwise, your subscription continues automatically.
+
+Bavio Team`;
+
+          await emailService.sendMail(biz.email, subject, body);
+
+          // Mark as alerted
+          await db.query(
+            'UPDATE businesses SET trial_expiry_alert_sent = true WHERE id = $1',
+            [biz.id]
+          );
+          console.log(`[CRON] Sent trial pre-expiry alert to ${biz.email}`);
+        } catch (bizErr) {
+          console.error(`[CRON] Failed to send trial alert to ${biz.email}:`, bizErr.message);
+        }
+      }
+    } catch (err) {
+      console.error('[CRON] checkTrialExpirations error:', err.message);
+    }
+  };
+
+  // Run check every 60 seconds
+  setInterval(checkTrialExpirations, 60 * 1000);
+  console.log('[CRON] 5-minute trial pre-expiry alert cron scheduled (checks every 60s)');
 });
 
 // ------- WebSocket Server Setup -------
