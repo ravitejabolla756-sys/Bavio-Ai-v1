@@ -69,6 +69,8 @@ const phoneRoutes = require('./routes/phone');
 const demoRoutes = require('./routes/demo');
 const webhookRoutes = require('./routes/webhook');
 const integrationsRoutes = require('./routes/integrations');
+const pricingRoutes = require('./routes/pricing');
+const userRoutes = require('./routes/user');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
@@ -88,6 +90,8 @@ app.use('/phone', phoneRoutes);
 app.use('/demo', demoRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/integrations', apiLimiter, integrationsRoutes);
+app.use('/pricing', pricingRoutes);
+app.use('/user', apiLimiter, userRoutes);
 
 // ------- Health Check -------
 app.get('/health', (req, res) => {
