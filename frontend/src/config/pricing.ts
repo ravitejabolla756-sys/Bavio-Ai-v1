@@ -41,7 +41,7 @@ export const PLANS: PlanDetails[] = [
     key: "starter",
     description: "For small businesses starting with voice automation.",
     features: [
-      { text: "100 minutes/month", included: true },
+      { text: "200 minutes/month", included: true },
       { text: "1 AI agent", included: true },
       { text: "Email support", included: true },
       { text: "Basic analytics", included: true },
@@ -56,7 +56,7 @@ export const PLANS: PlanDetails[] = [
     key: "growth",
     description: "For growing teams that need full-stack voice AI.",
     features: [
-      { text: "300 minutes/month", included: true },
+      { text: "500 minutes/month", included: true },
       { text: "Unlimited agents", included: true },
       { text: "24/7 phone support", included: true },
       { text: "Full analytics + exports", included: true },
@@ -71,7 +71,7 @@ export const PLANS: PlanDetails[] = [
     key: "scale",
     description: "For enterprises that demand reliability and scale.",
     features: [
-      { text: "800 minutes/month", included: true },
+      { text: "1,500 minutes/month", included: true },
       { text: "Everything in Growth", included: true },
       { text: "Dedicated account manager", included: true },
       { text: "Custom notification channels", included: true },
@@ -90,7 +90,7 @@ export interface ComparisonRow {
 }
 
 export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
-  { feature: "Minutes included", starter: "100", growth: "300", scale: "800" },
+  { feature: "Minutes included", starter: "200", growth: "500", scale: "1,500" },
   { feature: "AI agents", starter: "1", growth: "Unlimited", scale: "Unlimited" },
   { feature: "Support", starter: "Email", growth: "24/7 Phone", scale: "Priority + Dedicated" },
   { feature: "Analytics", starter: "Basic", growth: "Full + Export", scale: "Full + Custom" },

@@ -19,7 +19,7 @@ router.get('/current-plan', requireAuth, async (req, res) => {
     return res.status(200).json({
       plan: (row.plan_name || 'free').toLowerCase(),
       minutes_used: Number(row.minutes_used || 0),
-      minutes_limit: Number(row.minutes_limit || 100)
+      minutes_limit: Number(row.minutes_limit || 30)
     });
   } catch (err) {
     console.error('GET current-plan failed:', err.message);

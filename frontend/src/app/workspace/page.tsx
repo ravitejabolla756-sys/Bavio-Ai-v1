@@ -226,7 +226,7 @@ export default function WorkspaceHome() {
               <div>
                 <div className="flex justify-between text-[11px] font-bold text-ink-secondary mb-1.5">
                   <span>Talk Time Minutes</span>
-                  <span>{profile.minutes_used || 0} / {profile.minutes_limit || 100} mins</span>
+                  <span>{profile.minutes_used || 0} / {profile.minutes_limit || 30} mins</span>
                 </div>
                 <div className="w-full h-2 bg-[#EBE6DD] rounded-full overflow-hidden">
                   <div
@@ -234,8 +234,8 @@ export default function WorkspaceHome() {
                     style={{
                       width: `${Math.min(
                         100,
-                        (profile.minutes_limit || 100) > 0
-                          ? ((profile.minutes_used || 0) / (profile.minutes_limit || 100)) * 100
+                        (profile.minutes_limit || 30) > 0
+                          ? ((profile.minutes_used || 0) / (profile.minutes_limit || 30)) * 100
                           : 0
                       )}%`,
                     }}

@@ -8,21 +8,21 @@ import { PRICING_BY_COUNTRY } from "@/config/pricing";
 
 const PLAN_FEATURES: Record<string, string[]> = {
   starter: [
-    "100 included minutes",
+    "200 included minutes",
     "Basic call routing",
     "AI Receptionist role",
     "Email lead notifications",
     "Dashboard lead storage",
   ],
   growth: [
-    "300 included minutes",
+    "500 included minutes",
     "Multi-tenant routing",
     "Email lead notifications",
     "SMS lead notifications",
     "WhatsApp lead notifications",
   ],
   scale: [
-    "800 included minutes",
+    "1,500 included minutes",
     "Everything in Growth",
     "Custom notification channels",
     "Premium low-latency voices",
@@ -652,7 +652,7 @@ const COMPARISON_CATEGORIES = [
   {
     name: "Call Handling",
     rows: [
-      { feature: "Included minutes/month", starter: "100", growth: "300", scale: "800" },
+      { feature: "Included minutes/month", starter: "200", growth: "500", scale: "1,500" },
       { feature: "Overage rate per minute", starter: "overageRate", growth: "confirmOverage", scale: "confirmOverage" },
       { feature: "Basic call routing", starter: true, growth: true, scale: true },
       { feature: "Multi-tenant routing", starter: false, growth: true, scale: true },

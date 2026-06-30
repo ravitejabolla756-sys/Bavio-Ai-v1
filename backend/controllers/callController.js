@@ -536,7 +536,7 @@ async function handleCallStatus(req, res) {
         const overageRate = dodoBilling.OVERAGE_RATES[business_plan.toLowerCase()] || 0;
         
         const prevUsed = business.minutes_used || 0;
-        const limit = business.minutes_limit || 100;
+        const limit = business.minutes_limit || 30;
         
         if (prevUsed >= limit) {
           is_overage = true;
