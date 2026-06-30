@@ -10,11 +10,13 @@ const OPENAI_BASE_URL = 'https://api.openai.com/v1';
  * Transcribe audio using OpenAI Whisper.
  * @param {Buffer} audioBuffer - Raw audio buffer (WAV, MP3, etc.)
  * @param {string} language    - BCP-47 language code e.g. 'en-IN', 'hi-IN'
+ * @param {string} apiKey      - Optional custom OpenAI API key
  * @returns {Promise<{text: string, transcript: string, language_code: string}>}
  */
-async function transcribeAudio(audioBuffer, language = 'en') {
-  if (!OPENAI_API_KEY) {
-    throw new Error('[OpenAI STT] OPENAI_API_KEY is not set in .env');
+async function transcribeAudio(audioBuffer, language = 'en', apiKey = null) {
+  const key = apiKey || OPENAI_API_KEY;
+  if (!key) {
+    throw new Error('[OpenAI STT] OpenAI API key is not configured.');
   }
 
   const form = new FormData();
@@ -33,7 +35,7 @@ async function transcribeAudio(audioBuffer, language = 'en') {
 
   const response = await axios.post(`${OPENAI_BASE_URL}/audio/transcriptions`, form, {
     headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${key}`,
       ...form.getHeaders()
     },
     timeout: 30000
@@ -59,11 +61,13 @@ async function transcribeAudio(audioBuffer, language = 'en') {
  *
  * @param {string} systemPrompt          - System role instructions
  * @param {Array<{role,content}>} history - Conversation history (includes latest user msg)
+ * @param {string} apiKey                - Optional custom OpenAI API key
  * @returns {Promise<{response_text: string, lead_data: any, should_end: boolean}>}
  */
-async function chat(systemPrompt, history = []) {
-  if (!OPENAI_API_KEY) {
-    throw new Error('[OpenAI LLM] OPENAI_API_KEY is not set in .env');
+async function chat(systemPrompt, history = [], apiKey = null) {
+  const key = apiKey || OPENAI_API_KEY;
+  if (!key) {
+    throw new Error('[OpenAI LLM] OpenAI API key is not configured.');
   }
 
   const messages = [
@@ -86,7 +90,7 @@ async function chat(systemPrompt, history = []) {
     },
     {
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json'
       },
       timeout: 20000
@@ -153,8 +157,8 @@ async function chat(systemPrompt, history = []) {
 /**
  * Drop-in wrapper compatibility function for controllers that call generateResponse()
  */
-async function generateResponse(messages, systemPrompt) {
-  return chat(systemPrompt, messages);
+async function generateResponse(messages, systemPrompt, apiKey = null) {
+  return chat(systemPrompt, messages, apiKey);
 }
 
 // Re-export buildSystemPrompt (provider-agnostic)
