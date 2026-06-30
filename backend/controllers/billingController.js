@@ -3,7 +3,6 @@ const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
 const emailService = require('../services/emailService');
 const axios = require('axios');
-const vapiService = require('../services/vapiService');
 
 // Map user-facing subscription plan name to the plan_type enum used in DB
 const DB_PLAN_MAP = {
@@ -866,9 +865,6 @@ async function autoProvisionBusiness(clientId) {
             console.log(`[AUTO-PROVISION] Business already has a Twilio number assigned: ${assignedNumber}`);
         }
 
-        // 4. Create Vapi Assistant and map Twilio phone number on the Vapi platform
-        await vapiService.syncVapiAssistantAndPhone(clientId);
-        
         // 5. Update business state
         await db.query(
             `UPDATE businesses SET

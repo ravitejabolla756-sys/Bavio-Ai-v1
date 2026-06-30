@@ -44,7 +44,7 @@ const INTEGRATION_LIST: IntegrationItem[] = [
   { name: "Carrier SIP Trunking", category: "Telephony", desc: "Sync calls and manage telecom routing with compliant virtual numbers.", time: "5 mins", status: "Not Connected" },
   { name: "Advanced AI Voice Engine", category: "Telephony", desc: "Stream speech packets via proprietary low-latency speech processing models.", time: "4 mins", status: "Connected" },
   { name: "Retell AI", category: "Telephony", desc: "Integrate voice protocols for dedicated SIP trunk systems.", time: "5 mins", status: "Not Connected" },
-  { name: "Vapi Voice", category: "Telephony", desc: "Connect automated pipelines to manage automated business dials.", time: "4 mins", status: "Not Connected" },
+  { name: "ElevenLabs Voice", category: "Telephony", desc: "Connect automated pipelines to manage automated business dials.", time: "4 mins", status: "Not Connected" },
   { name: "Bland AI Calling", category: "Telephony", desc: "Trigger volume enterprise outbound calls with AI voice agents.", time: "5 mins", status: "Not Connected" },
   { name: "Natural Voice Synthesis", category: "Telephony", desc: "Sync natural accent synthesizers for regional accents.", time: "3 mins", status: "Connected" },
   { name: "Plivo Telephony", category: "Telephony", desc: "Rent international landline and toll-free numbers via Plivo APIs.", time: "4 mins", status: "Not Connected" },

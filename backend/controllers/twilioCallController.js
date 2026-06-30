@@ -1,7 +1,8 @@
 const db = require('../database/db');
-const sttService = require('../services/sarvam/stt');
-const llmService = require('../services/sarvam/llm');
-const ttsService = require('../services/sarvam/tts');
+// ── Voice pipeline: OpenAI Whisper (STT) + GPT-4o (LLM) + ElevenLabs (TTS) ──
+const sttService   = require('../services/openAIService');   // transcribeAudio()
+const llmService   = require('../services/openAIService');   // chat(), buildSystemPrompt()
+const ttsService   = require('../services/elevenLabsService'); // synthesizeSpeech()
 const storageService = require('../services/storage/storageService');
 const audioService = require('../services/audio/audioService');
 const axios = require('axios');
