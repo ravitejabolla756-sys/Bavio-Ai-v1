@@ -68,6 +68,7 @@ const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const phoneRoutes = require('./routes/phone');
 const demoRoutes = require('./routes/demo');
 const webhookRoutes = require('./routes/webhook');
+const integrationsRoutes = require('./routes/integrations');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
@@ -86,6 +87,7 @@ app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/phone', phoneRoutes);
 app.use('/demo', demoRoutes);
 app.use('/api/webhook', webhookRoutes);
+app.use('/integrations', apiLimiter, integrationsRoutes);
 
 // ------- Health Check -------
 app.get('/health', (req, res) => {
