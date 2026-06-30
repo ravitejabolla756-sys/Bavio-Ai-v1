@@ -158,7 +158,7 @@ async function getStatus(req, res) {
         const planKey = (client.plan || 'free').toLowerCase();
         const overageRate = dodoService.OVERAGE_RATES[planKey] || 0;
         const baseCost = dodoService.BASE_COSTS[planKey] || 0;
-        const overageMinutes = Math.max(0, (client.minutes_used || 0) - (client.minutes_limit || 100));
+        const overageMinutes = Math.max(0, (client.minutes_used || 0) - (client.minutes_limit || 30));
         const overageCost = overageMinutes * overageRate;
         const totalCostThisMonth = baseCost + overageCost;
 
@@ -186,7 +186,7 @@ async function getStatus(req, res) {
                 status: client.status,
                 minutesLimit: client.minutes_limit,
                 minutesUsed: client.minutes_used,
-                minutesRemaining: Math.max(0, (client.minutes_limit || 100) - (client.minutes_used || 0)),
+                minutesRemaining: Math.max(0, (client.minutes_limit || 30) - (client.minutes_used || 0)),
                 planExpiresAt: client.current_period_end,
                 dodoSubscriptionId: client.dodo_subscription_id,
                 dodoCustomerId: client.dodo_customer_id,

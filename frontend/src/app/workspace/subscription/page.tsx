@@ -185,7 +185,7 @@ export default function WorkspaceSubscription() {
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Talk Time Limit</span>
                 <span className="text-body-sm font-bold text-ink-secondary">
-                  {profile?.minutes_used || 0} / {profile?.minutes_limit || 100} mins
+                  {profile?.minutes_used || 0} / {profile?.minutes_limit || 30} mins
                 </span>
               </div>
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
