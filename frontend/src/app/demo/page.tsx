@@ -23,7 +23,7 @@ import {
   Phone
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/landing/Navbar";
 import { setCookie } from "@/lib/auth-utils";
 import { setAuthData, leadsApi, demoApi } from "@/lib/api";
 
