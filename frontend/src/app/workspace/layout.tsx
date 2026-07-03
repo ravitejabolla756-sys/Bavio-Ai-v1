@@ -315,11 +315,11 @@ export default function WorkspaceLayout({
             {/* Search Box Trigger */}
             <button 
               onClick={() => setCommandKOpen(true)}
-              className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-52"
+              className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-60"
             >
-              <MagnifyingGlass className="w-3.5 h-3.5" />
-              <span className="flex-grow text-left">Search Workspace...</span>
-              <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted">Ctrl K</kbd>
+              <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
+              <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Workspace...</span>
+              <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted whitespace-nowrap shrink-0">Ctrl K</kbd>
             </button>
 
             {/* Notification alert */}
