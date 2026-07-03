@@ -572,9 +572,9 @@ async function saveAiSetup(req, res) {
 
       const newAssistant = await db.query(
         `INSERT INTO assistants (business_id, name, agent_name, greeting, first_message, system_prompt, voice_id, language, is_active)
-         VALUES ($1, $2, $2, $3, $3, $4, 'meera', $5, true)
+         VALUES ($1, $2, $3, $4, $5, $6, 'meera', $7, true)
          RETURNING id`,
-        [clientId, agentName, firstMessage, systemPrompt, mappedLanguage]
+        [clientId, agentName, agentName, firstMessage, firstMessage, systemPrompt, mappedLanguage]
       );
       assistantId = newAssistant.rows[0].id;
     } else {
@@ -592,11 +592,11 @@ async function saveAiSetup(req, res) {
         `UPDATE assistants
          SET language = $1,
              first_message = $2,
-             greeting = $2,
-             system_prompt = $3,
+             greeting = $3,
+             system_prompt = $4,
              updated_at = NOW()
-         WHERE business_id = $4`,
-        [mappedLanguage, firstMessage, systemPrompt, clientId]
+         WHERE business_id = $5`,
+        [mappedLanguage, firstMessage, firstMessage, systemPrompt, clientId]
       );
     }
 

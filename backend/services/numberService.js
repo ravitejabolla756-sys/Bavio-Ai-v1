@@ -3,27 +3,46 @@ const providerFactory = require('../providers/index');
 
 async function buyAndSaveNumber({ business_id, country, assistant_id }) {
     const providerName = country.toUpperCase() === 'IN' ? 'exotel' : 'twilio';
-    const provider = providerFactory.getProvider(providerName);
+    
+    // For testing/pre-launch: look for an unassigned number of the provider in the database
+    const unassignedRes = await db.query(
+        `SELECT * FROM phone_numbers 
+         WHERE provider = $1 AND business_id IS NULL AND status = 'active'
+         LIMIT 1`,
+        [providerName]
+    );
 
-    const phoneNumber = await provider.buyNumber(country);
-
-    const webhookUrl = `${process.env.WEBHOOK_BASE_URL}/calls/twilio/incoming`;
-    // Attach the webhook to the purchased number (Twilio only for now)
-    if (providerName === 'twilio') {
-        const numbers = await provider.client?.incomingPhoneNumbers?.list?.({ phoneNumber, limit: 1 });
-        if (numbers && numbers.length > 0) {
-            await provider.client.incomingPhoneNumbers(numbers[0].sid).update({
-                voiceUrl: webhookUrl,
-                voiceMethod: 'POST'
-            });
-        }
+    if (unassignedRes.rows.length === 0) {
+        throw new Error(`No available pre-configured test numbers for country/provider: ${providerName}. Contact support.`);
     }
 
+    const dbNum = unassignedRes.rows[0];
+    
+    // Assign it to the business
     const result = await db.query(
-        `INSERT INTO phone_numbers (business_id, assistant_id, number, provider, status)
-         VALUES ($1, $2, $3, $4, 'active') RETURNING *`,
-        [business_id, assistant_id || null, phoneNumber, providerName]
+        `UPDATE phone_numbers 
+         SET business_id = $1, assistant_id = $2, type = 'dedicated'
+         WHERE id = $3 RETURNING *`,
+        [business_id, assistant_id || null, dbNum.id]
     );
+
+    // Update the business table as well to associate this number
+    if (providerName === 'twilio') {
+        await db.query(
+            `UPDATE businesses 
+             SET twilio_number = $1, twilio_number_sid = $2 
+             WHERE id = $3`,
+            [dbNum.phone_number, dbNum.twilio_sid || 'PN_mock_sid', business_id]
+        );
+    } else {
+        await db.query(
+            `UPDATE businesses 
+             SET original_phone_number = $1 
+             WHERE id = $2`,
+            [dbNum.phone_number, business_id]
+        );
+    }
+
     return result.rows[0];
 }
 
