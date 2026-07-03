@@ -149,7 +149,7 @@ export default function WorkspaceHome() {
               <Phone className="w-5.5 h-5.5" weight="bold" />
             </div>
             <div>
-              <h3 className="font-bold text-body-xs text-amber-900">No Dedicated Phone Number Assigned</h3>
+              <div className="font-sans font-extrabold text-[13px] tracking-wide text-amber-950">No Dedicated Phone Number Assigned</div>
               <p className="text-[11px] text-amber-800/80 leading-relaxed mt-1">
                 You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls.
               </p>
@@ -174,7 +174,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <Building className="w-4.5 h-4.5 text-saffron" />
-                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Business Setup</h3>
+                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Business Setup</div>
               </div>
               <span className="text-[9px] font-mono text-ink-muted">V1 Status</span>
             </div>
@@ -198,6 +198,7 @@ export default function WorkspaceHome() {
                   {profile.voice || "Meera"}
                 </span>
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -208,7 +209,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <CreditCard className="w-4.5 h-4.5 text-saffron" />
-                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Subscription</h3>
+                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Subscription</div>
               </div>
               <Link href="/workspace/subscription" className="text-[10px] font-bold text-saffron hover:underline">
                 Billing
@@ -241,7 +242,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <Clock className="w-4.5 h-4.5 text-saffron" />
-                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Usage Telemetry</h3>
+                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Usage Telemetry</div>
               </div>
               <span className="text-[9px] font-mono text-ink-muted">Inbound calls</span>
             </div>

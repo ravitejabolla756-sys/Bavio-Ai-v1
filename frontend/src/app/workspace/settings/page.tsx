@@ -317,7 +317,7 @@ function WorkspaceSettingsContent() {
           {activeTab === "general" && (
             <div className="card-bezel">
               <div className="card-bezel-inner p-6 text-left">
-                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-6 pb-2 border-b border-line">Workspace Parameters</h3>
+                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-6 pb-2 border-b border-line">Workspace Parameters</div>
                 
                 {savedGeneralAlert && (
                   <div className="bg-[#ECFDF5] border border-[#A7F3D0] p-3.5 rounded-xl text-state-success text-body-xs font-bold mb-6">
@@ -389,7 +389,7 @@ function WorkspaceSettingsContent() {
               {/* Invite Member form */}
               <div className="card-bezel">
                 <div className="card-bezel-inner p-6 text-left">
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Invite Team Member</h3>
+                  <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Invite Team Member</div>
                   
                   <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3 items-end">
                     <div className="flex-grow">
@@ -429,7 +429,7 @@ function WorkspaceSettingsContent() {
               {/* Members lists */}
               <div className="card-bezel">
                 <div className="card-bezel-inner p-6 text-left">
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Active Team Members</h3>
+                  <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Active Team Members</div>
                   
                   <div className="flex flex-col gap-4 text-body-xs font-semibold text-ink-secondary">
                     {teamMembers.map((member) => (
@@ -476,7 +476,7 @@ function WorkspaceSettingsContent() {
               {/* API keys block */}
               <div className="card-bezel">
                 <div className="card-bezel-inner p-6 text-left">
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">API Authentication Credentials</h3>
+                  <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">API Authentication Credentials</div>
                   
                   <div className="flex flex-col gap-3 text-body-xs font-semibold text-ink-secondary mb-6">
                     <p className="text-ink-tertiary">Use this key to authorize requests to Bavio endpoints (Call logs API, Webhook alerts).</p>
@@ -511,7 +511,7 @@ function WorkspaceSettingsContent() {
               {/* Webhooks configuration */}
               <div className="card-bezel">
                 <div className="card-bezel-inner p-6 text-left">
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Webhook Notifications Sync</h3>
+                  <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line">Webhook Notifications Sync</div>
                   
                   <div className="flex flex-col gap-4 text-body-xs font-semibold text-ink-secondary">
                     <p className="text-ink-tertiary">Configure the endpoint URL where Bavio will post call transcripts and booking outcomes.</p>
@@ -583,7 +583,7 @@ function WorkspaceSettingsContent() {
                 <div className="card-bezel-inner p-6 text-left">
                   <div className="flex items-start justify-between mb-5 pb-3 border-b border-line">
                     <div>
-                      <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Business Knowledge Base</h3>
+                      <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink">Business Knowledge Base</div>
                       <p className="text-[10px] text-ink-muted mt-1">
                         Add information about your business — services, FAQs, pricing, hours — and sync it to your AI assistant.
                       </p>
@@ -743,10 +743,10 @@ function WorkspaceSettingsContent() {
         <div className="lg:col-span-4 flex flex-col gap-6 text-left">
           
           <div className="border border-line bg-white/80 p-6 rounded-[22px] shadow-premium">
-            <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
+            <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
               <CheckCircle className="w-4.5 h-4.5 text-state-success" weight="fill" />
               <span>Workspace Health</span>
-            </h3>
+            </div>
 
             <div className="flex flex-col gap-4 text-body-xs font-semibold text-ink-secondary">
               <div className="flex items-center gap-3">
@@ -778,10 +778,10 @@ function WorkspaceSettingsContent() {
           </div>
 
             <div className="border border-line bg-white/80 p-6 rounded-[22px] shadow-premium">
-              <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
+              <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
                 <Info className="w-4.5 h-4.5 text-saffron" />
                 <span>Support Channels</span>
-              </h3>
+              </div>
               <div className="flex flex-col gap-3 text-body-xs font-semibold text-ink-secondary">
                 <div className="flex items-center justify-between border-b border-line/45 pb-2">
                   <span className="text-[9px] text-ink-muted uppercase font-bold">Support Email</span>
