@@ -58,14 +58,23 @@ async function signup(req, res) {
             agent_name, greeting, faqs,
             // New payload fields:
             businessName, countryCode, dialCode, phoneNumber,
-            businessPhone, demoCompleted
+            businessPhone, demoCompleted,
+            plan, currency
         } = req.body;
 
         const finalName = name || businessName;
         const finalEmail = email;
         const finalPassword = password;
         const finalPhone = phone || businessPhone || (dialCode && phoneNumber ? (dialCode + phoneNumber) : null);
-        const finalCountryCode = (countryCode || country_code || inferCountry(finalPhone, country)).trim().toUpperCase().substring(0, 2);
+        
+        let inferredCountryFromCurrency = null;
+        if (currency === 'INR') inferredCountryFromCurrency = 'IN';
+        else if (currency === 'USD') inferredCountryFromCurrency = 'US';
+        else if (currency === 'GBP') inferredCountryFromCurrency = 'GB';
+        else if (currency === 'AUD') inferredCountryFromCurrency = 'AU';
+        else if (currency === 'SGD') inferredCountryFromCurrency = 'SG';
+
+        const finalCountryCode = (countryCode || country_code || inferredCountryFromCurrency || inferCountry(finalPhone, country)).trim().toUpperCase().substring(0, 2);
         const finalCountry = country || finalCountryCode;
         
         // 1. Validation
@@ -112,11 +121,19 @@ async function signup(req, res) {
         const devEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
         const isDeveloper = finalEmail && devEmails.includes(finalEmail.trim().toLowerCase());
 
-        const finalMinutesLimit = isDeveloper ? 999999 : 100;
+        const validPlans = ['starter', 'growth', 'scale'];
+        const isPaidPlan = plan && validPlans.includes(plan.toLowerCase().trim());
+        const planKeyMap = {
+            'starter': 'starter',
+            'growth': 'pro',
+            'scale': 'enterprise'
+        };
+
+        const finalMinutesLimit = isDeveloper ? 999999 : (isPaidPlan ? (plan.toLowerCase().trim() === 'starter' ? 200 : plan.toLowerCase().trim() === 'growth' ? 500 : 1500) : 30);
         const finalOnboardingStep = isDeveloper ? 6 : onboardingStep;
         const finalOnboardingStatus = isDeveloper ? 'ready' : onboardingStatus;
-        const finalPlan = isDeveloper ? 'enterprise' : 'free';
-        const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
+        const finalPlan = isDeveloper ? 'enterprise' : (isPaidPlan ? planKeyMap[plan.toLowerCase().trim()] : 'free');
+        const finalPlanName = isDeveloper ? 'developer' : (isPaidPlan ? plan.toLowerCase().trim() : 'free_trial');
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
 
         // 4. Insert into businesses table with active status
@@ -127,9 +144,9 @@ async function signup(req, res) {
                 full_name, business_description, industry, language,
                 whatsapp_number, onboarding_step, onboarding_status,
                 plan, plan_name, current_period_end, subscription_status
-             )
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'active', $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-             RETURNING *`,
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'active', $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            RETURNING *`,
             [
                 supabaseUser.id, finalName, finalEmail, finalPhone, 'supabase_auth_placeholder', apiKey, 
                 finalMinutesLimit, finalCountry, finalCountryCode, finalName, business_description || null, 
@@ -145,8 +162,22 @@ async function signup(req, res) {
         const emailService = require('../services/emailService');
         emailService.sendMail(
             finalEmail,
-            'Welcome to Bavio AI!',
-            `Hi ${finalName},\n\nThank you for signing up with Bavio AI! Your account has been successfully created.\n\nGet started by setting up your dedicated receptionist virtual phone line to answer calls automatically 24/7.\n\nBest regards,\nThe Bavio Team`
+            'Welcome to Bavio! 30 minutes free starts now',
+            `Hi ${finalName},
+
+Your free trial is active. You have 30 minutes to test Bavio AI.
+
+What you can do:
+- Create your first AI agent
+- Get a dedicated phone number
+- Make test calls
+- Capture leads automatically
+
+Your trial expires in 30 minutes.
+
+Questions? Chat with us →
+
+Bavio Team`
         ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
         
         // 4.5 Auto-create receptionist assistant if demoCompleted is true
@@ -341,7 +372,7 @@ async function getProfile(req, res) {
                     minutes_limit, minutes_used, status, country,
                     full_name, onboarding_step, onboarding_status
                  )
-                 VALUES ($1, $2, $3, $4, $5, $6, 100, 0, 'active', $7, $8, 0, 'pending')
+                 VALUES ($1, $2, $3, $4, $5, $6, 30, 0, 'active', $7, $8, 0, 'pending')
                  RETURNING *`,
                 [
                     req.user.id,

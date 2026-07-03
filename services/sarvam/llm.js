@@ -1,118 +1,9 @@
 const axios = require('axios');
 
-const SARVAM_API_KEY = process.env.SARVAM_API_KEY;
-
 async function generateResponse(messages, systemPrompt) {
-
-  if (!SARVAM_API_KEY) {
-    throw new Error('[LLM] SARVAM_API_KEY not set in .env');
-  }
-
-  console.log(`[LLM] Sending ${messages.length} messages to Sarvam`);
-
-  const response = await axios.post(
-    process.env.SARVAM_LLM_URL ||
-      'https://api.sarvam.ai/v1/chat/completions',
-    {
-      model: process.env.SARVAM_LLM_MODEL || 'sarvam-30b',
-      max_tokens: 1024,
-      temperature: 0.7,
-      reasoning_effort: null,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'assistant',
-          content: m.content?.trim() || '(silence)'
-        }))
-      ]
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${SARVAM_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 20000
-    }
-  );
-
-  let rawText = response.data?.choices?.[0]?.message?.content || '';
-  console.log(`[LLM] Raw response (${rawText.length} chars): "${rawText.slice(0, 120)}"`);
-
-  // Strip complete thinking tags if present
-  rawText = rawText.replace(/<thinking>.*?<\/thinking>/gs, '');
-  rawText = rawText.replace(/<think>.*?<\/think>/gs, '');
-  
-  // Strip any unclosed thinking tags
-  const thinkStart = rawText.indexOf('<think>');
-  if (thinkStart !== -1) {
-    rawText = rawText.slice(0, thinkStart);
-  }
-  const thinkingStart = rawText.indexOf('<thinking>');
-  if (thinkingStart !== -1) {
-    rawText = rawText.slice(0, thinkingStart);
-  }
-  
-  rawText = rawText.trim();
-
-  // Extract lead data if present
-  let lead_data = null;
-  if (rawText.includes('[LEAD_CAPTURED]')) {
-    try {
-      const jsonMatch = rawText.match(/\[LEAD_CAPTURED\]\s*(\{[\s\S]*?\})/);
-      if (jsonMatch) {
-        lead_data = JSON.parse(jsonMatch[1]);
-        console.log('[LLM] Lead captured:', lead_data);
-      }
-    } catch (e) {
-      console.error('[LLM] Failed to parse lead JSON:', e.message);
-    }
-    rawText = rawText.replace(/\[LEAD_CAPTURED\][\s\S]*?(\{[\s\S]*?\})?/g, '').trim();
-  }
-
-  // Filter out empty or placeholder lead data
-  if (lead_data) {
-    const hasRealData = Object.entries(lead_data).some(([key, val]) => {
-      return val && val !== '...' && val !== 'Unknown' && !String(val).toLowerCase().includes('not collected') && String(val).trim() !== '';
-    });
-    if (!hasRealData) {
-      console.log('[LLM] Discarding empty/placeholder lead data:', lead_data);
-      lead_data = null;
-    }
-  }
-
-  // Strip any lines containing key-value pairs (like name: ..., phone: ...) or lead fields
-  // so the TTS never speaks them out loud
-  rawText = rawText.split('\n').filter(line => {
-    const lower = line.toLowerCase();
-    if (lower.includes('name:') || lower.includes('phone:') || lower.includes('intent:') || lower.includes('budget:') || lower.includes('location:')) {
-      return false;
-    }
-    if (lower.includes('not collected') || lower.includes('[lead_captured]')) {
-      return false;
-    }
-    return true;
-  }).join('\n').trim();
-
-  // Check if call should end
-  let should_end = rawText.includes('[END_CALL]');
-  if (should_end) {
-    // Prevent premature end-call if it's the first turn or if the lead data was a placeholder
-    const isPremature = messages.length <= 2 || (rawText.includes('Thank you for calling') && !lead_data);
-    if (isPremature) {
-      console.log('[LLM] Ignoring premature end call');
-      should_end = false;
-      rawText = rawText.replace('[END_CALL]', '').trim();
-    } else {
-      rawText = rawText.replace('[END_CALL]', '').trim();
-      console.log('[LLM] End call detected');
-    }
-  }
-
-  return {
-    response_text: rawText.trim(),
-    lead_data,
-    should_end
-  };
+  console.log(`[LLM Proxy] Generating response with OpenAI GPT-4o`);
+  const openAIService = require('../openAIService');
+  return openAIService.generateResponse(messages, systemPrompt);
 }
 
 // Build system prompt per industry
@@ -173,7 +64,7 @@ IMPORTANT RULES & CONVERSATION PHASES:
    - Once they answer with their Location, ask for their Budget. (e.g., "What is your budget range?")
    - NEVER ask for more than one piece of information at a time.
 3. Phase 3: Confirmation. Before completing the call, you MUST summarize and repeat all collected details (Name, Location, Budget) back to the caller to confirm they are correct (e.g., "So, your name is [Name], you are looking in [Location], and your budget is [Budget]. Is that correct?").
-4. Keep responses EXTREMELY SHORT â€” maximum 1 sentence, and under 15 words per turn. NEVER output long paragraphs or explanations. Be crisp, brief, and to-the-point.
+4. Keep responses EXTREMELY SHORT — maximum 1 sentence, and under 15 words per turn. NEVER output long paragraphs or explanations. Be crisp, brief, and to-the-point.
 5. Be warm, helpful, and conversational.
 6. Never mention you are an AI unless directly asked.
 7. If caller is rude or abusive, politely end the call.

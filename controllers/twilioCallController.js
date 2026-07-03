@@ -1,7 +1,8 @@
 const db = require('../database/db');
-const sttService = require('../services/sarvam/stt');
-const llmService = require('../services/sarvam/llm');
-const ttsService = require('../services/sarvam/tts');
+// ── Voice pipeline: OpenAI Whisper (STT) + GPT-4o (LLM) + ElevenLabs (TTS) ──
+const sttService   = require('../services/openAIService');   // transcribeAudio()
+const llmService   = require('../services/openAIService');   // chat(), buildSystemPrompt()
+const ttsService   = require('../services/elevenLabsService'); // synthesizeSpeech()
 const storageService = require('../services/storage/storageService');
 const audioService = require('../services/audio/audioService');
 const axios = require('axios');
@@ -147,32 +148,19 @@ async function handleIncomingCall(req, res) {
     } catch (dbErr) {
       console.error('[TWILIO] Call record error:', dbErr.message);
     }
+    // ── Twilio Media Stream over WebSocket ──────────────────────────────
+    const host = req.headers.host || 'localhost:3000';
+    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const wsProtocol = isSsl ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?businessId=${businessId}`;
 
-    // ── TTS greeting → Supabase Storage → public URL ─────────────────────
-    let greetingUrl = null;
-    try {
-      const result = await generateAndUploadTts(firstMessage, language, CallSid, 0);
-      greetingUrl = result.audioUrl;
-    } catch (ttsErr) {
-      console.error('[TWILIO] TTS greeting failed:', ttsErr.message);
-      // Falls back to <Say> below
-    }
-
-    // ── TwiML: <Play public-url> or <Say> fallback ───────────────────────
-    const audioTag = buildAudioTag(greetingUrl, firstMessage, language);
+    console.log(`[TWILIO] Routing call to Media Stream WebSocket: ${wsUrl}`);
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather
-    input="speech"
-    action="/calls/twilio/recording"
-    method="POST"
-    language="${language}"
-    speechTimeout="auto"
-  >
-    ${audioTag}
-  </Gather>
-  <Redirect method="POST">/calls/twilio/recording?silence=true</Redirect>
+  <Connect>
+    <Stream url="${wsUrl}" />
+  </Connect>
 </Response>`;
 
     res.type('text/xml');
@@ -590,7 +578,7 @@ async function handleCallStatus(req, res) {
           const overageRate = dodoBilling.OVERAGE_RATES[business_plan.toLowerCase()] || 0;
           
           const prevUsed = minutes_used || 0;
-          const limit = minutes_limit || 100;
+          const limit = minutes_limit || 30;
           
           if (prevUsed >= limit) {
             is_overage = true;

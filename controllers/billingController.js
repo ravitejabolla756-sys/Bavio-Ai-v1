@@ -3,7 +3,6 @@ const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
 const emailService = require('../services/emailService');
 const axios = require('axios');
-const vapiService = require('../services/vapiService');
 
 // Map user-facing subscription plan name to the plan_type enum used in DB
 const DB_PLAN_MAP = {
@@ -159,7 +158,7 @@ async function getStatus(req, res) {
         const planKey = (client.plan || 'free').toLowerCase();
         const overageRate = dodoService.OVERAGE_RATES[planKey] || 0;
         const baseCost = dodoService.BASE_COSTS[planKey] || 0;
-        const overageMinutes = Math.max(0, (client.minutes_used || 0) - (client.minutes_limit || 100));
+        const overageMinutes = Math.max(0, (client.minutes_used || 0) - (client.minutes_limit || 30));
         const overageCost = overageMinutes * overageRate;
         const totalCostThisMonth = baseCost + overageCost;
 
@@ -187,7 +186,7 @@ async function getStatus(req, res) {
                 status: client.status,
                 minutesLimit: client.minutes_limit,
                 minutesUsed: client.minutes_used,
-                minutesRemaining: Math.max(0, (client.minutes_limit || 100) - (client.minutes_used || 0)),
+                minutesRemaining: Math.max(0, (client.minutes_limit || 30) - (client.minutes_used || 0)),
                 planExpiresAt: client.current_period_end,
                 dodoSubscriptionId: client.dodo_subscription_id,
                 dodoCustomerId: client.dodo_customer_id,
@@ -866,9 +865,6 @@ async function autoProvisionBusiness(clientId) {
             console.log(`[AUTO-PROVISION] Business already has a Twilio number assigned: ${assignedNumber}`);
         }
 
-        // 4. Create Vapi Assistant and map Twilio phone number on the Vapi platform
-        await vapiService.syncVapiAssistantAndPhone(clientId);
-        
         // 5. Update business state
         await db.query(
             `UPDATE businesses SET

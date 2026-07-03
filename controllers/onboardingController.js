@@ -1,6 +1,5 @@
 const db = require('../database/db');
 const axios = require('axios');
-const vapiService = require('../services/vapiService');
 
 // Save onboarding step data (Step 1, Step 2, Step 3)
 async function saveStep(req, res) {
@@ -67,9 +66,10 @@ async function saveStep(req, res) {
             industry = $2,
             owner_mobile = $3,
             phone = $3,
+            business_description = COALESCE($5, business_description),
             updated_at = NOW()
           WHERE id = $4`,
-          [businessName, industry, ownerMobile, clientId]
+          [businessName, industry, ownerMobile, clientId, data.businessDescription]
         );
 
         // Check if assistant exists
@@ -319,9 +319,11 @@ async function assignPhone(req, res) {
     }
 
     const { country } = req.body;
-    if (!country || !['IN', 'US', 'UK'].includes(country)) {
+    if (!country || typeof country !== 'string' || country.trim().length !== 2) {
       return res.status(400).json({ error: 'invalid_country', message: 'Invalid or unsupported country' });
     }
+
+    const normCountry = country.trim().toUpperCase();
 
     // 1. Get business info
     const bizRes = await db.query(
@@ -339,7 +341,7 @@ async function assignPhone(req, res) {
     if (business.twilio_number) {
       return res.status(200).json({
         phoneNumber: business.twilio_number,
-        country: business.country_code || country,
+        country: business.country_code || normCountry,
         provider: 'TWILIO',
         status: 'ACTIVE',
         monthlyCharge: 1,
@@ -353,20 +355,29 @@ async function assignPhone(req, res) {
 
     try {
       const twilioProvider = require('../providers/twilio');
-      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${country}...`);
-      assignedPhone = await twilioProvider.buyNumber(country);
+      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${normCountry}...`);
+      assignedPhone = await twilioProvider.buyNumber(normCountry);
       console.log(`[PROVISION] Successfully purchased dedicated number: ${assignedPhone}`);
     } catch (e) {
       isMock = true;
       console.warn(`[PROVISION] Twilio purchase failed (${e.message}), using dedicated mock number fallback.`);
       
       // Generate a realistic dedicated mock number depending on the country
-      if (country === 'IN') {
+      if (normCountry === 'IN') {
         const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
         assignedPhone = `+91${randomDigits}`;
-      } else if (country === 'UK') {
-        const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
-        assignedPhone = `+44${randomDigits}`;
+      } else if (normCountry === 'UK') {
+        const randomDigits = Math.floor(700000000 + Math.random() * 299999999);
+        assignedPhone = `+447${randomDigits}`;
+      } else if (normCountry === 'AU') {
+        const randomDigits = Math.floor(400000000 + Math.random() * 599999999);
+        assignedPhone = `+61${randomDigits}`;
+      } else if (normCountry === 'SG') {
+        const randomDigits = Math.floor(80000000 + Math.random() * 19999999);
+        assignedPhone = `+65${randomDigits}`;
+      } else if (normCountry === 'NZ') {
+        const randomDigits = Math.floor(20000000 + Math.random() * 79999999);
+        assignedPhone = `+642${randomDigits}`;
       } else {
         // US / default
         const areaCode = [201, 302, 415, 512, 602, 702, 802, 902][Math.floor(Math.random() * 8)];
@@ -425,9 +436,6 @@ async function assignPhone(req, res) {
         [assistantId, clientId]
       );
     }
-
-    // Sync to Vapi in background (or await it to ensure it is created on Vapi for testing step)
-    await vapiService.syncVapiAssistantAndPhone(clientId);
 
     // Return response
     return res.status(200).json({
@@ -541,7 +549,16 @@ async function saveAiSetup(req, res) {
       [clientId]
     );
 
-    const mappedLanguage = language === 'HINDI' ? 'hi-IN' : language === 'ENGLISH' ? 'en-US' : 'hi-IN';
+    let mappedLanguage = 'en-US';
+    if (language === 'HINDI') {
+      mappedLanguage = 'hi-IN';
+    } else if (language === 'ENGLISH') {
+      mappedLanguage = 'en-US';
+    } else if (language === 'HINGLISH') {
+      mappedLanguage = 'hi-IN';
+    } else if (language) {
+      mappedLanguage = language;
+    }
 
     if (assistantResult.rows.length === 0) {
       const agentName = 'Bavio Assistant';
@@ -555,9 +572,9 @@ async function saveAiSetup(req, res) {
 
       const newAssistant = await db.query(
         `INSERT INTO assistants (business_id, name, agent_name, greeting, first_message, system_prompt, voice_id, language, is_active)
-         VALUES ($1, $2, $2, $3, $3, $4, 'meera', $5, true)
+         VALUES ($1, $2, $3, $4, $5, $6, 'meera', $7, true)
          RETURNING id`,
-        [clientId, agentName, firstMessage, systemPrompt, mappedLanguage]
+        [clientId, agentName, agentName, firstMessage, firstMessage, systemPrompt, mappedLanguage]
       );
       assistantId = newAssistant.rows[0].id;
     } else {
@@ -575,25 +592,23 @@ async function saveAiSetup(req, res) {
         `UPDATE assistants
          SET language = $1,
              first_message = $2,
-             greeting = $2,
-             system_prompt = $3,
+             greeting = $3,
+             system_prompt = $4,
              updated_at = NOW()
-         WHERE business_id = $4`,
-        [mappedLanguage, firstMessage, systemPrompt, clientId]
+         WHERE business_id = $5`,
+        [mappedLanguage, firstMessage, firstMessage, systemPrompt, clientId]
       );
     }
 
     await db.query(
       `UPDATE businesses 
        SET assistant_id = $1, 
-           onboarding_step = 3,
+           onboarding_step = 6,
+           onboarding_status = 'ready',
            updated_at = NOW()
        WHERE id = $2`,
       [assistantId, clientId]
     );
-
-    // Sync to Vapi in background (or await it to ensure it is created/updated on Vapi for testing step)
-    await vapiService.syncVapiAssistantAndPhone(clientId);
 
     return res.status(200).json({
       success: true,
