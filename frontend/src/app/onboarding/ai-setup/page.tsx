@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Play, Pause, SpeakerHigh, Spinner } from "@phosphor-icons/react";
+import { ArrowLeft, Check, Spinner } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
 import { apiFetch, getToken } from "@/lib/api";
 
@@ -67,14 +67,8 @@ export default function OnboardingAiSetupPage() {
 
   // Status/Loading states
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [isTtsGenerating, setIsTtsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // Audio Playback states
-  const [audioUrl, setAudioUrl] = useState<string>("");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load profile details on mount
   useEffect(() => {
@@ -126,16 +120,6 @@ export default function OnboardingAiSetupPage() {
     loadProfile();
   }, [router]);
 
-  // Audio clean-up on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
   // Templates
   const handleApplyTemplate = (type: "real_estate" | "healthcare" | "restaurant" | "custom") => {
     let text = "";
@@ -152,127 +136,16 @@ export default function OnboardingAiSetupPage() {
       text = "";
     }
     setFirstMessage(text);
-    setAudioUrl(""); // Invalidate audio URL cache
   };
 
-  // Generate TTS preview
-  const generatePreview = async (textToGen: string, langToGen: string) => {
-    if (!textToGen.trim()) return;
-    setIsTtsGenerating(true);
-    setErrorMsg("");
-
-    try {
-      const data = await apiFetch<PreviewTtsResponse>("/onboarding/preview-tts", {
-        method: "POST",
-        body: JSON.stringify({
-          text: textToGen.trim(),
-          language: langToGen
-        }),
-      });
-
-      if (data && data.audioUrl) {
-        setAudioUrl(data.audioUrl);
-        // Play automatically if requested, or just cache
-        if (audioRef.current) {
-          audioRef.current.src = data.audioUrl;
-          audioRef.current.load();
-        }
-      }
-    } catch (err: any) {
-      console.warn("TTS generation failed:", err);
-      setErrorMsg("Preview generation failed. Check connection or continue anyway.");
-    } finally {
-      setIsTtsGenerating(false);
-    }
-  };
-
-  // Debounced TTS generator helpers
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  
-  const triggerDebouncedPreview = useCallback((text: string, lang: string) => {
-    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    
-    debounceTimeout.current = setTimeout(() => {
-      generatePreview(text, lang);
-    }, 800);
-  }, []);
-
-  // Watchers for debounced preview generation
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value.substring(0, 150);
     setFirstMessage(val);
-    setAudioUrl(""); // Invalidate cache
-    triggerDebouncedPreview(val, language);
   };
 
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
-    setAudioUrl(""); // Invalidate cache
-    triggerDebouncedPreview(firstMessage, newLang);
     console.log(`[Analytics] language_selected: ${newLang}`);
-  };
-
-  // Play preview audio click handler
-  const handleHearIt = async () => {
-    if (!firstMessage.trim()) return;
-
-    if (isPlaying) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-      return;
-    }
-
-    console.log("[Analytics] preview_played");
-
-    if (audioUrl) {
-      // Play cached audio
-      playAudio(audioUrl);
-    } else {
-      // Generate first, then play
-      setIsTtsGenerating(true);
-      try {
-        const data = await apiFetch<PreviewTtsResponse>("/onboarding/preview-tts", {
-          method: "POST",
-          body: JSON.stringify({
-            text: firstMessage.trim(),
-            language
-          }),
-        });
-
-        if (data && data.audioUrl) {
-          setAudioUrl(data.audioUrl);
-          playAudio(data.audioUrl);
-        }
-      } catch (err: any) {
-        console.warn("Play preview failed:", err);
-        setErrorMsg("Failed to generate preview audio.");
-      } finally {
-        setIsTtsGenerating(false);
-      }
-    }
-  };
-
-  const playAudio = (url: string) => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(url);
-    } else {
-      audioRef.current.src = url;
-    }
-
-    audioRef.current.onended = () => {
-      setIsPlaying(false);
-    };
-
-    audioRef.current.play()
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch((playErr) => {
-        console.error("Audio playback error:", playErr);
-        setIsPlaying(false);
-      });
   };
 
   // Save changes and proceed
@@ -448,47 +321,7 @@ export default function OnboardingAiSetupPage() {
           </p>
         </div>
 
-        {/* SECTION 3: LIVE PREVIEW PLAYBACK */}
-        <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#140A02] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-            Preview
-          </label>
 
-          <div className="p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF9F6] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex gap-3 items-center min-w-0">
-              <SpeakerHigh className="w-5 h-5 text-[#FF6B00] shrink-0" weight="fill" />
-              <div className="text-xs text-[#5A5A66] leading-relaxed truncate pr-2">
-                <span>Your AI will say: </span>
-                <span className="font-bold text-[#140A02] italic">
-                  &quot;{firstMessage || "..."}&quot;
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleHearIt}
-              disabled={!firstMessage.trim() || isTtsGenerating}
-              className="flex items-center justify-center gap-2 border border-[#FF6B00] hover:bg-[#FF6B00] text-[#FF6B00] hover:text-white py-2 px-5 rounded-lg text-xs font-bold transition-all w-full sm:w-[160px] h-10 shrink-0 select-none cursor-pointer"
-            >
-              {isTtsGenerating ? (
-                <>
-                  <Spinner className="w-3.5 h-3.5 animate-spin" />
-                  <span>Generating...</span>
-                </>
-              ) : isPlaying ? (
-                <>
-                  <Pause className="w-3.5 h-3.5" weight="fill" />
-                  <span>Pause</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5" weight="fill" />
-                  <span>🔊 Hear It</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
 
         {/* CTA Next Button */}
         <button
