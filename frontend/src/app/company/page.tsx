@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Mail,
-  Linkedin,
   CheckCircle2,
   TrendingUp,
   Users,
@@ -339,108 +338,7 @@ export default function CompanyPage() {
           </div>
         </section>
 
-        {/* SECTION 3: THE FOUNDING TEAM */}
-        <section className="py-20 border-t border-[#F3E4D4] bg-[#FFFDF8]">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="max-w-3xl mb-16">
-              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                Founders
-              </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
-                Meet the Founders
-              </h2>
-              <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
-                {"We're a small, hyper-focused team building the future of automated business communications."}
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
-              {/* Founder 1: Raviteja */}
-              <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl flex flex-col sm:flex-row gap-6 hover:shadow-sm transition-all duration-300">
-                <div className="shrink-0 flex items-center justify-center">
-                  {/* Custom Graphic Avatar */}
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#E05E00] flex items-center justify-center text-white font-bold text-3xl shadow-sm relative overflow-hidden">
-                    <span className="relative z-10">R</span>
-                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-white via-transparent to-black" />
-                  </div>
-                </div>
-                <div className="flex-grow flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-[#140A02]">Raviteja</h3>
-                    <p className="text-xs font-semibold text-[#FF6B00] uppercase tracking-wider mb-3">
-                      Founder &amp; CTO
-                    </p>
-                    <p className="text-sm text-[#6B5A4C] leading-relaxed mb-6 font-normal">
-                      {"Built Bavio's entire AI pipeline from scratch. Integrated our proprietary voice pipeline, enterprise-grade voice infrastructure, WhatsApp, and orchestrated sub-100ms latency. Former AI infrastructure lead and full-stack developer. Obsessed with making AI work for businesses everywhere."}
-                    </p>
-                  </div>
-                  <div className="border-t border-[#F3E4D4] pt-4 flex gap-4">
-                    <a
-                      href="mailto:raviteja@bavio.in"
-                      className="inline-flex items-center gap-1 text-xs text-[#6B5A4C] hover:text-[#FF6B00] transition-colors font-semibold"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      raviteja@bavio.in
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/in/bavio-ai-a34bb93ba/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-[#6B5A4C] hover:text-[#FF6B00] transition-colors font-semibold"
-                    >
-                      <Linkedin className="w-3.5 h-3.5" />
-                      LinkedIn
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Founder 2: Praneeth */}
-              <div className="bg-white border border-[#F3E4D4] p-8 rounded-3xl flex flex-col sm:flex-row gap-6 hover:shadow-sm transition-all duration-300">
-                <div className="shrink-0 flex items-center justify-center">
-                  {/* Custom Graphic Avatar */}
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#E05E00] to-[#140A02] flex items-center justify-center text-white font-bold text-3xl shadow-sm relative overflow-hidden">
-                    <span className="relative z-10">P</span>
-                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-white via-transparent to-black" />
-                  </div>
-                </div>
-                <div className="flex-grow flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-[#140A02]">Praneeth</h3>
-                    <p className="text-xs font-semibold text-[#FF6B00] uppercase tracking-wider mb-3">
-                      CEO
-                    </p>
-                    <p className="text-sm text-[#6B5A4C] leading-relaxed mb-6 font-normal">
-                      Leads product decisions and customer acquisition. Spent 3
-                      months talking to real estate agencies to understand the
-                      exact problem Bavio solves. Former product builder and
-                      customer researcher. Believes growing businesses deserve better
-                      tools.
-                    </p>
-                  </div>
-                  <div className="border-t border-[#F3E4D4] pt-4 flex gap-4">
-                    <a
-                      href="mailto:praneeth@bavio.in"
-                      className="inline-flex items-center gap-1 text-xs text-[#6B5A4C] hover:text-[#FF6B00] transition-colors font-semibold"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      praneeth@bavio.in
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/in/bavio-ai-a34bb93ba/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-[#6B5A4C] hover:text-[#FF6B00] transition-colors font-semibold"
-                    >
-                      <Linkedin className="w-3.5 h-3.5" />
-                      LinkedIn
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* SECTION 4: WHAT WE'VE BUILT (Product Timeline) */}
         <section className="py-20 border-t border-[#F3E4D4] bg-white/40">
