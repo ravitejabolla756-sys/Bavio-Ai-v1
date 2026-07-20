@@ -148,7 +148,7 @@ function OnboardingContent() {
               Tell us about your business
             </h1>
             <p className="text-body-xs text-[#5A5A66] leading-relaxed">
-              We'll use this description to teach your AI receptionist about your services, hours, and business details.
+              {"We'll use this description to teach your AI receptionist about your services, hours, and business details."}
             </p>
           </div>
 

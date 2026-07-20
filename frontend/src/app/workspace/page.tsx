@@ -151,7 +151,7 @@ export default function WorkspaceHome() {
             <div>
               <div className="font-sans font-extrabold text-[13px] tracking-wide text-amber-950">No Dedicated Phone Number Assigned</div>
               <p className="text-[11px] text-amber-800/80 leading-relaxed mt-1">
-                You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls.
+                {"You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls."}
               </p>
             </div>
           </div>
@@ -197,7 +197,6 @@ export default function WorkspaceHome() {
                 <span className="text-ink bg-saffron/5 border border-saffron/10 px-2 py-0.5 rounded text-[10px] uppercase font-bold">
                   {profile.voice || "Meera"}
                 </span>
-              </div>
               </div>
             </div>
           </div>
