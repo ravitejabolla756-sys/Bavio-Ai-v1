@@ -583,55 +583,7 @@ export default function CompanyPage() {
           </div>
         </section>
 
-        {/* SECTION 6: MEDIA & PRESS */}
-        <section className="py-16 border-t border-[#F3E4D4] bg-[#FFFDF8]">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center">
-            <span className="text-xs uppercase tracking-widest text-[#6B5A4C] font-bold">
-              Media &amp; Pitching
-            </span>
-            <h3 className="text-lg font-bold text-[#140A02] mt-2 mb-8">
-              Launching Soon &amp; Currently Pitching To
-            </h3>
 
-            <div className="flex flex-wrap justify-center items-center gap-12 opacity-60">
-              <div className="flex flex-col items-center">
-                <span className="font-sans font-black text-xl tracking-tighter text-[#6B5A4C]">
-                  Y Combinator
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-[#FF6B00] font-bold">
-                  S26 Applicant
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <span className="font-display font-extrabold text-xl tracking-tight text-[#6B5A4C]">
-                  YOURSTORY
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-[#FF6B00] font-bold">
-                  Pitch Deck Submitted
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <span className="font-sans font-bold text-xl tracking-tight text-[#6B5A4C]">
-                  Inc42
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-[#FF6B00] font-bold">
-                  Beta Launch Pitch
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <span className="font-serif italic font-extrabold text-xl text-[#6B5A4C]">
-                  TechCrunch
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-[#FF6B00] font-bold">
-                  Disrupt Application
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* SECTION 7: JOIN THE TEAM (Hiring) */}
         <section className="py-20 border-t border-[#F3E4D4] bg-white/40">
