@@ -65,11 +65,11 @@ async function saveStep(req, res) {
             name = $1,
             industry = $2,
             owner_mobile = $3,
-            phone = $3,
-            business_description = COALESCE($5, business_description),
+            phone = $4,
+            business_description = COALESCE($6, business_description),
             updated_at = NOW()
-          WHERE id = $4`,
-          [businessName, industry, ownerMobile, clientId, data.businessDescription]
+          WHERE id = $5`,
+          [businessName, industry, ownerMobile, ownerMobile, clientId, data.businessDescription]
         );
 
         // Check if assistant exists
@@ -92,25 +92,27 @@ async function saveStep(req, res) {
           await db.query(
             `UPDATE assistants SET
               agent_name = $1,
-              name = $1,
-              voice = $2,
-              voice_id = $2,
-              industry = $3,
-              system_prompt = $4,
+              name = $2,
+              voice = $3,
+              voice_id = $4,
+              industry = $5,
+              system_prompt = $6,
               updated_at = NOW()
-            WHERE business_id = $5`,
-            [agentName, voice || 'meera', industry, systemPrompt, clientId]
+            WHERE business_id = $7`,
+            [agentName, agentName, voice || 'meera', voice || 'meera', industry, systemPrompt, clientId]
           );
         } else {
           const insertResult = await db.query(
             `INSERT INTO assistants
               (business_id, name, agent_name, greeting, voice, voice_id, industry, language, system_prompt, is_active)
-             VALUES ($1, $2, $2, $3, $4, $4, $5, 'en-US', $6, false)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'en-US', $8, false)
              RETURNING id`,
             [
               clientId,
               agentName,
+              agentName,
               `Hello. This is ${agentName} from ${businessName}. How may I assist you today?`,
+              voice || 'meera',
               voice || 'meera',
               industry,
               systemPrompt
