@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const sarvamService = require('../services/sarvamService');
+const openAIService = require('../services/openAIService');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
 const { requireAuth } = require('../middleware/auth');
 const { checkMinutesLimit } = require('../middleware/planEnforcement');
@@ -52,7 +52,8 @@ router.post('/stt', requireAuth, upload.single('audio'), async (req, res) => {
         }
 
         const languageCode = req.body.language_code || 'en-IN';
-        const transcript = await sarvamService.speechToText(req.file.buffer, languageCode);
+        const sttResult = await openAIService.transcribeAudio(req.file.buffer, languageCode);
+        const transcript = sttResult.text;
         
         res.json({
             success: true,
@@ -77,10 +78,10 @@ router.post('/tts', requireAuth, async (req, res) => {
         }
 
         const languageCode = language_code || 'hi-IN';
-        const audioBuffer = await sarvamService.textToSpeech(text, languageCode);
+        const audioBuffer = await openAIService.textToSpeech(text, 'alloy', languageCode, 'mp3');
         
         // Return audio as binary
-        res.set('Content-Type', 'audio/wav');
+        res.set('Content-Type', 'audio/mpeg');
         res.set('X-Text', encodeURIComponent(text));
         res.send(audioBuffer);
     } catch (error) {
@@ -101,9 +102,14 @@ router.post('/chat', requireAuth, async (req, res) => {
         }
 
         const systemPrompt = system_prompt || voiceOrchestrator.DEFAULT_SYSTEM_PROMPT;
-        const history = conversation_history || [];
+        const formattedHistory = (conversation_history || []).map(m => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content || ''
+        }));
+        formattedHistory.push({ role: 'user', content: transcript });
         
-        const aiResponse = await sarvamService.chat(transcript, systemPrompt, history);
+        const chatResult = await openAIService.chat(systemPrompt, formattedHistory, null);
+        const aiResponse = chatResult.response_text;
         
         res.json({
             success: true,

@@ -1,4 +1,4 @@
-const sarvamService = require('./sarvamService');
+const openAIService = require('./openAIService');
 const db = require('../database/db');
 const { incrementMinutesUsed } = require('../middleware/planEnforcement');
 
@@ -8,7 +8,7 @@ Be concise, friendly, and professional.
 Reply in the same language the customer uses.`;
 
 /**
- * Process a complete voice call through Sarvam AI pipeline
+ * Process a complete voice call through OpenAI pipeline
  * @param {Buffer} audioBuffer - Incoming audio from caller
  * @param {number} clientId - Client ID
  * @param {string} callId - Call identifier
@@ -20,12 +20,13 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
     try {
         // Step 1: Speech to Text
         console.log(`[Call ${callId}] Step 1: Converting speech to text...`);
-        const transcript = await sarvamService.speechToText(audioBuffer, 'hi-IN');
+        const sttResult = await openAIService.transcribeAudio(audioBuffer, 'hi-IN');
+        const transcript = sttResult.text;
         console.log(`[Call ${callId}] Transcript: "${transcript}"`);
 
         if (!transcript || transcript.trim().length === 0) {
             const fallbackText = "Namaste! Main Bavio AI hoon. Kripya dobara koshish karein.";
-            const fallbackAudio = await sarvamService.textToSpeech(fallbackText, 'hi-IN');
+            const fallbackAudio = await openAIService.textToSpeech(fallbackText, 'alloy', 'hi-IN', 'mp3');
             return {
                 audioBuffer: fallbackAudio,
                 transcript: '',
@@ -47,14 +48,27 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
 
         const systemPrompt = assistantResult.rows[0]?.system_prompt || DEFAULT_SYSTEM_PROMPT;
 
-        // Step 3: Chat with AI
+        // Step 3: Fetch history and Chat with AI
         console.log(`[Call ${callId}] Step 3: Getting AI response...`);
-        const aiResponse = await sarvamService.chat(transcript, systemPrompt, []);
+        const rawHistory = await getConversationHistory(callId);
+        const history = [];
+        for (const turn of rawHistory) {
+            if (turn.transcript) {
+                history.push({ role: 'user', content: turn.transcript });
+            }
+            if (turn.ai_response) {
+                history.push({ role: 'assistant', content: turn.ai_response });
+            }
+        }
+        history.push({ role: 'user', content: transcript });
+
+        const chatResult = await openAIService.chat(systemPrompt, history, null);
+        const aiResponse = chatResult.response_text;
         console.log(`[Call ${callId}] AI Response: "${aiResponse}"`);
 
         // Step 4: Text to Speech
         console.log(`[Call ${callId}] Step 4: Converting to speech...`);
-        const responseAudio = await sarvamService.textToSpeech(aiResponse, 'hi-IN');
+        const responseAudio = await openAIService.textToSpeech(aiResponse, 'alloy', 'hi-IN', 'mp3');
 
         // Step 5: Save to DB
         console.log(`[Call ${callId}] Step 5: Saving conversation...`);
@@ -87,7 +101,7 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
         // Return fallback audio on error
         try {
             const fallbackText = "Maaf kijiye, koi technical problem ho gayi hai. Kripya baad mein koshish karein.";
-            const fallbackAudio = await sarvamService.textToSpeech(fallbackText, 'hi-IN');
+            const fallbackAudio = await openAIService.textToSpeech(fallbackText, 'alloy', 'hi-IN', 'mp3');
             return {
                 audioBuffer: fallbackAudio,
                 transcript: '',
