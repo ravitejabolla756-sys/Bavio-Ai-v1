@@ -7,10 +7,7 @@ const voiceOrchestrator = require('../services/voiceOrchestrator');
 async function handleIncoming(req, res) {
     try {
         const body = req.body;
-
-        // Detect the provider by looking at the body signature
-        const isExotel = Boolean(body.CallSid && body.Status && body.From);
-        const providerName = isExotel ? 'exotel' : 'twilio';
+        const providerName = 'twilio';
         const provider = providerFactory.getProvider(providerName);
 
         const callData = await provider.handleIncomingCall(req);
@@ -22,11 +19,12 @@ async function handleIncoming(req, res) {
             [calledNumber]
         );
 
+        let phoneNumberId = null;
         if (numResult.rows.length === 0) {
             console.warn(`No phone_number record found for ${calledNumber}`);
         } else {
-            const phoneNumberId = numResult.rows[0].id;
-            // Insert initial call log (duration/cost will be updated by /status webhook)
+            phoneNumberId = numResult.rows[0].id;
+            // Insert initial call log
             await db.query(
                 `INSERT INTO calls (phone_number_id, provider_call_id, caller_number, call_status, duration, cost)
                  VALUES ($1, $2, $3, 'in-progress', 0, 0)
@@ -50,45 +48,33 @@ async function handleIncoming(req, res) {
                     // For testing/demo: return welcome message
                     const welcomeText = "Namaste! Main Bavio AI hoon. Aapki kya madad kar sakta hoon?";
                     const welcomeAudio = await voiceOrchestrator.DEFAULT_SYSTEM_PROMPT ? 
-                        await require('../services/sarvamService').textToSpeech(welcomeText, 'hi-IN') : null;
+                        await require('../services/openAIService').textToSpeech(welcomeText, 'alloy', 'hi-IN', 'mp3') : null;
                 }
 
                 if (audioBuffer && phoneNumberId) {
-                    // Get client_id from phone number record
                     const numData = numResult.rows[0];
                     const clientId = numData.client_id;
                     
-                    // Process through Sarvam AI pipeline
+                    // Process through OpenAI pipeline
                     const result = await voiceOrchestrator.processVoiceCall(
                         audioBuffer, 
                         clientId, 
                         providerCallId
                     );
 
-                    // Return audio response
-                    if (providerName === 'twilio') {
-                        // For Twilio: return audio URL or play directly
-                        res.set('Content-Type', 'text/xml');
-                        const audioBase64 = result.audioBuffer.toString('base64');
-                        return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Play>${audioBase64}</Play></Response>`);
-                    }
-                    
-                    // For Exotel or direct response: return audio buffer
-                    res.set('Content-Type', 'audio/wav');
-                    return res.send(result.audioBuffer);
+                    // For Twilio: return audio URL or play directly
+                    res.set('Content-Type', 'text/xml');
+                    const audioBase64 = result.audioBuffer.toString('base64');
+                    return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Play>${audioBase64}</Play></Response>`);
                 }
             } catch (voiceError) {
                 console.error('Voice processing error:', voiceError);
-                // Fall through to default response
             }
         }
 
         // Default welcome response (if no audio or error)
-        if (providerName === 'twilio') {
-            res.set('Content-Type', 'text/xml');
-            return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Namaste! Bavio AI mein aapka swagat hai. Kripya apna sawal poochiye.</Say></Response>`);
-        }
-        res.status(200).send('OK');
+        res.set('Content-Type', 'text/xml');
+        return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Namaste! Bavio AI mein aapka swagat hai. Kripya apna sawal poochiye.</Say></Response>`);
     } catch (err) {
         console.error('Incoming call error:', err);
         res.status(500).json({ error: err.message });

@@ -63,7 +63,7 @@ const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
-const exotelRoutes = require('./routes/exotelRoutes');
+
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const phoneRoutes = require('./routes/phone');
 const demoRoutes = require('./routes/demo');
@@ -74,7 +74,7 @@ const userRoutes = require('./routes/user');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
-app.use('/calls/exotel', exotelRoutes);
+
 app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
