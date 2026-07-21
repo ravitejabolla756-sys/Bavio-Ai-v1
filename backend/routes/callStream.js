@@ -1,7 +1,6 @@
 const WebSocket = require('ws');
 const db = require('../database/db');
 const openAIService = require('../services/openAIService');
-const elevenLabsService = require('../services/elevenLabsService');
 const deepgramService = require('../services/deepgramService');
 const encryption = require('../utils/encryption');
 
@@ -182,7 +181,7 @@ twilioWss.on('connection', async (ws, request) => {
     conversationHistory.push({ role: 'assistant', content: greeting });
     console.log(`[Twilio Stream] Speaking Greeting: "${greeting}"`);
     try {
-      const mulawAudio = await elevenLabsService.textToSpeech(greeting, voiceId, language, 'ulaw_8000', clientKeys.elevenlabs);
+      const mulawAudio = await openAIService.textToSpeech(greeting, voiceId, language, 'ulaw_8000', clientKeys.openai);
       streamAudioToTwilio(mulawAudio);
     } catch (err) {
       console.error('[Twilio Stream] Failed to play greeting:', err.message);
@@ -255,7 +254,7 @@ twilioWss.on('connection', async (ws, request) => {
       }
 
       // 4. ElevenLabs TTS
-      const replyAudio = await elevenLabsService.textToSpeech(llmResult.response_text, voiceId, language, 'ulaw_8000', clientKeys.elevenlabs);
+      const replyAudio = await openAIService.textToSpeech(llmResult.response_text, voiceId, language, 'ulaw_8000', clientKeys.openai);
       
       // 5. Stream back
       streamAudioToTwilio(replyAudio);

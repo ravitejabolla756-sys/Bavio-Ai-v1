@@ -18,7 +18,7 @@
 const { supabase } = require('../database/db');
 const redisService = require('../services/redis/redisService');
 const { resolveBusinessFromCall } = require('../services/phone/callRoutingService');
-const ttsService = require('../services/sarvam/tts');
+const ttsService = require('../services/openAIService');
 
 // ── POST /calls/exotel/incoming ───────────────────────────────────────
 async function handleIncomingExotel(req, res) {
@@ -274,7 +274,7 @@ async function handleRecording(req, res) {
     // STT — Sarvam STT
     let userText = '';
     try {
-      const sttService = require('../services/sarvam/stt');
+      const sttService = require('../services/openAIService');
       const sttResult = await sttService.transcribeAudio(
         audioBuffer, session.language
       );
@@ -324,7 +324,7 @@ async function handleRecording(req, res) {
     // LLM
     let llmResult;
     try {
-      const llmService = require('../services/sarvam/llm');
+      const llmService = require('../services/openAIService');
       // Build dynamic prompt using business system_prompt if available, else assistant
       const systemPrompt = business?.system_prompt || llmService.buildSystemPrompt(assistant, business);
       llmResult = await llmService.generateResponse(
