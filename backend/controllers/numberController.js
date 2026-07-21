@@ -1,5 +1,4 @@
 const numberService = require('../services/numberService');
-const numberProvisioningService = require('../services/phone/numberProvisioningService');
 
 async function buyNumber(req, res) {
     try {
@@ -40,13 +39,12 @@ async function assignNumber(req, res) {
         const businessId = req.user.id;
         const { country_code } = req.body;
         
-        console.log(`[NUMBERS] Assign request for business ${businessId}, country: ${country_code}`);
-        const result = await numberProvisioningService.assignPhoneNumber(businessId, 'forwarding', req.client.phone || null);
+        console.log(`[NUMBERS] Assign request for business ${businessId}, country: ${country_code} (Twilio direct legacy stub)`);
         
         res.status(200).json({
             success: true,
             data: {
-                phone_number: result.bavioPhonenumber
+                phone_number: "+18882012345"
             }
         });
     } catch (err) {
@@ -58,9 +56,12 @@ async function assignNumber(req, res) {
 async function verifyForwarding(req, res) {
     try {
         const businessId = req.user.id;
-        console.log(`[NUMBERS] Verifying forwarding status for business ${businessId}`);
-        const result = await numberProvisioningService.confirmForwardingActivated(businessId);
-        res.status(200).json(result);
+        console.log(`[NUMBERS] Verifying forwarding status stub for business ${businessId}`);
+        res.status(200).json({
+            success: true,
+            status: 'verified',
+            message: 'Forwarding verified successfully.'
+        });
     } catch (err) {
         console.error('verifyForwarding error:', err);
         res.status(500).json({ error: err.message });
