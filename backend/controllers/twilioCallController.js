@@ -6,6 +6,7 @@ const ttsService   = require('../services/openAIService'); // synthesizeSpeech()
 const storageService = require('../services/storage/storageService');
 const audioService = require('../services/audio/audioService');
 const axios = require('axios');
+const { checkCallBalance, deductCallSeconds } = require('../middleware/planEnforcement');
 
 const activeRequests = {};
 
@@ -121,27 +122,35 @@ async function handleIncomingCall(req, res) {
       assistant?.first_message || 'Namaste! Main aapki kaise madad kar sakta hoon?';
     const language = assistant?.language || 'hi-IN';
 
-    // ── Check if business has remaining minutes ──────────────────────────
+    // ── Check dual-balance (monthly seconds + top-up seconds) ────────────
     if (businessId) {
       try {
-        const bizResult = await db.query(
-          'SELECT minutes_limit, minutes_used FROM businesses WHERE id = $1',
-          [businessId]
-        );
-        if (bizResult.rows.length > 0) {
-          const { minutes_limit, minutes_used } = bizResult.rows[0];
-          if (minutes_limit !== null && minutes_used !== null && minutes_limit - minutes_used <= 0) {
-            console.log(`[TWILIO] Limit reached for business ${businessId} (${minutes_used}/${minutes_limit})`);
-            res.type('text/xml');
-            return res.send(`<?xml version="1.0" encoding="UTF-8"?>
+        const balance = await checkCallBalance(businessId);
+        if (!balance.allowed) {
+          const reason = balance.reason || 'usage_exhausted';
+          console.log(`[TWILIO] Call blocked for business ${businessId}. Reason: ${reason}. Balance: monthly=${balance.monthlyRemainingSeconds}s topup=${balance.topupRemainingSeconds}s`);
+
+          // Log the blocked call
+          try {
+            await db.query(
+              `INSERT INTO blocked_calls (business_id, provider_call_sid, blocked_reason, created_at)
+               VALUES ($1, $2, $3, NOW())`,
+              [businessId, CallSid, reason]
+            );
+          } catch (blockLogErr) {
+            console.error('[TWILIO] Failed to log blocked call:', blockLogErr.message);
+          }
+
+          res.type('text/xml');
+          return res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say language="${language}">Aapke account ka monthly limit poora ho chuka hai. Kripya upgrade/recharge karein.</Say>
+  <Say language="en-US">Your account has no remaining call minutes. Please log in to your Bavio dashboard to purchase additional minutes.</Say>
   <Hangup/>
 </Response>`);
-          }
         }
-      } catch (bizErr) {
-        console.error('[TWILIO] Business limit check error:', bizErr.message);
+      } catch (balanceErr) {
+        console.error('[TWILIO] Balance check error:', balanceErr.message);
+        // Non-fatal: allow call to proceed if check fails
       }
     }
 

@@ -48,6 +48,26 @@ async function assignNumber(req, res) {
         const { country_code, assistant_id } = req.body;
         const country = (country_code || 'US').toUpperCase().trim();
 
+        // Enforce included phone numbers limit
+        const countRes = await db.query(
+            "SELECT COUNT(*)::int as count FROM phone_numbers WHERE business_id = $1 AND status = 'active'",
+            [businessId]
+        );
+        const activeCount = countRes.rows[0].count;
+
+        const bizRes = await db.query(
+            "SELECT included_phone_numbers FROM businesses WHERE id = $1",
+            [businessId]
+        );
+        const includedLimit = bizRes.rows[0]?.included_phone_numbers || 1;
+
+        if (activeCount >= includedLimit) {
+            return res.status(403).json({
+                error: 'limit_reached',
+                message: `You have reached the maximum number of virtual phone numbers included in your plan (${includedLimit} number). Please contact support to request additional numbers at $10/month.`
+            });
+        }
+
         // 1. Validate country against supported countries list
         let countries = [];
         try {

@@ -1,33 +1,23 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  CreditCard, 
-  CurrencyDollar, 
-  Check, 
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  CreditCard,
+  Check,
   Warning,
-  Download
+  Plus,
+  ArrowRight
 } from "@phosphor-icons/react";
 import { billingApi, getClientId, BillingStatus, PaymentRecord } from "@/lib/api";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
 export default function BillingLedger() {
   const [invoices, setInvoices] = useState<PaymentRecord[]>([]);
-  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
+  const [billingStatus, setBillingStatus] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [autoRecharge, setAutoRecharge] = useState(true);
-  const [thresholdLimit, setThresholdLimit] = useState(10);
-  const [rechargeValue, setRechargeValue] = useState(50);
-  const [showPaySuccessToast, setShowPaySuccessToast] = useState(false);
-  const [isProcessingPay, setIsProcessingPay] = useState(false);
+  const [topupLoading, setTopupLoading] = useState<string | null>(null);
 
   const clientId = getClientId();
 
@@ -49,88 +39,55 @@ export default function BillingLedger() {
 
   useEffect(() => {
     loadData();
-    // Load Razorpay Script
-    if (!document.getElementById("razorpay-script")) {
-      const script = document.createElement("script");
-      script.id = "razorpay-script";
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      document.body.appendChild(script);
-    }
   }, [loadData]);
 
-  // Handle top-up payment via Razorpay
-  const handleTopUp = async () => {
-    setIsProcessingPay(true);
+  // Handle purchasing minute top-up
+  const handleBuyTopup = async (topupId: string) => {
+    setTopupLoading(topupId);
     setError(null);
     try {
-      // 1. Create order on backend
-      const order = await billingApi.createRazorpayOrder({
-        amount: rechargeValue,
-        type: "topup"
+      const res = await fetch("/api/billing/create-topup-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ topupId }),
       });
-
-      // 2. Open Razorpay Checkout
-      const options = {
-        key: order.key_id,
-        amount: order.amount,
-        currency: order.currency,
-        name: "Bavio AI",
-        description: `Top-Up ${rechargeValue} USD Credits`,
-        order_id: order.order_id,
-        handler: async function (response: any) {
-          try {
-            // 3. Verify payment on backend
-            await billingApi.verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              type: "topup",
-              topupMinutes: rechargeValue / 0.10 // Approx 0.10 USD per minute
-            });
-            setShowPaySuccessToast(true);
-            setTimeout(() => setShowPaySuccessToast(false), 3000);
-            loadData(); // Reload balances
-          } catch (verifyErr: any) {
-            setError(verifyErr.message || "Payment verification failed.");
-          }
-        },
-        prefill: {
-          name: "Workspace Owner",
-          email: "billing@workspace.com",
-        },
-        theme: {
-          color: "#FF6B00"
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 503) {
+          setError("This top-up is being prepared for launch. Please check back shortly.");
+        } else if (res.status === 403) {
+          setError("An active Bavio subscription is required to purchase top-up minutes.");
+        } else {
+          setError(data.message || "Failed to create checkout");
         }
-      };
-
-      const rzp1 = new window.Razorpay(options);
-      rzp1.on('payment.failed', function (response: any) {
-        setError(`Payment Failed: ${response.error.description}`);
-      });
-      rzp1.open();
-
+        return;
+      }
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
     } catch (err: any) {
-      setError(err.message || "Could not initialize payment");
+      setError("Network error. Please try again.");
     } finally {
-      setIsProcessingPay(false);
+      setTopupLoading(null);
     }
   };
 
-  // Remaining minutes directly mapped from limits and usage if available
-  const minutesRemaining = useMemo(() => {
-    if (!billingStatus) return 0;
-    return Math.max(0, (billingStatus.minutes_limit || 0) - (billingStatus.minutes_used || 0));
-  }, [billingStatus]);
-  
-  // Approximate credits based on remaining minutes
-  const creditsBalance = minutesRemaining * 0.10;
+  // Minutes calculations from billingStatus
+  const clientData = billingStatus?.client || billingStatus?.data || {};
+
+  const monthlyLimitMin = clientData.monthlyMinutesLimit ?? (Math.ceil((clientData.monthly_limit_seconds || 0) / 60) || Math.ceil((clientData.minutes_limit || 0)));
+  const monthlyUsedMin = clientData.monthlyMinutesUsed ?? (Math.ceil((clientData.monthly_usage_seconds || 0) / 60) || Math.ceil((clientData.minutes_used || 0)));
+  const monthlyRemMin = Math.max(0, monthlyLimitMin - monthlyUsedMin);
+  const topupRemMin = clientData.topupMinutesRemaining ?? Math.ceil((clientData.topup_balance_seconds || 0) / 60);
+  const totalAvailableMin = clientData.totalMinutesAvailable ?? (monthlyRemMin + topupRemMin);
+  const usagePercent = monthlyLimitMin > 0 ? Math.min(100, Math.round((monthlyUsedMin / monthlyLimitMin) * 100)) : 0;
 
   if (loading) {
     return (
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div>
-          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Billing & Ledger</h1>
+          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Billing & Usage</h1>
           <p className="text-body-xs text-ink-tertiary mt-1">Loading billing data...</p>
         </div>
         <div className="card-bezel animate-pulse"><div className="card-bezel-inner h-64 bg-surface-raised/20" /></div>
@@ -141,119 +98,157 @@ export default function BillingLedger() {
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
       
-      {/* Title Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-left">
-          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Billing & Ledger</h1>
-          <p className="text-body-xs text-ink-tertiary mt-1">Manage compute credits balance, billing limits, and transaction histories.</p>
+          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Billing & Usage</h1>
+          <p className="text-body-xs text-ink-tertiary mt-1">Manage your monthly subscription, minute balances, and top-ups.</p>
         </div>
-        <button
-          onClick={handleTopUp}
-          disabled={isProcessingPay}
-          className="bg-saffron text-white text-[10px] font-bold uppercase tracking-widest px-5 py-3.5 rounded-full hover:bg-saffron-hover hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 self-start disabled:bg-saffron-hover"
+        <Link
+          href="/dashboard/billing/topups"
+          className="bg-saffron text-white text-[11px] font-bold uppercase tracking-widest px-5 py-3.5 rounded-full hover:bg-saffron-hover hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 self-start shadow-sm"
         >
-          {isProcessingPay ? (
-            <span>Processing...</span>
-          ) : (
-            <>
-              <CurrencyDollar className="w-3.5 h-3.5" weight="bold" />
-              Add ${rechargeValue.toLocaleString()} Credits
-            </>
-          )}
-        </button>
+          <Plus className="w-3.5 h-3.5" weight="bold" />
+          Buy Minute Top-Up
+        </Link>
       </div>
 
       {error && (
         <div className="bg-state-error/10 border border-state-error/20 p-4 rounded-xl flex items-center gap-3">
-          <Warning className="w-5 h-5 text-state-error" />
+          <Warning className="w-5 h-5 text-state-error shrink-0" />
           <p className="text-body-xs text-state-error">{error}</p>
+        </div>
+      )}
+
+      {/* Warning Alert Banner when total balance is low (< 30 minutes) */}
+      {totalAvailableMin <= 30 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Warning className="w-5 h-5 text-amber-600 shrink-0" />
+            <p className="text-xs text-amber-900 font-medium">
+              {totalAvailableMin === 0 ? (
+                <span><strong>Usage limit reached:</strong> Your AI receptionist is paused. Purchase a minute top-up to resume answering calls instantly.</span>
+              ) : (
+                <span><strong>Low minute balance:</strong> You have only <strong>{totalAvailableMin} minutes</strong> remaining across your monthly plan and top-ups.</span>
+              )}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/billing/topups"
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg shrink-0 transition-colors"
+          >
+            Top Up Now
+          </Link>
         </div>
       )}
 
       {/* CORE WORKSPACE GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full">
         
-        {/* LEFT COLUMN: CREDITS BALANCE HUD & AUTO-RECHARGE CONFIGS */}
+        {/* LEFT COLUMN: BALANCE SUMMARY & TOP-UP OPTIONS */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           
-          {/* Credits Balance odometer HUD */}
+          {/* Active Balance Card */}
           <div className="card-bezel">
             <div className="card-bezel-inner p-6 flex flex-col justify-between bg-surface text-left">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary">Active compute ledger balance</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary">Total Available Call Minutes</span>
                   <h3 className="text-4xl font-bold font-mono text-ink mt-1 tracking-tight">
-                    ${creditsBalance.toFixed(2)}
+                    {totalAvailableMin.toLocaleString()} <span className="text-xl font-normal text-ink-tertiary">mins</span>
                   </h3>
                 </div>
-                <span className="text-[9px] font-mono bg-saffron-muted text-saffron border border-saffron-border px-2.5 py-0.5 rounded">
-                  ≈ {minutesRemaining.toLocaleString()} call mins
+                <span className="text-[10px] font-mono bg-saffron-muted text-saffron border border-saffron-border px-3 py-1 rounded-full font-bold uppercase">
+                  {clientData.subscriptionPlan || clientData.plan || 'Active Subscriber'}
                 </span>
               </div>
 
-              <div className="bg-surface-raised border border-line rounded-2xl p-4 flex items-center gap-3">
-                <Warning className="w-4.5 h-4.5 text-saffron shrink-0 mt-0.5" />
-                <p className="text-[10px] text-ink-secondary leading-relaxed">
-                  Platform charges strictly per compute minute used. When credits balance reaches zero, incoming trunk pipelines are queued to default overflow voice lines.
-                </p>
+              {/* Progress bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-xs text-ink-secondary mb-2 font-mono">
+                  <span>Monthly usage: {monthlyUsedMin} / {monthlyLimitMin} mins</span>
+                  <span>{usagePercent}% used</span>
+                </div>
+                <div className="w-full h-2.5 bg-surface-raised rounded-full overflow-hidden border border-line">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      usagePercent >= 90 ? 'bg-red-500' : usagePercent >= 70 ? 'bg-amber-500' : 'bg-saffron'
+                    }`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Dual Balance Breakdown */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-line">
+                <div className="bg-surface-raised p-3.5 rounded-xl border border-line">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary block">Monthly Allowance</span>
+                  <p className="text-lg font-bold font-mono text-ink mt-0.5">{monthlyRemMin} mins <span className="text-xs font-normal text-ink-tertiary">remaining</span></p>
+                  <span className="text-[9px] text-ink-tertiary block mt-1">Resets each billing cycle</span>
+                </div>
+                <div className="bg-surface-raised p-3.5 rounded-xl border border-line">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink-tertiary block">Prepaid Top-Up Balance</span>
+                  <p className="text-lg font-bold font-mono text-saffron mt-0.5">{topupRemMin} mins <span className="text-xs font-normal text-ink-tertiary">available</span></p>
+                  <span className="text-[9px] text-ink-tertiary block mt-1">Never expires · Carries over</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Auto-recharge settings panel */}
+          {/* Quick Minute Top-Ups Panel */}
           <div className="card-bezel">
             <div className="card-bezel-inner p-6 flex flex-col gap-5 bg-surface text-left">
               <div className="flex justify-between items-center border-b border-line pb-4">
                 <div>
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Auto-Refill Threshold</h3>
-                  <p className="text-[10px] text-ink-tertiary mt-0.5">Control automatic wallet refilling targets.</p>
+                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Prepaid Minute Top-Ups</h3>
+                  <p className="text-[10px] text-ink-tertiary mt-0.5">Top-up minutes are used after your monthly allowance is consumed.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-xl px-3 py-1.5 text-[10px] font-mono text-ink-secondary">
-                  <input
-                    type="checkbox"
-                    id="enableRefill"
-                    checked={autoRecharge}
-                    onChange={(e) => setAutoRecharge(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-saffron bg-canvas cursor-pointer rounded"
-                  />
-                  <label htmlFor="enableRefill" className="cursor-pointer select-none font-semibold">Enable Auto-Refill</label>
-                </div>
+                <Link
+                  href="/dashboard/billing/topups"
+                  className="text-xs text-saffron hover:underline font-bold flex items-center gap-1"
+                >
+                  View All Top-Ups <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
 
-              {/* Slider threshold configurator */}
-              <div className={`flex flex-col gap-6 transition-opacity duration-200 ${autoRecharge ? "opacity-100" : "opacity-45 pointer-events-none"}`}>
-                {/* Threshold Limit slider */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-[10px] font-semibold text-ink-tertiary">
-                    <span>Trigger recharge when balance drops below:</span>
-                    <span className="text-saffron font-bold font-mono">${thresholdLimit}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 100 Min Card */}
+                <div className="bg-surface-raised border border-line rounded-xl p-4 flex flex-col justify-between hover:border-saffron transition-all">
+                  <div>
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-bold text-sm text-ink">100 Minutes</h4>
+                      <span className="text-base font-bold font-mono text-saffron">$25</span>
+                    </div>
+                    <p className="text-[10px] text-ink-tertiary">One-time purchase. Used after monthly allowance.</p>
                   </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    step="5"
-                    value={thresholdLimit}
-                    disabled={!autoRecharge}
-                    onChange={(e) => setThresholdLimit(Number(e.target.value))}
-                    className="w-full accent-saffron h-1.5 bg-surface-raised rounded-lg cursor-pointer border border-line"
-                  />
+                  <button
+                    onClick={() => handleBuyTopup('topup_100')}
+                    disabled={topupLoading === 'topup_100'}
+                    className="mt-4 w-full bg-saffron hover:bg-saffron-hover text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {topupLoading === 'topup_100' ? 'Processing...' : 'Buy 100 Min — $25'}
+                  </button>
                 </div>
 
-                {/* Recharge Value select */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">Automated recharge amount</label>
-                  <select
-                    value={rechargeValue}
-                    disabled={!autoRecharge}
-                    onChange={(e) => setRechargeValue(Number(e.target.value))}
-                    className="bg-surface-raised border border-line rounded-xl px-4 py-3 text-body-xs focus:outline-none focus:border-saffron text-ink font-mono w-full"
+                {/* 250 Min Card */}
+                <div className="bg-surface-raised border-2 border-saffron-border rounded-xl p-4 flex flex-col justify-between hover:border-saffron transition-all relative">
+                  <span className="absolute -top-2.5 right-3 bg-saffron text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
+                    Best Value
+                  </span>
+                  <div>
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-bold text-sm text-ink">250 Minutes</h4>
+                      <span className="text-base font-bold font-mono text-saffron">$55</span>
+                    </div>
+                    <p className="text-[10px] text-ink-tertiary">Save 12%. Carries over month-to-month.</p>
+                  </div>
+                  <button
+                    onClick={() => handleBuyTopup('topup_250')}
+                    disabled={topupLoading === 'topup_250'}
+                    className="mt-4 w-full bg-saffron hover:bg-saffron-hover text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    <option value="25">Add $25 Credits</option>
-                    <option value="50">Add $50 Credits</option>
-                    <option value="100">Add $100 Credits</option>
-                    <option value="250">Add $250 Credits</option>
-                  </select>
+                    {topupLoading === 'topup_250' ? 'Processing...' : 'Buy 250 Min — $55'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -267,8 +262,8 @@ export default function BillingLedger() {
             <div>
               <div className="flex justify-between items-center border-b border-line pb-4 mb-5">
                 <div>
-                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Invoice History</h3>
-                  <p className="text-[10px] text-ink-tertiary mt-0.5">Download previous compute transaction receipts.</p>
+                  <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Payment History</h3>
+                  <p className="text-[10px] text-ink-tertiary mt-0.5">Subscription and top-up receipts.</p>
                 </div>
                 <CreditCard className="w-4 h-4 text-saffron" />
               </div>
@@ -276,7 +271,7 @@ export default function BillingLedger() {
               {/* Invoices List Table */}
               <div className="flex flex-col gap-3">
                 {invoices.length === 0 ? (
-                  <p className="text-[10px] text-ink-muted text-center py-6">No previous invoices found.</p>
+                  <p className="text-[10px] text-ink-muted text-center py-6">No previous transactions found.</p>
                 ) : (
                   invoices.map((inv) => (
                     <div 
@@ -285,22 +280,19 @@ export default function BillingLedger() {
                     >
                       <div className="flex flex-col gap-1 text-left">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-ink font-mono">{inv.id.substring(0,8)}</span>
+                          <span className="text-xs font-bold text-ink font-mono">{inv.id.substring(0,12)}</span>
                           <span className="text-[9px] font-mono text-ink-muted">
                             {new Date(inv.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <span className="text-[9px] font-mono text-ink-tertiary">{inv.plan}</span>
+                        <span className="text-[9px] font-mono text-ink-tertiary capitalize">{inv.plan || (inv as any).payment_type || 'Payment'}</span>
                       </div>
-  
+
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-xs font-bold font-mono text-ink">${inv.amount.toLocaleString()}</span>
-                        <button 
-                          className="p-1.5 bg-line-subtle/50 hover:bg-line-subtle border border-line rounded-lg text-ink-secondary hover:text-ink transition-all"
-                          aria-label="Download Invoice PDF"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
+                        <span className="text-[9px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          {inv.status || 'paid'}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -309,29 +301,14 @@ export default function BillingLedger() {
             </div>
 
             <div className="border-t border-line pt-4 mt-6 flex justify-between items-center text-[10px] font-mono text-ink-muted">
-              <span>Invoices include local sales tax if applicable</span>
-              <span className="text-ink-tertiary font-bold">Billing profile active</span>
+              <span>Bavio uses 100% prepaid billing with zero overage charges</span>
+              <span className="text-ink-tertiary font-bold">Active</span>
             </div>
           </div>
         </div>
 
       </div>
 
-      {/* QUICK PAYMENT SUCCESS TOAST */}
-      <AnimatePresence>
-        {showPaySuccessToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 right-6 z-50 bg-state-success border border-state-success/30 px-5 py-3.5 rounded-xl shadow-premium text-white text-[10px] font-bold font-mono flex items-center gap-2.5"
-          >
-            <Check className="w-4 h-4 border border-white/30 rounded-full p-0.5" />
-            <span>${rechargeValue.toLocaleString()} credits added successfully to wallet.</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
     </div>
   );
 }

@@ -22,17 +22,8 @@ async function processCallEnd({ providerCallId, phoneNumberId, callerNumber, dur
     const businessId = numResult.rows[0]?.business_id;
 
     if (businessId) {
-        // Insert usage log
-        await db.query(
-            `INSERT INTO usage_logs (user_id, call_id, minutes_used, cost_total) VALUES ($1, $2, $3, $4)`,
-            [businessId, call.id, durationMinutes, cost]
-        );
-
-        // Update business minutes_used
-        await db.query(
-            `UPDATE businesses SET minutes_used = minutes_used + $1 WHERE id = $2`,
-            [durationMinutes, businessId]
-        );
+        const { incrementMinutesUsed } = require('../middleware/planEnforcement');
+        await incrementMinutesUsed(businessId, durationMinutes, providerCallId);
     }
 
     return call;
