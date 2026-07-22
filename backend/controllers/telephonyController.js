@@ -108,16 +108,6 @@ async function handleStatus(req, res) {
                 callerNumber: call.caller_number,
                 durationSeconds
             });
-
-            // Track minutes usage for client billing
-            const phoneResult = await db.query(
-                'SELECT client_id FROM phone_numbers WHERE id = $1',
-                [call.phone_number_id]
-            );
-            if (phoneResult.rows.length > 0) {
-                const clientId = phoneResult.rows[0].client_id;
-                await incrementMinutesUsed(clientId, Math.ceil(durationSeconds / 60));
-            }
         } else {
             // Update the status only
             await db.query(

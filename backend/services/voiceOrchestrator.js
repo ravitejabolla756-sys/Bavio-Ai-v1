@@ -94,7 +94,7 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
 
         // Step 6: Track minutes usage
         const durationMinutes = Math.ceil(duration / 60);
-        await incrementMinutesUsed(clientId, durationMinutes);
+        await incrementMinutesUsed(clientId, durationMinutes, callId);
 
         return {
             audioBuffer: responseAudio,

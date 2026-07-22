@@ -89,7 +89,7 @@ export default function WorkspaceSubscription() {
       setSubscribing(planName);
       setErrorMsg(null);
       
-      const result = await billingApi.subscribe(planName, profile?.country || "US");
+      const result = await billingApi.subscribe(planName, "US");
       if (result.url || result.checkoutUrl) {
         window.location.href = result.url || result.checkoutUrl;
       } else {
@@ -128,13 +128,13 @@ export default function WorkspaceSubscription() {
   }
 
   const planDisplay =
-    profile?.plan_name === "starter"
+    profile?.plan_name?.toLowerCase() === "starter"
       ? "Starter Plan"
-      : profile?.plan_name === "growth"
+      : profile?.plan_name?.toLowerCase() === "growth"
       ? "Growth Plan"
-      : profile?.plan_name === "scale"
+      : profile?.plan_name?.toLowerCase() === "scale"
       ? "Scale Plan"
-      : "Free Trial / Plan";
+      : "No Active Plan";
 
   const expiryFormatted = profile?.current_period_end
     ? new Date(profile.current_period_end).toLocaleDateString("en-US", {
@@ -151,7 +151,7 @@ export default function WorkspaceSubscription() {
       
       {/* Header */}
       <div>
-        <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Subscription & Billing</h1>
+        <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Subscription &amp; Billing</h1>
         <p className="text-body-xs text-ink-tertiary mt-1">Review active plan parameters, upgrade/downgrade tiers, and view invoices.</p>
       </div>
 
@@ -175,7 +175,7 @@ export default function WorkspaceSubscription() {
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold font-mono text-saffron">
-                  {profile?.plan_name === "starter" ? "$49" : profile?.plan_name === "growth" ? "$99" : profile?.plan_name === "scale" ? "$199" : "Free"}
+                  {profile?.plan_name?.toLowerCase() === "starter" ? "$39" : profile?.plan_name?.toLowerCase() === "growth" ? "$99" : profile?.plan_name?.toLowerCase() === "scale" ? "$249" : "N/A"}
                 </span>
                 <span className="text-[10px] text-ink-muted block font-semibold">/month</span>
               </div>
@@ -185,7 +185,7 @@ export default function WorkspaceSubscription() {
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Talk Time Limit</span>
                 <span className="text-body-sm font-bold text-ink-secondary">
-                  {profile?.minutes_used || 0} / {profile?.minutes_limit || 30} mins
+                  {profile?.minutes_used || 0} / {profile?.minutes_limit || 120} mins
                 </span>
               </div>
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
@@ -223,17 +223,17 @@ export default function WorkspaceSubscription() {
               <div>
                 <h3 className="font-bold text-body-sm text-ink mb-1">Starter</h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-xl font-bold font-mono text-ink">$49</span>
+                  <span className="text-xl font-bold font-mono text-ink">$39</span>
                   <span className="text-[10px] text-ink-muted">/mo</span>
                 </div>
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>AI Call Receptionist</span>
+                    <span>120 included minutes</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>Dedicated Phone Number</span>
+                    <span>1 local Bavio phone number</span>
                   </li>
                 </ul>
               </div>
@@ -267,11 +267,11 @@ export default function WorkspaceSubscription() {
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>Increased limits</span>
+                    <span>400 included minutes</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>Premium support</span>
+                    <span>Detailed analytics</span>
                   </li>
                 </ul>
               </div>
@@ -299,17 +299,17 @@ export default function WorkspaceSubscription() {
               <div>
                 <h3 className="font-bold text-body-sm text-ink mb-1">Scale</h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-xl font-bold font-mono text-ink">$199</span>
+                  <span className="text-xl font-bold font-mono text-ink">$249</span>
                   <span className="text-[10px] text-ink-muted">/mo</span>
                 </div>
                 <ul className="flex flex-col gap-2 text-body-xs text-ink-secondary font-semibold mb-6">
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>Maximum minutes limit</span>
+                    <span>1,200 included minutes</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-state-success" weight="bold" />
-                    <span>Dedicated manager</span>
+                    <span>Advanced analytics</span>
                   </li>
                 </ul>
               </div>
@@ -349,7 +349,7 @@ export default function WorkspaceSubscription() {
                       <span className="text-[10px] font-semibold text-ink-secondary">{new Date(p.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold font-mono text-ink block">{p.currency === "INR" ? "₹" : "$"}{p.amount}</span>
+                      <span className="font-bold font-mono text-ink block">${p.amount}</span>
                       <span className="text-[9px] uppercase font-bold text-state-success">{p.status}</span>
                     </div>
                   </div>

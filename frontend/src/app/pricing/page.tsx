@@ -20,7 +20,7 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { apiFetch, authApi } from "@/lib/api";
 
-// ─── Number Counter Component ────────────────────────────────────────────────
+// â”€â”€â”€ Number Counter Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function UsageCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
   const [count, setCount] = useState(0);
   const elementRef = useRef<HTMLSpanElement>(null);
@@ -58,14 +58,14 @@ function UsageCounter({ value, duration = 1000 }: { value: number; duration?: nu
   return <span ref={elementRef}>{count.toLocaleString()}</span>;
 }
 
-// ─── FAQ Accordion Item ───────────────────────────────────────────────────────
+// â”€â”€â”€ FAQ Accordion Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border-b border-[#2a2010] py-5 last:border-b-0">
+    <div className="border-b border-[#E8E0D5] py-5 last:border-b-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center text-left py-2 font-bold text-[#F5F0E8] hover:text-[#FF6B00] transition-colors"
+        className="w-full flex justify-between items-center text-left py-2 font-bold text-[#140A02] hover:text-[#FF6B00] transition-colors"
       >
         <span className="text-sm font-semibold tracking-wide">{question}</span>
         {isOpen ? (
@@ -93,149 +93,71 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// ─── Currency Types & Configurations ─────────────────────────────────────────
-type CurrencyKey = "USD" | "GBP" | "AUD";
-
-interface CurrencyConfig {
-  symbol: string;
-  name: string;
-  starter: number;
-  growth: number;
-  scale: number;
-  enterprise: number;
-  overageStarter: string;
-  overageGrowth: string;
-  overageScale: string;
-  capGrowth: string;
-  capScale: string;
-}
-
-const CURRENCIES: Record<CurrencyKey, CurrencyConfig> = {
-  USD: {
-    symbol: "$",
-    name: "USA (USD)",
-    starter: 19,
-    growth: 39,
-    scale: 79,
-    enterprise: 199,
-    overageStarter: "$0.15",
-    overageGrowth: "$0.12",
-    overageScale: "$0.08",
-    capGrowth: "$0.60",
-    capScale: "$12"
-  },
-  GBP: {
-    symbol: "£",
-    name: "UK (GBP)",
-    starter: 15,
-    growth: 31,
-    scale: 63,
-    enterprise: 150,
-    overageStarter: "£0.12",
-    overageGrowth: "£0.10",
-    overageScale: "£0.06",
-    capGrowth: "£0.50",
-    capScale: "£10"
-  },
-  AUD: {
-    symbol: "A$",
-    name: "Australia (AUD)",
-    starter: 29,
-    growth: 59,
-    scale: 119,
-    enterprise: 299,
-    overageStarter: "A$0.23",
-    overageGrowth: "A$0.18",
-    overageScale: "A$0.12",
-    capGrowth: "A$1.00",
-    capScale: "A$18"
-  }
-};
-
 const DEFAULT_PLANS = [
   {
     id: "starter",
     name: "Starter",
-    monthlyPrice: 19,
-    annualPrice: 15,
+    priceMonthly: 39,
     currency: "USD",
-    minutes: 200,
-    overagePrice: 0.15,
+    includedMinutes: 200,
+    monthlyMinutes: 200,
+    checkoutAvailable: false,
     features: [
-      "200 included minutes/month",
-      "$0.15 per extra minute",
+      "200 connected call minutes",
+      "1 local Bavio phone number",
       "AI call answering",
-      "Business-specific assistant",
+      "Business-specific AI receptionist",
       "Lead qualification",
       "Call transcripts",
-      "Call recordings where enabled",
       "Lead dashboard",
-      "Usage analytics",
-      "Email alerts"
+      "Business knowledge",
+      "Basic usage analytics"
     ]
   },
   {
     id: "growth",
     name: "Growth",
-    monthlyPrice: 39,
-    annualPrice: 31,
+    priceMonthly: 99,
     currency: "USD",
-    minutes: 500,
-    overagePrice: 0.12,
+    includedMinutes: 500,
+    monthlyMinutes: 500,
     popular: true,
+    checkoutAvailable: false,
     features: [
-      "500 included minutes/month",
-      "$0.12 per extra minute",
-      "All Starter features",
-      "Advanced lead qualification",
-      "WhatsApp notifications (where available)",
-      "Knowledge base document upload",
-      "Priority support"
+      "500 connected call minutes",
+      "1 local Bavio phone number",
+      "Everything in Starter, plus:",
+      "Advanced lead-capture fields",
+      "Longer call-record retention",
+      "Detailed usage analytics",
+      "Priority email support"
     ]
   },
   {
     id: "scale",
     name: "Scale",
-    monthlyPrice: 79,
-    annualPrice: 63,
+    priceMonthly: 249,
     currency: "USD",
-    minutes: 1500,
-    overagePrice: 0.08,
+    includedMinutes: 1500,
+    monthlyMinutes: 1500,
+    checkoutAvailable: false,
     features: [
-      "1500 included minutes/month",
-      "$0.08 per extra minute",
-      "All Growth features",
-      "Full analytics suite",
-      "Custom assistant voice selection",
-      "Developer API access",
-      "Dedicated support specialist"
+      "1,500 connected call minutes",
+      "1 local Bavio phone number",
+      "Everything in Growth, plus:",
+      "Higher calling capacity",
+      "Extended data retention",
+      "Advanced analytics",
+      "Priority support"
     ]
   }
 ];
 
 export default function PricingPage() {
   const router = useRouter();
-  const [currency, setCurrency] = useState<CurrencyKey>("USD");
-  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [activeMobileTab, setActiveMobileTab] = useState<"starter" | "growth" | "scale" | "enterprise">("growth");
-  
   const [plans, setPlans] = useState<any[]>(DEFAULT_PLANS);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [pricingLoaded, setPricingLoaded] = useState(false);
-
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowCurrencyDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Fetch dynamic plans & auth profile on mount
   useEffect(() => {
@@ -263,54 +185,39 @@ export default function PricingPage() {
     loadPricingAndAuth();
   }, []);
 
-  const curConfig = CURRENCIES[currency];
-  const isAnnual = billingCycle === "annual";
-
-  // Compute conversion factor based on chosen local currency config compared to USD base
-  const getConversionFactor = () => {
-    if (currency === "USD") return 1;
-    if (currency === "GBP") return 15 / 19;
-    if (currency === "AUD") return 29 / 19;
-    return 1;
-  };
-
-  const getPrice = (planId: string, baseUSDPrice: number) => {
-    // If currency is USD, return exact configured price
-    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
-    const usdPrice = plan ? (isAnnual ? plan.annualPrice : plan.monthlyPrice) : baseUSDPrice;
-    
-    if (currency === "USD") return usdPrice;
-    
-    // Otherwise, convert using conversion factor
-    return Math.round(usdPrice * getConversionFactor());
-  };
-
-  const getSavings = (planId: string, baseMonthly: number) => {
-    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
-    const monthlyVal = plan ? plan.monthlyPrice : baseMonthly;
-    const annualVal = plan ? plan.annualPrice : Math.round(baseMonthly * 0.80);
-    
-    const savingsUSD = (monthlyVal - annualVal) * 12;
-    if (currency === "USD") return savingsUSD;
-    return Math.round(savingsUSD * getConversionFactor());
-  };
-
   const handleChoosePlan = (planId: string) => {
+    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
+    
+    // If product ID is missing in environment, show launch alert
+    if (plan && plan.checkoutAvailable === false) {
+      alert("This plan is being prepared for launch. Please try again shortly.");
+      return;
+    }
+
     if (!localStorage.getItem("bavio_token")) {
       // Unauthenticated -> Sign Up
       router.push(`/signup?plan=${planId}`);
     } else {
       // Authenticated -> Redirect to Checkout
-      router.push(`/checkout?plan=${planId}&period=${billingCycle}`);
+      router.push(`/checkout?plan=${planId}`);
     }
   };
 
   const getButtonTextAndStyle = (planId: string) => {
+    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
     const isCurrent = userProfile?.subscription_status === "active" && 
                       userProfile?.plan_name?.toLowerCase() === planId.toLowerCase();
     
     const capitalizedPlan = planId.charAt(0).toUpperCase() + planId.slice(1);
     
+    if (plan && plan.checkoutAvailable === false) {
+      return {
+        text: "Coming Soon",
+        disabled: false, // Permit click to display launch alert
+        className: "w-full bg-[#1c160c] text-[#7a6e5f] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center border border-[#2a2010]"
+      };
+    }
+
     if (isCurrent) {
       return {
         text: "Current Plan",
@@ -342,144 +249,65 @@ export default function PricingPage() {
 
   const faqs = [
     {
+      question: "What happens when I use all my included minutes?",
+      answer: "AI call handling pauses automatically when both your monthly allowance and any prepaid top-up balance reach zero. No calls are blocked mid-conversation â€” only new incoming calls pause. You can purchase a prepaid top-up from your billing dashboard to resume immediately."
+    },
+    {
+      question: "Is there any postpaid overage or surprise billing?",
+      answer: "No. Bavio uses a strictly prepaid model. You are never billed after the fact for minutes you did not purchase in advance. There are no per-minute charges after your plan limit."
+    },
+    {
+      question: "What are minute top-ups and how do they work?",
+      answer: "Top-ups are one-time prepaid minute bundles available to active subscribers: 100 minutes for $25 or 250 minutes for $55. Top-up minutes are used only after your monthly allowance is consumed. Unused top-up minutes carry over each month until used."
+    },
+    {
+      question: "Do top-up minutes roll over month to month?",
+      answer: "Yes. Prepaid top-up minutes never expire and carry over to the next billing period. Only your monthly included minutes reset at renewal."
+    },
+    {
       question: "Can I change plans anytime?",
-      answer: "Yes. Upgrade or downgrade any time. Changes take effect immediately. We'll pro-rate charges accordingly."
+      answer: "Yes. Upgrade or downgrade any time from your dashboard. Your new plan takes effect at the start of the next billing period."
     },
     {
-      question: "What happens when I exceed my monthly minutes limit?",
-      answer: "Calls will continue to route seamlessly. Extra minutes are billed at your plan's standard overage rate ($0.08 to $0.15/min) and billed at the end of your billing cycle."
+      question: "Do I get a dedicated phone number?",
+      answer: "Yes. Each plan includes one local virtual business phone number that your customers call to reach your AI receptionist."
     },
     {
-      question: "Do you offer annual billing?",
-      answer: "Yes. Pay annually and save 20% on any plan. Cancel anytime."
-    },
-    {
-      question: "What's included in analytics?",
-      answer: "Call logs, duration, caller sentiment, AI receptionist performance metrics, and lead capture summaries are available in your main dashboard."
-    },
-    {
-      question: "Can I get a custom plan?",
-      answer: "Absolutely. Contact our sales team for plans requiring more than 1,500 minutes per month."
-    },
-    {
-      question: "What's your refund policy?",
-      answer: "Cancel anytime. We don't offer refunds for partial billing periods, but your service will remain active until the end of your current paid duration."
+      question: "Which currencies do you support?",
+      answer: "Bavio bills in USD only."
     }
   ];
 
+
   return (
-    <div className="min-h-screen bg-[#080600] text-[#F5F0E8] font-sans antialiased selection:bg-[#FF6B00]/15 selection:text-[#FF6B00] relative overflow-hidden flex flex-col w-full">
+    <div className="min-h-screen bg-[#F7F4EF] text-[#140A02] font-sans antialiased selection:bg-[#FF6B00]/20 selection:text-[#FF6B00] relative overflow-hidden flex flex-col w-full">
       <Navbar />
-
-      {/* Currency Switcher Fixed Position */}
-      <div className="fixed top-28 right-6 z-40" ref={dropdownRef}>
-        <button
-          onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-          className="flex items-center gap-1.5 bg-[#100e08] border border-[#2a2010] hover:border-[#FF6B00]/40 px-3.5 py-2 rounded-xl text-xs font-bold text-[#F5F0E8] transition-all shadow-sm"
-        >
-          <span>{currency === "USD" ? "🇺🇸 USD" : currency === "GBP" ? "🇬🇧 GBP" : currency === "AUD" ? "🇦🇺 AUD" : "🇸🇬 SGD"}</span>
-          <CaretDown className="w-3.5 h-3.5 text-[#7a6e5f]" />
-        </button>
-
-        <AnimatePresence>
-          {showCurrencyDropdown && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute right-0 mt-2 w-44 bg-[#100e08] border border-[#2a2010] rounded-xl shadow-premium overflow-hidden"
-            >
-              {(Object.keys(CURRENCIES) as CurrencyKey[]).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    setCurrency(key);
-                    setShowCurrencyDropdown(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-white/5 transition-colors ${
-                    currency === key ? "text-[#FF6B00] bg-[#FF6B00]/5" : "text-[#F5F0E8]"
-                  }`}
-                >
-                  {CURRENCIES[key].name}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
       <main className="flex-grow pt-40 lg:pt-44">
         
-        {/* ─── SECTION 1: HERO ─── */}
-        <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-12 text-center relative">
-          <div className="absolute top-[0%] left-[50%] -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-[#FF6B00] opacity-[0.03] filter blur-[100px] pointer-events-none" />
-          
+        {/* â”€â”€â”€ SECTION 1: HERO â”€â”€â”€ */}
+        <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-6 text-center relative">
+          <div className="absolute top-[0%] left-[50%] -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-[#FF6B00] opacity-[0.04] filter blur-[120px] pointer-events-none" />
+
           <div className="max-w-4xl mx-auto space-y-6">
-            <h1 
+            <h1
               style={{ fontSize: "48px", fontWeight: 700 }}
-              className="text-[#F5F0E8] leading-tight tracking-tight max-w-[900px] mx-auto font-serif"
+              className="text-[#140A02] leading-tight tracking-tight max-w-[900px] mx-auto font-serif"
             >
               Simple, Transparent Pricing
             </h1>
             <p className="text-sm md:text-base text-[#7a6e5f] leading-relaxed max-w-2xl mx-auto font-sans font-normal">
-              Never pay for minutes you don&apos;t use. Switch plans anytime.
+              USD, billed monthly. Switch or cancel plans anytime.
             </p>
           </div>
         </section>
 
-        {/* ─── Billing Toggle ─── */}
-        <section className="flex flex-col items-center pb-12 px-6">
-          <div className="flex items-center gap-1 bg-[#100e08] border border-[#2a2010] rounded-full p-1 shadow-sm">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-6 py-2 rounded-full text-xs font-bold font-sans transition-all duration-200 ${
-                billingCycle === "monthly"
-                  ? "bg-[#FF6B00] text-[#080600]"
-                  : "text-[#7a6e5f] hover:text-[#F5F0E8]"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle("annual")}
-              className={`px-6 py-2 rounded-full text-xs font-bold font-sans transition-all duration-200 flex items-center gap-2 ${
-                billingCycle === "annual"
-                  ? "bg-[#FF6B00] text-[#080600]"
-                  : "text-[#7a6e5f] hover:text-[#F5F0E8]"
-              }`}
-            >
-              Annual
-              <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                billingCycle === "annual" ? "bg-[#080600] text-[#FF6B00]" : "bg-[#FF6B00] text-[#080600]"
-              }`}>
-                Save 20%
-              </span>
-            </button>
-          </div>
-
-          {/* Dynamic Savings Notification */}
-          <div className="h-6 mt-3">
-            <AnimatePresence mode="wait">
-              {isAnnual && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  className="text-xs text-[#10B981] font-bold"
-                >
-                  Save {curConfig.symbol}{getSavings("growth", 39).toLocaleString()} per year on Growth plan
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
-        </section>
-
-        {/* ─── SECTION 2: PRICING CARDS ─── */}
-        <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
+        {/* â”€â”€â”€ SECTION 2: PRICING CARDS â”€â”€â”€ */}
+        <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-20 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch max-w-6xl mx-auto">
             
             {/* CARD 1: STARTER */}
-            <div className="bg-[#100e08] border border-[#2a2010] rounded-[24px] p-8 flex flex-col justify-between h-[680px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] relative">
+            <div className="bg-white border border-[#E8E0D5] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative">
               <div className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Starter</span>
@@ -488,18 +316,18 @@ export default function PricingPage() {
 
                 <div className="flex items-baseline gap-1">
                   <span style={{ fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
-                    {curConfig.symbol}{getPrice("starter", 19).toLocaleString()}
+                    $39
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
+                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={200} /> included minutes/month</span>
                   </p>
                   <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
-                    <span>$0.15 per extra minute</span>
+                    <span>No overage — calls pause when minutes are used</span>
                   </p>
                 </div>
 
@@ -516,16 +344,16 @@ export default function PricingPage() {
                   );
                 })()}
 
-                <div className="border-t border-[#2a2010] my-4" />
+                <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#F5F0E8] font-sans font-semibold">
+                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>AI call answering</span>
+                    <span>1 local Bavio phone number</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Business-specific assistant</span>
+                    <span>AI call answering & Persona</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
@@ -533,24 +361,28 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Call transcripts & recordings</span>
+                    <span>Call transcripts</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Usage analytics & Email alerts</span>
+                    <span>Lead dashboard & Knowledge</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Basic usage analytics</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="text-[11px] text-[#7a6e5f] text-center pt-4">
+              <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
                 Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
               </div>
             </div>
 
             {/* CARD 2: GROWTH */}
-            <div className="bg-[#100e08] border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-[710px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.06)]">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-[#080600] text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-sm">
-                ⭐ Most Popular
+            <div className="bg-white border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[720px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.10)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-sm">
+                â­ Most Popular
               </div>
 
               <div className="space-y-6">
@@ -561,18 +393,18 @@ export default function PricingPage() {
 
                 <div className="flex items-baseline gap-1">
                   <span style={{ fontSize: "52px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
-                    {curConfig.symbol}{getPrice("growth", 39).toLocaleString()}
+                    $99
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
+                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={500} /> included minutes/month</span>
                   </p>
                   <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
-                    <span>$0.12 per extra minute</span>
+                    <span>No overage — calls pause when minutes are used</span>
                   </p>
                 </div>
 
@@ -589,9 +421,9 @@ export default function PricingPage() {
                   );
                 })()}
 
-                <div className="border-t border-[#2a2010] my-4" />
+                <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#F5F0E8] font-sans font-semibold">
+                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>All Starter features</span>
@@ -602,26 +434,26 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>WhatsApp notifications (where available)</span>
+                    <span>Detailed usage analytics</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Knowledge base document upload</span>
+                    <span>Longer call-record retention</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Priority Support</span>
+                    <span>Priority email support</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="text-[11px] text-[#7a6e5f] text-center pt-4">
+              <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
                 Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
               </div>
             </div>
 
             {/* CARD 3: SCALE */}
-            <div className="bg-[#100e08] border border-[#2a2010] rounded-[24px] p-8 flex flex-col justify-between h-[680px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] relative">
+            <div className="bg-white border border-[#E8E0D5] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative">
               <div className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Scale</span>
@@ -630,18 +462,18 @@ export default function PricingPage() {
 
                 <div className="flex items-baseline gap-1">
                   <span style={{ fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
-                    {curConfig.symbol}{getPrice("scale", 79).toLocaleString()}
+                    $249
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
+                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={1500} /> included minutes/month</span>
                   </p>
                   <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
-                    <span>$0.08 per extra minute</span>
+                    <span>No overage — calls pause when minutes are used</span>
                   </p>
                 </div>
 
@@ -658,33 +490,95 @@ export default function PricingPage() {
                   );
                 })()}
 
-                <div className="border-t border-[#2a2010] my-4" />
+                <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#F5F0E8] font-sans font-semibold">
+                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>All Growth features</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Full analytics suite</span>
+                    <span>Higher calling capacity</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Custom assistant voice selection</span>
+                    <span>Extended data retention</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Developer API access</span>
+                    <span>Advanced analytics</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Dedicated support specialist</span>
+                    <span>Priority Support</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="text-[11px] text-[#7a6e5f] text-center pt-4">
+              <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
+                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
+              </div>
+            </div>
+
+            {/* CARD 4: BUSINESS */}
+            <div className="bg-white border border-[#E8E0D5] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative">
+              <div className="space-y-6">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Business</span>
+                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Enterprises & Custom Receptionist Needs</span>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span style={{ fontSize: "36px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
+                    Contact Sales
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0" />
+                    <span>Custom call volume & minutes</span>
+                  </p>
+                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
+                    <span>Tailored plan agreement</span>
+                  </p>
+                </div>
+
+                <Link
+                  href="/contact?subject=business-plan"
+                  className="w-full bg-transparent hover:bg-[#FF6B00] hover:text-white border border-[#FF6B00] text-[#FF6B00] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center block"
+                >
+                  Contact Sales
+                </Link>
+
+                <div className="border-t border-[#E8E0D5] my-4" />
+
+                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Multiple local receptionist numbers</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Custom onboarding assistance</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Higher call concurrency</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Custom call record retention policies</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
+                    <span>Contract-based billing</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
                 Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
               </div>
             </div>
@@ -692,56 +586,80 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ─── SECTION 3: ENTERPRISE (CUSTOM BANNER) ─── */}
-        <section className="max-w-5xl mx-auto px-6 md:px-8 pb-20">
-          <div className="bg-[#100e08] border border-[#2a2010] p-8 md:p-10 rounded-[24px] flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
-            <div className="absolute top-[0%] right-[0%] w-64 h-64 bg-[#FF6B00] opacity-[0.02] rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="space-y-4 max-w-2xl text-left">
-              <span className="text-[10px] uppercase font-bold text-[#FF6B00] tracking-wider block">Need More?</span>
-              <h2 className="text-2xl font-bold text-[#F5F0E8] font-serif">
-                Enterprise plans start at {curConfig.symbol}{getPrice("scale", 79).toLocaleString()}/month
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs text-[#7a6e5f] font-sans font-semibold mt-2">
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> Unlimited concurrent calls</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> Dedicated infrastructure</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> 99.99% SLA guarantee</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> Custom integrations</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> Dedicated success manager</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> SSO + SAML authentication</p>
-              </div>
-            </div>
-
-            <Link
-              href="/contact"
-              className="bg-transparent border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-[#080600] text-[#FF6B00] font-bold text-xs py-3.5 px-6 rounded-xl uppercase tracking-wider transition-all text-center whitespace-nowrap self-start md:self-auto"
-            >
-              Contact Sales
-            </Link>
+        {/* â”€â”€â”€ SECTION 3: PREPAID TOP-UP NOTE â”€â”€â”€ */}
+        <section className="py-10 border-y border-[#E8E0D5] bg-[#FFF8F0]">
+          <div className="max-w-4xl mx-auto px-6 md:px-8 text-center space-y-2">
+            <p className="text-sm font-semibold text-[#140A02] font-sans">
+              Need more minutes before your monthly renewal?
+            </p>
+            <p className="text-sm text-[#7a6e5f] font-sans">
+              Active subscribers can purchase prepaid minute top-ups ($25 for 100 min Â· $55 for 250 min) from their billing dashboard. Top-up minutes are used after your monthly allowance. AI call handling pauses when both balances are used.
+            </p>
           </div>
         </section>
 
-        {/* ─── SECTION 4: FAQ (ACCORDION) ─── */}
-        <section className="py-20 border-t border-[#2a2010] bg-[#100e08]/20" id="faq">
+        {/* â”€â”€â”€ SECTION 4: TRUST BADGES â”€â”€â”€ */}
+        <section className="py-16 border-b border-[#E8E0D5] bg-white">
+          <div className="max-w-5xl mx-auto px-6 md:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸ”’ SOC 2 Compliant</span>
+                <span className="text-[11px] font-sans text-[#7a6e5f]">Enterprise-grade security standards</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
+                  <Pulse className="w-6 h-6" />
+                </div>
+                <span className="text-[13px] font-bold font-sans text-[#140A02]">âœ… HIPAA Ready</span>
+                <span className="text-[11px] font-sans text-[#7a6e5f]">Safe healthcare caller data handling</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸŒ GDPR Compliant</span>
+                <span className="text-[11px] font-sans text-[#7a6e5f]">Encrypted PII databases</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸ” Encrypted at Rest</span>
+                <span className="text-[11px] font-sans text-[#7a6e5f]">PCI DSS compliant environment</span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* â”€â”€â”€ SECTION 5: FAQ (ACCORDION) â”€â”€â”€ */}
+        <section className="py-20 border-t border-[#E8E0D5] bg-[#F7F4EF]" id="faq">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto">
-              
+
               {/* Left Column Label */}
               <div className="lg:col-span-4 text-left">
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-sans">
-                  Billing & Plans
+                  Billing &amp; Plans
                 </span>
-                <h2 className="text-3xl font-bold text-[#F5F0E8] mt-2 leading-tight font-serif">
+                <h2 className="text-3xl font-bold text-[#140A02] mt-2 leading-tight font-serif">
                   Frequently Asked Questions
                 </h2>
                 <p className="text-[#7a6e5f] text-xs mt-3 leading-relaxed font-sans font-normal">
-                  Have questions about minutes, payment methods, or receptionist workflows? Here are common answers.
+                  Have questions about minutes, top-ups, or how billing works? Here are common answers.
                 </p>
               </div>
 
               {/* Right Column Accordions */}
-              <div className="lg:col-span-8 bg-[#100e08] border border-[#2a2010] p-8 rounded-[24px] shadow-sm text-left">
-                <div className="divide-y divide-[#2a2010]">
+              <div className="lg:col-span-8 bg-white border border-[#E8E0D5] p-8 rounded-[24px] shadow-sm text-left">
+                <div className="divide-y divide-[#E8E0D5]">
                   {faqs.map((faq, idx) => (
                     <FaqItem key={idx} question={faq.question} answer={faq.answer} />
                   ))}
@@ -752,74 +670,27 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ─── SECTION 5: TRUST BADGES ─── */}
-        <section className="py-16 border-y border-[#2a2010] bg-[#100e08]/30">
-          <div className="max-w-5xl mx-auto px-6 md:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/10">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#F5F0E8]">🔒 SOC 2 Compliant</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Enterprise-grade security standards</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/10">
-                  <Pulse className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#F5F0E8]">✅ HIPAA Ready</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Safe healthcare caller data handling</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/10">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#F5F0E8]">🌍 GDPR Compliant</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Encrypted PII databases</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/10">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#F5F0E8]">🔐 Encrypted at Rest</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">PCI DSS compliant environment</span>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ─── SECTION 6: CTA FOOTER ─── */}
+        {/* â”€â”€â”€ SECTION 6: CTA FOOTER â”€â”€â”€ */}
         <section className="py-24 text-center max-w-4xl mx-auto px-6 md:px-8 space-y-6 relative">
-          <div className="absolute inset-0 bg-[#FF6B00] opacity-[0.01] rounded-full blur-3xl pointer-events-none" />
-          
-          <h2 className="text-[#F5F0E8] leading-tight tracking-tight font-serif text-[36px] font-bold">
+          <h2 className="text-[#140A02] leading-tight tracking-tight font-serif text-[36px] font-bold">
             Ready to never miss a call again?
           </h2>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
             <button
               onClick={() => handleChoosePlan("growth")}
-              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
+              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#E55A00] text-white font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
             >
               Get Started with Growth
             </button>
-            
+
             <Link
               href="/demo"
-              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-[#080600] text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
+              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
             >
               Try the AI Assistant Demo
             </Link>
           </div>
-
-          <p className="text-[11px] text-[#7a6e5f] font-sans font-semibold pt-2">
-            No credit card required to sign up. Cancel anytime.
-          </p>
         </section>
 
       </main>
@@ -828,3 +699,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+

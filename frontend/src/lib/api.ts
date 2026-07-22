@@ -413,6 +413,7 @@ export interface PaymentRecord {
   amount: number;
   currency: string;
   plan: string;
+  payment_type?: string;
   created_at: string;
   status: string;
 }

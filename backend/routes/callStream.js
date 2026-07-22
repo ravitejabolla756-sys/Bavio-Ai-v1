@@ -392,9 +392,9 @@ Speak naturally, keep your answers concise and conversational, and let the calle
         }
       }
 
-      // Charge minutes
-      const { incrementMinutesUsed } = require('../middleware/planEnforcement');
-      await incrementMinutesUsed(businessId, durationMin);
+      // Charge seconds (monthly first, then top-up)
+      const { deductCallSeconds } = require('../middleware/planEnforcement');
+      await deductCallSeconds(businessId, durationSec, callSid);
 
     } catch (err) {
       console.error('[Twilio Stream] Failed to save call summary:', err.message);

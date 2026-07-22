@@ -1,4 +1,32 @@
 require('dotenv').config();
+process.env.DODO_STARTER_PRODUCT_ID = 'pdt_0NdJCmLQ4vEu1ozciOnzC';
+process.env.DODO_GROWTH_PRODUCT_ID = 'pdt_growth_mock';
+process.env.DODO_SCALE_PRODUCT_ID = 'pdt_scale_mock';
+process.env.DODO_WEBHOOK_SECRET = 'whsec_dGVzdF9zZWNyZXRfdGVzdF9zZWNyZXQ=';
+
+const crypto = require('crypto');
+
+function signPayload(body) {
+  const secret = process.env.DODO_WEBHOOK_SECRET;
+  let cleanSecret = secret.startsWith('whsec_') ? secret.substring(6) : secret;
+  const secretBuffer = Buffer.from(cleanSecret, 'base64');
+  
+  const webhookId = `evt_${Math.random().toString(36).substring(2, 11)}`;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+  
+  const toSign = `${webhookId}.${timestamp}.${rawBody}`;
+  const hmac = crypto.createHmac('sha256', secretBuffer);
+  hmac.update(toSign);
+  const hash = hmac.digest('base64');
+  
+  return {
+    'webhook-id': webhookId,
+    'webhook-timestamp': timestamp,
+    'webhook-signature': `v1,${hash}`
+  };
+}
+
 const db = require('./database/db');
 const billingController = require('./controllers/billingController');
 
@@ -124,21 +152,21 @@ async function runBillingTests() {
 
     // 4. Test Webhook Endpoint (subscription.active)
     console.log('\n4. Testing /billing/webhook (subscription.active)...');
-    const activeWebhookReq = {
-      body: {
-        event: 'subscription.active',
-        data: {
-          subscription_id: subscriptionId,
-          product_id: 'pdt_0NdJCmLQ4vEu1ozciOnzC', // starter product id
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          metadata: {
-            business_id: testBusiness.id
-          }
+    const activeWebhookPayload = {
+      event: 'subscription.active',
+      data: {
+        id: subscriptionId,
+        subscription_id: subscriptionId,
+        product_id: 'pdt_0NdJCmLQ4vEu1ozciOnzC', // starter product id
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        metadata: {
+          business_id: testBusiness.id
         }
-      },
-      headers: {
-        'x-webhook-secret': process.env.DODO_WEBHOOK_SECRET || ''
       }
+    };
+    const activeWebhookReq = {
+      body: activeWebhookPayload,
+      headers: signPayload(activeWebhookPayload)
     };
     const activeWebhookRes = mockResponse();
     await billingController.handleWebhook(activeWebhookReq, activeWebhookRes);
@@ -178,22 +206,22 @@ async function runBillingTests() {
     // Overwrite twilio package require cache
     require.cache[require.resolve('twilio')].exports = () => mockTwilioClient;
 
-    const paymentWebhookReq = {
-      body: {
-        event: 'payment.succeeded',
-        data: {
-          id: `pay_${Date.now()}`,
-          customer_id: 'cust_test123',
-          amount: 2900, // $29.00
-          currency: 'USD',
-          metadata: {
-            business_id: testBusiness.id
-          }
+    const paymentWebhookPayload = {
+      event: 'payment.succeeded',
+      data: {
+        id: `pay_${Date.now()}`,
+        customer_id: 'cust_test123',
+        amount: 39.00, // $39.00
+        currency: 'USD',
+        metadata: {
+          business_id: testBusiness.id,
+          plan: 'starter'
         }
-      },
-      headers: {
-        'x-webhook-secret': process.env.DODO_WEBHOOK_SECRET || ''
       }
+    };
+    const paymentWebhookReq = {
+      body: paymentWebhookPayload,
+      headers: signPayload(paymentWebhookPayload)
     };
     const paymentWebhookRes = mockResponse();
     await billingController.handleWebhook(paymentWebhookReq, paymentWebhookRes);

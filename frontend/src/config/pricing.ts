@@ -4,15 +4,13 @@ export interface PricingTierData {
   starter: number;
   growth: number;
   scale: number;
-  overageRate: string;
+  overageRate?: string;
   mostPopularBadge?: string;
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  US: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  GB: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  AU: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  DEFAULT: { currency: "$", currencyCode: "USD", starter: 49, growth: 99, scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
+  US: { currency: "$", currencyCode: "USD", starter: 39, growth: 99, scale: 249, mostPopularBadge: "Most popular" },
+  DEFAULT: { currency: "$", currencyCode: "USD", starter: 39, growth: 99, scale: 249, mostPopularBadge: "Most popular" },
 };
 
 export interface PlanFeature {
@@ -34,13 +32,15 @@ export const PLANS: PlanDetails[] = [
     key: "starter",
     description: "For small businesses starting with voice automation.",
     features: [
-      { text: "200 minutes/month", included: true },
-      { text: "1 AI agent", included: true },
-      { text: "Email support", included: true },
-      { text: "Basic analytics", included: true },
-      { text: "Email lead notifications", included: true },
-      { text: "Dashboard lead storage", included: true },
-      { text: "SMS & WhatsApp notifications", included: false },
+      { text: "200 connected call minutes", included: true },
+      { text: "1 local Bavio phone number", included: true },
+      { text: "AI call answering", included: true },
+      { text: "Business-specific AI receptionist", included: true },
+      { text: "Lead qualification", included: true },
+      { text: "Call transcripts", included: true },
+      { text: "Lead dashboard", included: true },
+      { text: "Business knowledge", included: true },
+      { text: "Basic usage analytics", included: true }
     ],
     popular: false,
   },
@@ -49,13 +49,12 @@ export const PLANS: PlanDetails[] = [
     key: "growth",
     description: "For growing teams that need full-stack voice AI.",
     features: [
-      { text: "500 minutes/month", included: true },
-      { text: "Unlimited agents", included: true },
-      { text: "24/7 phone support", included: true },
-      { text: "Full analytics + exports", included: true },
-      { text: "Email lead notifications", included: true },
-      { text: "SMS lead notifications", included: true },
-      { text: "WhatsApp lead notifications", included: true },
+      { text: "500 connected call minutes", included: true },
+      { text: "Everything in Starter", included: true },
+      { text: "Advanced lead-capture fields", included: true },
+      { text: "Longer call-record retention", included: true },
+      { text: "Detailed usage analytics", included: true },
+      { text: "Priority email support", included: true }
     ],
     popular: true,
   },
@@ -64,14 +63,39 @@ export const PLANS: PlanDetails[] = [
     key: "scale",
     description: "For enterprises that demand reliability and scale.",
     features: [
-      { text: "1,500 minutes/month", included: true },
+      { text: "1,500 connected call minutes", included: true },
       { text: "Everything in Growth", included: true },
-      { text: "Dedicated account manager", included: true },
-      { text: "Custom notification channels", included: true },
-      { text: "Priority support", included: true },
-      { text: "White-label options", included: true },
+      { text: "Higher calling capacity", included: true },
+      { text: "Extended data retention", included: true },
+      { text: "Advanced analytics", included: true },
+      { text: "Priority support", included: true }
     ],
     popular: false,
+  },
+];
+
+export interface TopupOption {
+  id: string;
+  name: string;
+  price: number;
+  minutes: number;
+  description: string;
+}
+
+export const TOPUP_OPTIONS: TopupOption[] = [
+  {
+    id: "topup_100",
+    name: "100-Minute Top-Up",
+    price: 25,
+    minutes: 100,
+    description: "100 prepaid connected call minutes",
+  },
+  {
+    id: "topup_250",
+    name: "250-Minute Top-Up",
+    price: 55,
+    minutes: 250,
+    description: "250 prepaid connected call minutes",
   },
 ];
 
@@ -82,62 +106,43 @@ export interface ComparisonRow {
   scale: string;
 }
 
-export const getComparisonRows = (overageRate: string): ComparisonRow[] => [
+export const getComparisonRows = (): ComparisonRow[] => [
   { feature: "Minutes included", starter: "200", growth: "500", scale: "1,500" },
-  { feature: "AI agents", starter: "1", growth: "Unlimited", scale: "Unlimited" },
-  { feature: "Support", starter: "Email", growth: "24/7 Phone", scale: "Priority + Dedicated" },
-  { feature: "Analytics", starter: "Basic", growth: "Full + Export", scale: "Full + Custom" },
+  { feature: "Local phone numbers", starter: "1 local number", growth: "1 local number", scale: "1 local number" },
+  { feature: "Support", starter: "Email", growth: "Priority Email", scale: "Priority Support" },
+  { feature: "Analytics", starter: "Basic", growth: "Detailed", scale: "Advanced" },
   { feature: "Email notifications", starter: "Yes", growth: "Yes", scale: "Yes" },
-  { feature: "SMS notifications", starter: "No", growth: "Yes", scale: "Yes" },
-  { feature: "WhatsApp notifications", starter: "No", growth: "Yes", scale: "Yes" },
-  { feature: "White-label", starter: "No", growth: "No", scale: "Yes" },
-  {
-    feature: "Overage rate",
-    starter: overageRate,
-    growth: overageRate,
-    scale: overageRate,
-  },
+  { feature: "Call transcripts", starter: "Yes", growth: "Yes", scale: "Yes" },
+  { feature: "Overage billing", starter: "None (Prepaid)", growth: "None (Prepaid)", scale: "None (Prepaid)" },
 ];
 
 export const FAQS = [
   {
-    q: "What happens when I exceed my minutes?",
-    a: "Overage is billed at the specified rate per extra minute depending on your plan. Active calls never drop due to overage. You will receive an email alert at 80% usage.",
+    q: "What happens when I use all my included minutes?",
+    a: "AI call handling pauses automatically when both your monthly allowance and any prepaid top-up balance reach zero. You can purchase a prepaid top-up from your billing dashboard to resume immediately.",
+  },
+  {
+    q: "Is there any postpaid overage or surprise billing?",
+    a: "No. Bavio uses a strictly prepaid model. You are never billed after the fact for minutes you did not purchase in advance.",
+  },
+  {
+    q: "What are minute top-ups and how do they work?",
+    a: "Top-ups are one-time prepaid minute bundles available to active subscribers: 100 minutes for $25 or 250 minutes for $55. Top-up minutes are used after your monthly allowance is consumed and carry over indefinitely.",
+  },
+  {
+    q: "Do top-up minutes roll over month to month?",
+    a: "Yes. Prepaid top-up minutes never expire and carry over to the next billing period.",
   },
   {
     q: "Can I change plans anytime?",
-    a: "Yes. Upgrade or downgrade instantly from your dashboard. Prorated billing is applied immediately. No lock-in contracts.",
-  },
-  {
-    q: "Is there a setup fee?",
-    a: "No setup fee whatsoever. Start immediately after sign-up. Dedicated phone numbers are assigned within 60 seconds.",
+    a: "Yes. Upgrade or downgrade instantly from your dashboard.",
   },
   {
     q: "Do I get a dedicated phone number?",
-    a: "Yes. Each business receives a unique virtual phone number. Growth and Scale plans also support international numbers.",
-  },
-  {
-    q: "How accurate is lead capture?",
-    a: "Bavio captures caller name, phone number, and stated intent from every call. Accuracy depends on call quality, language clarity, and knowledge base setup.",
-  },
-  {
-    q: "Can I add team members?",
-    a: "Growth and Scale plans support unlimited users with role-based access control. Starter plan is single-user.",
-  },
-  {
-    q: "Do you offer annual billing discounts?",
-    a: "Yes. Pay annually and save 20% on any plan. Annual billing is available from the billing settings in your dashboard.",
-  },
-  {
-    q: "Can I white-label Bavio?",
-    a: "Yes, on the Scale plan. Custom branding, your domain name, and branded call experiences. Contact sales for enterprise white-label.",
-  },
-  {
-    q: "Is there a trial period?",
-    a: "Try Bavio's AI receptionist live demo for free. Full custom business onboarding and dedicated numbers unlock upon plan subscription.",
+    a: "Yes. Each plan includes one local virtual business phone number.",
   },
   {
     q: "Which currencies do you support?",
-    a: "Bavio bills in launch currencies including USD for US/Canada, GBP for the UK, AUD for Australia, and SGD for Singapore.",
+    a: "Bavio bills in USD.",
   },
 ];

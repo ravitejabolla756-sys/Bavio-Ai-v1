@@ -430,7 +430,7 @@ export function PricingSelector({
                               const rawValue = (row as any)[planKey];
 
                               if (rawValue === "overageRate") {
-                                displayValue = pricing.overageRate;
+                                displayValue = pricing.overageRate || "None (Prepaid)";
                               } else if (rawValue === "confirmOverage") {
                                 const val = planKey === "growth" ? growthOverage : scaleOverage;
                                 displayValue = val ? `${pricing.currency}${val}/min` : "";
