@@ -29,10 +29,12 @@ import {
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
-  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
-  { name: "Analytics", href: "/dashboard/analytics", icon: ChartBar },
-  { name: "Voice Pipeline", href: "/dashboard/integrations/voice-pipeline", icon: GitFork },
+  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
+  { name: "Assistant", href: "/dashboard/assistant", icon: Users },
+  { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
+  { name: "Phone Numbers", href: "/dashboard/phone-numbers", icon: GitFork },
+  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Gear },
 ];
 

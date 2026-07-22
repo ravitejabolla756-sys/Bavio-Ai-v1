@@ -33,9 +33,9 @@ interface StatusResponse {
 }
 
 const VOICES = [
-  { id: "21m00Tcm4TlvDq8ikWAM", name: "Luna", gender: "Female", lang: "EN - Natural", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
-  { id: "pNInz6obpgfrhhF21wbu", name: "Arjun", gender: "Male", lang: "EN/HI - Hinglish", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Priya", gender: "Female", lang: "HI - Hindi", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" }
+  { id: "21m00Tcm4TlvDq8ikWAM", name: "Luna", gender: "Female", lang: "EN - US (Natural)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
+  { id: "pNInz6obpgfrhhF21wbu", name: "Charles", gender: "Male", lang: "EN - UK (Executive)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
+  { id: "EXAVITQu4vr4xnSDxMaL", name: "Olivia", gender: "Female", lang: "EN - AU (Warming)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" }
 ];
 
 export default function VoicePipelinePage() {

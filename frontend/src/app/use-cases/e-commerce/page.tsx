@@ -29,15 +29,15 @@ export default function ECommerceUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">70% Ticket Deflection</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Ticket Deflection</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">From automated phone support</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">sub-500ms API Lag</span>
+              <span className="text-2xl font-bold font-display text-saffron block">API Integrations</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Real-time shipping updates</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">3x Support Scale</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Scale Support</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Without hiring support agents</span>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function ECommerceUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Scale Post-Purchase Support</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Post-purchase calls about &ldquo;where is my order&rdquo; or return rules occupy customer service teams. Bavio answers calls instantly, authenticates phone numbers, queries shipping APIs, and updates customers immediately.
+                Post-purchase calls about &ldquo;where is my order&rdquo; or return rules occupy customer service teams. Bavio answers calls instantly, queries shipping APIs, and updates customers.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
@@ -56,17 +56,17 @@ export default function ECommerceUseCase() {
                   Real-time Order Tracking
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Bavio connects directly to Delhivery, Shiprocket, or Shopify APIs to get active transit routes and explain tracking details to customers naturally.
+                  Bavio can connect directly to your e-commerce APIs to get active transit routes and explain tracking details to customers naturally.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-saffron" />
-                  Secure Refund Approvals
+                  Refund Registrations
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Validate order statuses, check return window compliance, and automatically queue refund requests within Razorpay or Stripe dashboards.
+                  Validate order statuses, check return window compliance, and automatically log refund requests inside the dashboard.
                 </p>
               </div>
             </div>
@@ -84,7 +84,7 @@ export default function ECommerceUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Shopify/Stripe transaction checks</span>
+                  <span>Transaction checks</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

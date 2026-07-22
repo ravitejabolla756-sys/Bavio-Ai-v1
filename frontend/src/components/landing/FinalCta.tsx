@@ -56,10 +56,10 @@ export default function FinalCta() {
           transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
-            href="/pricing"
+            href="/sign-up"
             className="inline-flex items-center justify-center gap-2 bg-[#140B06] hover:bg-[#140B06]/85 text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-lg hover:shadow-[0_12px_36px_rgba(20,10,2,0.3)] font-sans"
           >
-            Join Waitlist
+            Try Bavio Free
             <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>

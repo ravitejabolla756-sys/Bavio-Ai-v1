@@ -49,30 +49,75 @@ function writeMulawWavHeader(dataLength) {
 twilioWss.on('connection', async (ws, request) => {
   console.log('[Twilio Stream] New WebSocket connection established.');
 
-  // Parse businessId from URL query param
   const urlObj = new URL(request.url, 'http://localhost');
-  const businessId = urlObj.searchParams.get('businessId') || urlObj.searchParams.get('business_id');
+  let callSid = urlObj.searchParams.get('callSid') || urlObj.searchParams.get('CallSid');
 
-  if (!businessId) {
-    console.error('[Twilio Stream] No businessId provided. Closing connection.');
+  if (!callSid) {
+    console.error('[Twilio Stream] No callSid provided. Closing connection.');
     ws.close();
     return;
   }
 
+  // 1. Resolve call session details strictly from DB
+  let session = null;
+  try {
+    const sessionRes = await db.query(
+      "SELECT * FROM call_sessions WHERE call_sid = $1 AND session_status = 'active' LIMIT 1",
+      [callSid]
+    );
+    session = sessionRes.rows[0];
+  } catch (err) {
+    console.error('[Twilio Stream] Call session DB lookup error:', err.message);
+    ws.close();
+    return;
+  }
+
+  if (!session) {
+    console.error(`[Twilio Stream] Active call session not found for CallSid: ${callSid}. Closing.`);
+    ws.close();
+    return;
+  }
+
+  // Enforce session expiration limits (5 minutes)
+  const sessionAge = Date.now() - new Date(session.started_at).getTime();
+  if (sessionAge > 5 * 60 * 1000) {
+    console.error('[Twilio Stream] Call session expired (> 5 minutes). Closing.');
+    ws.close();
+    return;
+  }
+
+  const businessId = session.business_id;
+
   // Fetch business & assistant details from DB
   let business = null;
   let assistant = null;
-  try {
-    const [bizRes, astRes] = await Promise.all([
-      db.query('SELECT * FROM businesses WHERE id = $1', [businessId]),
-      db.query('SELECT * FROM assistants WHERE business_id = $1 LIMIT 1', [businessId])
-    ]);
-    business = bizRes.rows[0];
-    assistant = astRes.rows[0];
-  } catch (err) {
-    console.error('[Twilio Stream] DB lookup error:', err.message);
-    ws.close();
-    return;
+  const isDemo = businessId === '00000000-0000-0000-0000-000000000000';
+
+  if (isDemo) {
+    business = {
+      id: '00000000-0000-0000-0000-000000000000',
+      name: 'Bavio Demo',
+      email: 'demo@bavio.in',
+      phone: '+15555550100'
+    };
+    assistant = {
+      name: 'Bavio Demo Assistant',
+      language: 'en-US',
+      voice: 'alloy'
+    };
+  } else {
+    try {
+      const [bizRes, astRes] = await Promise.all([
+        db.query('SELECT * FROM businesses WHERE id = $1', [businessId]),
+        db.query('SELECT * FROM assistants WHERE business_id = $1 LIMIT 1', [businessId])
+      ]);
+      business = bizRes.rows[0];
+      assistant = astRes.rows[0];
+    } catch (err) {
+      console.error('[Twilio Stream] DB lookup error:', err.message);
+      ws.close();
+      return;
+    }
   }
 
   if (!business || !assistant) {
@@ -83,7 +128,21 @@ twilioWss.on('connection', async (ws, request) => {
 
   const voiceId = assistant.voice;
   const language = assistant.language || 'en-US';
-  const systemPrompt = openAIService.buildSystemPrompt(assistant, business);
+
+  const SHARED_DEMO_PROMPT = `You are Bavio's Shared Demo Assistant. Your goal is to demonstrate Bavio's capabilities to a potential customer in a friendly, conversational manner.
+Answer questions about:
+- What Bavio is: An AI receptionist platform that answers business calls, qualifies leads, and organizes conversations.
+- How Bavio answers business calls: Instantly, naturally, and with 24/7 availability.
+- How business information is provided to an AI receptionist: By entering services, FAQs, and receptionist rules in the onboarding or settings dashboard.
+- How lead qualification works: Bavio pre-screens callers for budget, requirements, and contact details, then logs them.
+- How phone-number forwarding works: Forward existing mobile or landline numbers to a dedicated Bavio number.
+- What appears in the dashboard: Call logs, full transcripts, and qualified leads.
+- Available plans: Starter, Growth, and Scale plans, starting from $49/mo (or ₹1,999/mo depending on country).
+- What happens after payment: Users get a dedicated virtual number and their custom assistant goes live immediately.
+
+Speak naturally, keep your answers concise and conversational, and let the caller know that this demo session will end automatically after 3 minutes.`;
+
+  const systemPrompt = isDemo ? SHARED_DEMO_PROMPT : openAIService.buildSystemPrompt(assistant, business);
 
   // Fetch client API keys if they exist
   let clientKeys = { deepgram: null, openai: null, elevenlabs: null };
@@ -104,7 +163,19 @@ twilioWss.on('connection', async (ws, request) => {
   }
 
   let streamSid = null;
-  let callSid = null;
+  let demoTimer = null;
+
+  if (isDemo) {
+    demoTimer = setTimeout(async () => {
+      console.log(`[Twilio Stream] Demo call session reached 3 minutes limit for CallSid: ${callSid}. Terminating.`);
+      try {
+        const twilioProvider = require('../providers/twilio');
+        await twilioProvider.client.calls(callSid).update({ status: 'completed' });
+      } catch (termErr) {
+        console.error('[Twilio Stream] Failed to terminate demo call at Twilio:', termErr.message);
+      }
+    }, 180000); // 3 minutes
+  }
   let audioChunks = [];
   let silenceCount = 0;
   let isProcessing = false;
@@ -382,6 +453,7 @@ twilioWss.on('connection', async (ws, request) => {
   ws.on('close', () => {
     console.log('[Twilio Stream] WebSocket connection closed.');
     if (playbackInterval) clearInterval(playbackInterval);
+    if (demoTimer) clearTimeout(demoTimer);
   });
 });
 

@@ -28,33 +28,7 @@ interface SaveSetupResponse {
 const SUPPORTED_LANGUAGES = [
   { code: "en-US", name: "English (United States)", flag: "🇺🇸" },
   { code: "en-GB", name: "English (United Kingdom)", flag: "🇬🇧" },
-  { code: "en-IN", name: "English (India)", flag: "🇮🇳" },
-  { code: "en-AU", name: "English (Australia)", flag: "🇦🇺" },
-  { code: "en-CA", name: "English (Canada)", flag: "🇨🇦" },
-  { code: "hi-IN", name: "Hindi (India)", flag: "🇮🇳" },
-  { code: "hinglish", name: "Hinglish (Hindi/English mix)", flag: "🇮🇳" },
-  { code: "es-ES", name: "Spanish (Spain)", flag: "🇪🇸" },
-  { code: "es-MX", name: "Spanish (Mexico)", flag: "🇲🇽" },
-  { code: "fr-FR", name: "French (France)", flag: "🇫🇷" },
-  { code: "de-DE", name: "German (Germany)", flag: "🇩🇪" },
-  { code: "it-IT", name: "Italian (Italy)", flag: "🇮🇹" },
-  { code: "pt-BR", name: "Portuguese (Brazil)", flag: "🇧🇷" },
-  { code: "pt-PT", name: "Portuguese (Portugal)", flag: "🇵🇹" },
-  { code: "ja-JP", name: "Japanese (Japan)", flag: "🇯🇵" },
-  { code: "zh-CN", name: "Chinese (Mandarin)", flag: "🇨🇳" },
-  { code: "ko-KR", name: "Korean (South Korea)", flag: "🇰🇷" },
-  { code: "ar-AE", name: "Arabic (UAE)", flag: "🇦🇪" },
-  { code: "nl-NL", name: "Dutch (Netherlands)", flag: "🇳🇱" },
-  { code: "pl-PL", name: "Polish (Poland)", flag: "🇵🇱" },
-  { code: "sv-SE", name: "Swedish (Sweden)", flag: "🇸🇪" },
-  { code: "tr-TR", name: "Turkish (Turkey)", flag: "🇹🇷" },
-  { code: "vi-VN", name: "Vietnamese (Vietnam)", flag: "🇻🇳" },
-  { code: "fil-PH", name: "Filipino (Philippines)", flag: "🇵🇭" },
-  { code: "el-GR", name: "Greek (Greece)", flag: "🇬🇷" },
-  { code: "da-DK", name: "Danish (Denmark)", flag: "🇩🇰" },
-  { code: "no-NO", name: "Norwegian (Norway)", flag: "🇳🇴" },
-  { code: "fi-FI", name: "Finnish (Finland)", flag: "🇫🇮" },
-  { code: "cs-CZ", name: "Czech (Czech Republic)", flag: "🇨🇿" }
+  { code: "en-AU", name: "English (Australia)", flag: "🇦🇺" }
 ];
 
 export default function OnboardingAiSetupPage() {

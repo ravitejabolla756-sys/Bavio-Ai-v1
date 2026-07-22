@@ -29,12 +29,12 @@ export default function CoachingUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">2,000+ Enrolled</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">From automated phone leads</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Student Enquiries</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">All conversations qualified</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">+22% Admissions</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">In 6 months of use</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Response Rate</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">100% of parent calls answered</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">24/7 Availability</span>
@@ -63,10 +63,10 @@ export default function CoachingUseCase() {
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <ChartBar className="w-5 h-5 text-saffron" />
-                  Lead Scoring & CRM Routing
+                  Lead Scoring & Dashboard Logging
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Classify student intent (high intent vs general queries). Push details instantly into Zoho CRM or Google Sheets, alerting sales counselors for callback closure.
+                  Classify student intent (high intent vs general queries). Push details instantly into the lead dashboard, alerting sales counselors for callback closure.
                 </p>
               </div>
             </div>
@@ -84,7 +84,7 @@ export default function CoachingUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Interactive slot bookings for counseling</span>
+                  <span>Counseling request collection</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />

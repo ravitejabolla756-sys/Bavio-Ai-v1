@@ -20,13 +20,13 @@ import {
 const features = [
   { icon: Clock, title: "Never Miss Calls", desc: "Never place callers on hold. Calls are answered within 1 ring." },
   { icon: UserCheck, title: "Lead Qualification", desc: "Pre-screen callers for budget, intent, location, and requirements." },
-  { icon: Calendar, title: "Appointment Booking", desc: "Book, reschedule, or cancel slots synced straight to your calendar." },
-  { icon: GitBranch, title: "CRM Sync", desc: "Sync leads automatically with Salesforce, HubSpot, or custom webhook targets." },
+  { icon: Calendar, title: "Appointment Requests", desc: "Capture preferred appointment dates, times and customer details for your team to confirm." },
+  { icon: GitBranch, title: "Lead Dashboard", desc: "Organize captured callers, requirements and follow-up details in one workspace." },
   { icon: MessageSquare, title: "Instant Notifications", desc: "Get alerts via WhatsApp, email, or SMS with transcription summaries." },
   { icon: Disc, title: "Call Summaries", desc: "Listen back to recordings and review conversations via dashboard." },
-  { icon: Smile, title: "24×7 Availability", desc: "Natural conversations in 20+ languages, 24/7 availability." },
+  { icon: Smile, title: "24×7 Availability", desc: "Natural conversations with 24/7 availability." },
   { icon: Terminal, title: "Custom Scripts", desc: "Provide your own custom script, greeting styles, and guidelines." },
-  { icon: Languages, title: "Multi-language Support", desc: "Support for English, Spanish, and 20+ other languages." },
+  { icon: Languages, title: "Global English Launch", desc: "English voice support optimized for US, UK, and Australia." },
   { icon: ShieldCheck, title: "Call Recording", desc: "Securely record every inbound call for quality and audit trails." },
   { icon: TrendingUp, title: "Intent Detection", desc: "Identify customer intent, interest level, and urgency in real-time." },
   { icon: Hash, title: "Analytics Dashboard", desc: "Monitor calls answered, qualified leads, duration, and conversion trends." }

@@ -29,16 +29,16 @@ export default function RealEstateUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">3x Lead Capture</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">From late-night property ads</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Lead Capture</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Every qualified enquiry recorded</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">$10,000/mo Added</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Average estimated agent commissions</span>
+              <span className="text-2xl font-bold font-display text-saffron block">More Enquiries</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Captured when agents are on site visits</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">sub-500ms Response</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Zero latency wait time</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Fast Responses</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Fast, natural voice responses</span>
             </div>
           </div>
 
@@ -56,17 +56,17 @@ export default function RealEstateUseCase() {
                   Instant SMS Follow-up
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  As soon as the call ends, Bavio extracts the caller&apos;s preferences and triggers an SMS delivery carrying property PDF brochures and scheduling details.
+                  As soon as the call ends, Bavio extracts the caller&apos;s preferences and triggers an SMS delivery carrying property PDF brochures and details.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-saffron" />
-                  Site Visit Coordination
+                  Enquiry Collection
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  If the budget matches current listing inventories, Bavio offers site showing visits for coming weekends, syncs calendars, and notifies listing managers.
+                  Bavio answers property enquiries, collects preferred location, property type, budget and timeline, and saves the qualified enquiry to the lead dashboard.
                 </p>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default function RealEstateUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Sales representative CRM handoff</span>
+                  <span>Lead dashboard integration</span>
                 </li>
               </ul>
               <Link

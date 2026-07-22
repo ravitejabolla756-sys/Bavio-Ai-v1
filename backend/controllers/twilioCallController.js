@@ -107,6 +107,16 @@ async function handleIncomingCall(req, res) {
       console.error('[TWILIO] DB lookup error:', dbErr.message);
     }
 
+    if (!businessId) {
+      console.warn(`[TWILIO] Incoming call to unregistered number To: ${To}. Hanging up.`);
+      res.type('text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="en-US">Sorry, this number is not registered with Bavio. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
+    }
+
     const firstMessage =
       assistant?.first_message || 'Namaste! Main aapki kaise madad kar sakta hoon?';
     const language = assistant?.language || 'hi-IN';
@@ -136,23 +146,41 @@ async function handleIncomingCall(req, res) {
     }
 
     // ── Create call record (include business_id!) ──────────────────────────
-    try {
-      const countryCode = phoneResult.rows[0]?.country_code || 'US';
-      const currency = 'USD';
-      await db.query(
-        `INSERT INTO calls (
-          user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
-        ) VALUES ($1, $2, $3, 'twilio', $4, $5, NOW(), $6, NOW())`,
-        [businessId, countryCode, CallSid, From, To, currency]
-      );
-    } catch (dbErr) {
-      console.error('[TWILIO] Call record error:', dbErr.message);
+    if (businessId) {
+      try {
+        const countryCode = phoneResult.rows[0]?.country_code || 'US';
+        const currency = 'USD';
+        await db.query(
+          `INSERT INTO calls (
+            user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
+          ) VALUES ($1, $2, $3, 'twilio', $4, $5, NOW(), $6, NOW())`,
+          [businessId, countryCode, CallSid, From, To, currency]
+        );
+      } catch (dbErr) {
+        console.error('[TWILIO] Call record error:', dbErr.message);
+      }
+
+      // Create/update active call session in call_sessions table for WebSocket authorization
+      try {
+        await db.query(
+          `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
+           VALUES ($1, $2, $3, $4, 'active', NOW())
+           ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
+          [CallSid, businessId, From, To]
+        );
+        console.log(`[TWILIO] Active call session stored in database for CallSid: ${CallSid}`);
+      } catch (sessionErr) {
+        console.error('[TWILIO] Failed to insert call session to database:', sessionErr.message);
+      }
+    } else {
+      console.warn('[TWILIO] Skipping call record and session storage for unresolved business');
     }
+
     // ── Twilio Media Stream over WebSocket ──────────────────────────────
     const host = req.headers.host || 'localhost:3000';
     const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
     const wsProtocol = isSsl ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?businessId=${businessId}`;
+    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
 
     console.log(`[TWILIO] Routing call to Media Stream WebSocket: ${wsUrl}`);
 
@@ -528,6 +556,29 @@ async function handleCallStatus(req, res) {
     if (!callData) return res.sendStatus(200);
 
     const duration = parseInt(CallDuration) || 0;
+
+    // Check if it's a demo session call
+    try {
+        const demoSession = await db.query(
+            "SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_status = 'active'",
+            [callData.user_id]
+        );
+        if (demoSession.rows.length > 0) {
+            const statusVal = duration >= 180 ? 'expired' : 'completed';
+            const terminationReason = duration >= 180 ? 'duration_limit' : 'user_hangup';
+            await db.query(
+                `UPDATE demo_sessions 
+                 SET demo_status = $1, demo_used = true, demo_ended_at = NOW(), 
+                     demo_duration_seconds = $2, termination_reason = $3
+                 WHERE user_id = $4 AND demo_status = 'active'`,
+                [statusVal, duration, terminationReason, callData.user_id]
+            );
+            console.log(`[DEMO STATUS CALLBACK] Finished demo call session for user ${callData.user_id} with status ${statusVal}`);
+        }
+    } catch (demoErr) {
+        console.error('[TWILIO] Demo session status update error:', demoErr.message);
+    }
+
     const mins = duration / 60;
 
     // Update call record

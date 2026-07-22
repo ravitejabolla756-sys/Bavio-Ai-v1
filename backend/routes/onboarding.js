@@ -3,18 +3,22 @@ const router = express.Router();
 const onboardingController = require('../controllers/onboardingController');
 const { requireAuth } = require('../middleware/auth');
 
-// Public route - allows landing/signup page lookup
+// Public route
 router.get('/detect-country', onboardingController.detectCountry);
 
-// Protected routes - require JWT
+// Step-by-step paid onboarding routes (Protected by JWT auth & active subscription check)
+router.post('/business', requireAuth, onboardingController.saveBusinessStep);
+router.post('/knowledge', requireAuth, onboardingController.saveKnowledgeStep);
+router.post('/agent', requireAuth, onboardingController.saveAgentStep);
+router.post('/phone', requireAuth, onboardingController.assignPhone);
+router.post('/preview-tts', requireAuth, onboardingController.previewTts);
+router.post('/test-call', requireAuth, onboardingController.testCallStep);
+router.post('/complete', requireAuth, onboardingController.completeOnboardingStep);
+
+// Legacy compatibility routes
 router.post('/save-step', requireAuth, onboardingController.saveStep);
 router.post('/set-country', requireAuth, onboardingController.setCountry);
 router.post('/assign-phone', requireAuth, onboardingController.assignPhone);
-router.post('/preview-tts', requireAuth, onboardingController.previewTts);
-router.post('/save-ai-setup', requireAuth, onboardingController.saveAiSetup);
-router.post('/complete-trial', requireAuth, onboardingController.completeTrial);
 router.get('/status/:client_id', requireAuth, onboardingController.getStatus);
-router.get('/first-lead', requireAuth, onboardingController.getFirstLead);
 
 module.exports = router;
-

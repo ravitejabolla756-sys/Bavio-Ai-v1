@@ -155,8 +155,8 @@ const FAQS = [
     a: "Yes, you save 15% on any plan when you pay annually. Choose the annual toggle above to see the discounted monthly rates.",
   },
   {
-    q: "Is there a free trial?",
-    a: "Yes, we offer a 7-day free trial on all plans. No credit card is required to sign up and test your voice agent.",
+    q: "Is there a demo available?",
+    a: "Yes! You can test Bavio's shared AI assistant for free after creating an account. Dedicated phone numbers and custom business onboarding unlock upon subscription.",
   },
   {
     q: "What about HIPAA/compliance?",
@@ -168,7 +168,7 @@ const FAQS = [
   },
   {
     q: "Does it support multiple languages?",
-    a: "Bavio uses localized voice language engines powered by advanced AI language processing and custom models. It recognizes English, Spanish, French, Hindi, and 20+ other languages with over 95% accuracy.",
+    a: "Bavio supports primary launch languages including English (US, UK, Australia) with crystal clear voice quality.",
   },
   {
     q: "Do I get a dedicated phone number?",
@@ -587,7 +587,7 @@ export function PricingGrid() {
             </div>
             
             <p className="text-body-md text-darkTextMuted max-w-md mx-auto mb-8">
-              Answer every call, capture every lead. Start your free trial today.
+              Answer every call, capture every lead. Select your plan today.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 max-w-sm mx-auto">
@@ -595,7 +595,7 @@ export function PricingGrid() {
                 href="/signup"
                 className="bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider py-4 px-8 rounded-button shadow-saffron transition-all duration-200 active:scale-[0.97]"
               >
-                Start Free Trial
+                Get Started
               </Link>
               <Link
                 href="/contact"

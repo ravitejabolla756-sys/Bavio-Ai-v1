@@ -12,48 +12,95 @@ export interface CountryData {
   flag: string;
 }
 
+// Static default/supported countries (excluding India by default)
 export const countries: CountryData[] = [
-  { code: "IN", name: "India",               currency: "inr", currencyCode: "INR", symbol: "₹",    dialCode: "+91",  flag: "🇮🇳" },
   { code: "US", name: "United States",       currency: "usd", currencyCode: "USD", symbol: "$",    dialCode: "+1",   flag: "🇺🇸" },
   { code: "GB", name: "United Kingdom",      currency: "gbp", currencyCode: "GBP", symbol: "£",    dialCode: "+44",  flag: "🇬🇧" },
-  { code: "CA", name: "Canada",              currency: "cad", currencyCode: "CAD", symbol: "C$",   dialCode: "+1",   flag: "🇨🇦" },
   { code: "AU", name: "Australia",           currency: "aud", currencyCode: "AUD", symbol: "A$",   dialCode: "+61",  flag: "🇦🇺" },
-  { code: "AE", name: "United Arab Emirates",currency: "aed", currencyCode: "AED", symbol: "AED ", dialCode: "+971", flag: "🇦🇪" },
-  { code: "DE", name: "Germany",             currency: "eur", currencyCode: "EUR", symbol: "€",    dialCode: "+49",  flag: "🇩🇪" },
-  { code: "FR", name: "France",              currency: "eur", currencyCode: "EUR", symbol: "€",    dialCode: "+33",  flag: "🇫🇷" },
-  { code: "SG", name: "Singapore",           currency: "sgd", currencyCode: "SGD", symbol: "S$",   dialCode: "+65",  flag: "🇸🇬" },
-  { code: "NZ", name: "New Zealand",         currency: "nzd", currencyCode: "NZD", symbol: "NZ$",  dialCode: "+64",  flag: "🇳🇿" },
 ];
 
 const DEFAULT_COUNTRY = countries.find(c => c.code === "US") || countries[0];
 
 interface CountryContextType {
   country: CountryData;
+  countriesList: CountryData[];
   isLoading: boolean;
+  error: string | null;
   detectedMethod: "geolocation" | "geoip" | "manual" | "default" | null;
   changeCountry: (code: string) => Promise<void>;
   detectCountry: (force?: boolean) => Promise<void>;
+  retryFetchCountries: () => Promise<void>;
 }
 
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export function CountryProvider({ children }: { children: React.ReactNode }) {
   const [country, setCountry] = useState<CountryData>(DEFAULT_COUNTRY);
-  const [isLoading, setIsLoading] = useState(false);
+  const [countriesList, setCountriesList] = useState<CountryData[]>(countries);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [detectedMethod, setDetectedMethod] = useState<CountryContextType["detectedMethod"]>("default");
 
-  const getCountryByCode = useCallback((code: string): CountryData => {
-    return countries.find(c => c.code === code) || DEFAULT_COUNTRY;
+  const fetchCountries = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/telephony/supported-countries");
+      if (!res.ok) throw new Error("Failed to fetch supported countries");
+      const data = await res.json();
+      
+      const METADATA_MAP: Record<string, { currency: string, currencyCode: string, symbol: string, flag: string }> = {
+        US: { currency: "usd", currencyCode: "USD", symbol: "$",    flag: "🇺🇸" },
+        GB: { currency: "gbp", currencyCode: "GBP", symbol: "£",    flag: "🇬🇧" },
+        AU: { currency: "aud", currencyCode: "AUD", symbol: "A$",   flag: "🇦🇺" },
+        IN: { currency: "inr", currencyCode: "INR", symbol: "₹",    flag: "🇮🇳" }
+      };
+
+      const mapped = data.map((c: any) => {
+        const meta = METADATA_MAP[c.iso2] || { currency: "usd", currencyCode: "USD", symbol: "$", flag: "🌐" };
+        return {
+          code: c.iso2,
+          name: c.name,
+          dialCode: c.dialCode,
+          flag: meta.flag,
+          currency: meta.currency,
+          currencyCode: meta.currencyCode,
+          symbol: meta.symbol
+        };
+      });
+
+      setCountriesList(mapped);
+
+      // Re-detect with the new country list
+      let defaultCode = "US";
+      if (typeof window !== "undefined") {
+        const saved = sessionStorage.getItem("bavio_country");
+        if (saved) {
+          defaultCode = saved;
+        }
+      }
+      const found = mapped.find((c: CountryData) => c.code === defaultCode);
+      if (found) {
+        setCountry(found);
+        setDetectedMethod("manual");
+      } else if (mapped.length > 0) {
+        setCountry(mapped.find((c: CountryData) => c.code === "US") || mapped[0]);
+        setDetectedMethod("default");
+      }
+    } catch (err: any) {
+      console.error("Error loading countries:", err.message);
+      setError("Failed to load supported countries.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const detectCountry = useCallback(async (force = false) => {
-    // Auto-detect can be wired to a geo-IP API later.
-    // For now default to US, but respect a previously saved user preference.
     try {
       if (typeof window !== "undefined") {
         const saved = sessionStorage.getItem("bavio_country");
         if (saved) {
-          const found = countries.find(c => c.code === saved);
+          const found = countriesList.find(c => c.code === saved);
           if (found) {
             setCountry(found);
             setDetectedMethod("manual");
@@ -61,37 +108,42 @@ export function CountryProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
-    } catch (_) {
-      // sessionStorage not available
-    }
-    setCountry(DEFAULT_COUNTRY);
+    } catch (_) {}
+    setCountry(countriesList.find(c => c.code === "US") || countriesList[0] || DEFAULT_COUNTRY);
     setDetectedMethod("default");
-    setIsLoading(false);
-  }, []);
+  }, [countriesList]);
 
   const changeCountry = useCallback(async (code: string) => {
-    const found = countries.find(c => c.code === code);
+    const found = countriesList.find(c => c.code === code);
     if (found) {
       setCountry(found);
       setDetectedMethod("manual");
-      // Persist to session so the choice survives page navigation
       try {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("bavio_country", code);
         }
-      } catch (_) {
-        // ignore
-      }
+      } catch (_) {}
     }
-  }, []);
+  }, [countriesList]);
 
   // Run on mount
   useEffect(() => {
-    detectCountry();
-  }, [detectCountry]);
+    fetchCountries();
+  }, [fetchCountries]);
 
   return (
-    <CountryContext.Provider value={{ country, isLoading, detectedMethod, changeCountry, detectCountry }}>
+    <CountryContext.Provider 
+      value={{ 
+        country, 
+        countriesList, 
+        isLoading, 
+        error, 
+        detectedMethod, 
+        changeCountry, 
+        detectCountry,
+        retryFetchCountries: fetchCountries
+      }}
+    >
       {children}
     </CountryContext.Provider>
   );

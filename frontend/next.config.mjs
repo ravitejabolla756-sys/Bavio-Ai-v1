@@ -16,6 +16,15 @@ const nextConfig = {
     'localhost:5000',
     'localhost:3001',
   ],
+  async redirects() {
+    return [
+      {
+        source: '/sign-up',
+        destination: '/signup',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

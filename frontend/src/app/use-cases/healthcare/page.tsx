@@ -29,12 +29,12 @@ export default function HealthcareUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">-98% Missed Calls</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Immediate patient booking</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Answer Rate</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">100% of incoming patient calls answered</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">840+ Hours Saved</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Per receptionist annually</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Time Saved</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Reduced front desk overload</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">100% HIPAA Safe</span>
@@ -47,16 +47,16 @@ export default function HealthcareUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Frictionless Patient Intake</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Hospitals and clinic OPD desks face massive call spikes in morning hours. Patients frequently get busy tones or wait in queues, leading to missed appointments. Bavio AI takes call streams concurrently, booking slots in real-time.
+                OPD desks face massive call spikes in morning hours. Patients frequently get busy tones or wait in queues. Bavio AI takes call streams concurrently to answer patient inquiries and collect appointment requests.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-saffron" />
-                  Live Slot Synchronization
+                  Appointment Requests
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Bavio checks real-time doctor availability calendars, proposes open slots to patients, confirms appointments, and writes slots back to the clinic scheduler in under 1 second.
+                  Bavio collects patients&apos; preferred appointment dates, times, and contact details, logging their request directly in your dashboard for confirmation.
                 </p>
               </div>
 
@@ -76,7 +76,7 @@ export default function HealthcareUseCase() {
               <ul className="flex flex-col gap-4 text-body-sm text-ink-tertiary">
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>OPD appointment booking</span>
+                  <span>Patient intake details & request capture</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
@@ -88,7 +88,7 @@ export default function HealthcareUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Automatic doctor notifications</span>
+                  <span>Intake dashboard logging</span>
                 </li>
               </ul>
               <Link

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -12,18 +13,12 @@ import {
   Lock,
   Pulse,
   CreditCard,
-  Warning,
   CheckCircle,
   ArrowRight
 } from "@phosphor-icons/react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
-
-// Check if user is authenticated in localStorage
-function isAuthenticated(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(localStorage.getItem("bavio_token"));
-}
+import { apiFetch, authApi } from "@/lib/api";
 
 // ─── Number Counter Component ────────────────────────────────────────────────
 function UsageCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -72,7 +67,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex justify-between items-center text-left py-2 font-bold text-[#F5F0E8] hover:text-[#FF6B00] transition-colors"
       >
-        <span style={{ fontFamily: "var(--font-dm-sans), sans-serif" }} className="text-sm font-semibold tracking-wide">{question}</span>
+        <span className="text-sm font-semibold tracking-wide">{question}</span>
         {isOpen ? (
           <CaretUp className="w-4 h-4 text-[#FF6B00] shrink-0 transition-transform duration-200" />
         ) : (
@@ -99,7 +94,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 }
 
 // ─── Currency Types & Configurations ─────────────────────────────────────────
-type CurrencyKey = "INR" | "USD" | "GBP" | "AUD" | "SGD";
+type CurrencyKey = "USD" | "GBP" | "AUD";
 
 interface CurrencyConfig {
   symbol: string;
@@ -116,29 +111,16 @@ interface CurrencyConfig {
 }
 
 const CURRENCIES: Record<CurrencyKey, CurrencyConfig> = {
-  INR: {
-    symbol: "₹",
-    name: "India (INR)",
-    starter: 1499,
-    growth: 2999,
-    scale: 5999,
-    enterprise: 15000,
-    overageStarter: "₹10",
-    overageGrowth: "₹8",
-    overageScale: "₹5",
-    capGrowth: "₹50",
-    capScale: "₹1,000"
-  },
   USD: {
     symbol: "$",
     name: "USA (USD)",
-    starter: 18,
-    growth: 36,
-    scale: 72,
-    enterprise: 180,
-    overageStarter: "$0.12",
-    overageGrowth: "$0.10",
-    overageScale: "$0.06",
+    starter: 19,
+    growth: 39,
+    scale: 79,
+    enterprise: 199,
+    overageStarter: "$0.15",
+    overageGrowth: "$0.12",
+    overageScale: "$0.08",
     capGrowth: "$0.60",
     capScale: "$12"
   },
@@ -146,51 +128,101 @@ const CURRENCIES: Record<CurrencyKey, CurrencyConfig> = {
     symbol: "£",
     name: "UK (GBP)",
     starter: 15,
-    growth: 29,
-    scale: 59,
+    growth: 31,
+    scale: 63,
     enterprise: 150,
-    overageStarter: "£0.10",
-    overageGrowth: "£0.08",
-    overageScale: "£0.05",
+    overageStarter: "£0.12",
+    overageGrowth: "£0.10",
+    overageScale: "£0.06",
     capGrowth: "£0.50",
     capScale: "£10"
   },
   AUD: {
     symbol: "A$",
     name: "Australia (AUD)",
-    starter: 28,
-    growth: 56,
-    scale: 112,
-    enterprise: 280,
-    overageStarter: "A$0.19",
-    overageGrowth: "A$0.15",
-    overageScale: "A$0.10",
+    starter: 29,
+    growth: 59,
+    scale: 119,
+    enterprise: 299,
+    overageStarter: "A$0.23",
+    overageGrowth: "A$0.18",
+    overageScale: "A$0.12",
     capGrowth: "A$1.00",
     capScale: "A$18"
-  },
-  SGD: {
-    symbol: "S$",
-    name: "Singapore (SGD)",
-    starter: 22,
-    growth: 44,
-    scale: 88,
-    enterprise: 220,
-    overageStarter: "S$0.15",
-    overageGrowth: "S$0.12",
-    overageScale: "S$0.08",
-    capGrowth: "S$0.75",
-    capScale: "S$15"
   }
 };
 
+const DEFAULT_PLANS = [
+  {
+    id: "starter",
+    name: "Starter",
+    monthlyPrice: 19,
+    annualPrice: 15,
+    currency: "USD",
+    minutes: 200,
+    overagePrice: 0.15,
+    features: [
+      "200 included minutes/month",
+      "$0.15 per extra minute",
+      "AI call answering",
+      "Business-specific assistant",
+      "Lead qualification",
+      "Call transcripts",
+      "Call recordings where enabled",
+      "Lead dashboard",
+      "Usage analytics",
+      "Email alerts"
+    ]
+  },
+  {
+    id: "growth",
+    name: "Growth",
+    monthlyPrice: 39,
+    annualPrice: 31,
+    currency: "USD",
+    minutes: 500,
+    overagePrice: 0.12,
+    popular: true,
+    features: [
+      "500 included minutes/month",
+      "$0.12 per extra minute",
+      "All Starter features",
+      "Advanced lead qualification",
+      "WhatsApp notifications (where available)",
+      "Knowledge base document upload",
+      "Priority support"
+    ]
+  },
+  {
+    id: "scale",
+    name: "Scale",
+    monthlyPrice: 79,
+    annualPrice: 63,
+    currency: "USD",
+    minutes: 1500,
+    overagePrice: 0.08,
+    features: [
+      "1500 included minutes/month",
+      "$0.08 per extra minute",
+      "All Growth features",
+      "Full analytics suite",
+      "Custom assistant voice selection",
+      "Developer API access",
+      "Dedicated support specialist"
+    ]
+  }
+];
+
 export default function PricingPage() {
-  const [currency, setCurrency] = useState<CurrencyKey>("INR");
+  const router = useRouter();
+  const [currency, setCurrency] = useState<CurrencyKey>("USD");
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [activeMobileTab, setActiveMobileTab] = useState<"starter" | "growth" | "scale" | "enterprise">("growth");
   
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [plans, setPlans] = useState<any[]>(DEFAULT_PLANS);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -205,31 +237,107 @@ export default function PricingPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch dynamic plans & auth profile on mount
+  useEffect(() => {
+    async function loadPricingAndAuth() {
+      try {
+        const data = await apiFetch<{ plans: any[] }>("/billing/plans", { skipAuth: true });
+        if (data && data.plans && data.plans.length > 0) {
+          setPlans(data.plans);
+        }
+      } catch (err) {
+        console.warn("Failed to load pricing from backend, using default configuration:", err);
+      }
+
+      try {
+        if (localStorage.getItem("bavio_token")) {
+          const profile = await authApi.getProfile();
+          setUserProfile(profile);
+        }
+      } catch (authErr) {
+        console.warn("Could not retrieve user session profile:", authErr);
+      } finally {
+        setPricingLoaded(true);
+      }
+    }
+    loadPricingAndAuth();
+  }, []);
+
   const curConfig = CURRENCIES[currency];
   const isAnnual = billingCycle === "annual";
 
-  // Calculate annual price (15% discount)
-  const getPrice = (basePrice: number) => {
-    if (isAnnual) {
-      return Math.round(basePrice * 0.85);
+  // Compute conversion factor based on chosen local currency config compared to USD base
+  const getConversionFactor = () => {
+    if (currency === "USD") return 1;
+    if (currency === "GBP") return 15 / 19;
+    if (currency === "AUD") return 29 / 19;
+    return 1;
+  };
+
+  const getPrice = (planId: string, baseUSDPrice: number) => {
+    // If currency is USD, return exact configured price
+    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
+    const usdPrice = plan ? (isAnnual ? plan.annualPrice : plan.monthlyPrice) : baseUSDPrice;
+    
+    if (currency === "USD") return usdPrice;
+    
+    // Otherwise, convert using conversion factor
+    return Math.round(usdPrice * getConversionFactor());
+  };
+
+  const getSavings = (planId: string, baseMonthly: number) => {
+    const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
+    const monthlyVal = plan ? plan.monthlyPrice : baseMonthly;
+    const annualVal = plan ? plan.annualPrice : Math.round(baseMonthly * 0.80);
+    
+    const savingsUSD = (monthlyVal - annualVal) * 12;
+    if (currency === "USD") return savingsUSD;
+    return Math.round(savingsUSD * getConversionFactor());
+  };
+
+  const handleChoosePlan = (planId: string) => {
+    if (!localStorage.getItem("bavio_token")) {
+      // Unauthenticated -> Sign Up
+      router.push(`/signup?plan=${planId}`);
+    } else {
+      // Authenticated -> Redirect to Checkout
+      router.push(`/checkout?plan=${planId}&period=${billingCycle}`);
     }
-    return basePrice;
   };
 
-  // Calculate total savings per year: (Monthly Price - Annual Price) * 12
-  const getSavings = (basePrice: number) => {
-    const monthlyTotal = basePrice * 12;
-    const annualTotal = getPrice(basePrice) * 12;
-    return monthlyTotal - annualTotal;
-  };
+  const getButtonTextAndStyle = (planId: string) => {
+    const isCurrent = userProfile?.subscription_status === "active" && 
+                      userProfile?.plan_name?.toLowerCase() === planId.toLowerCase();
+    
+    const capitalizedPlan = planId.charAt(0).toUpperCase() + planId.slice(1);
+    
+    if (isCurrent) {
+      return {
+        text: "Current Plan",
+        disabled: true,
+        className: "w-full bg-[#2a2010] text-[#7a6e5f] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center cursor-not-allowed border border-transparent"
+      };
+    }
 
-  const handleSubscribe = (planKey: string) => {
-    if (loadingPlan) return;
-    setLoadingPlan(planKey);
-    setError(null);
+    if (userProfile?.subscription_status === "active") {
+      const activePlanRank = ["starter", "growth", "scale"].indexOf(userProfile.plan_name.toLowerCase());
+      const thisPlanRank = ["starter", "growth", "scale"].indexOf(planId.toLowerCase());
+      const btnText = thisPlanRank > activePlanRank ? `Upgrade to ${capitalizedPlan}` : `Downgrade to ${capitalizedPlan}`;
+      
+      return {
+        text: btnText,
+        disabled: false,
+        className: "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
+      };
+    }
 
-    // Dynamic redirect to signup pre-populating selected plan and currency options
-    window.location.href = `/signup?plan=${planKey}&currency=${currency}&cycle=${billingCycle}`;
+    return {
+      text: `Choose ${capitalizedPlan}`,
+      disabled: false,
+      className: planId.toLowerCase() === "growth" 
+        ? "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-black text-xs py-4 rounded-xl uppercase tracking-wider transition-all text-center shadow-lg"
+        : "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
+    };
   };
 
   const faqs = [
@@ -238,28 +346,24 @@ export default function PricingPage() {
       answer: "Yes. Upgrade or downgrade any time. Changes take effect immediately. We'll pro-rate charges accordingly."
     },
     {
-      question: "What if I don't use all my minutes?",
-      answer: "Minutes roll over up to 2x your plan limit. After that, they expire. Upgrade to Scale for unlimited."
+      question: "What happens when I exceed my monthly minutes limit?",
+      answer: "Calls will continue to route seamlessly. Extra minutes are billed at your plan's standard overage rate ($0.08 to $0.15/min) and billed at the end of your billing cycle."
     },
     {
       question: "Do you offer annual billing?",
-      answer: "Yes. Pay annually and save 15% on any plan. Cancel anytime."
+      answer: "Yes. Pay annually and save 20% on any plan. Cancel anytime."
     },
     {
-      question: "What's included in 'Basic Analytics'?",
-      answer: "Call count, duration, sentiment score, and lead capture rate. Growth adds CRM sync, Scale adds predictive scoring."
+      question: "What's included in analytics?",
+      answer: "Call logs, duration, caller sentiment, AI receptionist performance metrics, and lead capture summaries are available in your main dashboard."
     },
     {
       question: "Can I get a custom plan?",
-      answer: "Absolutely. Contact our sales team for plans >1,500 min/month."
-    },
-    {
-      question: "Do you offer free trial?",
-      answer: "Yes. 7 days free on any plan. No credit card required."
+      answer: "Absolutely. Contact our sales team for plans requiring more than 1,500 minutes per month."
     },
     {
       question: "What's your refund policy?",
-      answer: "Cancel anytime. No refunds for used minutes, but pro-rated credit for next month."
+      answer: "Cancel anytime. We don't offer refunds for partial billing periods, but your service will remain active until the end of your current paid duration."
     }
   ];
 
@@ -267,13 +371,13 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#080600] text-[#F5F0E8] font-sans antialiased selection:bg-[#FF6B00]/15 selection:text-[#FF6B00] relative overflow-hidden flex flex-col w-full">
       <Navbar />
 
-      {/* Currency Switcher Fixed Position (Top-Right under Navbar) */}
+      {/* Currency Switcher Fixed Position */}
       <div className="fixed top-28 right-6 z-40" ref={dropdownRef}>
         <button
           onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
           className="flex items-center gap-1.5 bg-[#100e08] border border-[#2a2010] hover:border-[#FF6B00]/40 px-3.5 py-2 rounded-xl text-xs font-bold text-[#F5F0E8] transition-all shadow-sm"
         >
-          <span>{currency === "INR" ? "🇮🇳 INR" : currency === "USD" ? "🇺🇸 USD" : currency === "GBP" ? "🇬🇧 GBP" : currency === "AUD" ? "🇦🇺 AUD" : "🇸🇬 SGD"}</span>
+          <span>{currency === "USD" ? "🇺🇸 USD" : currency === "GBP" ? "🇬🇧 GBP" : currency === "AUD" ? "🇦🇺 AUD" : "🇸🇬 SGD"}</span>
           <CaretDown className="w-3.5 h-3.5 text-[#7a6e5f]" />
         </button>
 
@@ -312,8 +416,8 @@ export default function PricingPage() {
           
           <div className="max-w-4xl mx-auto space-y-6">
             <h1 
-              style={{ fontFamily: "var(--font-syne), sans-serif", fontSize: "48px", fontWeight: 700 }}
-              className="text-[#F5F0E8] leading-tight tracking-tight max-w-[900px] mx-auto"
+              style={{ fontSize: "48px", fontWeight: 700 }}
+              className="text-[#F5F0E8] leading-tight tracking-tight max-w-[900px] mx-auto font-serif"
             >
               Simple, Transparent Pricing
             </h1>
@@ -348,7 +452,7 @@ export default function PricingPage() {
               <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${
                 billingCycle === "annual" ? "bg-[#080600] text-[#FF6B00]" : "bg-[#FF6B00] text-[#080600]"
               }`}>
-                Save 15%
+                Save 20%
               </span>
             </button>
           </div>
@@ -363,7 +467,7 @@ export default function PricingPage() {
                   exit={{ opacity: 0, y: -5 }}
                   className="text-xs text-[#10B981] font-bold"
                 >
-                  Save {curConfig.symbol}{getSavings(curConfig.growth).toLocaleString()} per year on Growth plan
+                  Save {curConfig.symbol}{getSavings("growth", 39).toLocaleString()} per year on Growth plan
                 </motion.p>
               )}
             </AnimatePresence>
@@ -383,8 +487,8 @@ export default function PricingPage() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span style={{ fontFamily: "var(--font-syne), sans-serif", fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight">
-                    {curConfig.symbol}{getPrice(curConfig.starter).toLocaleString()}
+                  <span style={{ fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
+                    {curConfig.symbol}{getPrice("starter", 19).toLocaleString()}
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
@@ -392,54 +496,48 @@ export default function PricingPage() {
                 <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
-                    <span><UsageCounter value={200} /> minutes/month</span>
+                    <span><UsageCounter value={200} /> included minutes/month</span>
                   </p>
-                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5">
-                    <span>~30 calls/month</span>
+                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
+                    <span>$0.15 per extra minute</span>
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleSubscribe("starter")}
-                  className="w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
-                >
-                  Start Free Trial
-                </button>
+                {(() => {
+                  const btnProps = getButtonTextAndStyle("starter");
+                  return (
+                    <button
+                      onClick={() => handleChoosePlan("starter")}
+                      disabled={btnProps.disabled}
+                      className={btnProps.className}
+                    >
+                      {btnProps.text}
+                    </button>
+                  );
+                })()}
 
                 <div className="border-t border-[#2a2010] my-4" />
 
                 <ul className="space-y-3 text-xs text-[#F5F0E8] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Hindi & English AI</span>
+                    <span>AI call answering</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Unlimited Call Recording</span>
+                    <span>Business-specific assistant</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>WhatsApp Lead Alerts</span>
+                    <span>Lead qualification</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Basic Analytics</span>
+                    <span>Call transcripts & recordings</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Community Support</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[#7a6e5f]/50 line-through">
-                    <X className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>Custom Voice Cloning</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[#7a6e5f]/50 line-through">
-                    <X className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>Dedicated Phone Numbers</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[#7a6e5f]/50 line-through">
-                    <X className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>Priority Support</span>
+                    <span>Usage analytics & Email alerts</span>
                   </li>
                 </ul>
               </div>
@@ -449,9 +547,8 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* CARD 2: GROWTH (Highlighted & Elevated) */}
+            {/* CARD 2: GROWTH */}
             <div className="bg-[#100e08] border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-[710px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.06)]">
-              {/* Badge */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-[#080600] text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-sm">
                 ⭐ Most Popular
               </div>
@@ -463,8 +560,8 @@ export default function PricingPage() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span style={{ fontFamily: "var(--font-syne), sans-serif", fontSize: "52px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight">
-                    {curConfig.symbol}{getPrice(curConfig.growth).toLocaleString()}
+                  <span style={{ fontSize: "52px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
+                    {curConfig.symbol}{getPrice("growth", 39).toLocaleString()}
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
@@ -472,19 +569,25 @@ export default function PricingPage() {
                 <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
-                    <span><UsageCounter value={500} /> minutes/month</span>
+                    <span><UsageCounter value={500} /> included minutes/month</span>
                   </p>
-                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5">
-                    <span>~75 calls/month</span>
+                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
+                    <span>$0.12 per extra minute</span>
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleSubscribe("growth")}
-                  className="w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-black text-xs py-4 rounded-xl uppercase tracking-wider transition-all text-center shadow-lg"
-                >
-                  Start Free Trial
-                </button>
+                {(() => {
+                  const btnProps = getButtonTextAndStyle("growth");
+                  return (
+                    <button
+                      onClick={() => handleChoosePlan("growth")}
+                      disabled={btnProps.disabled}
+                      className={btnProps.className}
+                    >
+                      {btnProps.text}
+                    </button>
+                  );
+                })()}
 
                 <div className="border-t border-[#2a2010] my-4" />
 
@@ -495,30 +598,18 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>3 Custom Phone Numbers</span>
+                    <span>Advanced lead qualification</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Advanced Workflow Builder</span>
+                    <span>WhatsApp notifications (where available)</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>CRM Integrations (HubSpot, Zoho)</span>
+                    <span>Knowledge base document upload</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Performance Analytics</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Email Support (24h response)</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[#7a6e5f]/50 line-through">
-                    <X className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>Custom Voice Cloning</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[#7a6e5f]/50 line-through">
-                    <X className="w-4 h-4 shrink-0 mt-0.5" />
                     <span>Priority Support</span>
                   </li>
                 </ul>
@@ -538,8 +629,8 @@ export default function PricingPage() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span style={{ fontFamily: "var(--font-syne), sans-serif", fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight">
-                    {curConfig.symbol}{getPrice(curConfig.scale).toLocaleString()}
+                  <span style={{ fontSize: "48px", fontWeight: 700 }} className="text-[#FF6B00] leading-none tracking-tight font-serif">
+                    {curConfig.symbol}{getPrice("scale", 79).toLocaleString()}
                   </span>
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
@@ -547,19 +638,25 @@ export default function PricingPage() {
                 <div className="space-y-1.5 text-xs text-[#F5F0E8] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
-                    <span><UsageCounter value={1500} /> minutes/month</span>
+                    <span><UsageCounter value={1500} /> included minutes/month</span>
                   </p>
-                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5">
-                    <span>~225 calls/month</span>
+                  <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
+                    <span>$0.08 per extra minute</span>
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleSubscribe("scale")}
-                  className="w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
-                >
-                  Start Free Trial
-                </button>
+                {(() => {
+                  const btnProps = getButtonTextAndStyle("scale");
+                  return (
+                    <button
+                      onClick={() => handleChoosePlan("scale")}
+                      disabled={btnProps.disabled}
+                      className={btnProps.className}
+                    >
+                      {btnProps.text}
+                    </button>
+                  );
+                })()}
 
                 <div className="border-t border-[#2a2010] my-4" />
 
@@ -570,31 +667,19 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Unlimited Phone Numbers</span>
+                    <span>Full analytics suite</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Custom Voice Cloning</span>
+                    <span>Custom assistant voice selection</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Advanced Lead Scoring</span>
+                    <span>Developer API access</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Webhook Integrations</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>API Access</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Priority Support (4h response)</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Custom SLA Options</span>
+                    <span>Dedicated support specialist</span>
                   </li>
                 </ul>
               </div>
@@ -614,8 +699,8 @@ export default function PricingPage() {
             
             <div className="space-y-4 max-w-2xl text-left">
               <span className="text-[10px] uppercase font-bold text-[#FF6B00] tracking-wider block">Need More?</span>
-              <h2 style={{ fontFamily: "var(--font-syne), sans-serif" }} className="text-2xl font-bold text-[#F5F0E8]">
-                Enterprise plans start at {curConfig.symbol}{curConfig.enterprise.toLocaleString()}/month
+              <h2 className="text-2xl font-bold text-[#F5F0E8] font-serif">
+                Enterprise plans start at {curConfig.symbol}{getPrice("scale", 79).toLocaleString()}/month
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs text-[#7a6e5f] font-sans font-semibold mt-2">
                 <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#10B981]" /> Unlimited concurrent calls</p>
@@ -636,264 +721,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ─── SECTION 4: FEATURE COMPARISON TABLE ─── */}
-        <section className="max-w-5xl mx-auto px-6 md:px-8 pb-20">
-          <h2 style={{ fontFamily: "var(--font-syne), sans-serif" }} className="text-xl font-bold uppercase tracking-wider text-left mb-6">
-            Feature Breakdown
-          </h2>
-
-          {/* Mobile Tab Selectors (only visible on mobile) */}
-          <div className="flex md:hidden border-b border-[#2a2010] mb-6 overflow-x-auto gap-2 pb-2">
-            {(["starter", "growth", "scale", "enterprise"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveMobileTab(tab)}
-                className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border whitespace-nowrap transition-colors ${
-                  activeMobileTab === tab
-                    ? "bg-[#FF6B00]/10 border-[#FF6B00] text-[#FF6B00]"
-                    : "border-transparent text-[#7a6e5f]"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-hidden border border-[#2a2010] rounded-2xl bg-[#100e08]/30">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#100e08] border-b border-[#2a2010]">
-                  <th style={{ fontFamily: "var(--font-syne), sans-serif" }} className="p-4 text-xs font-semibold text-[#7a6e5f] uppercase tracking-wider">Feature</th>
-                  <th style={{ fontFamily: "var(--font-syne), sans-serif" }} className="p-4 text-xs font-semibold text-[#7a6e5f] uppercase tracking-wider">Starter</th>
-                  <th style={{ fontFamily: "var(--font-syne), sans-serif" }} className="p-4 text-xs font-semibold text-[#7a6e5f] uppercase tracking-wider">Growth</th>
-                  <th style={{ fontFamily: "var(--font-syne), sans-serif" }} className="p-4 text-xs font-semibold text-[#7a6e5f] uppercase tracking-wider">Scale</th>
-                  <th style={{ fontFamily: "var(--font-syne), sans-serif" }} className="p-4 text-xs font-semibold text-[#7a6e5f] uppercase tracking-wider">Enterprise</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#2a2010] text-xs font-semibold font-sans">
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Monthly Minutes</td>
-                  <td className="p-4 text-[#7a6e5f]">200</td>
-                  <td className="p-4 text-[#7a6e5f]">500</td>
-                  <td className="p-4 text-[#7a6e5f]">1,500</td>
-                  <td className="p-4 text-[#FF6B00]">Unlimited</td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Phone Numbers</td>
-                  <td className="p-4 text-[#7a6e5f]">1</td>
-                  <td className="p-4 text-[#7a6e5f]">3</td>
-                  <td className="p-4 text-[#7a6e5f]">Unlimited</td>
-                  <td className="p-4 text-[#7a6e5f]">Unlimited</td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Hindi/English Support</td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Call Recording</td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">WhatsApp Alerts</td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Basic Analytics</td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">CRM Integrations</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Custom Voice Cloning</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">API Access</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Webhook Support</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Email Support</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Priority Support</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                  <td className="p-4 text-[#10B981]">24/7 Priority</td>
-                </tr>
-                <tr className="hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">SSO / SAML</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-                <tr className="bg-white/[0.01] hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-[#F5F0E8]">Dedicated Manager</td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><X className="w-4 h-4 text-[#7a6e5f]" /></td>
-                  <td className="p-4"><Check className="w-4 h-4 text-[#10B981]" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Horizontal Accordion List (Visible only on mobile) */}
-          <div className="block md:hidden border border-[#2a2010] rounded-xl bg-[#100e08]/30 p-4 space-y-4">
-            <div className="space-y-3 font-semibold text-xs text-left">
-              
-              <div className="flex justify-between border-b border-[#2a2010] pb-2 text-[#7a6e5f] font-bold">
-                <span>Feature</span>
-                <span className="capitalize text-[#FF6B00]">{activeMobileTab} Value</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1">
-                <span className="text-[#7a6e5f]">Monthly Minutes</span>
-                <span className="text-[#F5F0E8]">
-                  {activeMobileTab === "starter" ? "200" : activeMobileTab === "growth" ? "500" : activeMobileTab === "scale" ? "1,500" : "Unlimited"}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Phone Numbers</span>
-                <span className="text-[#F5F0E8]">
-                  {activeMobileTab === "starter" ? "1" : activeMobileTab === "growth" ? "3" : activeMobileTab === "scale" ? "Unlimited" : "Unlimited"}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Hindi/English Support</span>
-                <span><Check className="w-4 h-4 text-[#10B981]" /></span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Call Recording</span>
-                <span><Check className="w-4 h-4 text-[#10B981]" /></span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">WhatsApp Alerts</span>
-                <span><Check className="w-4 h-4 text-[#10B981]" /></span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Basic Analytics</span>
-                <span><Check className="w-4 h-4 text-[#10B981]" /></span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">CRM Integrations</span>
-                <span>{activeMobileTab === "starter" ? <X className="w-4 h-4 text-[#7a6e5f]" /> : <Check className="w-4 h-4 text-[#10B981]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Custom Voice Cloning</span>
-                <span>{["starter", "growth"].includes(activeMobileTab) ? <X className="w-4 h-4 text-[#7a6e5f]" /> : <Check className="w-4 h-4 text-[#10B981]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">API Access</span>
-                <span>{["starter", "growth"].includes(activeMobileTab) ? <X className="w-4 h-4 text-[#7a6e5f]" /> : <Check className="w-4 h-4 text-[#10B981]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Webhook Support</span>
-                <span>{["starter", "growth"].includes(activeMobileTab) ? <X className="w-4 h-4 text-[#7a6e5f]" /> : <Check className="w-4 h-4 text-[#10B981]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Email Support</span>
-                <span>{activeMobileTab === "starter" ? <X className="w-4 h-4 text-[#7a6e5f]" /> : <Check className="w-4 h-4 text-[#10B981]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Priority Support</span>
-                <span>{activeMobileTab === "starter" ? <X className="w-4 h-4 text-[#7a6e5f]" /> : activeMobileTab === "growth" ? <X className="w-4 h-4 text-[#7a6e5f]" /> : activeMobileTab === "scale" ? <Check className="w-4 h-4 text-[#10B981]" /> : <span className="text-[#10B981]">24/7</span>}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">SSO / SAML</span>
-                <span>{activeMobileTab === "enterprise" ? <Check className="w-4 h-4 text-[#10B981]" /> : <X className="w-4 h-4 text-[#7a6e5f]" />}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-1 border-t border-[#2a2010]/40">
-                <span className="text-[#7a6e5f]">Dedicated Manager</span>
-                <span>{activeMobileTab === "enterprise" ? <Check className="w-4 h-4 text-[#10B981]" /> : <X className="w-4 h-4 text-[#7a6e5f]" />}</span>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ─── SECTION 5: OVERAGE PRICING ─── */}
-        <section className="max-w-5xl mx-auto px-6 md:px-8 pb-20 text-center space-y-8">
-          <div className="space-y-2">
-            <h2 style={{ fontFamily: "var(--font-syne), sans-serif" }} className="text-xl font-bold uppercase tracking-wider text-[#F5F0E8]">
-              What happens when you exceed your minutes?
-            </h2>
-            <p className="text-xs text-[#7a6e5f] font-sans font-semibold">
-              Your plan includes a safety net. You&apos;ll never be surprised by an overage bill.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-            <div className="bg-[#100e08] border border-[#2a2010] p-6 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-[#F5F0E8] block">Starter</span>
-              <p className="text-lg font-mono font-black text-[#FF6B00]">Extra: {curConfig.overageStarter}/min</p>
-              <p className="text-[11px] text-[#7a6e5f] leading-normal font-sans">Pay only for what you use. Cancel or adjust limit thresholds anytime.</p>
-            </div>
-
-            <div className="bg-[#100e08] border border-[#2a2010] p-6 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-[#F5F0E8] block">Growth</span>
-              <p className="text-lg font-mono font-black text-[#FF6B00]">Extra: {curConfig.overageGrowth}/min</p>
-              <p className="text-[11px] text-[#7a6e5f] leading-normal font-sans">You never lose a call—we cap overage fees at {curConfig.capGrowth} maximum limit per invoice.</p>
-            </div>
-
-            <div className="bg-[#100e08] border border-[#2a2010] p-6 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-[#F5F0E8] block">Scale</span>
-              <p className="text-lg font-mono font-black text-[#FF6B00]">Extra: {curConfig.overageScale}/min</p>
-              <p className="text-[11px] text-[#7a6e5f] leading-normal font-sans">Unlimited overages capped at {curConfig.capScale}/month maximum. Zero extra charges after that.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── SECTION 6: FAQ (ACCORDION) ─── */}
+        {/* ─── SECTION 4: FAQ (ACCORDION) ─── */}
         <section className="py-20 border-t border-[#2a2010] bg-[#100e08]/20" id="faq">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto">
@@ -903,11 +731,11 @@ export default function PricingPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-sans">
                   Billing & Plans
                 </span>
-                <h2 style={{ fontFamily: "var(--font-syne), sans-serif" }} className="text-3xl font-bold text-[#F5F0E8] mt-2 leading-tight">
+                <h2 className="text-3xl font-bold text-[#F5F0E8] mt-2 leading-tight font-serif">
                   Frequently Asked Questions
                 </h2>
                 <p className="text-[#7a6e5f] text-xs mt-3 leading-relaxed font-sans font-normal">
-                  Have questions about minutes, payment methods, or conditional call forwarding? Here are common answers.
+                  Have questions about minutes, payment methods, or receptionist workflows? Here are common answers.
                 </p>
               </div>
 
@@ -924,7 +752,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ─── SECTION 7: TRUST BADGES ─── */}
+        {/* ─── SECTION 5: TRUST BADGES ─── */}
         <section className="py-16 border-y border-[#2a2010] bg-[#100e08]/30">
           <div className="max-w-5xl mx-auto px-6 md:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -965,32 +793,32 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ─── SECTION 8: CTA FOOTER ─── */}
+        {/* ─── SECTION 6: CTA FOOTER ─── */}
         <section className="py-24 text-center max-w-4xl mx-auto px-6 md:px-8 space-y-6 relative">
           <div className="absolute inset-0 bg-[#FF6B00] opacity-[0.01] rounded-full blur-3xl pointer-events-none" />
           
-          <h2 style={{ fontFamily: "var(--font-syne), sans-serif", fontSize: "36px", fontWeight: 700 }} className="text-[#F5F0E8] leading-tight tracking-tight">
+          <h2 className="text-[#F5F0E8] leading-tight tracking-tight font-serif text-[36px] font-bold">
             Ready to never miss a call again?
           </h2>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
             <button
-              onClick={() => handleSubscribe("growth")}
+              onClick={() => handleChoosePlan("growth")}
               className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
             >
-              Start Free Trial - 7 Days
+              Get Started with Growth
             </button>
             
             <Link
               href="/demo"
               className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-[#080600] text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
             >
-              Schedule a Demo
+              Try the AI Assistant Demo
             </Link>
           </div>
 
           <p className="text-[11px] text-[#7a6e5f] font-sans font-semibold pt-2">
-            14-day money-back guarantee. Cancel anytime.
+            No credit card required to sign up. Cancel anytime.
           </p>
         </section>
 

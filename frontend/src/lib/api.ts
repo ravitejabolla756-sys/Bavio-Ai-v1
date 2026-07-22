@@ -188,6 +188,15 @@ export interface BusinessProfile {
   city?: string;
   website?: string;
   twilio_number?: string | null;
+  subscription_status?: string;
+  businessName?: string;
+  country_code?: string;
+  assistant_name?: string;
+  assistant_status?: string;
+  voice?: string;
+  greeting?: string;
+  nextRoute?: string;
+  success?: boolean;
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
@@ -464,6 +473,19 @@ export const billingApi = {
 // ─── Demo ─────────────────────────────────────────────────────────────────────
 
 export const demoApi = {
+  start: (phoneNumber: string, countryCode: string) =>
+    apiFetch<{ success: boolean; session: any; callSid: string }>('/demo/start', {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber, countryCode }),
+    }),
+  getStatus: () =>
+    apiFetch<{ eligible: boolean; session: any; transcript?: any[] }>('/demo/status', {
+      method: 'GET',
+    }),
+  hangup: () =>
+    apiFetch<{ success: boolean }>('/demo/hangup', {
+      method: 'POST',
+    }),
   saveCall: (data: {
     caller_number: string;
     duration?: number;

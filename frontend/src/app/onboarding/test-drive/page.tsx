@@ -362,7 +362,7 @@ export default function OnboardingTestDrivePage() {
               </div>
               <div className="flex gap-2">
                 <span className="text-[#FF6B00] font-black">2.</span>
-                <span>Say anything in Hindi or English (introduce yourself or ask about pricing).</span>
+                <span>Say anything in English (introduce yourself or ask about your business).</span>
               </div>
               <div className="flex gap-2">
                 <span className="text-[#FF6B00] font-black">3.</span>

@@ -94,7 +94,7 @@ export default function GettingStarted() {
                 <div>
                   <label className="text-[9px] text-[#6E6256]/60 font-bold block uppercase mb-1">Custom Instructions</label>
                   <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded px-2.5 py-1.5 font-mono text-[9px] text-[#6E6256] h-10 overflow-hidden line-clamp-2">
-                    Greet in English or Spanish. Collect name, budget range, and preferred visit timing.
+                    Greet caller warmly. Collect name, budget range, and preferred visit timing.
                   </div>
                 </div>
               </div>
@@ -104,7 +104,7 @@ export default function GettingStarted() {
             <div className="p-8 text-left space-y-3">
               <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Customize Your AI</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Configure your language preferences (20+ languages supported including English, Spanish, French, German, Mandarin, Arabic, and more), custom greeting text, and custom prompt guidelines.
+                Configure your English voice assistant, custom greeting text, and custom prompt guidelines.
               </p>
             </div>
           </motion.div>

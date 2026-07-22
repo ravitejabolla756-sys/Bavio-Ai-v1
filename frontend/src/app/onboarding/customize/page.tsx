@@ -82,14 +82,14 @@ export default function OnboardingCustomizePage() {
 
   const loadFallbackTemplates = (industryName: string) => {
     const indLower = industryName.toLowerCase();
-    let prompt = "You are a professional AI receptionist for a business in India. You speak conversationally and naturally. Your goals are: 1) Greet the caller warmly, 2) Understand their intent, 3) Capture key details, 4) Keep answers clear and friendly.";
+    let prompt = "You are a professional AI receptionist. You speak conversationally and naturally in English. Your goals are: 1) Greet the caller warmly, 2) Understand their intent, 3) Capture key details, 4) Keep answers clear and friendly.";
 
     if (indLower.includes("real") || indLower.includes("estate")) {
-      prompt = "You are a helpful AI receptionist for a premier real estate agency in India. You speak naturally in English and Hindi. Your goals are: 1) Welcome the caller, 2) Inquire if they want to buy, rent, or sell a property, 3) Ask for their preferred location and budget range, 4) Assure them an agent will call back soon.";
+      prompt = "You are a helpful AI receptionist for a premier real estate agency. You speak naturally in English. Your goals are: 1) Welcome the caller, 2) Inquire if they want to buy, rent, or sell a property, 3) Ask for their preferred location and budget range, 4) Assure them an agent will call back soon.";
     } else if (indLower.includes("health") || indLower.includes("clinic")) {
-      prompt = "You are a professional AI receptionist for a healthcare clinic in India. You speak warmly and naturally. Your goals are: 1) Greet the patient, 2) Ask about their appointment booking preference or general inquiry, 3) Capture their preferred slot and details, 4) Assure them of confirmation via WhatsApp.";
+      prompt = "You are a professional AI receptionist for a healthcare clinic. You speak warmly and naturally in English. Your goals are: 1) Greet the patient, 2) Ask about their appointment request preference or general inquiry, 3) Capture their preferred date/time and contact details, 4) Assure them a representative will contact them to confirm.";
     } else if (indLower.includes("restaurant") || indLower.includes("food")) {
-      prompt = "You are a friendly AI receptionist for a popular restaurant. You speak naturally in Hinglish/English. Your goals are: 1) Greet the caller, 2) Assist with table bookings and menu inquiries, 3) Capture the number of guests and booking time, 4) Log details to confirm reservation.";
+      prompt = "You are a friendly AI receptionist for a popular restaurant. You speak naturally in English. Your goals are: 1) Greet the caller, 2) Assist with table reservation inquiries, 3) Capture the number of guests and preferred time, 4) Log details to confirm availability.";
     }
 
     setSystemPrompt(prompt);
@@ -99,11 +99,11 @@ export default function OnboardingCustomizePage() {
   const handleApplyTemplate = (type: "real_estate" | "healthcare" | "restaurant" | "reset") => {
     let prompt = "";
     if (type === "real_estate") {
-      prompt = "You are a helpful AI receptionist for a premier real estate agency in India. You speak naturally in English and Hindi. Your goals are: 1) Welcome the caller, 2) Inquire if they want to buy, rent, or sell a property, 3) Ask for their preferred location and budget range, 4) Assure them an agent will call back soon.";
+      prompt = "You are a helpful AI receptionist for a premier real estate agency. You speak naturally in English. Your goals are: 1) Welcome the caller, 2) Inquire if they want to buy, rent, or sell a property, 3) Ask for their preferred location and budget range, 4) Assure them an agent will call back soon.";
     } else if (type === "healthcare") {
-      prompt = "You are a professional AI receptionist for a healthcare clinic in India. You speak warmly and naturally. Your goals are: 1) Greet the patient, 2) Ask about their appointment booking preference or general inquiry, 3) Capture their preferred slot and details, 4) Assure them of confirmation via WhatsApp.";
+      prompt = "You are a professional AI receptionist for a healthcare clinic. You speak warmly and naturally in English. Your goals are: 1) Greet the patient, 2) Ask about their appointment request preference or general inquiry, 3) Capture their preferred date/time and contact details, 4) Assure them a representative will contact them to confirm.";
     } else if (type === "restaurant") {
-      prompt = "You are a friendly AI receptionist for a popular restaurant. You speak naturally in Hinglish/English. Your goals are: 1) Greet the caller, 2) Assist with table bookings and menu inquiries, 3) Capture the number of guests and booking time, 4) Log details to confirm reservation.";
+      prompt = "You are a friendly AI receptionist for a popular restaurant. You speak naturally in English. Your goals are: 1) Greet the caller, 2) Assist with table reservation inquiries, 3) Capture the number of guests and preferred time, 4) Log details to confirm availability.";
     } else {
       loadFallbackTemplates(profile?.industry || "other");
       return;
@@ -324,22 +324,21 @@ export default function OnboardingCustomizePage() {
         {/* SECTION 3: INTEGRATIONS (TEASER) */}
         <div className="mb-10">
           <label className="block text-sm font-semibold text-[#140A02] mb-3" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-            Auto-Sync Leads (Coming Next)
+            Email &amp; Webhook Alerts (Coming Next)
           </label>
 
           <div className="p-5 rounded-xl border border-dashed border-[#E5E0D8] bg-[#FAF9F6] space-y-3">
             <div className="flex gap-2.5 items-start text-xs text-[#5A5A66]">
               <span className="text-[#FF6B00] text-sm shrink-0">⚡</span>
               <p className="leading-relaxed">
-                Connect your CRM or spreadsheet to auto-sync captured leads. Available after trial starts.
+                Connect your email notifications or custom webhooks to auto-sync captured leads. Available after subscription starts.
               </p>
             </div>
             
             <div className="pl-6 text-[11px] text-[#5A5A66] space-y-1 font-bold">
-              <div>✓ Google Sheets</div>
-              <div>✓ HubSpot</div>
-              <div>✓ Salesforce</div>
-              <div>✓ Zoho CRM</div>
+              <div>✓ Email Alerts</div>
+              <div>✓ Webhook Triggers</div>
+              <div>✓ Slack Alerts</div>
             </div>
           </div>
         </div>

@@ -68,8 +68,7 @@ async function signup(req, res) {
         const finalPhone = phone || businessPhone || (dialCode && phoneNumber ? (dialCode + phoneNumber) : null);
         
         let inferredCountryFromCurrency = null;
-        if (currency === 'INR') inferredCountryFromCurrency = 'IN';
-        else if (currency === 'USD') inferredCountryFromCurrency = 'US';
+        if (currency === 'USD') inferredCountryFromCurrency = 'US';
         else if (currency === 'GBP') inferredCountryFromCurrency = 'GB';
         else if (currency === 'AUD') inferredCountryFromCurrency = 'AU';
         else if (currency === 'SGD') inferredCountryFromCurrency = 'SG';
@@ -78,7 +77,16 @@ async function signup(req, res) {
         const finalCountry = country || finalCountryCode;
         
         // 1. Validation
-        if (!finalName || !finalEmail || !finalPhone || !finalPassword) {
+        const { validateAndNormalizePhone } = require('../utils/phoneValidation');
+        const phoneValidationResult = validateAndNormalizePhone(finalPhone, finalCountryCode);
+        
+        if (!phoneValidationResult.valid) {
+            return res.status(400).json({ success: false, error: phoneValidationResult.error });
+        }
+
+        const finalNormalizedPhone = phoneValidationResult.normalized;
+
+        if (!finalName || !finalEmail || !finalNormalizedPhone || !finalPassword) {
             return res.status(400).json({ success: false, error: 'Name/Business name, email, phone, and password are required' });
         }
 
@@ -86,7 +94,7 @@ async function signup(req, res) {
         const { data: authData, error: authError } = await db.supabase.auth.admin.createUser({
             email: finalEmail,
             password: finalPassword,
-            phone: finalPhone,
+            phone: finalNormalizedPhone,
             email_confirm: true,
             phone_confirm: true,
             user_metadata: {
@@ -129,14 +137,16 @@ async function signup(req, res) {
             'scale': 'enterprise'
         };
 
-        const finalMinutesLimit = isDeveloper ? 999999 : (isPaidPlan ? (plan.toLowerCase().trim() === 'starter' ? 200 : plan.toLowerCase().trim() === 'growth' ? 500 : 1500) : 30);
-        const finalOnboardingStep = isDeveloper ? 6 : onboardingStep;
-        const finalOnboardingStatus = isDeveloper ? 'ready' : onboardingStatus;
-        const finalPlan = isDeveloper ? 'enterprise' : (isPaidPlan ? planKeyMap[plan.toLowerCase().trim()] : 'free');
-        const finalPlanName = isDeveloper ? 'developer' : (isPaidPlan ? plan.toLowerCase().trim() : 'free_trial');
+        const finalMinutesLimit = isDeveloper ? 999999 : 0;
+        const finalOnboardingStep = isDeveloper ? 6 : 0;
+        const finalOnboardingStatus = isDeveloper ? 'ready' : 'pre_payment';
+        const finalPlan = isDeveloper ? 'enterprise' : 'free';
+        const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
+        const finalStatus = 'active'; // business_status enum only allows active or suspended
+        const finalSubStatus = isDeveloper ? 'active' : 'inactive';
 
-        // 4. Insert into businesses table with active status
+        // 4. Insert into businesses table
         const result = await db.query(
             `INSERT INTO businesses (
                 id, name, email, phone, password_hash, api_key, 
@@ -145,14 +155,14 @@ async function signup(req, res) {
                 whatsapp_number, onboarding_step, onboarding_status,
                 plan, plan_name, current_period_end, subscription_status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'active', $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
             RETURNING *`,
             [
-                supabaseUser.id, finalName, finalEmail, finalPhone, 'supabase_auth_placeholder', apiKey, 
-                finalMinutesLimit, finalCountry, finalCountryCode, finalName, business_description || null, 
-                industry || null, language || 'en-US', finalPhone, 
+                supabaseUser.id, finalName, finalEmail, finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
+                finalMinutesLimit, finalStatus, finalCountry, finalCountryCode, finalName, business_description || null, 
+                industry || null, language || 'en-US', finalNormalizedPhone, 
                 finalOnboardingStep, finalOnboardingStatus,
-                finalPlan, finalPlanName, finalPeriodEnd, isDeveloper ? 'active' : 'trialing'
+                finalPlan, finalPlanName, finalPeriodEnd, finalSubStatus
             ]
         );
         
@@ -352,13 +362,11 @@ async function login(req, res) {
         console.error('Login error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
-}
-
-async function getProfile(req, res) {
+}async function getProfile(req, res) {
     try {
         let result = await db.query(
-            'SELECT * FROM businesses WHERE id = $1 AND status = $2',
-            [req.user.id, 'active']
+            'SELECT * FROM businesses WHERE id = $1',
+            [req.user.id]
         );
         
         if (result.rows.length === 0) {
@@ -369,10 +377,10 @@ async function getProfile(req, res) {
             const insertResult = await db.query(
                 `INSERT INTO businesses (
                     id, name, email, phone, password_hash, api_key, 
-                    minutes_limit, minutes_used, status, country,
-                    full_name, onboarding_step, onboarding_status
+                    minutes_limit, minutes_used, status, country, country_code,
+                    full_name, onboarding_step, onboarding_status, subscription_status
                  )
-                 VALUES ($1, $2, $3, $4, $5, $6, 30, 0, 'active', $7, $8, 0, 'pending')
+                 VALUES ($1, $2, $3, $4, $5, $6, 0, 0, 'registered', 'US', 'US', $7, 0, 'pre_payment', 'inactive')
                  RETURNING *`,
                 [
                     req.user.id,
@@ -381,7 +389,6 @@ async function getProfile(req, res) {
                     `google_oauth_fallback_${req.user.id}`,
                     'supabase_auth_placeholder',
                     apiKey,
-                    'IN', // default country
                     emailPrefix
                 ]
             );
@@ -391,11 +398,76 @@ async function getProfile(req, res) {
         const user = result.rows[0];
         
         // Compute trial metadata
-        const limit = user.minutes_limit || 30;
+        const limit = user.minutes_limit || 0;
         const used = user.minutes_used || 0;
         const trialMinutesAvailable = Math.max(0, limit - used);
         const trialStatus = used >= limit ? 'EXPIRED' : 'ACTIVE';
         const trialEndsAt = new Date(new Date(user.created_at).getTime() + 14 * 24 * 3600 * 1000).toISOString();
+
+        // 1. Compute demo_status
+        let demoStatus = 'eligible';
+        const demoRes = await db.query(
+            "SELECT demo_status, demo_used FROM demo_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
+            [user.id]
+        );
+        if (demoRes.rows.length > 0) {
+            const lastDemo = demoRes.rows[0];
+            if (lastDemo.demo_used) {
+                demoStatus = 'completed';
+            } else if (lastDemo.demo_status === 'active') {
+                demoStatus = 'active';
+            } else if (lastDemo.demo_status === 'failed') {
+                demoStatus = 'failed';
+            }
+        }
+
+        // 2. Compute assistant_status
+        const astCount = await db.query("SELECT id FROM assistants WHERE business_id = $1 LIMIT 1", [user.id]);
+        const assistantStatus = astCount.rows.length > 0 ? 'configured' : 'not_configured';
+
+        // 3. Compute phone_number_status
+        const phoneNumberStatus = user.twilio_number ? 'assigned' : 'not_assigned';
+
+        // 4. Resolve nextRoute
+        const subStatus = user.subscription_status || 'inactive';
+        const onboardingStatus = user.onboarding_status || 'pre_payment';
+        let nextRoute = '/demo';
+
+        if (subStatus === 'cancelled' || subStatus === 'expired') {
+            nextRoute = '/billing/reactivate';
+        } else if (subStatus === 'inactive' || subStatus === 'trialing') {
+            // Check if there is a pending subscription intent
+            const intentCheck = await db.query(
+                "SELECT id FROM subscription_intents WHERE business_id = $1 AND status = 'pending' LIMIT 1",
+                [user.id]
+            );
+            if (intentCheck.rows.length > 0) {
+                nextRoute = '/payment-processing';
+            } else if (demoStatus === 'eligible' || demoStatus === 'active') {
+                nextRoute = '/demo';
+            } else {
+                nextRoute = '/pricing';
+            }
+        } else if (subStatus === 'pending') {
+            nextRoute = '/payment-processing';
+        } else if (subStatus === 'active') {
+            if (onboardingStatus === 'completed' || user.onboarding_step >= 6) {
+                nextRoute = '/dashboard';
+            } else {
+                const step = user.onboarding_step || 0;
+                if (step < 3) {
+                    nextRoute = '/onboarding';
+                } else if (step === 3) {
+                    nextRoute = '/onboarding/ai-setup';
+                } else if (step === 4) {
+                    nextRoute = '/onboarding/phone';
+                } else if (step === 5) {
+                    nextRoute = '/onboarding/test-drive';
+                } else {
+                    nextRoute = '/dashboard';
+                }
+            }
+        }
 
         // Return flat profile matching frontend BusinessProfile type
         res.status(200).json({
@@ -415,12 +487,15 @@ async function getProfile(req, res) {
             trialStatus,
             trialMinutesAvailable,
             trialEndsAt,
-            status: 'ACTIVE',
-            plan: user.plan || 'free',
-            plan_name: user.plan_name || 'Free Trial',
-            current_period_end: user.current_period_end || null,
-            onboarding_status: user.onboarding_status || 'pending',
+            status: subStatus === 'inactive' ? 'registered' : user.status,
+            account_status: subStatus === 'inactive' ? 'registered' : user.status,
+            subscription_status: subStatus,
+            onboarding_status: onboardingStatus,
             onboarding_step: user.onboarding_step || 0,
+            assistant_status: assistantStatus,
+            phone_number_status: phoneNumberStatus,
+            demo_status: demoStatus,
+            nextRoute,
             dodo_subscription_id: user.dodo_subscription_id || null,
             industry: user.industry || null,
             language: user.language || null,

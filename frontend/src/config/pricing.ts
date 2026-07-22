@@ -9,16 +9,9 @@ export interface PricingTierData {
 }
 
 export const PRICING_BY_COUNTRY: Record<string, PricingTierData> = {
-  IN: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
   US: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  CA: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
   GB: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
   AU: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  AE: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  DE: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  FR: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  SG: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
-  NZ: { currency: "$",  currencyCode: "USD", starter: 49,   growth: 99,   scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
   DEFAULT: { currency: "$", currencyCode: "USD", starter: 49, growth: 99, scale: 199,  overageRate: "$0.06/min", mostPopularBadge: "Most popular" },
 };
 
@@ -141,10 +134,10 @@ export const FAQS = [
   },
   {
     q: "Is there a trial period?",
-    a: "Free trial call answering minutes on every plan. No credit card required. Full access to all features during the trial. Cancel anytime.",
+    a: "Try Bavio's AI receptionist live demo for free. Full custom business onboarding and dedicated numbers unlock upon plan subscription.",
   },
   {
     q: "Which currencies do you support?",
-    a: "Bavio bills in your local currency — INR for India, USD for the US and Canada, GBP for the UK, AUD for Australia, EUR for Europe, AED for the UAE, and more. Internal cost accounting is in USD.",
+    a: "Bavio bills in launch currencies including USD for US/Canada, GBP for the UK, AUD for Australia, and SGD for Singapore.",
   },
 ];

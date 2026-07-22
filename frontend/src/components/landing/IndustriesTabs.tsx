@@ -54,7 +54,7 @@ const tabList = [
     label: "Healthcare",
     icon: Stethoscope,
     title: "Patient Scheduling & Intake",
-    desc: "Patients looking to schedule appointments get routed through Bavio. Collects symptoms, triages urgency level, and updates calendars dynamically.",
+    desc: "Patients looking to request appointments get routed through Bavio. Collects symptoms, triages urgency level, and organizes details in your dashboard.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
@@ -84,12 +84,12 @@ const tabList = [
     id: "consulting",
     label: "Consulting",
     icon: Briefcase,
-    title: "Consultation Booking Log",
-    desc: "Clients calling for strategy or advisory sessions get booked by Bavio instantly. Confirms agenda, duration, and logs requirements.",
+    title: "Consultation Request Log",
+    desc: "Clients calling for strategy or advisory sessions get their consultation requests captured. Logs agenda, duration, and specific requirements.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Consultation Booking Log</span>
+          <span className="font-bold text-[#140A02]">Consultation Request Log</span>
           <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">{"Today's Schedule"}</span>
         </div>
         <div className="space-y-3">
@@ -201,10 +201,10 @@ export default function IndustriesTabs() {
               {activeTab.desc}
             </p>
             <div className="text-[#F97316] font-mono text-base font-bold">
-              {activeTab.id === "real-estate" ? "4.8x more site visits booked" : 
-               activeTab.id === "healthcare" ? "95% front-desk call reduction" : 
-               activeTab.id === "consulting" ? "100% booking capture rate" : 
-               "40% support ticket resolution jump"}
+              {activeTab.id === "real-estate" ? "24/7 lead qualification & call capture" : 
+               activeTab.id === "healthcare" ? "95% call capture rate" : 
+               activeTab.id === "consulting" ? "100% call transcript logging" : 
+               "Instant caller lead capture"}
             </div>
           </div>
 
