@@ -48,21 +48,21 @@ export default function WaitlistSection() {
 
           {/* Heading */}
           <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.04em] text-[#140A02] mb-6 leading-[0.9] max-w-[620px]">
-            Get Early Access <br />
-            To Bavio.
+            Start Answering Calls <br />
+            With Bavio.
           </h2>
 
           {/* Subtext */}
           <p className="text-[#6B5A4C] text-[20px] font-normal leading-[1.7] max-w-[720px] mx-auto font-sans mb-8">
-            We are onboarding businesses globally in batches to ensure premium service quality and low-latency performance. Get early access to the AI receptionist that never misses a call.
+            Start answering business calls, qualifying leads, and capturing customer details automatically. Sign up today to speak with Bavio’s AI assistant.
           </p>
 
           {/* Action Button */}
           <Link
-            href="/signup"
+            href="/sign-up"
             className="bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
           >
-            <span>Join Waitlist</span>
+            <span>Try Bavio Free</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 

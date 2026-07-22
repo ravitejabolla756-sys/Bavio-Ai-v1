@@ -44,7 +44,7 @@ export default function Hero() {
           transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="text-[#6B5A4C] text-[18px] md:text-[20px] font-normal leading-[1.7] max-w-[720px] mb-8 font-sans"
         >
-          Bavio answers every call in 20+ languages naturally, qualifies leads, books appointments, and sends instant WhatsApp alerts.
+          Bavio answers business calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard.
         </motion.p>
 
         {/* Buttons */}
@@ -52,31 +52,36 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center gap-4 mb-16"
+          className="flex flex-col items-center gap-3 mb-16"
         >
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[52px]"
-          >
-            <GlareHover
-              glareColor="#ffffff"
-              glareOpacity={0.25}
-              glareAngle={-30}
-              glareSize={200}
-              borderRadius="9999px"
-              className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
+          <div className="flex items-center gap-4">
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[52px]"
             >
-              <span>Start Free Trial</span>
-              <ArrowRight className="w-4 h-4" />
-            </GlareHover>
-          </Link>
-          <Link
-            href="/demo"
-            className="inline-flex items-center justify-center gap-2 border border-[#EADFD3] bg-white hover:bg-[#FAF4EE] text-[#140B06] text-[15px] font-semibold px-8 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] font-sans"
-          >
-            <Play className="w-3.5 h-3.5 text-[#FF6B00] fill-current" />
-            Watch Demo
-          </Link>
+              <GlareHover
+                glareColor="#ffffff"
+                glareOpacity={0.25}
+                glareAngle={-30}
+                glareSize={200}
+                borderRadius="9999px"
+                className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
+              >
+                <span>Try Bavio Free</span>
+                <ArrowRight className="w-4 h-4" />
+              </GlareHover>
+            </Link>
+            <Link
+              href="/signup?next=/demo"
+              className="inline-flex items-center justify-center gap-2 border border-[#EADFD3] bg-white hover:bg-[#FAF4EE] text-[#140B06] text-[15px] font-semibold px-8 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] font-sans"
+            >
+              <Play className="w-3.5 h-3.5 text-[#FF6B00] fill-current" />
+              Watch Demo
+            </Link>
+          </div>
+          <p className="text-[13px] text-[#6B5A4C]/80 font-medium font-sans mt-1">
+            Create an account and speak with Bavio’s AI assistant for up to 3 minutes. No card required.
+          </p>
         </motion.div>
 
         {/* Large Screenshot (1200px width mockup) */}
@@ -151,16 +156,16 @@ export default function Hero() {
               {/* Top stats banner */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 shrink-0">
                 <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-4 lg:p-4.5">
-                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">CALLS</span>
-                  <div className="text-2xl font-extrabold text-[#140A02] font-sans">1,892</div>
+                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">Calls handled</span>
+                  <div className="text-lg font-extrabold text-[#140A02] font-sans">Usage overview</div>
                 </div>
                 <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-4 lg:p-4.5">
-                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">LEADS</span>
-                  <div className="text-2xl font-extrabold text-[#F97316] font-sans">482</div>
+                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">Leads captured</span>
+                  <div className="text-lg font-extrabold text-[#F97316] font-sans">Product preview</div>
                 </div>
                 <div className="bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-4 lg:p-4.5">
-                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">AVG RESPONSE</span>
-                  <div className="text-2xl font-extrabold text-[#140A02] font-sans">0.4s</div>
+                  <span className="text-[10px] text-[#6E6256] font-bold block uppercase tracking-wider mb-1">RESPONSE STYLE</span>
+                  <div className="text-lg font-extrabold text-[#140A02] font-sans">Fast &amp; Natural</div>
                 </div>
               </div>
 

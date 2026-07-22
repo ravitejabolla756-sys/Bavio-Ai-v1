@@ -53,7 +53,7 @@ export default function CompanyPage() {
     email: "",
     message: "",
   });
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (
@@ -65,16 +65,7 @@ export default function CompanyPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) return;
-
-    setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setFormSubmitted(true);
-      setFormData({ name: "", email: "", message: "" });
-      setTimeout(() => setFormSubmitted(false), 5000);
-    }, 1200);
+    setErrorMsg("Contact form submissions are temporarily disabled during the controlled beta. Please email hello@bavio.in directly.");
   };
 
   const timeline = [
@@ -82,7 +73,7 @@ export default function CompanyPage() {
       date: "April 2026",
       title: "Bavio Backend Complete",
       description:
-        "Successfully integrated advanced AI language processing, enterprise-grade voice infrastructure, and WhatsApp. Achieved sub-100ms conversational processing latency.",
+        "Successfully integrated advanced AI language processing, enterprise-grade voice infrastructure, and WhatsApp. Achieved real-time conversational voice stream processing.",
       status: "done",
     },
     {
@@ -132,13 +123,13 @@ export default function CompanyPage() {
               Our Company
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
-              Never Miss Another Customer Call. <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">We Built Bavio Because We Understand What That Costs.</span>
+              We Built Bavio Because <br className="hidden sm:inline" />
+              <span className="text-[#FF6B00]">Every Missed Call Can Mean a Lost Customer.</span>
             </h1>
-            <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl">
-              We started Bavio because we watched too many businesses lose
-              customers to missed calls. We are on a mission to help 1 million
-              businesses capture every lead automatically.
+            <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl font-sans">
+              Bavio helps businesses answer customer calls, qualify enquiries and keep every
+              conversation organized. We are building a simpler way for small teams to stay
+              available without adding a full-time front desk.
             </p>
           </motion.div>
         </section>
@@ -170,19 +161,13 @@ export default function CompanyPage() {
                     {"\"We get 50 inquiries a week but only convert 10 because we miss half the calls.\""}
                   </blockquote>
                   <p>
-                    We realized: While advanced AI language processing and voice technology are expanding globally, no one is building for SMBs at a price they can afford. Every competitor charges $100+/month minimum. A business owner sees that price and thinks,{" "}
-                    <em>
-                      {"\"That's a new full-time employee, minus the benefits.\""}
-                    </em>
+                    We realized: While advanced AI language processing and voice technology are expanding globally, no one is building for small business teams at a price they can easily afford. A business owner sees expensive enterprise solutions and thinks it is out of reach.
                   </p>
                   <p>
-                    So we built Bavio: <strong>$49/month</strong>. Speaks
-                    multiple languages natively. Captures leads instantly.
-                    Works 24/7. No setup complexity. No IT team needed.
+                    So we built Bavio. It answers calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard. No setup complexity, no IT team needed.
                   </p>
                   <p className="font-semibold text-[#140A02]">
-                    Our goal is simple: help 1 million businesses never
-                    miss another customer call.
+                    Our goal is simple: help businesses stay responsive, capture more opportunities, and deliver a better calling experience.
                   </p>
                 </div>
               </div>
@@ -223,7 +208,7 @@ export default function CompanyPage() {
                     </div>
                     <div className="bg-[#FF6B00]/10 text-[#FF6B00] px-2.5 py-1 rounded-full text-xs font-bold border border-[#FF6B00]/20 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-ping" />
-                      Live Sub-100ms
+                      Live Voice Streams
                     </div>
                   </div>
 
@@ -311,9 +296,8 @@ export default function CompanyPage() {
                     Global-Ready
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
-                    Built for every business from day one. Our system supports
-                    20+ languages natively and adapts seamlessly to diverse business
-                    models and communication preferences.
+                    Built for initial launch markets with English voice support,
+                    adapting seamlessly to diverse business models and communication preferences.
                   </p>
                 </div>
               </div>
@@ -426,162 +410,7 @@ export default function CompanyPage() {
           </div>
         </section>
 
-        {/* SECTION 5: WHY INVEST IN BAVIO? */}
-        <section className="py-20 border-t border-[#F3E4D4]">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="max-w-3xl mb-16">
-              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                For Investors
-              </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
-                Why Invest in Bavio?
-              </h2>
-              <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
-                The business fundamentals powering our unit economics and moat.
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Left Column: The Opportunity */}
-              <div className="space-y-6 bg-white border border-[#F3E4D4] p-8 rounded-3xl">
-                <div className="flex items-center gap-2 text-[#FF6B00]">
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="font-bold uppercase tracking-wider text-xs">
-                    The Opportunity
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-[#140A02]">
-                  Unlocking the SMB Market
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                  <div className="space-y-1">
-                    <div className="text-4xl font-extrabold text-[#FF6B00]">
-                      75M+
-                    </div>
-                    <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
-                      SMBs Globally
-                    </div>
-                    <p className="text-xs text-[#6B5A4C]">
-                      Massive underserved market transitioning to digital ops.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-4xl font-extrabold text-[#140A02]">
-                      60%
-                    </div>
-                    <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
-                      Calls Unanswered
-                    </div>
-                    <p className="text-xs text-[#6B5A4C]">
-                      SMBs miss more than half of their incoming customer calls.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-4xl font-extrabold text-[#140A02]">
-                      $15B+
-                    </div>
-                    <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
-                      Revenue Lost
-                    </div>
-                    <p className="text-xs text-[#6B5A4C]">
-                      Lost revenue due directly to missed sales calls.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-4xl font-extrabold text-[#FF6B00]">
-                      Zero
-                    </div>
-                    <div className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
-                      Funded Competitors
-                    </div>
-                    <p className="text-xs text-[#6B5A4C]">
-                      No active funded players pricing for the micro-SMB tier.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Our Advantage */}
-              <div className="space-y-6 bg-white border border-[#F3E4D4] p-8 rounded-3xl">
-                <div className="flex items-center gap-2 text-[#FF6B00]">
-                  <Shield className="w-5 h-5" />
-                  <span className="font-bold uppercase tracking-wider text-xs">
-                    Our Advantage
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-[#140A02]">
-                  Defensible Moat &amp; Economics
-                </h3>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] p-1.5 rounded-lg mt-0.5">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#140A02]">
-                        Multilingual Voice Stack
-                      </h4>
-                      <p className="text-xs text-[#6B5A4C]">
-                        Advanced AI language processing allows flawless,
-                        low-latency multilingual voice streams.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] p-1.5 rounded-lg mt-0.5">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#140A02]">
-                        62–71% Gross Margins
-                      </h4>
-                      <p className="text-xs text-[#6B5A4C]">
-                        Highly optimized engine allows strong profitability
-                        even at our low monthly price point.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] p-1.5 rounded-lg mt-0.5">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#140A02]">
-                        Low-Cost Voice Compute
-                      </h4>
-                      <p className="text-xs text-[#6B5A4C]">
-                        10x cheaper pipeline than global products relying on bloated
-                        telephony routing and translation.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] p-1.5 rounded-lg mt-0.5">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#140A02]">
-                        Regulatory-Compliant Telephony
-                      </h4>
-                      <p className="text-xs text-[#6B5A4C]">
-                        Compliant enterprise-grade voice infrastructure routing avoids
-                        VoIP bans common to international providers.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
 
 
@@ -673,20 +502,15 @@ export default function CompanyPage() {
 
                   <div className="flex items-center gap-3">
                     <div className="bg-[#FF6B00]/10 text-[#FF6B00] p-2.5 rounded-xl">
-                      <MessageSquare className="w-4 h-4" />
+                      <PhoneCall className="w-4 h-4 animate-pulse" />
                     </div>
                     <div>
                       <div className="text-[10px] text-[#6B5A4C] font-bold uppercase tracking-wider">
-                        WhatsApp Business
+                        Phone Support
                       </div>
-                      <a
-                        href="https://wa.me/15550192834"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-bold text-[#140A02] hover:text-[#FF6B00] transition-colors"
-                      >
-                        +1 (555) 019-2834
-                      </a>
+                      <span className="text-[12px] font-semibold text-[#6B5A4C]">
+                        Business phone support will be available during the controlled beta.
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -694,21 +518,7 @@ export default function CompanyPage() {
 
               {/* Right Side: Form */}
               <div className="lg:col-span-7 bg-white border border-[#F3E4D4] p-8 rounded-3xl shadow-sm">
-                {formSubmitted ? (
-                  <div className="h-full flex flex-col items-center justify-center py-12 text-center">
-                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] w-16 h-16 rounded-full flex items-center justify-center mb-4">
-                      <Check className="w-8 h-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-[#140A02] mb-2">
-                      Message Sent!
-                    </h3>
-                    <p className="text-sm text-[#6B5A4C] max-w-sm">
-                      Thank you for reaching out. We will get back to you within 2
-                      hours.
-                    </p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label
@@ -742,7 +552,7 @@ export default function CompanyPage() {
                           required
                           value={formData.email}
                           onChange={handleInputChange}
-                          placeholder="you@company.in"
+                          placeholder="you@company.com"
                           className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all"
                         />
                       </div>
@@ -767,6 +577,12 @@ export default function CompanyPage() {
                       />
                     </div>
 
+                    {errorMsg && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold p-4 rounded-xl text-left">
+                        {errorMsg}
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       disabled={isSubmitting}
@@ -785,7 +601,6 @@ export default function CompanyPage() {
                       )}
                     </button>
                   </form>
-                )}
               </div>
             </div>
           </div>
@@ -800,7 +615,7 @@ export default function CompanyPage() {
               Ready to see Bavio in action?
             </h2>
             <p className="text-base md:text-lg text-[#6B5A4C] mb-8 max-w-xl mx-auto">
-              Start your free trial and begin capturing every lead today.
+              Create your account and experience Bavio&apos;s AI receptionist.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -808,7 +623,7 @@ export default function CompanyPage() {
                 href="/signup"
                 className="w-full sm:w-auto inline-flex items-center justify-center bg-[#FF6B00] hover:bg-[#FF7C32] text-white px-8 py-4 rounded-full text-base font-bold transition-all duration-200 shadow-sm active:scale-[0.98]"
               >
-                Start Free Trial &rarr;
+                Get Started &rarr;
               </Link>
               <Link
                 href="/#live-demo"

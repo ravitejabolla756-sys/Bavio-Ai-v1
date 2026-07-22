@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 const faqs = [
   {
     question: "How does Bavio work?",
-    answer: "Bavio provides you with a dedicated forwarding phone number. When customers call your number, Bavio's low-latency voice pipeline answers instantly, converses naturally in 20+ languages, qualifies their requirements, and sends you structured summaries via instant notifications and your dashboard."
+    answer: "Bavio provides you with a dedicated forwarding phone number. When customers call your number, Bavio's low-latency voice pipeline answers instantly, converses naturally in English, qualifies their requirements, and sends you structured summaries via instant notifications and your dashboard."
   },
   {
     question: "Can I keep my existing number?",
@@ -15,11 +15,11 @@ const faqs = [
   },
   {
     question: "What languages are supported?",
-    answer: "Absolutely. Bavio is fully tuned for global markets. It supports English, Spanish, French, German, Mandarin, and 20+ other languages natively without complex configuration."
+    answer: "Bavio currently supports English voice conversations for our initial launch markets (US, UK, and Australia)."
   },
   {
-    question: "Can it book appointments?",
-    answer: "Yes, Bavio integrates with standard calendar services like Google Calendar, Outlook, or your internal CRM. It can check real-time availability, offer time slots to callers, and reserve bookings automatically."
+    question: "Can it handle appointment requests?",
+    answer: "Bavio captures appointment requests from callers, collecting their preferred dates, times, and contact details for your team to review and confirm from your dashboard."
   },
   {
     question: "How many calls can it handle simultaneously?",

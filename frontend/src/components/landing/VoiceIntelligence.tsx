@@ -148,7 +148,7 @@ export default function VoiceIntelligence() {
             </div>
 
             <div className="text-[10px] font-mono text-[#6E6256] text-center bg-[#FFF7ED] border border-[#F3E4D4] rounded-xl py-2 mt-2">
-              Auto-saved to Hubspot & Salesforce
+              Saved to Lead Dashboard
             </div>
           </motion.div>
 

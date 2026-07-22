@@ -15,10 +15,11 @@ router.post('/razorpay/verify', requireAuth, billingController.verifyRazorpayPay
 
 router.get('/trial-status', requireAuth, billingController.getTrialStatus);
 router.get('/pricing', requireAuth, billingController.getPricing);
+router.get('/plans', billingController.getPricing);
 router.post('/create-checkout', requireAuth, billingController.createCheckout);
 
-// Webhook - NO authentication (called by Dodo)
-router.post('/webhook', billingController.handleWebhook);
-router.post('/dodo-webhook', billingController.handleDodoWebhook);
+// Webhook - NO authentication (called by Dodo Payments)
+router.post('/webhook', express.raw({ type: 'application/json' }), billingController.handleWebhook);
+router.post('/dodo-webhook', express.raw({ type: 'application/json' }), billingController.handleWebhook);
 
 module.exports = router;

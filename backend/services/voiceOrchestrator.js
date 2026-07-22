@@ -16,27 +16,12 @@ Reply in the same language the customer uses.`;
  */
 async function processVoiceCall(audioBuffer, clientId, callId) {
     const startTime = Date.now();
+    let language = 'en-US';
+    let voice = 'alloy';
     
     try {
-        // Step 1: Speech to Text
-        console.log(`[Call ${callId}] Step 1: Converting speech to text...`);
-        const sttResult = await openAIService.transcribeAudio(audioBuffer, 'hi-IN');
-        const transcript = sttResult.text;
-        console.log(`[Call ${callId}] Transcript: "${transcript}"`);
-
-        if (!transcript || transcript.trim().length === 0) {
-            const fallbackText = "Namaste! Main Bavio AI hoon. Kripya dobara koshish karein.";
-            const fallbackAudio = await openAIService.textToSpeech(fallbackText, 'alloy', 'hi-IN', 'mp3');
-            return {
-                audioBuffer: fallbackAudio,
-                transcript: '',
-                aiResponse: fallbackText,
-                duration: Math.ceil((Date.now() - startTime) / 1000)
-            };
-        }
-
-        // Step 2: Get client's assistant config
-        console.log(`[Call ${callId}] Step 2: Fetching assistant config...`);
+        // Step 1: Get client's assistant config first
+        console.log(`[Call ${callId}] Step 1: Fetching assistant config...`);
         const assistantResult = await db.query(
             `SELECT a.*, c.system_prompt 
              FROM assistants a 
@@ -46,7 +31,30 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
             [clientId]
         );
 
-        const systemPrompt = assistantResult.rows[0]?.system_prompt || DEFAULT_SYSTEM_PROMPT;
+        const assistant = assistantResult.rows[0] || {};
+        const systemPrompt = assistant.system_prompt || DEFAULT_SYSTEM_PROMPT;
+        language = assistant.language || 'en-US';
+        voice = assistant.voice_id || 'alloy';
+
+        // Step 2: Speech to Text using configured language
+        console.log(`[Call ${callId}] Step 2: Converting speech to text for language ${language}...`);
+        const sttResult = await openAIService.transcribeAudio(audioBuffer, language);
+        const transcript = sttResult.text;
+        console.log(`[Call ${callId}] Transcript: "${transcript}"`);
+
+        if (!transcript || transcript.trim().length === 0) {
+            const isHindi = language.startsWith('hi');
+            const fallbackText = isHindi 
+                ? "Namaste! Kripya dobara koshish karein." 
+                : "Sorry, I didn't catch that. Could you please repeat it?";
+            const fallbackAudio = await openAIService.textToSpeech(fallbackText, voice, language, 'mp3');
+            return {
+                audioBuffer: fallbackAudio,
+                transcript: '',
+                aiResponse: fallbackText,
+                duration: Math.ceil((Date.now() - startTime) / 1000)
+            };
+        }
 
         // Step 3: Fetch history and Chat with AI
         console.log(`[Call ${callId}] Step 3: Getting AI response...`);
@@ -67,8 +75,8 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
         console.log(`[Call ${callId}] AI Response: "${aiResponse}"`);
 
         // Step 4: Text to Speech
-        console.log(`[Call ${callId}] Step 4: Converting to speech...`);
-        const responseAudio = await openAIService.textToSpeech(aiResponse, 'alloy', 'hi-IN', 'mp3');
+        console.log(`[Call ${callId}] Step 4: Converting to speech using voice ${voice}...`);
+        const responseAudio = await openAIService.textToSpeech(aiResponse, voice, language, 'mp3');
 
         // Step 5: Save to DB
         console.log(`[Call ${callId}] Step 5: Saving conversation...`);
@@ -100,8 +108,11 @@ async function processVoiceCall(audioBuffer, clientId, callId) {
         
         // Return fallback audio on error
         try {
-            const fallbackText = "Maaf kijiye, koi technical problem ho gayi hai. Kripya baad mein koshish karein.";
-            const fallbackAudio = await openAIService.textToSpeech(fallbackText, 'alloy', 'hi-IN', 'mp3');
+            const isHindi = language.startsWith('hi');
+            const fallbackText = isHindi 
+                ? "Maaf kijiye, koi technical problem ho gayi hai. Kripya baad mein koshish karein." 
+                : "I apologize, but we are experiencing technical difficulties. Please try again later.";
+            const fallbackAudio = await openAIService.textToSpeech(fallbackText, voice, language, 'mp3');
             return {
                 audioBuffer: fallbackAudio,
                 transcript: '',

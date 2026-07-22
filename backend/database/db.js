@@ -34,8 +34,26 @@ const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '', {
 
 // 3. Connection test on import
 pool.query('SELECT NOW()')
-  .then(res => {
+  .then(async res => {
     console.log('✅ Database connection test successful on import. Server time:', res.rows[0].now);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS demo_sessions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL,
+            demo_started_at TIMESTAMPTZ,
+            demo_ended_at TIMESTAMPTZ,
+            demo_duration_seconds INTEGER,
+            demo_status VARCHAR(20) DEFAULT 'eligible',
+            demo_used BOOLEAN DEFAULT false,
+            termination_reason TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `);
+      console.log('✅ demo_sessions table initialized/verified.');
+    } catch (tblErr) {
+      console.error('❌ Failed to initialize demo_sessions table:', tblErr.message);
+    }
   })
   .catch(err => {
     console.error('❌ Database connection test failed on import:', err.message);

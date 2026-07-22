@@ -217,7 +217,7 @@ export default function Customers() {
               href={ctaDestination}
               className="bg-saffron text-white text-body-xs font-bold uppercase tracking-wider px-8 py-4 rounded-full hover:bg-saffron-hover transition-all duration-200 shadow-saffron mt-2"
             >
-              Start Free Trial
+              Get Started
             </Link>
           </div>
         </section>

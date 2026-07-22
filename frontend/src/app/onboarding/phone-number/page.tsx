@@ -23,7 +23,6 @@ interface ProfileResponse {
 
 const getCountryDisplayInfo = (code: string) => {
   const map: Record<string, { name: string; flag: string; desc: string; price: string }> = {
-    IN: { name: "India", flag: "🇮🇳", desc: "Your AI receptionist answers calls 24/7 in Hindi.", price: "₹499/mo" },
     US: { name: "USA", flag: "🇺🇸", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$15/mo" },
     UK: { name: "UK", flag: "🇬🇧", desc: "Your AI receptionist answers calls 24/7 in English.", price: "£12/mo" },
     AU: { name: "Australia", flag: "🇦🇺", desc: "Your AI receptionist answers calls 24/7 in English.", price: "$20/mo" },
@@ -312,7 +311,7 @@ export default function OnboardingPhoneNumberPage() {
                   Calls to this number will be answered by your AI receptionist. You can forward your existing business calls to this number.
                 </p>
                 <p className="bg-[#FAF9F6]/50 p-2.5 rounded-lg border border-[#E5E0D8] font-mono text-[10px] text-[#140A02]">
-                  Example: Forward your main number (e.g. +91 99999 88888) to <span className="text-[#FF6B00] font-bold">{assignedNumber}</span>. When clients call your number, they reach your AI receptionist.
+                  Example: Forward your main number (e.g. +1 555-010-0200) to <span className="text-[#FF6B00] font-bold">{assignedNumber}</span>. When clients call your number, they reach your AI receptionist.
                 </p>
               </div>
             </div>

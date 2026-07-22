@@ -1,0 +1,30 @@
+[
+  {
+    "name": "United States",
+    "iso2": "US",
+    "dialCode": "+1",
+    "twilioCountryCode": "US",
+    "enabled": true
+  },
+  {
+    "name": "United Kingdom",
+    "iso2": "GB",
+    "dialCode": "+44",
+    "twilioCountryCode": "GB",
+    "enabled": true
+  },
+  {
+    "name": "Australia",
+    "iso2": "AU",
+    "dialCode": "+61",
+    "twilioCountryCode": "AU",
+    "enabled": true
+  },
+  {
+    "name": "India",
+    "iso2": "IN",
+    "dialCode": "+91",
+    "twilioCountryCode": "IN",
+    "enabled": false
+  }
+]

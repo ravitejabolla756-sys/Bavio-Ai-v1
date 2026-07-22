@@ -42,11 +42,11 @@ export default function ProductPage() {
   const productFeatures: ProductFeature[] = [
     {
       title: "Real-Time Voice Processing",
-      description: "Sub-500ms response latency ensures natural conversations. No awkward silences or robotic delays.",
+      description: "Fast responses ensure natural conversations. No awkward silences or robotic delays.",
       icon: Lightning,
       bullets: [
         "Concurrent voice streaming processing",
-        "Sub-500ms latency for fluent flow",
+        "Low latency for fluent flow",
         "Intelligent background noise suppression",
         "Automatic speech pacing and overlap detection",
       ],
@@ -58,19 +58,19 @@ export default function ProductPage() {
           </div>
           <VoiceWaveform isPlaying={true} barCount={10} color="bg-saffron" className="h-10" />
           <div className="text-center font-mono text-body-xs">
-            <span className="text-darkTextMuted">Average Latency:</span> <strong className="text-white">380ms</strong>
+            <span className="text-darkTextMuted">Response Style:</span> <strong className="text-white">Fast & Natural</strong>
           </div>
         </div>
       ),
     },
     {
-      title: "No-Code Drag-and-Drop Builder",
-      description: "Design logic flows visually. Set conditional branching, appointment bookings, and CRM updates in 5 minutes.",
+      title: "No-Code Custom Instructions",
+      description: "Configure your assistant's rules, custom greeting text, and prompts in minutes.",
       icon: GitFork,
       bullets: [
-        "Visual visual logic builder",
+        "Visual prompt guidelines builder",
         "If-else routing conditions",
-        "Calendar synchronization (Cal.com / Google Calendar)",
+        "Collect appointment request details",
         "Direct webhook triggers for any workflow event",
       ],
       visual: (
@@ -85,7 +85,7 @@ export default function ProductPage() {
           </div>
           <div className="flex items-center gap-2 p-2.5 bg-darkBg border border-[#2a2a2a] rounded-lg">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-white font-bold">3. Push Lead to CRM</span>
+            <span className="text-white font-bold">3. Push Lead to Dashboard</span>
           </div>
         </div>
       ),
@@ -129,7 +129,7 @@ export default function ProductPage() {
       icon: UserCircleGear,
       bullets: [
         "95%+ accuracy on custom field extraction",
-        "Syncs with Zoho CRM, HubSpot, and Salesforce",
+        "Instant dashboard lead capture & export",
         "Direct webhook logging",
         "Sentiment profiling (Engaged vs. Curious)",
       ],
@@ -180,7 +180,7 @@ export default function ProductPage() {
         "Male and female voice synthetics",
         "Dialects adjusted for regional accents",
         "Pacing speed toggles (0.8x to 1.4x)",
-        "Voice cloning options available on Scale+",
+        "Custom voice instructions and guidelines",
       ],
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-between h-[240px]">
@@ -189,7 +189,7 @@ export default function ProductPage() {
             {[
               { id: "v1", name: "Male (English - US)", region: "US-West" },
               { id: "v2", name: "Female (English - UK)", region: "UK-London" },
-              { id: "v3", name: "Female (Spanish)", region: "ES-Madrid" },
+              { id: "v3", name: "Female (English - AU)", region: "AU-Sydney" },
             ].map((voice) => {
               const active = activeVoice === voice.name;
               return (
@@ -210,11 +210,11 @@ export default function ProductPage() {
       ),
     },
     {
-      title: "Multi-Channel Integration Ecosystem",
-      description: "Plug directly into CRM, calendar schedules, and messaging protocols to streamline leads instantly.",
+      title: "Lead Alerts & Webhooks",
+      description: "Get notified instantly when leads are qualified and trigger webhooks for custom pipelines.",
       icon: Plug,
       bullets: [
-        "Sync contacts instantly in CRM card profiles",
+        "View contacts instantly in the lead dashboard",
         "Push immediate WhatsApp alerts to sales teams",
         "Auto-dispatch follow-up SMS texts to callers",
         "Integrate webhooks for custom backend scripts",
@@ -222,7 +222,7 @@ export default function ProductPage() {
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-center gap-3.5 h-[240px] text-body-xs font-mono">
           <div className="flex justify-between items-center p-2.5 bg-darkBg border border-[#2a2a2a] rounded-lg">
-            <span className="text-white">Zoho CRM Sync</span>
+            <span className="text-white">Lead Dashboard Logging</span>
             <span className="text-green-500">Connected</span>
           </div>
           <div className="flex justify-between items-center p-2.5 bg-[#0f0f0f] border border-saffron/40 rounded-lg">
@@ -230,7 +230,7 @@ export default function ProductPage() {
             <span className="text-saffron">Connected</span>
           </div>
           <div className="flex justify-between items-center p-2.5 bg-darkBg border border-[#2a2a2a] rounded-lg">
-            <span className="text-white">Google Calendar</span>
+            <span className="text-white">SMS Notification</span>
             <span className="text-green-500">Connected</span>
           </div>
         </div>
@@ -265,10 +265,10 @@ export default function ProductPage() {
 
   const comparison = [
     { feature: "24/7 Availability", receptionist: false, ivr: false, bavio: true },
-    { feature: "Multilingual Support", receptionist: false, ivr: false, bavio: true },
+    { feature: "English Voice Support", receptionist: false, ivr: false, bavio: true },
     { feature: "Lead Qualification", receptionist: false, ivr: false, bavio: true },
-    { feature: "Appointment Booking", receptionist: true, ivr: false, bavio: true },
-    { feature: "CRM Integration", receptionist: false, ivr: false, bavio: true },
+    { feature: "Appointment Requests", receptionist: true, ivr: false, bavio: true },
+    { feature: "Lead Dashboard", receptionist: false, ivr: false, bavio: true },
     { feature: "No Additional Hiring", receptionist: false, ivr: true, bavio: true },
   ];
 
@@ -298,7 +298,7 @@ export default function ProductPage() {
             </h1>
 
             <p className="text-body-md md:text-body-lg text-darkTextMuted max-w-xl mx-auto mb-10 leading-relaxed font-sans">
-              Deploy your first AI assistant in under 5 minutes. No technical skills required. Conforms to your business calling workflows out of the box.
+              Deploy your first AI assistant in minutes. No technical skills required. Conforms to your business calling workflows out of the box.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -306,7 +306,7 @@ export default function ProductPage() {
                 href="/signup"
                 className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-hover text-white text-body-xs font-bold uppercase tracking-wider px-8 py-4 rounded-button shadow-saffron transition-all duration-200"
               >
-                Start Building Free
+                Start Building
               </Link>
               <Link
                 href="/pricing"
@@ -485,13 +485,13 @@ export default function ProductPage() {
               Ready to Automate Your Calls?
             </h2>
             <p className="text-body-xs text-darkTextMuted">
-              7 days free. No credit card required.
+              Try the Bavio AI demo and choose your plan.
             </p>
             <Link
               href="/signup"
               className="inline-flex items-center justify-center bg-saffron hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider px-8 py-4 rounded-button shadow-saffron transition-all duration-200 mt-2 max-w-[280px] w-full"
             >
-              Start Free Trial
+              Get Started
             </Link>
           </ScrollReveal>
         </div>

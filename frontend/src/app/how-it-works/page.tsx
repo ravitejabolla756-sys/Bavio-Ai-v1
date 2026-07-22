@@ -80,55 +80,55 @@ const steps = [
     Icon: Phone,
     headline: "Customer Calls",
     description:
-      "A customer calls your business number. Bavio answers in under 500ms every time, day or night, even when you are with another client.",
-    detail: "Your number. Your brand. Powered by Bavio.",
+      "A customer calls your business number. Bavio answers the call instantly, day or night.",
+    detail: "Your business number. Powered by Bavio.",
   },
   {
     number: "02",
     Icon: Mic,
-    headline: "AI Listens & Understands",
+    headline: "Bavio Answers Call",
     description:
-      "Bavio understands their need in 20+ languages natively. No scripts. No rigid menus. Natural, fluent conversation powered by advanced AI language processing.",
-    detail: "Sub-100ms processing latency.",
+      "Bavio greets the caller and answers inquiries using the business’s saved information.",
+    detail: "Dynamic responses based on your business profile.",
   },
   {
     number: "03",
     Icon: CheckCircle2,
-    headline: "AI Qualifies the Lead",
+    headline: "AI Qualifies Caller",
     description:
-      "Bavio asks for name, budget, intent, and any other details you specify during setup. It filters serious buyers from casual inquiries automatically.",
-    detail: "Customizable qualification questions per business type.",
+      "Bavio understands the caller's needs and asks custom qualification questions to collect details.",
+    detail: "Captures budget, requirements, and timeline.",
   },
   {
     number: "04",
     Icon: MessageSquare,
-    headline: "Lead is Captured & Logged",
+    headline: "Conversation Saved",
     description:
-      "All details are structured into a clean lead record and stored in your dashboard instantly. The full call transcript is available for review.",
-    detail: "Searchable, filterable lead database always up to date.",
+      "Caller details, qualified requirements, and the full call transcript are saved securely.",
+    detail: "Real-time logging of call conversation events.",
   },
   {
     number: "05",
     Icon: Bell,
-    headline: "You Get Notified Instantly",
+    headline: "Review in Dashboard",
     description:
-      "You receive a WhatsApp alert the moment a lead is captured with name, intent, budget, and a call summary. Never chase a call log again.",
-    detail: "WhatsApp + dashboard. Zero manual follow-up needed.",
+      "The business reviews the call logs, transcripts, and lead details directly in the dashboard.",
+    detail: "Actionable workspace for your team to follow up.",
   },
 ];
 
 const roiItems = [
   {
     Icon: Clock,
-    stat: "< 500ms",
+    stat: "Instant",
     label: "Answer Time",
-    description: "Bavio picks up faster than any human receptionist, every single time.",
+    description: "Bavio answers the call immediately, day or night.",
   },
   {
     Icon: TrendingUp,
-    stat: "3x",
-    label: "More Leads Captured",
-    description: "Businesses typically capture 3x more leads vs. manual call handling.",
+    stat: "100%",
+    label: "Answer Rate",
+    description: "Bavio answers every incoming call so you never miss an opportunity.",
   },
   {
     Icon: Zap,
@@ -138,39 +138,45 @@ const roiItems = [
   },
   {
     Icon: Shield,
-    stat: "$49",
-    label: "Starting / Month",
-    description: "Far less than a missed commission or a full-time receptionist salary.",
+    stat: "Saves 80%",
+    label: "Receptionist Cost",
+    description: "Far less than hiring a full-time front desk or missing valuable clients.",
   },
 ];
 
 const faqs = [
   {
+    key: 0,
     question: "How long does it take to set up Bavio?",
     answer:
       "Most businesses are fully live within 15 minutes. You sign up, enter your business details, and Bavio configures your AI assistant automatically. No technical skills required.",
   },
   {
+    key: 1,
     question: "What languages does Bavio support?",
     answer:
-      "Bavio currently supports English, Spanish, French, and 20+ other languages natively. Additional languages are continuously being added.",
+      "Bavio currently supports English voice conversations for our initial launch markets (US, UK, and Australia).",
   },
   {
+    key: 2,
     question: "Do I need to change my existing phone number?",
     answer:
       "No. Bavio works by forwarding missed calls from your existing number to your Bavio-assigned number. Your customers keep calling the same number they always have.",
   },
   {
+    key: 3,
     question: "What happens if Bavio cannot understand the caller?",
     answer:
       "Bavio gracefully asks the caller to repeat or clarify, just like a human would. If the call still cannot be qualified, it logs it as an unresolved inquiry and sends you a notification so you can follow up.",
   },
   {
+    key: 4,
     question: "Can I customise what Bavio asks callers?",
     answer:
       "Yes. During onboarding, you specify the key questions Bavio should ask - budget, location, preferred visit time, etc. You can update these anytime from your dashboard.",
   },
   {
+    key: 5,
     question: "Is my data secure?",
     answer:
       "All call data is encrypted at rest and in transit. We never share your lead data with third parties. You own your data completely.",
@@ -359,8 +365,8 @@ export default function HowItWorksPage() {
                 </p>
                 <div className="space-y-3">
                   {[
-                    "Answers every call in under 500ms",
-                    "Understands 20+ languages naturally",
+                    "Answers every call instantly",
+                    "English voice support for initial launch markets",
                     "Asks your custom qualifying questions",
                     "Captures name, budget, intent & location",
                     "Sends you instant notifications",
@@ -390,7 +396,7 @@ export default function HowItWorksPage() {
                     {
                       title: "Not a CRM",
                       description:
-                        "Bavio captures leads and logs them. It does not replace a full CRM like Salesforce or Zoho, though we integrate with them.",
+                        "Bavio captures qualified leads and logs them directly to your central dashboard and call records.",
                     },
                     {
                       title: "Not a Sales Closer",
@@ -464,7 +470,7 @@ export default function HowItWorksPage() {
                   href="/pricing"
                   className="inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white font-bold px-8 py-4 rounded-full text-sm transition-all duration-200 shadow-sm active:scale-[0.98]"
                 >
-                  Start Free Trial
+                  View Plans & Pricing
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link

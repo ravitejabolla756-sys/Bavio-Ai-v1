@@ -32,6 +32,35 @@ class TwilioProvider {
         }
     }
 
+    async buyNumberWithDetails(country) {
+        try {
+            const availableNumbers = await this.client.availablePhoneNumbers(country).local.list({ limit: 1 });
+            if (availableNumbers.length > 0) {
+                const phoneNumber = availableNumbers[0].phoneNumber;
+                const webhookBase = process.env.WEBHOOK_BASE_URL || 'https://api.bavio.in';
+                const voiceUrl = `${webhookBase}/api/calls/incoming`;
+                const statusCallback = `${webhookBase}/api/calls/status`;
+                
+                const purchasedNumber = await this.client.incomingPhoneNumbers.create({ 
+                    phoneNumber,
+                    voiceUrl,
+                    voiceMethod: 'POST',
+                    statusCallback,
+                    statusCallbackMethod: 'POST'
+                });
+                
+                return {
+                    phoneNumber: purchasedNumber.phoneNumber,
+                    sid: purchasedNumber.sid
+                };
+            }
+            throw new Error(`No available Twilio numbers for country: ${country}`);
+        } catch (error) {
+            console.error('Twilio buyNumberWithDetails error:', error.message);
+            throw error;
+        }
+    }
+
     async handleIncomingCall(req) {
         const body = req.body;
         return {

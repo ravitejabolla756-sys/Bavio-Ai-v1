@@ -17,7 +17,7 @@ const stats = [
     icon: Users,
     title: "Qualified Leads",
     value: "3,124",
-    change: "+42% lead sync",
+    change: "Qualified lead list",
     color: "#FF8C3A",
     sparkline: [10, 15, 12, 22, 18, 30, 28, 38]
   },
@@ -33,7 +33,7 @@ const stats = [
     icon: Percent,
     title: "Conversion Rate",
     value: "84.3%",
-    change: "+12.1% booking rate",
+    change: "High conversion rate",
     color: "#FF8C3A",
     sparkline: [60, 65, 62, 70, 72, 80, 78, 84]
   },

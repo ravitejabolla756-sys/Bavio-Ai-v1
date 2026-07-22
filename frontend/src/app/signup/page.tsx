@@ -24,53 +24,12 @@ import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 const STATIC_COUNTRIES = [
   { code: "US", name: "United States", flag: "🇺🇸", dialCode: "+1" },
-  { code: "CA", name: "Canada", flag: "🇨🇦", dialCode: "+1" },
   { code: "GB", name: "United Kingdom", flag: "🇬🇧", dialCode: "+44" },
-  { code: "AU", name: "Australia", flag: "🇦🇺", dialCode: "+61" },
-  { code: "NZ", name: "New Zealand", flag: "🇳🇿", dialCode: "+64" },
-  { code: "SG", name: "Singapore", flag: "🇸🇬", dialCode: "+65" },
-  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪", dialCode: "+971" },
-  { code: "DE", name: "Germany", flag: "🇩🇪", dialCode: "+49" },
-  { code: "FR", name: "France", flag: "🇫🇷", dialCode: "+33" },
-  { code: "IE", name: "Ireland", flag: "🇮🇪", dialCode: "+353" },
-  { code: "IT", name: "Italy", flag: "🇮🇹", dialCode: "+39" },
-  { code: "ES", name: "Spain", flag: "🇪🇸", dialCode: "+34" },
-  { code: "NL", name: "Netherlands", flag: "🇳🇱", dialCode: "+31" },
-  { code: "BE", name: "Belgium", flag: "🇧🇪", dialCode: "+32" },
-  { code: "CH", name: "Switzerland", flag: "🇨🇭", dialCode: "+41" },
-  { code: "AT", name: "Austria", flag: "🇦🇹", dialCode: "+43" },
-  { code: "SE", name: "Sweden", flag: "🇸🇪", dialCode: "+46" },
-  { code: "NO", name: "Norway", flag: "🇳🇴", dialCode: "+47" },
-  { code: "DK", name: "Denmark", flag: "🇩🇰", dialCode: "+45" },
-  { code: "FI", name: "Finland", flag: "🇫🇮", dialCode: "+358" },
-  { code: "PL", name: "Poland", flag: "🇵🇱", dialCode: "+48" },
-  { code: "PT", name: "Portugal", flag: "🇵🇹", dialCode: "+351" },
-  { code: "GR", name: "Greece", flag: "🇬🇷", dialCode: "+30" },
-  { code: "ZA", name: "South Africa", flag: "🇿🇦", dialCode: "+27" },
-  { code: "MX", name: "Mexico", flag: "🇲🇽", dialCode: "+52" },
-  { code: "BR", name: "Brazil", flag: "🇧🇷", dialCode: "+55" },
-  { code: "AR", name: "Argentina", flag: "🇦🇷", dialCode: "+54" },
-  { code: "CO", name: "Colombia", flag: "🇨🇴", dialCode: "+57" },
-  { code: "CL", name: "Chile", flag: "🇨🇱", dialCode: "+56" },
-  { code: "JP", name: "Japan", flag: "🇯🇵", dialCode: "+81" },
-  { code: "HK", name: "Hong Kong", flag: "🇭🇰", dialCode: "+852" },
-  { code: "ID", name: "Indonesia", flag: "🇮🇩", dialCode: "+62" },
-  { code: "MY", name: "Malaysia", flag: "🇲🇾", dialCode: "+60" },
-  { code: "TH", name: "Thailand", flag: "🇹🇭", dialCode: "+66" },
-  { code: "PH", name: "Philippines", flag: "🇵🇭", dialCode: "+63" },
-  { code: "KR", name: "South Korea", flag: "🇰🇷", dialCode: "+82" },
-  { code: "IL", name: "Israel", flag: "🇮🇱", dialCode: "+972" },
-  { code: "TR", name: "Turkey", flag: "🇹🇷", dialCode: "+90" },
-  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦", dialCode: "+966" },
-  { code: "QA", name: "Qatar", flag: "🇶🇦", dialCode: "+974" },
-  { code: "KW", name: "Kuwait", flag: "🇰🇼", dialCode: "+965" },
-  { code: "OM", name: "Oman", flag: "🇴🇲", dialCode: "+968" },
-  { code: "BH", name: "Bahrain", flag: "🇧🇭", dialCode: "+973" },
-  { code: "EG", name: "Egypt", flag: "🇪🇬", dialCode: "+20" },
-  { code: "VN", name: "Vietnam", flag: "🇻🇳", dialCode: "+84" }
+  { code: "AU", name: "Australia", flag: "🇦🇺", dialCode: "+61" }
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function SignUpPage() {
@@ -100,13 +59,56 @@ export default function SignUpPage() {
   const [demoCompletedFlag, setDemoCompletedFlag] = useState(false);
 
   // Country selector states
-  const [countriesList, setCountriesList] = useState<any[]>(STATIC_COUNTRIES);
+  const [countriesList, setCountriesList] = useState<any[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<any>(null);
-  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
   const [countriesError, setCountriesError] = useState<string | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  const fetchSupportedCountries = async () => {
+    setIsLoadingCountries(true);
+    setCountriesError(null);
+    try {
+      const res = await fetch("/api/telephony/supported-countries");
+      if (!res.ok) throw new Error("Failed to fetch supported countries");
+      const data = await res.json();
+      
+      const METADATA_MAP: Record<string, { flag: string }> = {
+        US: { flag: "🇺🇸" },
+        GB: { flag: "🇬🇧" },
+        AU: { flag: "🇦🇺" }
+      };
+
+      const mapped = data
+        .filter((c: any) => c.iso2 !== "IN")
+        .map((c: any) => ({
+          code: c.iso2,
+          name: c.name,
+          dialCode: c.dialCode,
+          flag: METADATA_MAP[c.iso2]?.flag || "🌐"
+        }));
+
+      mapped.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      setCountriesList(mapped);
+      if (mapped.length > 0) {
+        setSelectedCountry(mapped.find((c: any) => c.code === "US") || mapped[0]);
+      }
+    } catch (err: any) {
+      console.error("Error loading countries:", err.message);
+      setCountriesError("Failed to load supported countries.");
+      // Set to static safe list excluding India as a fallback
+      setCountriesList(STATIC_COUNTRIES);
+      setSelectedCountry(STATIC_COUNTRIES[0]);
+    } finally {
+      setIsLoadingCountries(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSupportedCountries();
+  }, []);
 
   // Validation, dirty and blurred states
   const [blurredFields, setBlurredFields] = useState<Record<string, boolean>>({});
@@ -306,16 +308,19 @@ export default function SignUpPage() {
       }
       if (!businessPhone.trim()) {
         temp.businessPhone = "Enter a valid phone number";
-      } else {
-        const clean = businessPhone.replace(/\D/g, "");
-        let minLength = 10;
-        if (selectedCountry?.code === "AU") {
-          minLength = 9;
-        } else if (selectedCountry?.code === "SG" || selectedCountry?.code === "NZ") {
-          minLength = 8;
-        }
-        if (clean.length < minLength) {
-          temp.businessPhone = "Enter a valid phone number";
+      } else if (selectedCountry) {
+        if (selectedCountry.code === "IN" || selectedCountry.dialCode === "+91") {
+          temp.businessPhone = "India phone numbers are not supported.";
+        } else {
+          try {
+            const fullPhone = selectedCountry.dialCode + businessPhone.trim();
+            const parsed = parsePhoneNumberFromString(fullPhone, selectedCountry.code);
+            if (!parsed || !parsed.isValid() || parsed.country !== selectedCountry.code) {
+              temp.businessPhone = `Enter a valid phone number for ${selectedCountry.name}`;
+            }
+          } catch (e) {
+            temp.businessPhone = "Enter a valid phone number";
+          }
         }
       }
     }
@@ -363,9 +368,9 @@ export default function SignUpPage() {
         email: email.trim(),
         password,
         businessName: businessName.trim(),
-        countryCode: isPhonePrefilled ? "IN" : (selectedCountry?.code || "IN"),
-        dialCode: isPhonePrefilled ? "+91" : (selectedCountry?.dialCode || "+91"),
-        phoneNumber: isPhonePrefilled ? businessPhone.replace("+91", "") : businessPhone.trim().replace(/\D/g, ""),
+        countryCode: isPhonePrefilled ? "US" : (selectedCountry?.code || "US"),
+        dialCode: isPhonePrefilled ? "+1" : (selectedCountry?.dialCode || "+1"),
+        phoneNumber: isPhonePrefilled ? businessPhone.replace("+1", "") : businessPhone.trim().replace(/\D/g, ""),
         businessPhone: payloadPhone,
         industry: selectedIndustryLabel,
         demoCompleted: demoCompletedFlag
@@ -387,7 +392,12 @@ export default function SignUpPage() {
         }
         setIsSubmitted(true);
         console.log("[Analytics] signup_succeeded");
-        router.push("/confirm-email");
+        const emailVerificationRequired = false; // Toggle to true if email validation becomes mandatory
+        if (emailVerificationRequired) {
+          router.push("/verify-email");
+        } else {
+          router.push("/demo");
+        }
       } else {
         throw new Error((result as any).error || "Failed to create account. Please try again.");
       }
@@ -524,10 +534,10 @@ export default function SignUpPage() {
                 {/* Header */}
                 <div className="flex flex-col text-left mb-6">
                   <h1 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
-                    Create Workspace Account
+                    Create Your Bavio Account
                   </h1>
                   <p className="text-body-xs text-[#5A5A66]">
-                    Create your administrative credentials to configure your AI receptionist.
+                    Create your account to experience Bavio’s AI assistant and explore available plans.
                   </p>
                 </div>
 
@@ -743,8 +753,15 @@ export default function SignUpPage() {
                                       Loading countries...
                                     </div>
                                   ) : countriesError ? (
-                                    <div className="px-4 py-6 text-center text-body-xs text-red-500 font-semibold">
-                                      {countriesError}
+                                    <div className="px-4 py-6 text-center text-body-xs text-red-500 font-semibold flex flex-col items-center gap-1.5">
+                                      <span>{countriesError}</span>
+                                      <button
+                                        type="button"
+                                        onClick={fetchSupportedCountries}
+                                        className="text-xs text-[#FF6B00] hover:text-[#E05E00] underline font-bold"
+                                      >
+                                        Retry loading
+                                      </button>
                                     </div>
                                   ) : filteredCountries.length > 0 ? (
                                     filteredCountries.map((c) => {
@@ -876,7 +893,7 @@ export default function SignUpPage() {
                   {/* Submit CTA */}
                   <button
                     type="submit"
-                    disabled={isLoading || !isFormDirty}
+                    disabled={isLoading || !isFormDirty || isLoadingCountries || !!countriesError}
                     aria-busy={isLoading}
                     className="mt-4 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#CCCCCC] disabled:cursor-not-allowed text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] min-h-[48px]"
                     style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
