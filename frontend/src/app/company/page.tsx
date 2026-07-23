@@ -73,7 +73,7 @@ export default function CompanyPage() {
       date: "April 2026",
       title: "Bavio Backend Complete",
       description:
-        "Successfully integrated advanced AI language processing, enterprise-grade voice infrastructure, and WhatsApp. Achieved real-time conversational voice stream processing.",
+        "Successfully integrated advanced AI language processing, Standard voice infrastructure, and WhatsApp. Achieved real-time conversational voice stream processing.",
       status: "done",
     },
     {
@@ -92,7 +92,7 @@ export default function CompanyPage() {
     },
     {
       date: "July 2026",
-      title: "First Paying Customers",
+      title: "Early Adopters",
       description:
         "Onboarding initial cohort of real estate agencies, healthcare clinics, and consulting firms globally.",
       status: "upcoming",
@@ -101,7 +101,7 @@ export default function CompanyPage() {
       date: "Future",
       title: "Expansion & Growth",
       description:
-        "Scaling to 100+ active businesses and integrating support for additional global languages.",
+        "Scaling to active businesses and integrating support for additional global languages.",
       status: "future",
     },
   ];
@@ -164,7 +164,7 @@ export default function CompanyPage() {
                     We realized: While advanced AI language processing and voice technology are expanding globally, no one is building for small business teams at a price they can easily afford. A business owner sees expensive enterprise solutions and thinks it is out of reach.
                   </p>
                   <p>
-                    So we built Bavio. It answers calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard. No setup complexity, no IT team needed.
+                    So we built Bavio. It answers calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard. Guided Business Setup, no IT team needed.
                   </p>
                   <p className="font-semibold text-[#140A02]">
                     Our goal is simple: help businesses stay responsive, capture more opportunities, and deliver a better calling experience.
@@ -250,7 +250,7 @@ export default function CompanyPage() {
 
                   {/* Footnote */}
                   <div className="relative z-10 text-xs text-[#6B5A4C] border-t border-[#F3E4D4] pt-4 font-medium">
-                    Speaks multiple languages natively, bypassing heavy cloud latency.
+                    Speaks English voice support for initial launch markets natively, bypassing heavy cloud latency.
                   </div>
                 </div>
               </div>

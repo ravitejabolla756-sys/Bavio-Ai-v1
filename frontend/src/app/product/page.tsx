@@ -267,7 +267,7 @@ export default function ProductPage() {
     { feature: "24/7 Availability", receptionist: false, ivr: false, bavio: true },
     { feature: "English Voice Support", receptionist: false, ivr: false, bavio: true },
     { feature: "Lead Qualification", receptionist: false, ivr: false, bavio: true },
-    { feature: "Appointment Requests", receptionist: true, ivr: false, bavio: true },
+    { feature: "Request Capture", receptionist: true, ivr: false, bavio: true },
     { feature: "Lead Dashboard", receptionist: false, ivr: false, bavio: true },
     { feature: "No Additional Hiring", receptionist: false, ivr: true, bavio: true },
   ];

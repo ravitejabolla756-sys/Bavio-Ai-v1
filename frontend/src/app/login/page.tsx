@@ -196,7 +196,7 @@ export default function LoginPage() {
             <span className="text-[#FF6B00]">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and book appointments automatically.
+            Answer calls, qualify leads, and capture customer requests automatically.
           </p>
 
           {/* Features horizontal/grid row */}

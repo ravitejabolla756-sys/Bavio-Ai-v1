@@ -46,7 +46,7 @@ const PRICING_PLANS: PlanDetails[] = [
     inrMins: 200,
     usdMins: 200,
     description: "Ideal for small clinics & individual consultants.",
-    subtext: "7 days free. No credit card.",
+    subtext: "Try the 3-minute demo. No credit card.",
     buttonText: "Start Free",
     buttonStyle: "saffron",
     features: [
@@ -70,11 +70,11 @@ const PRICING_PLANS: PlanDetails[] = [
     inrMins: 500,
     usdMins: 500,
     description: "Designed for growing real estate teams & agencies.",
-    subtext: "7 days free. Most teams choose this.",
+    subtext: "Most teams choose this.",
     buttonText: "Start Free",
     buttonStyle: "saffron-large",
     features: [
-      "Unlimited agents",
+      "Agent limits based on plan",
       "Custom voice training",
       "Advanced analytics",
       "Priority support",
@@ -99,15 +99,15 @@ const PRICING_PLANS: PlanDetails[] = [
     usdMins: 1500,
     description: "Built for large-scale calling centers and SMB aggregators.",
     subtext: "For growing businesses",
-    buttonText: "Start Free Trial",
+    buttonText: "Try the 3-Minute Bavio Demo",
     buttonStyle: "outline",
     features: [
       "Dedicated account manager",
-      "Custom SLA",
+      "Standard SLA",
       "White-label option",
       "API priority",
       "Phone support",
-      "Unlimited agents",
+      "Agent limits based on plan",
       "Custom voice training",
       "Advanced analytics",
       "Priority support",
@@ -128,7 +128,7 @@ const COMPARISON_TABLE: ComparisonRow[] = [
   { feature: "Included Minutes", starter: "200", growth: "500", scale: "1,500", enterprise: "Custom / Volume" },
   { feature: "Per-minute Overage (INR)", starter: "₹5/min", growth: "₹4/min", scale: "₹3/min", enterprise: "Volume discounts" },
   { feature: "Per-minute Overage (USD)", starter: "$0.08/min", growth: "$0.06/min", scale: "$0.04/min", enterprise: "Volume discounts" },
-  { feature: "AI Voice Agents", starter: "1", growth: "Unlimited", scale: "Unlimited", enterprise: "Unlimited" },
+  { feature: "AI Voice Agents", starter: "1", growth: "Plan Limits", scale: "Plan Limits", enterprise: "Plan Limits" },
   { feature: "Languages Supported", starter: "20+ Languages", growth: "20+ Languages", scale: "20+ Languages", enterprise: "Custom Language Models" },
   { feature: "Lead Capture & Sync", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Custom Schema" },
   { feature: "Instant Notifications", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Dedicated Channel" },
@@ -138,7 +138,7 @@ const COMPARISON_TABLE: ComparisonRow[] = [
   { feature: "Support Channels", starter: "Email", growth: "Priority Email/Chat", scale: "24/7 Phone Support", enterprise: "Dedicated TAM 24/7" },
   { feature: "SSO Security", starter: "—", growth: "—", scale: "—", enterprise: "SAML / OIDC" },
   { feature: "HIPAA / Compliance", starter: "—", growth: "—", scale: "✓ (Scale+ Ready)", enterprise: "✓ Full Audits" },
-  { feature: "SLA Guarantee", starter: "—", growth: "—", scale: "Custom SLA", enterprise: "99.99% Uptime SLA" },
+  { feature: "Support Response Time", starter: "—", growth: "—", scale: "Standard SLA", enterprise: "Standard Uptime" },
 ];
 
 const FAQS = [
@@ -167,16 +167,16 @@ const FAQS = [
     a: "Yes, our white-label options are available on the Scale plan. You can configure custom domains, custom SMTP routing, and visual dashboards for your clients.",
   },
   {
-    q: "Does it support multiple languages?",
+    q: "Does it support English voice support for initial launch markets?",
     a: "Bavio supports primary launch languages including English (US, UK, Australia) with crystal clear voice quality.",
   },
   {
     q: "Do I get a dedicated phone number?",
-    a: "Yes, each active plan gets a dedicated virtual landline or mobile trunk number generated instantly in the dashboard via enterprise-grade voice infrastructure.",
+    a: "Yes, each active plan gets a dedicated virtual landline or mobile trunk number generated instantly in the dashboard via Standard voice infrastructure.",
   },
   {
     q: "Can I port my existing number?",
-    a: "Yes. On the Growth and Scale plans, we support call forwarding from your existing business lines, or we can assist in porting SIP trunks directly.",
+    a: "Yes. On the Growth and Scale plans, we support call forwarding from your existing business lines, or we can assist in porting standard numbers directly.",
   },
 ];
 
@@ -382,7 +382,7 @@ export function PricingGrid() {
                     Custom pricing, dedicated support, SLA & compliance
                   </h3>
                   <p className="text-body-xs text-darkTextMuted leading-relaxed">
-                    Custom volume pricing, single sign-on (SSO), HIPAA compliant pipelines, and unlimited voice receptionists configured for enterprise operations.
+                    Custom volume pricing, single sign-on (SSO), HIPAA compliant pipelines, and custom voice receptionists configured for enterprise operations.
                   </p>
                 </div>
 

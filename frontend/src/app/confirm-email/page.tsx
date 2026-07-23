@@ -157,7 +157,7 @@ export default function ConfirmEmailPage() {
             <span className="text-[#FF6B00]">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and book appointments automatically.
+            Answer calls, qualify leads, and capture customer requests automatically.
           </p>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">

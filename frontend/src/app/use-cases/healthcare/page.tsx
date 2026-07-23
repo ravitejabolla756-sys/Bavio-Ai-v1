@@ -29,15 +29,15 @@ export default function HealthcareUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Answer Rate</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">100% of incoming patient calls answered</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Call Coverage</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Consistent Call Coverage</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">Time Saved</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Reduced front desk overload</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">100% HIPAA Safe</span>
+              <span className="text-2xl font-bold font-display text-saffron block">HIPAA Compliant Configuration</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Encrypted transcript logs</span>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function HealthcareUseCase() {
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-saffron" />
-                  Appointment Requests
+                  Request Capture
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
                   Bavio collects patients&apos; preferred appointment dates, times, and contact details, logging their request directly in your dashboard for confirmation.

@@ -20,7 +20,7 @@ import {
 const features = [
   { icon: Clock, title: "Never Miss Calls", desc: "Never place callers on hold. Calls are answered within 1 ring." },
   { icon: UserCheck, title: "Lead Qualification", desc: "Pre-screen callers for budget, intent, location, and requirements." },
-  { icon: Calendar, title: "Appointment Requests", desc: "Capture preferred appointment dates, times and customer details for your team to confirm." },
+  { icon: Calendar, title: "Request Capture", desc: "Capture preferred appointment dates, times and customer details for your team to confirm." },
   { icon: GitBranch, title: "Lead Dashboard", desc: "Organize captured callers, requirements and follow-up details in one workspace." },
   { icon: MessageSquare, title: "Instant Notifications", desc: "Get alerts via WhatsApp, email, or SMS with transcription summaries." },
   { icon: Disc, title: "Call Summaries", desc: "Listen back to recordings and review conversations via dashboard." },
