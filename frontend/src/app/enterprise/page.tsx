@@ -39,9 +39,9 @@ const enterpriseFeatures = [
     icon: Lightning,
     title: "Scale and Performance",
     items: [
-      "Unlimited concurrent calls",
+      "Concurrent call limits based on plan",
       "Auto-scaling infrastructure",
-      "99.99% uptime SLA",
+      "Standard Uptime",
       "Custom failover options",
       "Geo-redundancy across regions",
       "DDoS protection included",
@@ -56,7 +56,7 @@ const enterpriseFeatures = [
       "Role-based access control",
       "Team workspace management",
       "Dedicated Slack channel support",
-      "Custom SLAs and contracts",
+      "Standard SLAs and contracts",
       "White-label and custom branding",
       "Audit logs and compliance reports",
     ],
@@ -173,7 +173,7 @@ export default function EnterprisePage() {
                 { icon: Lock, label: "SOC 2 Type II", sub: "Certified" },
                 { icon: Certificate, label: "HIPAA Ready", sub: "Healthcare" },
                 { icon: Globe, label: "GDPR Compliant", sub: "Europe" },
-                { icon: Cloud, label: "99.99% Uptime", sub: "SLA Guaranteed" },
+                { icon: Cloud, label: "Standard Uptime", sub: "Support Response Time" },
               ].map((badge) => {
                 const Icon = badge.icon;
                 return (

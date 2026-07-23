@@ -120,27 +120,27 @@ const steps = [
 const roiItems = [
   {
     Icon: Clock,
-    stat: "Instant",
-    label: "Answer Time",
-    description: "Bavio answers the call immediately, day or night.",
+    stat: "Fast",
+    label: "Call Answering",
+    description: "Bavio answers calls quickly without hold times.",
   },
   {
     Icon: TrendingUp,
-    stat: "100%",
-    label: "Answer Rate",
-    description: "Bavio answers every incoming call so you never miss an opportunity.",
+    stat: "Consistent",
+    label: "Call Coverage",
+    description: "Bavio provides reliable coverage for your incoming calls.",
   },
   {
     Icon: Zap,
     stat: "24/7",
-    label: "Always On",
-    description: "No sick days. No off-hours. No missed calls on holidays.",
+    label: "Availability",
+    description: "Available Around the Clock Within Your Plan Limits.",
   },
   {
     Icon: Shield,
-    stat: "Saves 80%",
-    label: "Receptionist Cost",
-    description: "Far less than hiring a full-time front desk or missing valuable clients.",
+    stat: "Flexible",
+    label: "Front-Desk Coverage",
+    description: "Adaptable coverage without the overhead of a full-time front desk.",
   },
 ];
 
@@ -219,8 +219,8 @@ export default function HowItWorksPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 The Flow
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
-                5 Steps. 60 Seconds. Zero Missed Calls.
+              <h2 className="font-display text-4xl font-bold tracking-tight text-ink-primary mb-4">
+                How Bavio Handles an Incoming Call
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-3">
                 From the moment a customer dials to the moment a lead hits your dashboard.
@@ -371,7 +371,7 @@ export default function HowItWorksPage() {
                     "Captures name, budget, intent & location",
                     "Sends you instant notifications",
                     "Stores a full transcript on your dashboard",
-                    "Works 24/7 with zero breaks",
+                    "Available Around the Clock Within Your Plan Limits",
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center shrink-0">
@@ -462,7 +462,7 @@ export default function HowItWorksPage() {
                 <span className="text-[#FF6B00]">Missed Calls.</span>
               </h2>
               <p className="text-[#6B5A4C] text-base md:text-lg mb-10 leading-relaxed">
-                Try Bavio free for 7 days. No credit card. No setup complexity.
+                Try the 3-Minute Bavio Demo. No credit card. Guided Business Setup.
                 See your first lead captured in minutes.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">

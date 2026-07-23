@@ -15,8 +15,8 @@ export default function GettingStarted() {
             Getting Started
           </span>
           <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.04em] text-[#140A02] mb-6 leading-[0.9]">
-            Your First Qualified Lead <br />
-            Is Five Minutes Away.
+            From Customer Call <br />
+            to Qualified Lead
           </h2>
           <p className="text-[#6B5A4C] text-[20px] font-normal leading-[1.7] max-w-[720px] mx-auto font-sans">
             Bavio is built to get you up and running fast. No long onboarding, no complicated setup.
@@ -80,9 +80,9 @@ export default function GettingStarted() {
                 <div>
                   <label className="text-[9px] text-[#6E6256]/60 font-bold block uppercase mb-1">Supported Languages</label>
                   <div className="flex gap-1.5">
-                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">Spanish</span>
-                    <span className="bg-[#FFF7ED] border border-[#F3E4D4] text-[#140A02] text-[9px] font-bold px-2 py-0.5 rounded">English</span>
-                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">French</span>
+                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">English — UK</span>
+                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">English — US</span>
+                    <span className="bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded">English — AU</span>
                   </div>
                 </div>
                 <div>

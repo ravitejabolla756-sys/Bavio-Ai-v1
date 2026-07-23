@@ -70,7 +70,7 @@ export default function WaitlistSection() {
           <div className="mt-4 pt-6 border-t border-[#F3E4D4]/60 w-full flex flex-col sm:flex-row justify-center items-center gap-6 text-[10px] font-bold text-[#6E6256] uppercase tracking-wider">
             <div>✓ No Credit Card</div>
             <div>✓ Setup In 5 Minutes</div>
-            <div>✓ Dedicated SIP Trunks</div>
+            <div>✓ Standard Voice Setup</div>
           </div>
 
         </motion.div>
