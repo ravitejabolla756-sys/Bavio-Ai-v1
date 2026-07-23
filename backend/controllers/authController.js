@@ -86,9 +86,20 @@ async function signup(req, res) {
 
         const finalNormalizedPhone = phoneValidationResult.normalized;
 
+        // Validate submitted country against supported launch countries
+        const { SUPPORTED_LAUNCH_COUNTRIES } = require('../routes/telephony');
+        const supportedCodes = new Set(SUPPORTED_LAUNCH_COUNTRIES.map(c => c.isoCode));
+        if (!supportedCodes.has(finalCountryCode)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Country "${finalCountryCode}" is not supported for Bavio launch. Supported countries: ${[...supportedCodes].join(', ')}.`
+            });
+        }
+
         if (!finalName || !finalEmail || !finalNormalizedPhone || !finalPassword) {
             return res.status(400).json({ success: false, error: 'Name/Business name, email, phone, and password are required' });
         }
+
 
         // 2. Create user in Supabase Auth via Admin client (auto-confirm email and phone)
         const { data: authData, error: authError } = await db.supabase.auth.admin.createUser({
