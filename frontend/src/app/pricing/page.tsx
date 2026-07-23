@@ -761,8 +761,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <ShieldCheck className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Authenticated Access</h3>
-                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                <h3 className="text-[16px] font-bold font-sans text-[#140A02]">Authenticated Access</h3>
+                <p className="text-[13.5px] font-sans text-[#5C5246] leading-relaxed">
                   Account and billing areas require authenticated access.
                 </p>
               </div>
@@ -771,8 +771,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <Lock className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Tenant-Isolated Data</h3>
-                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                <h3 className="text-[16px] font-bold font-sans text-[#140A02]">Tenant-Isolated Data</h3>
+                <p className="text-[13.5px] font-sans text-[#5C5246] leading-relaxed">
                   Business records are restricted to the correct account.
                 </p>
               </div>
@@ -781,8 +781,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <Activity className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Secure Provider Connections</h3>
-                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                <h3 className="text-[16px] font-bold font-sans text-[#140A02]">Secure Provider Connections</h3>
+                <p className="text-[13.5px] font-sans text-[#5C5246] leading-relaxed">
                   Sensitive provider requests are handled through encrypted connections.
                 </p>
               </div>
@@ -791,8 +791,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <CreditCard className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Verified Payment Events</h3>
-                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                <h3 className="text-[16px] font-bold font-sans text-[#140A02]">Verified Payment Events</h3>
+                <p className="text-[13.5px] font-sans text-[#5C5246] leading-relaxed">
                   Subscriptions and top-ups are activated only after verified payment webhooks.
                 </p>
               </div>
