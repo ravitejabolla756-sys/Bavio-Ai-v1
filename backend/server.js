@@ -47,23 +47,35 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ------- CORS Configuration -------
-const allowedOrigins = [
+const PRODUCTION_ORIGINS = [
   'https://bavio.in',
   'https://www.bavio.in',
+];
+
+const DEVELOPMENT_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5000',
   'https://bavio.vercel.app',
-  'https://alaya-osteopathic-suppliantly.ngrok-free.dev'
+  'https://alaya-osteopathic-suppliantly.ngrok-free.dev',
 ];
+
+// Pattern for Vercel preview deployments (bavio-ai-v1-*.vercel.app)
+const VERCEL_PREVIEW_PATTERN = /^https:\/\/bavio-ai-v1-[a-z0-9-]+-ravitejabolla756-3583s-projects\.vercel\.app$/;
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Allow requests with no origin (mobile apps, curl, server-to-server, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes(origin)) {
+
+    const isProductionOrigin = PRODUCTION_ORIGINS.includes(origin);
+    const isDevelopmentOrigin = DEVELOPMENT_ORIGINS.includes(origin);
+    const isVercelPreview = VERCEL_PREVIEW_PATTERN.test(origin);
+
+    if (isProductionOrigin || isDevelopmentOrigin || isVercelPreview) {
       callback(null, true);
     } else {
+      console.warn(`[CORS] Blocked request from unrecognized origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -71,6 +83,7 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'api-subscription-key']
 };
+
 
 // ------- Global Middleware -------
 app.set('trust proxy', 1); // Trust first proxy (ngrok / load balancer)

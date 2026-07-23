@@ -72,35 +72,55 @@ export default function SignUpPage() {
     setCountriesError(null);
     try {
       const res = await fetch("/api/telephony/supported-countries");
-      if (!res.ok) throw new Error("Failed to fetch supported countries");
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch supported countries`);
       const data = await res.json();
-      
+
+      // Support canonical shape { countries: [...] } and legacy raw array shape
+      const rawList: any[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.countries)
+        ? data.countries
+        : [];
+
+      if (rawList.length === 0) {
+        throw new Error("Empty or malformed country list received from server");
+      }
+
       const METADATA_MAP: Record<string, { flag: string }> = {
         US: { flag: "🇺🇸" },
         GB: { flag: "🇬🇧" },
         AU: { flag: "🇦🇺" }
       };
 
-      const mapped = data
-        .filter((c: any) => c.iso2 !== "IN")
-        .map((c: any) => ({
-          code: c.iso2,
-          name: c.name,
-          dialCode: c.dialCode,
-          flag: METADATA_MAP[c.iso2]?.flag || "🌐"
-        }));
+      const mapped = rawList
+        // Support both isoCode (new) and iso2 (legacy) field names
+        .filter((c: any) => {
+          const code = c.isoCode ?? c.iso2 ?? "";
+          return code !== "IN" && c.enabled !== false;
+        })
+        .map((c: any) => {
+          const code = c.isoCode ?? c.iso2 ?? "";
+          return {
+            code,
+            name: c.name,
+            dialCode: c.dialCode,
+            flag: METADATA_MAP[code]?.flag || "🌐"
+          };
+        })
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      mapped.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      setCountriesList(mapped);
-      if (mapped.length > 0) {
-        setSelectedCountry(mapped.find((c: any) => c.code === "US") || mapped[0]);
+      if (mapped.length === 0) {
+        throw new Error("No supported countries returned from server");
       }
+
+      setCountriesList(mapped);
+      setSelectedCountry(mapped.find((c: any) => c.code === "US") || mapped[0]);
     } catch (err: any) {
-      console.error("Error loading countries:", err.message);
-      setCountriesError("Failed to load supported countries.");
-      // Set to static safe list excluding India as a fallback
+      console.error("[Signup] Error loading supported countries:", err.message);
+      // Safe display fallback — US, GB, AU only. Backend still validates the submitted country.
+      setCountriesError("We couldn't load available countries. Please retry.");
       setCountriesList(STATIC_COUNTRIES);
-      setSelectedCountry(STATIC_COUNTRIES[0]);
+      setSelectedCountry(STATIC_COUNTRIES.find(c => c.code === "US") || STATIC_COUNTRIES[0]);
     } finally {
       setIsLoadingCountries(false);
     }
@@ -472,15 +492,15 @@ export default function SignUpPage() {
             <span className="text-[#FF6B00]">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and book appointments automatically.
+            Answer calls, qualify leads, and capture customer requests automatically.
           </p>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
             {[
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
-              { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Appointment", label2: "Booking" },
+              { icon: Chats, label1: "Live Call", label2: "Transcripts" },
+              { icon: Calendar, label1: "Request", label2: "Capture" },
             ].map((feat, i) => {
               const Icon = feat.icon;
               return (
@@ -750,17 +770,17 @@ export default function SignUpPage() {
                                 <div className="py-1.5 max-h-[260px] overflow-y-auto scrollbar-thin">
                                   {isLoadingCountries ? (
                                     <div className="px-4 py-6 text-center text-body-xs text-[#8A8A96] font-semibold animate-pulse">
-                                      Loading countries...
+                                      Loading supported countries…
                                     </div>
                                   ) : countriesError ? (
-                                    <div className="px-4 py-6 text-center text-body-xs text-red-500 font-semibold flex flex-col items-center gap-1.5">
+                                    <div className="px-4 py-6 text-center text-body-xs text-amber-600 font-semibold flex flex-col items-center gap-2">
                                       <span>{countriesError}</span>
                                       <button
                                         type="button"
                                         onClick={fetchSupportedCountries}
-                                        className="text-xs text-[#FF6B00] hover:text-[#E05E00] underline font-bold"
+                                        className="text-xs bg-[#FF6B00] hover:bg-[#E05E00] text-white px-3 py-1 rounded-lg font-bold transition-colors"
                                       >
-                                        Retry loading
+                                        Retry
                                       </button>
                                     </div>
                                   ) : filteredCountries.length > 0 ? (
@@ -893,7 +913,7 @@ export default function SignUpPage() {
                   {/* Submit CTA */}
                   <button
                     type="submit"
-                    disabled={isLoading || !isFormDirty || isLoadingCountries || !!countriesError}
+                    disabled={isLoading || !isFormDirty || isLoadingCountries}
                     aria-busy={isLoading}
                     className="mt-4 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#CCCCCC] disabled:cursor-not-allowed text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] min-h-[48px]"
                     style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 600 }}
