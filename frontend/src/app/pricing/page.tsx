@@ -3,50 +3,52 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
   X,
-  CaretDown,
-  CaretUp,
+  ChevronDown,
+  ChevronUp,
   ShieldCheck,
   Lock,
-  Pulse,
+  Activity,
   CreditCard,
-  CheckCircle,
+  Star,
   ArrowRight
-} from "@phosphor-icons/react";
+} from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { apiFetch, authApi } from "@/lib/api";
 
-// â”€â”€â”€ Number Counter Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Number Counter Component ---
 function UsageCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
   const [count, setCount] = useState(0);
   const elementRef = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !hasAnimated.current) {
-        hasAnimated.current = true;
-        let start = 0;
-        const end = value;
-        const totalSteps = 25;
-        const stepTime = Math.abs(Math.floor(duration / totalSteps));
-        const increment = Math.ceil(end / totalSteps);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          let start = 0;
+          const end = value;
+          const totalSteps = 25;
+          const stepTime = Math.abs(Math.floor(duration / totalSteps));
+          const increment = Math.ceil(end / totalSteps);
 
-        const timer = setInterval(() => {
-          start += increment;
-          if (start >= end) {
-            setCount(end);
-            clearInterval(timer);
-          } else {
-            setCount(start);
-          }
-        }, stepTime);
-      }
-    }, { threshold: 0.1 });
+          const timer = setInterval(() => {
+            start += increment;
+            if (start >= end) {
+              setCount(end);
+              clearInterval(timer);
+            } else {
+              setCount(start);
+            }
+          }, stepTime);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
     if (elementRef.current) {
       observer.observe(elementRef.current);
@@ -58,7 +60,7 @@ function UsageCounter({ value, duration = 1000 }: { value: number; duration?: nu
   return <span ref={elementRef}>{count.toLocaleString()}</span>;
 }
 
-// â”€â”€â”€ FAQ Accordion Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- FAQ Accordion Item ---
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -69,26 +71,18 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
       >
         <span className="text-sm font-semibold tracking-wide">{question}</span>
         {isOpen ? (
-          <CaretUp className="w-4 h-4 text-[#FF6B00] shrink-0 transition-transform duration-200" />
+          <ChevronUp className="w-4 h-4 text-[#FF6B00] shrink-0 transition-transform duration-200" />
         ) : (
-          <CaretDown className="w-4 h-4 text-[#7a6e5f] shrink-0 transition-transform duration-200" />
+          <ChevronDown className="w-4 h-4 text-[#7a6e5f] shrink-0 transition-transform duration-200" />
         )}
       </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <p className="text-xs text-[#7a6e5f] leading-relaxed pt-2 pb-3 font-normal font-sans">
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isOpen && (
+        <div className="overflow-hidden">
+          <p className="text-xs text-[#7a6e5f] leading-relaxed pt-2 pb-3 font-normal font-sans">
+            {answer}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -101,7 +95,7 @@ const DEFAULT_PLANS = [
     currency: "USD",
     includedMinutes: 200,
     monthlyMinutes: 200,
-    checkoutAvailable: false,
+    checkoutAvailable: true,
     features: [
       "200 connected call minutes",
       "1 local Bavio phone number",
@@ -122,7 +116,7 @@ const DEFAULT_PLANS = [
     includedMinutes: 500,
     monthlyMinutes: 500,
     popular: true,
-    checkoutAvailable: false,
+    checkoutAvailable: true,
     features: [
       "500 connected call minutes",
       "1 local Bavio phone number",
@@ -140,7 +134,7 @@ const DEFAULT_PLANS = [
     currency: "USD",
     includedMinutes: 1500,
     monthlyMinutes: 1500,
-    checkoutAvailable: false,
+    checkoutAvailable: true,
     features: [
       "1,500 connected call minutes",
       "1 local Bavio phone number",
@@ -163,7 +157,10 @@ export default function PricingPage() {
   useEffect(() => {
     async function loadPricingAndAuth() {
       try {
-        const data = await apiFetch<{ plans: any[] }>("/billing/plans", { skipAuth: true });
+        const data = await apiFetch<{ plans: any[] }>("/billing/plans", {
+          skipAuth: true,
+          cache: "no-store"
+        } as any);
         if (data && data.plans && data.plans.length > 0) {
           setPlans(data.plans);
         }
@@ -188,17 +185,14 @@ export default function PricingPage() {
   const handleChoosePlan = (planId: string) => {
     const plan = plans.find(p => p.id.toLowerCase() === planId.toLowerCase());
     
-    // If product ID is missing in environment, show launch alert
     if (plan && plan.checkoutAvailable === false) {
-      alert("This plan is being prepared for launch. Please try again shortly.");
+      alert("This plan's checkout setup is currently in progress. Please check again shortly.");
       return;
     }
 
     if (!localStorage.getItem("bavio_token")) {
-      // Unauthenticated -> Sign Up
       router.push(`/signup?plan=${planId}`);
     } else {
-      // Authenticated -> Redirect to Checkout
       router.push(`/checkout?plan=${planId}`);
     }
   };
@@ -212,9 +206,10 @@ export default function PricingPage() {
     
     if (plan && plan.checkoutAvailable === false) {
       return {
-        text: "Coming Soon",
-        disabled: false, // Permit click to display launch alert
-        className: "w-full bg-[#1c160c] text-[#7a6e5f] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center border border-[#2a2010]"
+        text: "Checkout Setup in Progress",
+        disabled: true,
+        isSetupInProgress: true,
+        className: "w-full bg-[#FAF9F6] text-[#8E8276] border border-[#EADFD3] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider text-center cursor-not-allowed"
       };
     }
 
@@ -222,7 +217,8 @@ export default function PricingPage() {
       return {
         text: "Current Plan",
         disabled: true,
-        className: "w-full bg-[#2a2010] text-[#7a6e5f] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center cursor-not-allowed border border-transparent"
+        isSetupInProgress: false,
+        className: "w-full bg-[#FAF9F6] text-[#8E8276] border border-[#EADFD3] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider text-center cursor-not-allowed"
       };
     }
 
@@ -234,50 +230,55 @@ export default function PricingPage() {
       return {
         text: btnText,
         disabled: false,
-        className: "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
+        isSetupInProgress: false,
+        className: "w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-[0_4px_12px_rgba(255,107,0,0.15)]"
       };
     }
 
     return {
       text: `Choose ${capitalizedPlan}`,
       disabled: false,
+      isSetupInProgress: false,
       className: planId.toLowerCase() === "growth" 
-        ? "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-black text-xs py-4 rounded-xl uppercase tracking-wider transition-all text-center shadow-lg"
-        : "w-full bg-[#FF6B00] hover:bg-[#E55A00] text-[#080600] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center"
+        ? "w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-black text-xs py-4 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-[0_6px_16px_rgba(255,107,0,0.2)]"
+        : "w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-[0_4px_12px_rgba(255,107,0,0.15)]"
     };
   };
 
   const faqs = [
     {
-      question: "What happens when I use all my included minutes?",
-      answer: "AI call handling pauses automatically when both your monthly allowance and any prepaid top-up balance reach zero. No calls are blocked mid-conversation â€” only new incoming calls pause. You can purchase a prepaid top-up from your billing dashboard to resume immediately."
+      question: "What happens when I use all my monthly minutes?",
+      answer: "Bavio first uses your monthly included minutes and then any prepaid top-up minutes. When both balances reach zero, AI call handling pauses until you buy a top-up, upgrade your plan, or your monthly allowance renews."
     },
     {
-      question: "Is there any postpaid overage or surprise billing?",
-      answer: "No. Bavio uses a strictly prepaid model. You are never billed after the fact for minutes you did not purchase in advance. There are no per-minute charges after your plan limit."
+      question: "Do unused monthly minutes roll over?",
+      answer: "No. Monthly included minutes reset at the start of each successfully renewed billing cycle."
     },
     {
-      question: "What are minute top-ups and how do they work?",
-      answer: "Top-ups are one-time prepaid minute bundles available to active subscribers: 100 minutes for $25 or 250 minutes for $55. Top-up minutes are used only after your monthly allowance is consumed. Unused top-up minutes carry over each month until used."
+      question: "Do prepaid top-up minutes roll over?",
+      answer: "Yes. Unused prepaid top-up minutes remain available while your paid Bavio subscription stays active."
     },
     {
-      question: "Do top-up minutes roll over month to month?",
-      answer: "Yes. Prepaid top-up minutes never expire and carry over to the next billing period. Only your monthly included minutes reset at renewal."
+      question: "Will Bavio automatically charge me for extra usage?",
+      answer: "No. Bavio does not use postpaid overage billing. Additional minutes must be purchased in advance."
     },
     {
-      question: "Can I change plans anytime?",
-      answer: "Yes. Upgrade or downgrade any time from your dashboard. Your new plan takes effect at the start of the next billing period."
+      question: "Can I use a top-up without a subscription?",
+      answer: "No. Prepaid top-ups require an active monthly Bavio subscription."
     },
     {
-      question: "Do I get a dedicated phone number?",
-      answer: "Yes. Each plan includes one local virtual business phone number that your customers call to reach your AI receptionist."
+      question: "Can I change plans?",
+      answer: "Yes. You can upgrade your plan from the billing dashboard. Downgrades take effect according to the subscription change rules shown during checkout."
     },
     {
-      question: "Which currencies do you support?",
-      answer: "Bavio bills in USD only."
+      question: "What currency does Bavio use?",
+      answer: "Bavio's public subscription prices are displayed and billed in USD. Applicable taxes are calculated during checkout."
+    },
+    {
+      question: "What is the refund policy?",
+      answer: "Subscription and top-up purchases are governed by Bavio's published refund policy and applicable payment-provider rules."
     }
   ];
-
 
   return (
     <div className="min-h-screen bg-[#F7F4EF] text-[#140A02] font-sans antialiased selection:bg-[#FF6B00]/20 selection:text-[#FF6B00] relative overflow-hidden flex flex-col w-full">
@@ -285,7 +286,7 @@ export default function PricingPage() {
 
       <main className="flex-grow pt-40 lg:pt-44">
         
-        {/* â”€â”€â”€ SECTION 1: HERO â”€â”€â”€ */}
+        {/* --- SECTION 1: HERO --- */}
         <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-6 text-center relative">
           <div className="absolute top-[0%] left-[50%] -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-[#FF6B00] opacity-[0.04] filter blur-[120px] pointer-events-none" />
 
@@ -297,12 +298,12 @@ export default function PricingPage() {
               Simple, Transparent Pricing
             </h1>
             <p className="text-sm md:text-base text-[#7a6e5f] leading-relaxed max-w-2xl mx-auto font-sans font-normal">
-              USD, billed monthly. Switch or cancel plans anytime.
+              USD, billed monthly. Applicable taxes are calculated at checkout.
             </p>
           </div>
         </section>
 
-        {/* â”€â”€â”€ SECTION 2: PRICING CARDS â”€â”€â”€ */}
+        {/* --- SECTION 2: PRICING CARDS --- */}
         <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-20 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch max-w-6xl mx-auto">
             
@@ -311,7 +312,7 @@ export default function PricingPage() {
               <div className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Starter</span>
-                  <span className="text-[13px] text-[#7a6e5f] font-normal font-sans block">For Solo Agents & Small Teams</span>
+                  <span className="text-[13px] text-[#7a6e5f] font-normal font-sans block">For Solo Agents &amp; Small Teams</span>
                 </div>
 
                 <div className="flex items-baseline gap-1">
@@ -334,13 +335,21 @@ export default function PricingPage() {
                 {(() => {
                   const btnProps = getButtonTextAndStyle("starter");
                   return (
-                    <button
-                      onClick={() => handleChoosePlan("starter")}
-                      disabled={btnProps.disabled}
-                      className={btnProps.className}
-                    >
-                      {btnProps.text}
-                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleChoosePlan("starter")}
+                        disabled={btnProps.disabled}
+                        aria-disabled={btnProps.disabled ? "true" : undefined}
+                        className={btnProps.className}
+                      >
+                        {btnProps.text}
+                      </button>
+                      {btnProps.isSetupInProgress && (
+                        <p className="text-[10px] text-[#7a6e5f] text-center mt-2 leading-normal">
+                          This plan’s checkout is being connected. Please check again shortly.
+                        </p>
+                      )}
+                    </div>
                   );
                 })()}
 
@@ -353,7 +362,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>AI call answering & Persona</span>
+                    <span>AI call answering &amp; Persona</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
@@ -365,7 +374,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-                    <span>Lead dashboard & Knowledge</span>
+                    <span>Lead dashboard &amp; Knowledge</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
@@ -375,20 +384,21 @@ export default function PricingPage() {
               </div>
 
               <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
-                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
+                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">See FAQ</a>
               </div>
             </div>
 
             {/* CARD 2: GROWTH */}
-            <div className="bg-white border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[720px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.10)]">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-sm">
-                â­ Most Popular
+            <div className="bg-[#FFFDF9] border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[720px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.10)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                <Star className="w-3 h-3 fill-white text-white" aria-hidden="true" />
+                <span>Most Popular</span>
               </div>
 
               <div className="space-y-6">
                 <div className="pt-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#FF6B00] block mb-1">Growth</span>
-                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Real Estate & Clinic Teams</span>
+                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Real Estate &amp; Clinic Teams</span>
                 </div>
 
                 <div className="flex items-baseline gap-1">
@@ -411,13 +421,21 @@ export default function PricingPage() {
                 {(() => {
                   const btnProps = getButtonTextAndStyle("growth");
                   return (
-                    <button
-                      onClick={() => handleChoosePlan("growth")}
-                      disabled={btnProps.disabled}
-                      className={btnProps.className}
-                    >
-                      {btnProps.text}
-                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleChoosePlan("growth")}
+                        disabled={btnProps.disabled}
+                        aria-disabled={btnProps.disabled ? "true" : undefined}
+                        className={btnProps.className}
+                      >
+                        {btnProps.text}
+                      </button>
+                      {btnProps.isSetupInProgress && (
+                        <p className="text-[10px] text-[#7a6e5f] text-center mt-2 leading-normal">
+                          This plan’s checkout is being connected. Please check again shortly.
+                        </p>
+                      )}
+                    </div>
                   );
                 })()}
 
@@ -448,7 +466,7 @@ export default function PricingPage() {
               </div>
 
               <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
-                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
+                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">See FAQ</a>
               </div>
             </div>
 
@@ -457,7 +475,7 @@ export default function PricingPage() {
               <div className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Scale</span>
-                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Large Agencies & Clinics</span>
+                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Large Agencies &amp; Clinics</span>
                 </div>
 
                 <div className="flex items-baseline gap-1">
@@ -480,13 +498,21 @@ export default function PricingPage() {
                 {(() => {
                   const btnProps = getButtonTextAndStyle("scale");
                   return (
-                    <button
-                      onClick={() => handleChoosePlan("scale")}
-                      disabled={btnProps.disabled}
-                      className={btnProps.className}
-                    >
-                      {btnProps.text}
-                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleChoosePlan("scale")}
+                        disabled={btnProps.disabled}
+                        aria-disabled={btnProps.disabled ? "true" : undefined}
+                        className={btnProps.className}
+                      >
+                        {btnProps.text}
+                      </button>
+                      {btnProps.isSetupInProgress && (
+                        <p className="text-[10px] text-[#7a6e5f] text-center mt-2 leading-normal">
+                          This plan’s checkout is being connected. Please check again shortly.
+                        </p>
+                      )}
+                    </div>
                   );
                 })()}
 
@@ -517,7 +543,7 @@ export default function PricingPage() {
               </div>
 
               <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
-                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
+                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">See FAQ</a>
               </div>
             </div>
 
@@ -526,7 +552,7 @@ export default function PricingPage() {
               <div className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Business</span>
-                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Enterprises & Custom Receptionist Needs</span>
+                  <span className="text-[13px] text-[#7a6e5f] font-normal block">For Enterprises &amp; Custom Receptionist Needs</span>
                 </div>
 
                 <div className="flex items-baseline gap-1">
@@ -538,7 +564,7 @@ export default function PricingPage() {
                 <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
-                    <span>Custom call volume & minutes</span>
+                    <span>Custom call volume &amp; minutes</span>
                   </p>
                   <p className="text-[#7a6e5f] flex items-center gap-1.5 pl-5 font-medium">
                     <span>Tailored plan agreement</span>
@@ -547,7 +573,7 @@ export default function PricingPage() {
 
                 <Link
                   href="/contact?subject=business-plan"
-                  className="w-full bg-transparent hover:bg-[#FF6B00] hover:text-white border border-[#FF6B00] text-[#FF6B00] font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all text-center block"
+                  className="w-full bg-[#140A02] hover:bg-[#FF6B00] hover:scale-[1.02] active:scale-[0.98] text-white hover:text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all duration-200 text-center block shadow-sm"
                 >
                   Contact Sales
                 </Link>
@@ -579,67 +605,202 @@ export default function PricingPage() {
               </div>
 
               <div className="text-[11px] text-[#7a6e5f] text-center pt-6">
-                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">Chat with us</a>
+                Questions? <a href="#faq" className="text-[#FF6B00] hover:underline font-bold">See FAQ</a>
               </div>
             </div>
 
           </div>
         </section>
 
-        {/* â”€â”€â”€ SECTION 3: PREPAID TOP-UP NOTE â”€â”€â”€ */}
-        <section className="py-10 border-y border-[#E8E0D5] bg-[#FFF8F0]">
-          <div className="max-w-4xl mx-auto px-6 md:px-8 text-center space-y-2">
-            <p className="text-sm font-semibold text-[#140A02] font-sans">
+        {/* --- SECTION 3: PREPAID TOP-UPS --- */}
+        <section className="py-12 border-y border-[#E8E0D5] bg-[#FFF8F0] text-center">
+          <div className="max-w-4xl mx-auto px-6 md:px-8 space-y-3">
+            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-sans block">
+              Prepaid Minute Top-Ups
+            </span>
+            <h2 className="text-xl font-bold text-[#140A02] font-serif">
               Need more minutes before your monthly renewal?
-            </p>
-            <p className="text-sm text-[#7a6e5f] font-sans">
-              Active subscribers can purchase prepaid minute top-ups ($25 for 100 min Â· $55 for 250 min) from their billing dashboard. Top-up minutes are used after your monthly allowance. AI call handling pauses when both balances are used.
-            </p>
-          </div>
-        </section>
-
-        {/* â”€â”€â”€ SECTION 4: TRUST BADGES â”€â”€â”€ */}
-        <section className="py-16 border-b border-[#E8E0D5] bg-white">
-          <div className="max-w-5xl mx-auto px-6 md:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸ”’ SOC 2 Compliant</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Enterprise-grade security standards</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
-                  <Pulse className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#140A02]">âœ… HIPAA Ready</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Safe healthcare caller data handling</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸŒ GDPR Compliant</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">Encrypted PII databases</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-3 rounded-full border border-[#FF6B00]/15">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-                <span className="text-[13px] font-bold font-sans text-[#140A02]">ðŸ” Encrypted at Rest</span>
-                <span className="text-[11px] font-sans text-[#7a6e5f]">PCI DSS compliant environment</span>
-              </div>
-
+            </h2>
+            <div className="space-y-2 text-sm text-[#7a6e5f] font-sans leading-relaxed">
+              <p>
+                Active subscribers can purchase prepaid minute top-ups from their billing dashboard: $25 for 100 minutes or $55 for 250 minutes.
+              </p>
+              <p className="text-xs text-[#7a6e5f]/90">
+                Top-up minutes are used after the monthly allowance. AI call handling pauses when both balances are used.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* â”€â”€â”€ SECTION 5: FAQ (ACCORDION) â”€â”€â”€ */}
+        {/* --- SECTION 3.5: FEATURE COMPARISON TABLE --- */}
+        <section className="py-20 bg-[#F7F4EF] border-b border-[#E8E0D5]">
+          <div className="max-w-5xl mx-auto px-6 md:px-8 text-center">
+            <div className="space-y-3 mb-12">
+              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-sans block">
+                Compare Plans
+              </span>
+              <h2 className="text-3xl font-bold text-[#140A02] font-serif">
+                Feature Breakdown
+              </h2>
+            </div>
+
+            <div className="bg-white border border-[#E8E0D5] rounded-[24px] shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E0D5] bg-[#FFF8F0]/30">
+                      <th scope="col" className="p-4 font-bold text-[#140A02] w-[30%]">Feature</th>
+                      <th scope="col" className="p-4 font-bold text-[#140A02] text-center w-[17.5%]">Starter</th>
+                      <th scope="col" className="p-4 font-bold text-[#140A02] text-center w-[17.5%]">Growth</th>
+                      <th scope="col" className="p-4 font-bold text-[#140A02] text-center w-[17.5%]">Scale</th>
+                      <th scope="col" className="p-4 font-bold text-[#140A02] text-center w-[17.5%]">Business</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8E0D5]/60">
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Monthly Minutes</td>
+                      <td className="p-4 text-center text-[#7a6e5f] font-mono">200</td>
+                      <td className="p-4 text-center text-[#FF6B00] font-bold font-mono">500</td>
+                      <td className="p-4 text-center text-[#7a6e5f] font-mono">1,500</td>
+                      <td className="p-4 text-center text-[#7a6e5f] font-mono">Custom</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Included Phone Numbers</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">1</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">1</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">1</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">Custom</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Language Support</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f] text-xs">Custom launch-market requirements</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Lead Qualification</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Call Transcripts</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Lead Dashboard</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-[#FF6B00] mx-auto" aria-hidden="true" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Advanced Analytics</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">No</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Detailed</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Advanced</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Custom</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-[#140A02]">Priority Support</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Standard</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Priority Email</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Priority</td>
+                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Custom</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* --- SECTION 4: SECURITY --- */}
+        <section className="py-20 border-b border-[#E8E0D5] bg-white text-center">
+          <div className="max-w-5xl mx-auto px-6 md:px-8">
+            <div className="space-y-4 mb-16">
+              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-sans">
+                Security
+              </span>
+              <h2 className="text-3xl font-bold text-[#140A02] font-serif leading-tight">
+                Designed to Protect Business and Customer Data
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+              <div className="flex flex-col gap-3 p-6 rounded-2xl bg-[#F7F4EF]/50 border border-[#E8E0D5]/60">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
+                  <ShieldCheck className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Authenticated Access</h3>
+                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                  Account and billing areas require authenticated access.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 p-6 rounded-2xl bg-[#F7F4EF]/50 border border-[#E8E0D5]/60">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
+                  <Lock className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Tenant-Isolated Data</h3>
+                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                  Business records are restricted to the correct account.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 p-6 rounded-2xl bg-[#F7F4EF]/50 border border-[#E8E0D5]/60">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
+                  <Activity className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Secure Provider Connections</h3>
+                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                  Sensitive provider requests are handled through encrypted connections.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 p-6 rounded-2xl bg-[#F7F4EF]/50 border border-[#E8E0D5]/60">
+                <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
+                  <CreditCard className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-[14px] font-bold font-sans text-[#140A02]">Verified Payment Events</h3>
+                <p className="text-[12px] font-sans text-[#7a6e5f] leading-relaxed">
+                  Subscriptions and top-ups are activated only after verified payment webhooks.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* --- SECTION 5: FAQ (ACCORDION) --- */}
         <section className="py-20 border-t border-[#E8E0D5] bg-[#F7F4EF]" id="faq">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto">
@@ -670,7 +831,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* â”€â”€â”€ SECTION 6: CTA FOOTER â”€â”€â”€ */}
+        {/* --- SECTION 6: CTA FOOTER --- */}
         <section className="py-24 text-center max-w-4xl mx-auto px-6 md:px-8 space-y-6 relative">
           <h2 className="text-[#140A02] leading-tight tracking-tight font-serif text-[36px] font-bold">
             Ready to never miss a call again?
@@ -679,14 +840,14 @@ export default function PricingPage() {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
             <button
               onClick={() => handleChoosePlan("growth")}
-              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#E55A00] text-white font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
+              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98]"
             >
               Get Started with Growth
             </button>
 
             <Link
               href="/demo"
-              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all text-center"
+              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98]"
             >
               Try the AI Assistant Demo
             </Link>
@@ -699,5 +860,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-
