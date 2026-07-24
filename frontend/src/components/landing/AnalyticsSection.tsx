@@ -41,7 +41,7 @@ const stats = [
     icon: Activity,
     title: "Peak Hours Load",
     value: "5:00 - 8:00 PM",
-    change: "99.9% trunk uptime",
+    change: "High trunk availability",
     color: "#FF6B00",
     sparkline: [10, 20, 15, 45, 50, 90, 85, 95]
   },

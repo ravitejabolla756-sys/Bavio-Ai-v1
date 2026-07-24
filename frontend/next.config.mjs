@@ -4,26 +4,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Backend URL: default to production AWS backend.
-// IMPORTANT: Do NOT set BACKEND_URL to localhost in Vercel production environment variables.
-// If BACKEND_URL is missing, the production AWS backend (https://api.bavio.in) is used.
+// Backend URL: default to production AWS backend, override via env if needed
 const BACKEND_URL = process.env.BACKEND_URL || 'https://api.bavio.in';
-
-// Safety check: warn if BACKEND_URL is pointing to localhost in a non-dev context.
-if (
-  BACKEND_URL.includes('localhost') ||
-  BACKEND_URL.includes('127.0.0.1')
-) {
-  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-    // This will surface during the Vercel build log, catching misconfiguration early.
-    console.error(
-      `[BAVIO CONFIG ERROR] BACKEND_URL is set to a localhost address ("${BACKEND_URL}") in a Vercel/production environment. ` +
-      `All /api/* requests will fail. Set BACKEND_URL=https://api.bavio.in in Vercel environment variables, or delete the variable to use the default.`
-    );
-  } else {
-    console.warn(`[BAVIO CONFIG] Using local backend: ${BACKEND_URL}`);
-  }
-}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -39,6 +21,26 @@ const nextConfig = {
       {
         source: '/sign-up',
         destination: '/signup',
+        permanent: true,
+      },
+      {
+        source: '/privacy',
+        destination: '/legal/privacy',
+        permanent: true,
+      },
+      {
+        source: '/terms',
+        destination: '/legal/terms',
+        permanent: true,
+      },
+      {
+        source: '/cookie-policy',
+        destination: '/legal/cookies',
+        permanent: true,
+      },
+      {
+        source: '/refund-policy',
+        destination: '/legal/refund-policy',
         permanent: true,
       },
     ];

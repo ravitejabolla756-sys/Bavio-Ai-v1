@@ -73,7 +73,7 @@ export default function CompanyPage() {
       date: "April 2026",
       title: "Bavio Backend Complete",
       description:
-        "Successfully integrated advanced AI language processing, Standard voice infrastructure, and WhatsApp. Achieved real-time conversational voice stream processing.",
+        "Successfully integrated advanced AI language processing, enterprise-grade voice infrastructure, and WhatsApp. Achieved real-time conversational voice stream processing.",
       status: "done",
     },
     {
@@ -92,16 +92,16 @@ export default function CompanyPage() {
     },
     {
       date: "July 2026",
-      title: "Early Adopters",
+      title: "Paid Subscriptions",
       description:
-        "Onboarding initial cohort of real estate agencies, healthcare clinics, and consulting firms globally.",
+        "Onboarding initial cohort of agencies and clinics on paid monthly plans.",
       status: "upcoming",
     },
     {
       date: "Future",
       title: "Expansion & Growth",
       description:
-        "Scaling to active businesses and integrating support for additional global languages.",
+        "Expanding call coverage capacity and integrating support for additional locations.",
       status: "future",
     },
   ];
@@ -122,7 +122,7 @@ export default function CompanyPage() {
             <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-3 py-1 rounded-full border border-[#FF6B00]/10 w-fit mb-6 block">
               Our Company
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1] font-display">
               We Built Bavio Because <br className="hidden sm:inline" />
               <span className="text-[#FF6B00]">Every Missed Call Can Mean a Lost Customer.</span>
             </h1>
@@ -143,7 +143,7 @@ export default function CompanyPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                   The Origin Story
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02]">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] font-display">
                   Why We Built Bavio
                 </h2>
                 <div className="text-base text-[#6B5A4C] space-y-5 leading-relaxed font-normal">
@@ -164,7 +164,7 @@ export default function CompanyPage() {
                     We realized: While advanced AI language processing and voice technology are expanding globally, no one is building for small business teams at a price they can easily afford. A business owner sees expensive enterprise solutions and thinks it is out of reach.
                   </p>
                   <p>
-                    So we built Bavio. It answers calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard. Guided Business Setup, no IT team needed.
+                    So we built Bavio. It answers calls, understands customer needs, qualifies leads, and organizes every conversation in one dashboard. No setup complexity, no IT team needed.
                   </p>
                   <p className="font-semibold text-[#140A02]">
                     Our goal is simple: help businesses stay responsive, capture more opportunities, and deliver a better calling experience.
@@ -250,7 +250,7 @@ export default function CompanyPage() {
 
                   {/* Footnote */}
                   <div className="relative z-10 text-xs text-[#6B5A4C] border-t border-[#F3E4D4] pt-4 font-medium">
-                    Speaks English voice support for initial launch markets natively, bypassing heavy cloud latency.
+                    English voice support for initial launch markets.
                   </div>
                 </div>
               </div>
@@ -265,7 +265,7 @@ export default function CompanyPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 Values
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
                 What Guides Our Decisions
               </h2>
             </div>
@@ -277,7 +277,7 @@ export default function CompanyPage() {
                   <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center">
                     <Target className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#140A02]">
+                  <h3 className="text-xl font-bold text-[#140A02] font-sans">
                     Our Mission
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
@@ -292,7 +292,7 @@ export default function CompanyPage() {
                   <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center">
                     <Globe className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#140A02]">
+                  <h3 className="text-xl font-bold text-[#140A02] font-sans">
                     Global-Ready
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
@@ -308,7 +308,7 @@ export default function CompanyPage() {
                   <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center">
                     <Zap className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#140A02]">
+                  <h3 className="text-xl font-bold text-[#140A02] font-sans">
                     Simple &gt; Smart
                   </h3>
                   <p className="text-sm text-[#6B5A4C] leading-relaxed">
@@ -331,7 +331,7 @@ export default function CompanyPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 Timeline
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
                 {"What We've Built"}
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
@@ -357,10 +357,10 @@ export default function CompanyPage() {
                           <CheckCircle2 className="w-5 h-5 text-[#FF6B00]" />
                         )}
                       </div>
-                      <h4 className="font-bold text-base text-[#140A02] mb-2">
+                      <h4 className="font-bold text-base text-[#140A02] mb-2 font-sans">
                         {milestone.title}
                       </h4>
-                      <p className="text-xs text-[#6B5A4C] leading-relaxed">
+                      <p className="text-sm text-[#6B5A4C] leading-relaxed font-sans">
                         {milestone.description}
                       </p>
                     </div>
@@ -395,10 +395,10 @@ export default function CompanyPage() {
                             {milestone.date}
                           </span>
                         </div>
-                        <h4 className="text-lg font-bold text-[#140A02] mb-2">
+                        <h4 className="text-lg font-bold text-[#140A02] mb-2 font-sans">
                           {milestone.title}
                         </h4>
-                        <p className="text-sm text-[#6B5A4C] leading-relaxed">
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-sans">
                           {milestone.description}
                         </p>
                       </div>
@@ -414,55 +414,7 @@ export default function CompanyPage() {
 
 
 
-        {/* SECTION 7: JOIN THE TEAM (Hiring) */}
-        <section className="py-20 border-t border-[#F3E4D4] bg-white/40">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center max-w-3xl">
-            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-              Careers
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 mb-4">
-              {"We're Hiring"}
-            </h2>
-            <p className="text-[#6B5A4C] text-sm md:text-base mb-8 max-w-xl mx-auto">
-              {"We're a 2-person team building something big. If you care about voice tech, AI engineering, and real customer impact, let's talk."}
-            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 max-w-2xl mx-auto">
-              <div className="bg-white border border-[#F3E4D4] p-5 rounded-2xl">
-                <div className="text-sm font-bold text-[#140A02]">
-                  Backend Engineer
-                </div>
-                <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Remote
-                </div>
-              </div>
-              <div className="bg-white border border-[#F3E4D4] p-5 rounded-2xl">
-                <div className="text-sm font-bold text-[#140A02]">
-                  Sales &amp; Growth
-                </div>
-                <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Remote
-                </div>
-              </div>
-              <div className="bg-white border border-[#F3E4D4] p-5 rounded-2xl">
-                <div className="text-sm font-bold text-[#140A02]">
-                  Product Designer
-                </div>
-                <div className="text-[10px] text-[#FF6B00] font-bold uppercase tracking-wider mt-1">
-                  Remote
-                </div>
-              </div>
-            </div>
-
-            <a
-              href="mailto:careers@bavio.in"
-              className="inline-flex items-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white px-6 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-sm active:scale-[0.98]"
-            >
-              See Open Roles
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        </section>
 
         {/* SECTION 8: GET IN TOUCH */}
         <section id="contact-us" className="py-20 border-t border-[#F3E4D4]">
@@ -473,13 +425,12 @@ export default function CompanyPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                   Contact Us
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02]">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] font-display">
                   Questions? <br />
                   {"We'd love to hear from you."}
                 </h2>
                 <p className="text-sm md:text-base text-[#6B5A4C] leading-relaxed">
-                  Ask us anything about Bavio, onboarding details, custom regional
-                  languages, or your specific telephony use case.
+                  Ask us anything about Bavio, onboarding details, or your specific telephony use case.
                 </p>
 
                 <div className="space-y-4 pt-4 border-t border-[#F3E4D4]">
@@ -535,7 +486,7 @@ export default function CompanyPage() {
                           value={formData.name}
                           onChange={handleInputChange}
                           placeholder="Your Name"
-                          className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all"
+                          className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-base text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all font-sans"
                         />
                       </div>
                       <div className="space-y-2">
@@ -553,7 +504,7 @@ export default function CompanyPage() {
                           value={formData.email}
                           onChange={handleInputChange}
                           placeholder="you@company.com"
-                          className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all"
+                          className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-base text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all font-sans"
                         />
                       </div>
                     </div>
@@ -573,7 +524,7 @@ export default function CompanyPage() {
                         value={formData.message}
                         onChange={handleInputChange}
                         placeholder="Tell us about your business or question..."
-                        className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-sm text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all resize-none"
+                        className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-xl px-4 py-3 text-base text-[#140A02] focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00] transition-all resize-none font-sans"
                       />
                     </div>
 
@@ -611,7 +562,7 @@ export default function CompanyPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF6B00]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center relative z-10">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] tracking-tight mb-4">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] tracking-tight mb-4 font-display">
               Ready to see Bavio in action?
             </h2>
             <p className="text-base md:text-lg text-[#6B5A4C] mb-8 max-w-xl mx-auto">

@@ -52,22 +52,23 @@ export function CountryProvider({ children }: { children: React.ReactNode }) {
       const METADATA_MAP: Record<string, { currency: string, currencyCode: string, symbol: string, flag: string }> = {
         US: { currency: "usd", currencyCode: "USD", symbol: "$",    flag: "🇺🇸" },
         GB: { currency: "gbp", currencyCode: "GBP", symbol: "£",    flag: "🇬🇧" },
-        AU: { currency: "aud", currencyCode: "AUD", symbol: "A$",   flag: "🇦🇺" },
-        IN: { currency: "inr", currencyCode: "INR", symbol: "₹",    flag: "🇮🇳" }
+        AU: { currency: "aud", currencyCode: "AUD", symbol: "A$",   flag: "🇦🇺" }
       };
 
-      const mapped = data.map((c: any) => {
-        const meta = METADATA_MAP[c.iso2] || { currency: "usd", currencyCode: "USD", symbol: "$", flag: "🌐" };
-        return {
-          code: c.iso2,
-          name: c.name,
-          dialCode: c.dialCode,
-          flag: meta.flag,
-          currency: meta.currency,
-          currencyCode: meta.currencyCode,
-          symbol: meta.symbol
-        };
-      });
+      const mapped = data
+        .filter((c: any) => c.iso2 !== "IN")
+        .map((c: any) => {
+          const meta = METADATA_MAP[c.iso2] || { currency: "usd", currencyCode: "USD", symbol: "$", flag: "🌐" };
+          return {
+            code: c.iso2,
+            name: c.name,
+            dialCode: c.dialCode,
+            flag: meta.flag,
+            currency: meta.currency,
+            currencyCode: meta.currencyCode,
+            symbol: meta.symbol
+          };
+        });
 
       setCountriesList(mapped);
 

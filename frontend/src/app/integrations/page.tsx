@@ -28,11 +28,11 @@ const INTEGRATION_LIST: IntegrationItem[] = [
   { name: "ActiveCampaign", category: "CRM", desc: "Trigger email automation workflows as soon as a lead is qualified.", time: "3 mins", status: "Not Connected" },
   { name: "Mailchimp", category: "CRM", desc: "Add qualified call contacts directly to newsletter lists.", time: "2 mins", status: "Not Connected" },
   
-  { name: "Google Calendar", category: "Calendar", desc: "Check calendar slots and schedule calls directly on GCal.", time: "1 min", status: "Connected" },
-  { name: "Outlook Calendar", category: "Calendar", desc: "Read and write corporate scheduling events instantly.", time: "2 mins", status: "Not Connected" },
-  { name: "Cal.com", category: "Calendar", desc: "Natively book available appointment openings during call streams.", time: "1 min", status: "Connected" },
-  { name: "Calendly", category: "Calendar", desc: "Check availability links and book slots in Calendly from transcripts.", time: "2 mins", status: "Not Connected" },
-  { name: "Acuity Scheduling", category: "Calendar", desc: "Sync client scheduling details for local services and clinics.", time: "3 mins", status: "Not Connected" },
+  { name: "Google Calendar", category: "Calendar", desc: "Sync preferred call slots on GCal.", time: "1 min", status: "Connected" },
+  { name: "Outlook Calendar", category: "Calendar", desc: "Sync calendar slots and scheduling preferences.", time: "2 mins", status: "Not Connected" },
+  { name: "Cal.com", category: "Calendar", desc: "Sync client scheduling preferences with Cal.com workflows.", time: "1 min", status: "Connected" },
+  { name: "Calendly", category: "Calendar", desc: "Sync client scheduling preferences with Calendly workflows.", time: "2 mins", status: "Not Connected" },
+  { name: "Acuity Scheduling", category: "Calendar", desc: "Sync client scheduling preferences for local services and clinics.", time: "3 mins", status: "Not Connected" },
   
   { name: "WhatsApp Business", category: "SMS", desc: "Send summary notifications and follow-up templates on WhatsApp.", time: "3 mins", status: "Connected" },
   { name: "Slack Notifications", category: "SMS", desc: "Receive immediate notifications when new leads get qualified.", time: "2 mins", status: "Connected" },

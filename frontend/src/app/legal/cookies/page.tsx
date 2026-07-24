@@ -16,7 +16,7 @@ export default function CookiesPolicy() {
 
         <div className="flex flex-col gap-6 text-body-sm text-ink-tertiary leading-relaxed">
           <p>
-            Bavio AI uses cookies and local browser storage to run our web interfaces, authenticate developer dashboards, and improve performance.
+            Bavio uses cookies and local browser storage to run our web interfaces, authenticate developer dashboards, and improve performance.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">1. Essential Cookies</h3>
@@ -26,7 +26,7 @@ export default function CookiesPolicy() {
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">2. Analytics & Preference Cookies</h3>
           <p>
-            We use basic analysis scripts to track usage volumes, click flows, and currency preference settings (INR vs USD) to serve optimized resources.
+            We use basic analysis scripts to track usage volumes, click flows, and dashboard preference settings to serve optimized resources.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">3. Modifying Cookie Settings</h3>

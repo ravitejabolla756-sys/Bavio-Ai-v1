@@ -40,8 +40,8 @@ export default function CrmSection() {
                 {/* Profile header */}
                 <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-[#140A02] rounded flex items-center justify-center text-white font-extrabold text-[10px]">TF</div>
-                    <span className="font-bold text-[#140A02]">Trueform</span>
+                    <div className="w-6 h-6 bg-[#140A02] rounded flex items-center justify-center text-white font-extrabold text-[10px]">B</div>
+                    <span className="font-bold text-[#140A02]">Bavio Dashboard</span>
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-[#6E6256]" />
                 </div>
@@ -52,7 +52,7 @@ export default function CrmSection() {
                   <div className="space-y-1">
                     <div className="px-2 py-1.5 text-[#6E6256] font-medium flex items-center gap-2 rounded-lg">
                       <Clock className="w-3.5 h-3.5" />
-                      <span>Cockpit</span>
+                      <span>Overview</span>
                     </div>
                     <div className="px-2 py-1.5 bg-[#FFF7ED] text-[#F97316] font-bold flex items-center justify-between rounded-lg border border-[#F3E4D4]/40">
                       <div className="flex items-center gap-2">
@@ -62,12 +62,12 @@ export default function CrmSection() {
                       <span className="bg-[#F97316] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">2</span>
                     </div>
                     <div className="px-2 py-1.5 text-[#6E6256] font-medium flex items-center gap-2 rounded-lg">
-                      <FolderIcon className="w-3.5 h-3.5" />
-                      <span>Projects</span>
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      <span>Calls</span>
                     </div>
                     <div className="px-2 py-1.5 text-[#6E6256] font-medium flex items-center gap-2 rounded-lg">
-                      <InvoiceIcon className="w-3.5 h-3.5" />
-                      <span>Invoices</span>
+                      <FolderIcon className="w-3.5 h-3.5" />
+                      <span>Knowledge Base</span>
                     </div>
                   </div>
                 </div>
@@ -77,8 +77,9 @@ export default function CrmSection() {
             {/* Leads Columns Area */}
             <div className="flex-1 p-5 bg-[#FFFDF8] flex flex-col gap-4 overflow-hidden">
               <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="font-bold text-sm text-[#140A02]">Leads</span>
+                  <span className="bg-[#FFF7ED] border border-[#F3E4D4] px-2 py-0.5 rounded text-[9px] font-bold text-[#F97316]">Example data</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#6E6256]">
                   <button className="border border-[#F3E4D4] rounded-lg px-3 py-1 bg-white text-[10px] font-bold flex items-center gap-1.5 shadow-sm">
@@ -100,10 +101,10 @@ export default function CrmSection() {
                   </div>
                   <div className="bg-white border border-[#F3E4D4] rounded-xl p-3.5 space-y-2 shadow-sm text-xs">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-[#140A02]">Website Relaunch</span>
+                      <span className="font-bold text-[#140A02]">Property Inquiry</span>
                       <span className="bg-orange-50 border border-orange-200 text-orange-600 font-bold px-1.5 py-0.5 rounded text-[8px]">Call</span>
                     </div>
-                    <div className="text-[10px] text-[#6E6256]">Miro &bull; John Doe</div>
+                    <div className="text-[10px] text-[#6E6256]">Example Property Group &bull; Alex Morgan</div>
                     <div className="flex justify-between items-center text-[10px] font-mono text-[#6E6256] pt-1">
                       <span>Oct 19th 2025</span>
                       <span className="font-bold text-[#140A02]">$10k-$20k</span>
@@ -119,10 +120,10 @@ export default function CrmSection() {
                   </div>
                   <div className="bg-white border border-[#F3E4D4] rounded-xl p-3.5 space-y-2 shadow-sm text-xs">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-[#140A02]">Marketing Site</span>
+                      <span className="font-bold text-[#140A02]">Request Capture</span>
                       <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-1.5 py-0.5 rounded text-[8px]">Inbound</span>
                     </div>
-                    <div className="text-[10px] text-[#6E6256]">Eden &bull; John Doe</div>
+                    <div className="text-[10px] text-[#6E6256]">Tech Advisors &bull; Jamie Smith</div>
                     <div className="flex justify-between items-center text-[10px] font-mono text-[#6E6256] pt-1">
                       <span>Oct 19th 2025</span>
                       <span className="font-bold text-[#140A02]">$20k-$30k</span>
@@ -147,13 +148,12 @@ export default function CrmSection() {
                     <span className="text-[9px] text-[#6E6256] bg-[#FFF7ED] border border-[#F3E4D4] px-2 py-0.5 rounded">Autofill from Notes</span>
                   </div>
 
-                  {/* Form fields */}
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Project</label>
+                      <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Inquiry Type</label>
                       <input
                         type="text"
-                        value="Landing Page"
+                        value="Property Inquiry"
                         readOnly
                         className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-lg px-3 py-2 text-xs text-[#140A02] focus:outline-none"
                       />
@@ -162,16 +162,25 @@ export default function CrmSection() {
                       <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Company</label>
                       <input
                         type="text"
-                        value="Miro"
+                        value="Example Property Group"
                         readOnly
                         className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-lg px-3 py-2 text-xs text-[#140A02] focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Person of Contact</label>
+                      <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Caller</label>
                       <input
                         type="text"
-                        value="John Doe"
+                        value="Alex Morgan"
+                        readOnly
+                        className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-lg px-3 py-2 text-xs text-[#140A02] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-[#6E6256]/60 font-bold block mb-1 uppercase">Phone Number</label>
+                      <input
+                        type="text"
+                        value="+1 555 010 2040"
                         readOnly
                         className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-lg px-3 py-2 text-xs text-[#140A02] focus:outline-none"
                       />

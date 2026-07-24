@@ -69,7 +69,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex justify-between items-center text-left py-2 font-bold text-[#140A02] hover:text-[#FF6B00] transition-colors"
       >
-        <span className="text-sm font-semibold tracking-wide">{question}</span>
+        <span className="text-base font-semibold tracking-wide font-sans">{question}</span>
         {isOpen ? (
           <ChevronUp className="w-4 h-4 text-[#FF6B00] shrink-0 transition-transform duration-200" />
         ) : (
@@ -78,7 +78,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
       </button>
       {isOpen && (
         <div className="overflow-hidden">
-          <p className="text-xs text-[#7a6e5f] leading-relaxed pt-2 pb-3 font-normal font-sans">
+          <p className="text-sm text-[#7a6e5f] leading-relaxed pt-2 pb-3 font-normal font-sans">
             {answer}
           </p>
         </div>
@@ -152,8 +152,34 @@ export default function PricingPage() {
   const [plans, setPlans] = useState<any[]>(DEFAULT_PLANS);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [pricingLoaded, setPricingLoaded] = useState(false);
+  const [urlPlan, setUrlPlan] = useState<string | null>(null);
+
+  // Helper to check if a plan is the selected plan (from query or profile)
+  const isSelectedPlan = (planId: string) => {
+    const pId = planId.toLowerCase();
+    const upPlan = userProfile?.subscription_plan?.toLowerCase();
+    
+    // check query param first
+    if (urlPlan && urlPlan === pId) return true;
+    
+    // check profile next
+    if (upPlan) {
+      if (pId === "starter" && upPlan === "starter") return true;
+      if (pId === "growth" && upPlan === "pro") return true;
+      if (pId === "scale" && upPlan === "enterprise") return true;
+    }
+    return false;
+  };
 
   // Fetch dynamic plans & auth profile on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const p = params.get("plan");
+      if (p) setUrlPlan(p.toLowerCase());
+    }
+  }, []);
+
   useEffect(() => {
     async function loadPricingAndAuth() {
       try {
@@ -308,9 +334,16 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch max-w-6xl mx-auto">
             
             {/* CARD 1: STARTER */}
-            <div className="bg-white border border-[#E8E0D5] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative">
+            <div className={`bg-white border rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative ${
+              isSelectedPlan("starter") ? "border-[#FF6B00] border-4 ring-4 ring-[#FF6B00]/10" : "border-[#E8E0D5]"
+            }`}>
+              {isSelectedPlan("starter") && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
+                  <span>Your Selected Plan</span>
+                </div>
+              )}
               <div className="space-y-6">
-                <div>
+                <div className={isSelectedPlan("starter") ? "pt-2" : ""}>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Starter</span>
                   <span className="text-[13px] text-[#7a6e5f] font-normal font-sans block">For Solo Agents &amp; Small Teams</span>
                 </div>
@@ -322,7 +355,7 @@ export default function PricingPage() {
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
+                <div className="space-y-1.5 text-sm text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={200} /> included minutes/month</span>
@@ -355,7 +388,7 @@ export default function PricingPage() {
 
                 <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
+                <ul className="space-y-3 text-sm text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>1 local Bavio phone number</span>
@@ -389,10 +422,18 @@ export default function PricingPage() {
             </div>
 
             {/* CARD 2: GROWTH */}
-            <div className="bg-[#FFFDF9] border-2 border-[#FF6B00] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[720px] transition-all duration-200 hover:-translate-y-2 relative shadow-[0_12px_40px_rgba(255,107,0,0.10)]">
+            <div className={`bg-[#FFFDF9] border rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[720px] transition-all duration-200 hover:-translate-y-2 relative ${
+              isSelectedPlan("growth") ? "border-[#FF6B00] border-4 ring-4 ring-[#FF6B00]/10 shadow-[0_12px_40px_rgba(255,107,0,0.15)]" : "border-2 border-[#FF6B00] shadow-[0_12px_40px_rgba(255,107,0,0.10)]"
+            }`}>
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
-                <Star className="w-3 h-3 fill-white text-white" aria-hidden="true" />
-                <span>Most Popular</span>
+                {isSelectedPlan("growth") ? (
+                  <span>Your Selected Plan</span>
+                ) : (
+                  <>
+                    <Star className="w-3 h-3 fill-white text-white" aria-hidden="true" />
+                    <span>Most Popular</span>
+                  </>
+                )}
               </div>
 
               <div className="space-y-6">
@@ -408,7 +449,7 @@ export default function PricingPage() {
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
+                <div className="space-y-1.5 text-sm text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={500} /> included minutes/month</span>
@@ -441,7 +482,7 @@ export default function PricingPage() {
 
                 <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
+                <ul className="space-y-3 text-sm text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>All Starter features</span>
@@ -471,9 +512,16 @@ export default function PricingPage() {
             </div>
 
             {/* CARD 3: SCALE */}
-            <div className="bg-white border border-[#E8E0D5] rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative">
+            <div className={`bg-white border rounded-[24px] p-8 flex flex-col justify-between h-auto min-h-[690px] transition-all duration-200 hover:-translate-y-2 hover:border-[#FF6B00] hover:shadow-[0_8px_30px_rgba(255,107,0,0.08)] relative ${
+              isSelectedPlan("scale") ? "border-[#FF6B00] border-4 ring-4 ring-[#FF6B00]/10" : "border-[#E8E0D5]"
+            }`}>
+              {isSelectedPlan("scale") && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B00] text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
+                  <span>Your Selected Plan</span>
+                </div>
+              )}
               <div className="space-y-6">
-                <div>
+                <div className={isSelectedPlan("scale") ? "pt-2" : ""}>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7a6e5f] block mb-1">Scale</span>
                   <span className="text-[13px] text-[#7a6e5f] font-normal block">For Large Agencies &amp; Clinics</span>
                 </div>
@@ -485,7 +533,7 @@ export default function PricingPage() {
                   <span className="text-xs text-[#7a6e5f] font-normal">/month</span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
+                <div className="space-y-1.5 text-sm text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span><UsageCounter value={1500} /> included minutes/month</span>
@@ -518,7 +566,7 @@ export default function PricingPage() {
 
                 <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
+                <ul className="space-y-3 text-sm text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>All Growth features</span>
@@ -561,7 +609,7 @@ export default function PricingPage() {
                   </span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-[#140A02] font-sans">
+                <div className="space-y-1.5 text-sm text-[#140A02] font-sans">
                   <p className="font-semibold flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0" />
                     <span>Custom call volume &amp; minutes</span>
@@ -573,14 +621,14 @@ export default function PricingPage() {
 
                 <Link
                   href="/contact?subject=business-plan"
-                  className="w-full bg-[#140A02] hover:bg-[#FF6B00] hover:scale-[1.02] active:scale-[0.98] text-white hover:text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all duration-200 text-center block shadow-sm"
+                  className="w-full bg-[#140A02] hover:bg-[#FF6B00] hover:scale-[1.02] active:scale-[0.98] text-white hover:text-white font-bold text-sm py-3.5 rounded-xl uppercase tracking-wider transition-all duration-200 text-center block shadow-sm font-sans"
                 >
                   Contact Sales
                 </Link>
 
                 <div className="border-t border-[#E8E0D5] my-4" />
 
-                <ul className="space-y-3 text-xs text-[#140A02] font-sans font-semibold">
+                <ul className="space-y-3 text-sm text-[#140A02] font-sans font-semibold">
                   <li className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
                     <span>Multiple local receptionist numbers</span>
@@ -625,7 +673,7 @@ export default function PricingPage() {
               <p>
                 Active subscribers can purchase prepaid minute top-ups from their billing dashboard: $25 for 100 minutes or $55 for 250 minutes.
               </p>
-              <p className="text-xs text-[#7a6e5f]/90">
+              <p className="text-sm text-[#7a6e5f]/90">
                 Top-up minutes are used after the monthly allowance. AI call handling pauses when both balances are used.
               </p>
             </div>
@@ -673,10 +721,10 @@ export default function PricingPage() {
                     </tr>
                     <tr>
                       <td className="p-4 font-semibold text-[#140A02]">Language Support</td>
-                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
-                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
-                      <td className="p-4 text-center text-[#7a6e5f]">English</td>
-                      <td className="p-4 text-center text-[#7a6e5f] text-xs">Custom launch-market requirements</td>
+                      <td className="p-4 text-center text-[#7a6e5f] text-sm">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f] text-sm">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f] text-sm">English</td>
+                      <td className="p-4 text-center text-[#7a6e5f] text-sm">Custom launch-market requirements</td>
                     </tr>
                     <tr>
                       <td className="p-4 font-semibold text-[#140A02]">Lead Qualification</td>
@@ -725,17 +773,17 @@ export default function PricingPage() {
                     </tr>
                     <tr>
                       <td className="p-4 font-semibold text-[#140A02]">Advanced Analytics</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">No</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Detailed</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Advanced</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Custom</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">No</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Detailed</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Advanced</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Custom</td>
                     </tr>
                     <tr>
                       <td className="p-4 font-semibold text-[#140A02]">Priority Support</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Standard</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Priority Email</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Priority</td>
-                      <td className="p-4 text-center text-xs text-[#7a6e5f]">Custom</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Standard</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Priority Email</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Priority</td>
+                      <td className="p-4 text-center text-sm text-[#7a6e5f]">Custom</td>
                     </tr>
                   </tbody>
                 </table>
@@ -761,8 +809,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <ShieldCheck className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[18px] font-bold font-sans text-[#140A02]">Authenticated Access</h3>
-                <p className="text-[15px] font-sans text-[#5C5246] leading-relaxed">
+                <h3 className="text-base font-bold font-sans text-[#140A02]">Authenticated Access</h3>
+                <p className="text-sm font-sans text-[#7a6e5f] leading-relaxed">
                   Account and billing areas require authenticated access.
                 </p>
               </div>
@@ -771,8 +819,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <Lock className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[18px] font-bold font-sans text-[#140A02]">Tenant-Isolated Data</h3>
-                <p className="text-[15px] font-sans text-[#5C5246] leading-relaxed">
+                <h3 className="text-base font-bold font-sans text-[#140A02]">Tenant-Isolated Data</h3>
+                <p className="text-sm font-sans text-[#7a6e5f] leading-relaxed">
                   Business records are restricted to the correct account.
                 </p>
               </div>
@@ -781,8 +829,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <Activity className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[18px] font-bold font-sans text-[#140A02]">Secure Provider Connections</h3>
-                <p className="text-[15px] font-sans text-[#5C5246] leading-relaxed">
+                <h3 className="text-base font-bold font-sans text-[#140A02]">Secure Provider Connections</h3>
+                <p className="text-sm font-sans text-[#7a6e5f] leading-relaxed">
                   Sensitive provider requests are handled through encrypted connections.
                 </p>
               </div>
@@ -791,8 +839,8 @@ export default function PricingPage() {
                 <div className="bg-[#FF6B00]/5 text-[#FF6B00] p-2.5 rounded-xl border border-[#FF6B00]/15 w-fit">
                   <CreditCard className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <h3 className="text-[18px] font-bold font-sans text-[#140A02]">Verified Payment Events</h3>
-                <p className="text-[15px] font-sans text-[#5C5246] leading-relaxed">
+                <h3 className="text-base font-bold font-sans text-[#140A02]">Verified Payment Events</h3>
+                <p className="text-sm font-sans text-[#7a6e5f] leading-relaxed">
                   Subscriptions and top-ups are activated only after verified payment webhooks.
                 </p>
               </div>
@@ -813,7 +861,7 @@ export default function PricingPage() {
                 <h2 className="text-3xl font-bold text-[#140A02] mt-2 leading-tight font-serif">
                   Frequently Asked Questions
                 </h2>
-                <p className="text-[#7a6e5f] text-xs mt-3 leading-relaxed font-sans font-normal">
+                <p className="text-[#7a6e5f] text-sm mt-3 leading-relaxed font-sans font-normal">
                   Have questions about minutes, top-ups, or how billing works? Here are common answers.
                 </p>
               </div>
@@ -840,14 +888,14 @@ export default function PricingPage() {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
             <button
               onClick={() => handleChoosePlan("growth")}
-              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-sm py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] font-sans"
             >
               Get Started with Growth
             </button>
 
             <Link
               href="/demo"
-              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-xs py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-sm py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] font-sans"
             >
               Try the AI Assistant Demo
             </Link>

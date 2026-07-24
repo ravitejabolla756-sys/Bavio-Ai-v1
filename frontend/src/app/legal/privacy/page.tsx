@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
 
         <div className="flex flex-col gap-6 text-body-sm text-ink-tertiary leading-relaxed">
           <p>
-            Bavio AI (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) values the privacy of our corporate clients and their end callers. This Privacy Policy details how we collect, process, and secure call recordings, transcripts, and metadata during the operations of our autonomous voice agent platform.
+            Bavio (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) values the privacy of our corporate clients and their end callers. This Privacy Policy details how we collect, process, and secure call recordings, transcripts, and metadata during the operations of our autonomous voice agent platform.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">1. Data We Collect</h3>

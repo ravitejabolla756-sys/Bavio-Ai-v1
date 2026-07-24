@@ -18,18 +18,12 @@ import {
 } from "lucide-react";
 
 const features = [
-  { icon: Clock, title: "Never Miss Calls", desc: "Never place callers on hold. Calls are answered within 1 ring." },
+  { icon: Clock, title: "AI Call Answering", desc: "Never place callers on hold. Calls are answered instantly." },
+  { icon: Terminal, title: "Business Knowledge", desc: "Provide your own custom script, greeting styles, and guidelines." },
   { icon: UserCheck, title: "Lead Qualification", desc: "Pre-screen callers for budget, intent, location, and requirements." },
-  { icon: Calendar, title: "Request Capture", desc: "Capture preferred appointment dates, times and customer details for your team to confirm." },
-  { icon: GitBranch, title: "Lead Dashboard", desc: "Organize captured callers, requirements and follow-up details in one workspace." },
-  { icon: MessageSquare, title: "Instant Notifications", desc: "Get alerts via WhatsApp, email, or SMS with transcription summaries." },
-  { icon: Disc, title: "Call Summaries", desc: "Listen back to recordings and review conversations via dashboard." },
-  { icon: Smile, title: "24×7 Availability", desc: "Natural conversations with 24/7 availability." },
-  { icon: Terminal, title: "Custom Scripts", desc: "Provide your own custom script, greeting styles, and guidelines." },
-  { icon: Languages, title: "Global English Launch", desc: "English voice support optimized for US, UK, and Australia." },
-  { icon: ShieldCheck, title: "Call Recording", desc: "Securely record every inbound call for quality and audit trails." },
-  { icon: TrendingUp, title: "Intent Detection", desc: "Identify customer intent, interest level, and urgency in real-time." },
-  { icon: Hash, title: "Analytics Dashboard", desc: "Monitor calls answered, qualified leads, duration, and conversion trends." }
+  { icon: Calendar, title: "Request Capture", desc: "Capture preferred appointment dates, times and customer details." },
+  { icon: MessageSquare, title: "Call Transcripts", desc: "Listen back to recordings and review conversation transcripts." },
+  { icon: GitBranch, title: "Lead Dashboard", desc: "Organize captured callers, requirements and follow-up details in one workspace." }
 ];
 
 export default function FeaturesGrid() {
@@ -49,7 +43,7 @@ export default function FeaturesGrid() {
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feat, idx) => (
             <motion.div
               key={feat.title}
@@ -63,10 +57,10 @@ export default function FeaturesGrid() {
                 <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] border border-[#F3E4D4]/60 flex items-center justify-center text-[#F97316] transition-colors duration-300 group-hover:bg-[#F97316] group-hover:text-white">
                   <feat.icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-[#140A02] tracking-tight">
+                <h3 className="text-base font-bold text-[#140A02] tracking-tight font-sans">
                   {feat.title}
                 </h3>
-                <p className="text-[#6B5A4C] text-xs leading-relaxed font-sans">
+                <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
                   {feat.desc}
                 </p>
               </div>

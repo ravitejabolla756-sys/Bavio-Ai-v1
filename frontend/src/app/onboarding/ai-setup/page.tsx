@@ -63,24 +63,16 @@ export default function OnboardingAiSetupPage() {
         // Pre-select language based on industry mapping
         const indLower = userIndustry.toLowerCase();
         let defaultLang = "en-US";
-        if (indLower.includes("real") || indLower.includes("estate")) {
-          defaultLang = "hi-IN";
-        } else if (indLower.includes("restaurant") || indLower.includes("food")) {
-          defaultLang = "hinglish";
-        }
         setLanguage(defaultLang);
 
         // Pre-fill first message from default templates
         let initialMsg = "Hello! Welcome to our business. How can I help you today?";
-        if (defaultLang === "hi-IN") {
-          initialMsg = "Namaste! Property ke baare mein puchhna hai?";
-        } else if (defaultLang === "hinglish") {
-          initialMsg = "Namaste! Reservation ke liye call kiya?";
-        } else {
-          // Healthcare / clinic or other default
-          if (indLower.includes("health") || indLower.includes("clinic")) {
-            initialMsg = "Hello. Welcome to our clinic. How may I help you today?";
-          }
+        if (indLower.includes("real") || indLower.includes("estate")) {
+          initialMsg = "Hello! Thank you for calling Premier Realty. How can I help you find your dream property today?";
+        } else if (indLower.includes("restaurant") || indLower.includes("food")) {
+          initialMsg = "Hello! Thank you for calling Bistro Grill. How can I assist you with reservations or ordering today?";
+        } else if (indLower.includes("health") || indLower.includes("clinic")) {
+          initialMsg = "Hello! Welcome to our clinic. How may I help you with your booking or query today?";
         }
         setFirstMessage(initialMsg);
 
@@ -98,14 +90,14 @@ export default function OnboardingAiSetupPage() {
   const handleApplyTemplate = (type: "real_estate" | "healthcare" | "restaurant" | "custom") => {
     let text = "";
     if (type === "real_estate") {
-      text = "Namaste! Property ke baare mein puchhna hai?";
-      setLanguage("hi-IN");
+      text = "Hello! Thank you for calling Premier Realty. How can I help you find your dream property today?";
+      setLanguage("en-US");
     } else if (type === "healthcare") {
-      text = "Namaste! Appointment book karna hai?";
+      text = "Hello! Welcome to our clinic. How may I help you with your booking or query today?";
       setLanguage("en-US");
     } else if (type === "restaurant") {
-      text = "Namaste! Reservation ke liye call kiya?";
-      setLanguage("hinglish");
+      text = "Hello! Thank you for calling Bistro Grill. How can I assist you with reservations or ordering today?";
+      setLanguage("en-US");
     } else {
       text = "";
     }
@@ -265,7 +257,7 @@ export default function OnboardingAiSetupPage() {
           <textarea
             value={firstMessage}
             onChange={handleTextChange}
-            placeholder="Namaste, MedCenter Clinic se bol rahe hain..."
+            placeholder="Hello! Welcome to our clinic. How may I help you today?"
             rows={3}
             maxLength={150}
             className="w-full bg-white border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 text-sm text-[#140A02] placeholder-[#5A5A66]/40 outline-none transition-all duration-200 resize-none leading-relaxed"

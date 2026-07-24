@@ -62,9 +62,14 @@ async function signup(req, res) {
             plan, currency
         } = req.body;
 
-        const finalName = name || businessName;
         const finalEmail = email;
         const finalPassword = password;
+
+        if (!finalEmail || !finalPassword) {
+            return res.status(400).json({ success: false, error: 'Email and password are required' });
+        }
+
+        const finalName = name || businessName || finalEmail.split('@')[0];
         const finalPhone = phone || businessPhone || (dialCode && phoneNumber ? (dialCode + phoneNumber) : null);
         
         let inferredCountryFromCurrency = null;
@@ -73,46 +78,37 @@ async function signup(req, res) {
         else if (currency === 'AUD') inferredCountryFromCurrency = 'AU';
         else if (currency === 'SGD') inferredCountryFromCurrency = 'SG';
 
-        const finalCountryCode = (countryCode || country_code || inferredCountryFromCurrency || inferCountry(finalPhone, country)).trim().toUpperCase().substring(0, 2);
+        const finalCountryCode = (countryCode || country_code || inferredCountryFromCurrency || (finalPhone ? inferCountry(finalPhone, country) : 'US')).trim().toUpperCase().substring(0, 2);
         const finalCountry = country || finalCountryCode;
         
         // 1. Validation
-        const { validateAndNormalizePhone } = require('../utils/phoneValidation');
-        const phoneValidationResult = validateAndNormalizePhone(finalPhone, finalCountryCode);
-        
-        if (!phoneValidationResult.valid) {
-            return res.status(400).json({ success: false, error: phoneValidationResult.error });
+        let finalNormalizedPhone = null;
+        if (finalPhone) {
+            const { validateAndNormalizePhone } = require('../utils/phoneValidation');
+            const phoneValidationResult = validateAndNormalizePhone(finalPhone, finalCountryCode);
+            
+            if (!phoneValidationResult.valid) {
+                return res.status(400).json({ success: false, error: phoneValidationResult.error });
+            }
+            finalNormalizedPhone = phoneValidationResult.normalized;
         }
 
-        const finalNormalizedPhone = phoneValidationResult.normalized;
-
-        // Validate submitted country against supported launch countries
-        const { SUPPORTED_LAUNCH_COUNTRIES } = require('../routes/telephony');
-        const supportedCodes = new Set(SUPPORTED_LAUNCH_COUNTRIES.map(c => c.isoCode));
-        if (!supportedCodes.has(finalCountryCode)) {
-            return res.status(400).json({ 
-                success: false, 
-                error: `Country "${finalCountryCode}" is not supported for Bavio launch. Supported countries: ${[...supportedCodes].join(', ')}.`
-            });
-        }
-
-        if (!finalName || !finalEmail || !finalNormalizedPhone || !finalPassword) {
-            return res.status(400).json({ success: false, error: 'Name/Business name, email, phone, and password are required' });
-        }
-
-
-        // 2. Create user in Supabase Auth via Admin client (auto-confirm email and phone)
-        const { data: authData, error: authError } = await db.supabase.auth.admin.createUser({
+        // 2. Create user in Supabase Auth via Admin client
+        const createParams = {
             email: finalEmail,
             password: finalPassword,
-            phone: finalNormalizedPhone,
             email_confirm: true,
-            phone_confirm: true,
             user_metadata: {
                 full_name: finalName,
                 country: finalCountry
             }
-        });
+        };
+        if (finalNormalizedPhone) {
+            createParams.phone = finalNormalizedPhone;
+            createParams.phone_confirm = true;
+        }
+
+        const { data: authData, error: authError } = await db.supabase.auth.admin.createUser(createParams);
 
         if (authError) {
             if (authError.message && (authError.message.includes('already registered') || authError.status === 422)) {
@@ -131,22 +127,8 @@ async function signup(req, res) {
         // 3. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
 
-        const isDemo = demoCompleted === true || String(demoCompleted) === 'true';
-        const hasReceptionistData = agent_name && greeting;
-        // If demoCompleted is true, they have a receptionist set up automatically, step 1 complete
-        const onboardingStep = isDemo ? 1 : (hasReceptionistData ? 3 : 0);
-        const onboardingStatus = isDemo ? 'pending' : (hasReceptionistData ? 'payment_pending' : 'pending');
-
         const devEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
         const isDeveloper = finalEmail && devEmails.includes(finalEmail.trim().toLowerCase());
-
-        const validPlans = ['starter', 'growth', 'scale'];
-        const isPaidPlan = plan && validPlans.includes(plan.toLowerCase().trim());
-        const planKeyMap = {
-            'starter': 'starter',
-            'growth': 'pro',
-            'scale': 'enterprise'
-        };
 
         const finalMinutesLimit = isDeveloper ? 999999 : 0;
         const finalOnboardingStep = isDeveloper ? 6 : 0;
@@ -154,8 +136,18 @@ async function signup(req, res) {
         const finalPlan = isDeveloper ? 'enterprise' : 'free';
         const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
-        const finalStatus = 'active'; // business_status enum only allows active or suspended
+        const finalStatus = 'active'; 
         const finalSubStatus = isDeveloper ? 'active' : 'inactive';
+
+        const validPlans = ['starter', 'growth', 'scale'];
+        const planKeyMap = {
+            'starter': 'starter',
+            'growth': 'pro',
+            'scale': 'enterprise'
+        };
+        const savedPlan = plan && validPlans.includes(plan.toLowerCase().trim()) 
+            ? planKeyMap[plan.toLowerCase().trim()] 
+            : 'free';
 
         // 4. Insert into businesses table
         const result = await db.query(
@@ -164,16 +156,18 @@ async function signup(req, res) {
                 minutes_limit, minutes_used, status, country, country_code,
                 full_name, business_description, industry, language,
                 whatsapp_number, onboarding_step, onboarding_status,
-                plan, plan_name, current_period_end, subscription_status
+                plan, plan_name, current_period_end, subscription_status,
+                subscription_plan
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
             RETURNING *`,
             [
                 supabaseUser.id, finalName, finalEmail, finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
-                finalMinutesLimit, finalStatus, finalCountry, finalCountryCode, finalName, business_description || null, 
-                industry || null, language || 'en-US', finalNormalizedPhone, 
+                finalMinutesLimit, finalStatus, finalCountry, finalCountryCode, finalName, null, 
+                null, 'en-US', finalNormalizedPhone, 
                 finalOnboardingStep, finalOnboardingStatus,
-                finalPlan, finalPlanName, finalPeriodEnd, finalSubStatus
+                finalPlan, finalPlanName, finalPeriodEnd, finalSubStatus,
+                savedPlan
             ]
         );
         
@@ -183,101 +177,21 @@ async function signup(req, res) {
         const emailService = require('../services/emailService');
         emailService.sendMail(
             finalEmail,
-            'Welcome to Bavio! 30 minutes free starts now',
+            'Welcome to Bavio!',
             `Hi ${finalName},
 
-Your free trial is active. You have 30 minutes to test Bavio AI.
-
-What you can do:
-- Create your first AI agent
-- Get a dedicated phone number
-- Make test calls
-- Capture leads automatically
-
-Your trial expires in 30 minutes.
+Your Bavio account has been created. Try the 3-Minute Bavio Demo to get started.
 
 Questions? Chat with us →
 
 Bavio Team`
         ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
         
-        // 4.5 Auto-create receptionist assistant if demoCompleted is true
-        if (isDemo) {
-            const onboardingController = require('./onboardingController');
-            const defaultAgentName = 'Bavio Assistant';
-            const defaultGreeting = `Hello! Welcome to ${finalName}. I'm your AI receptionist. How can I help you today?`;
-            
-            const promptKey = mapIndustryToSystemPromptKey(industry);
-            const systemPrompt = onboardingController.buildSystemPrompt({
-                agent_name: defaultAgentName,
-                greeting: defaultGreeting,
-                industry: promptKey,
-                language: 'en-US'
-            });
-
-            const assistantResult = await db.query(
-                `INSERT INTO assistants
-                  (business_id, name, agent_name, greeting, first_message, voice, voice_id, faqs, industry, language, system_prompt, is_active)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, true)
-                 RETURNING id`,
-                [
-                    supabaseUser.id,
-                    defaultAgentName,
-                    defaultAgentName,
-                    defaultGreeting,
-                    defaultGreeting,
-                    'meera', // voice
-                    'meera', // voice_id
-                    JSON.stringify([]), // faqs
-                    promptKey,
-                    'en-US',
-                    systemPrompt
-                ]
-            );
-
-            if (assistantResult.rows.length > 0) {
-                const assistantId = assistantResult.rows[0].id;
-                await db.query(
-                    'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
-                    [assistantId, supabaseUser.id]
-                );
-                console.log(`[AUTH SIGNUP] Linked default assistant ${assistantId} to business ${supabaseUser.id}`);
-            }
-        } else if (hasReceptionistData) {
-            // Create receptionist assistant immediately if provided normally
-            const onboardingController = require('./onboardingController');
-            const systemPrompt = onboardingController.buildSystemPrompt({
-                agent_name,
-                greeting,
-                industry: industry || 'general',
-                language: language || 'hi-IN',
-                faqs: faqs || []
-            });
-
-            await db.query(
-                `INSERT INTO assistants
-                  (business_id, name, agent_name, greeting, first_message, voice_id, faqs, industry, language, system_prompt, is_active)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, true)`,
-                [
-                    user.id,
-                    agent_name,
-                    agent_name,
-                    greeting,
-                    greeting,
-                    'meera', // default voice_id
-                    JSON.stringify(faqs || []),
-                    industry || 'general',
-                    language || 'hi-IN',
-                    systemPrompt
-                ]
-            );
-        }
-        
-        // 5. Generate token via Supabase Auth signin (using a fresh client to avoid mutating the shared client)
+        // 5. Generate token via Supabase Auth signin
         const authClient = db.createAuthClient();
         const { data: sessionData, error: sessionError } = await authClient.auth.signInWithPassword({
-            email,
-            password
+            email: finalEmail,
+            password: finalPassword
         });
 
         if (sessionError) {
@@ -287,14 +201,14 @@ Bavio Team`
 
         const token = sessionData.session.access_token;
         
-        // 6. Return response (NO password_hash exposed)
+        // 6. Return response
         res.status(201).json({
             success: true,
             token,
-            jwt: token, // Alias for jwt
+            jwt: token, 
             client_id: user.id,
-            userId: user.id, // Alias for userId
-            businessId: user.id, // Alias for businessId
+            userId: user.id, 
+            businessId: user.id, 
             name: user.name,
             email: user.email,
             plan: user.plan || 'free',
@@ -304,18 +218,20 @@ Bavio Team`
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
             country_code: user.country_code,
-            redirectTo: '/onboarding'
+            redirectTo: '/demo'
         });
     } catch (err) {
         if (err.code === '23505') {
             const detail = String(err.detail || '').toLowerCase();
-            if (detail.includes('phone') || detail.includes('mobile')) {
+            if (detail.includes('email')) {
+                return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+            }
+            if (detail.includes('phone')) {
                 return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
             }
-            return res.status(409).json({ success: false, error: 'A business with that email already exists' });
         }
         console.error('signup error:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
     }
 }
 

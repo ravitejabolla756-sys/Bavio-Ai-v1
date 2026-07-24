@@ -102,7 +102,10 @@ export default function ProductPage() {
       ],
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-between h-[240px]">
-          <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Indexed Documents</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Indexed Documents</span>
+            <span className="text-[9px] font-mono font-bold text-saffron bg-saffron/10 px-1.5 py-0.5 rounded">Example data</span>
+          </div>
           <div className="flex flex-col gap-2.5 my-2">
             <div className="flex justify-between items-center p-2 bg-darkBg border border-darkBorder rounded text-body-xs">
               <span className="text-white truncate max-w-[160px]">🏢 business_brochure.pdf</span>
@@ -135,9 +138,12 @@ export default function ProductPage() {
       ],
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-center gap-3 h-[240px] text-body-xs font-mono">
-          <span className="text-[10px] text-darkTextMuted uppercase tracking-wider">JSON Lead Data Extracted</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] text-darkTextMuted uppercase tracking-wider">JSON Lead Data</span>
+            <span className="text-[9px] font-bold text-saffron bg-saffron/10 px-1.5 py-0.5 rounded">Example data</span>
+          </div>
           <div className="bg-darkBg border border-darkBorder rounded-lg p-3 text-white flex flex-col gap-1 text-[11px] leading-relaxed">
-            <div><span className="text-saffron">&quot;name&quot;:</span> &quot;Sarah Johnson&quot;</div>
+            <div><span className="text-saffron">&quot;name&quot;:</span> &quot;Alex Morgan&quot;</div>
             <div><span className="text-saffron">&quot;intent&quot;:</span> &quot;Site Visit (Downtown Home)&quot;</div>
             <div><span className="text-saffron">&quot;budget&quot;:</span> &quot;$750,000&quot;</div>
             <div><span className="text-saffron">&quot;status&quot;:</span> &quot;Qualified Lead&quot;</div>
@@ -157,7 +163,10 @@ export default function ProductPage() {
       ],
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-between h-[240px]">
-          <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Call Volume Analytics</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Call Volume Analytics</span>
+            <span className="text-[9px] font-bold text-saffron bg-saffron/10 px-1.5 py-0.5 rounded">Example data</span>
+          </div>
           {/* Mock bar chart using flex blocks */}
           <div className="flex items-end justify-between gap-2 h-28 px-2 border-b border-[#2a2a2a] pb-1">
             <div className="bg-darkBorder w-6 h-[40%] rounded-t" />
@@ -184,7 +193,9 @@ export default function ProductPage() {
       ],
       visual: (
         <div className="bg-[#12102B] border border-[#2a2a2a] rounded-xl p-6 flex flex-col justify-between h-[240px]">
-          <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Voice Selector</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono text-darkTextMuted uppercase tracking-wider">Voice Selector</span>
+          </div>
           <div className="flex flex-col gap-2 my-2">
             {[
               { id: "v1", name: "Male (English - US)", region: "US-West" },
@@ -226,7 +237,7 @@ export default function ProductPage() {
             <span className="text-green-500">Connected</span>
           </div>
           <div className="flex justify-between items-center p-2.5 bg-[#0f0f0f] border border-saffron/40 rounded-lg">
-            <span className="text-saffron font-bold">WhatsApp Alert</span>
+            <span className="text-saffron font-bold">SMS Alert</span>
             <span className="text-saffron">Connected</span>
           </div>
           <div className="flex justify-between items-center p-2.5 bg-darkBg border border-[#2a2a2a] rounded-lg">
@@ -241,7 +252,7 @@ export default function ProductPage() {
       description: "All voice data is fully encrypted at rest and in transit. Bavio conforms to key compliance codes for clinical operations.",
       icon: ShieldCheck,
       bullets: [
-        "SOC 2 Certified security protocol",
+        "Enterprise-grade security protocol",
         "HIPAA-ready dedicated cloud infrastructure",
         "GDPR compliance structures",
         "AES-256 local database encryption",
@@ -253,7 +264,7 @@ export default function ProductPage() {
           </div>
           <div>
             <h4 className="text-body-xs font-bold text-white">AES-256 Encrypted</h4>
-            <p className="text-[10px] text-darkTextMuted font-mono mt-1">SOC 2 compliant trunk protocols</p>
+            <p className="text-[10px] text-darkTextMuted font-mono mt-1">Encrypted trunk protocols</p>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-mono uppercase font-bold">
             HIPAA Ready

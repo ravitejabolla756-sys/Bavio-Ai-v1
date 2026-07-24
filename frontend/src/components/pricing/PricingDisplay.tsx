@@ -37,21 +37,21 @@ const PRICING_PLANS: PlanDetails[] = [
   {
     name: "Starter",
     popular: false,
-    inrPriceMonthly: 1999,
-    usdPriceMonthly: 29,
-    inrPriceAnnual: 1699,
-    usdPriceAnnual: 24,
-    inrOverage: "₹5",
-    usdOverage: "$0.08",
-    inrMins: 200,
+    inrPriceMonthly: 0,
+    usdPriceMonthly: 39,
+    inrPriceAnnual: 0,
+    usdPriceAnnual: 33,
+    inrOverage: "",
+    usdOverage: "$0.25",
+    inrMins: 0,
     usdMins: 200,
     description: "Ideal for small clinics & individual consultants.",
-    subtext: "Try the 3-minute demo. No credit card.",
-    buttonText: "Start Free",
+    subtext: "Guided Business Setup.",
+    buttonText: "Choose Starter",
     buttonStyle: "saffron",
     features: [
       "Single AI agent",
-      "Multilingual Support (20+ Languages)",
+      "English voice support for initial launch markets",
       "Instant notifications",
       "Lead capture",
       "Dashboard analytics",
@@ -61,26 +61,26 @@ const PRICING_PLANS: PlanDetails[] = [
   {
     name: "Growth",
     popular: true,
-    inrPriceMonthly: 3999,
-    usdPriceMonthly: 59,
-    inrPriceAnnual: 3399,
-    usdPriceAnnual: 49,
-    inrOverage: "₹4",
-    usdOverage: "$0.06",
-    inrMins: 500,
+    inrPriceMonthly: 0,
+    usdPriceMonthly: 99,
+    inrPriceAnnual: 0,
+    usdPriceAnnual: 84,
+    inrOverage: "",
+    usdOverage: "$0.22",
+    inrMins: 0,
     usdMins: 500,
     description: "Designed for growing real estate teams & agencies.",
     subtext: "Most teams choose this.",
-    buttonText: "Start Free",
+    buttonText: "Choose Growth",
     buttonStyle: "saffron-large",
     features: [
-      "Agent limits based on plan",
+      "Multiple AI receptionists",
       "Custom voice training",
       "Advanced analytics",
       "Priority support",
       "Integration builder",
       "Single AI agent",
-      "Multilingual Support (20+ Languages)",
+      "English voice support for initial launch markets",
       "Instant notifications",
       "Lead capture",
       "Dashboard analytics",
@@ -89,25 +89,25 @@ const PRICING_PLANS: PlanDetails[] = [
   {
     name: "Scale",
     popular: false,
-    inrPriceMonthly: 7999,
-    usdPriceMonthly: 119,
-    inrPriceAnnual: 6799,
-    usdPriceAnnual: 99,
-    inrOverage: "₹3",
-    usdOverage: "$0.04",
-    inrMins: 1500,
+    inrPriceMonthly: 0,
+    usdPriceMonthly: 249,
+    inrPriceAnnual: 0,
+    usdPriceAnnual: 211,
+    inrOverage: "",
+    usdOverage: "$0.20",
+    inrMins: 0,
     usdMins: 1500,
     description: "Built for large-scale calling centers and SMB aggregators.",
     subtext: "For growing businesses",
-    buttonText: "Try the 3-Minute Bavio Demo",
+    buttonText: "Choose Scale",
     buttonStyle: "outline",
     features: [
       "Dedicated account manager",
-      "Standard SLA",
+      "Custom SLA",
       "White-label option",
       "API priority",
       "Phone support",
-      "Agent limits based on plan",
+      "Custom AI receptionists",
       "Custom voice training",
       "Advanced analytics",
       "Priority support",
@@ -126,25 +126,24 @@ interface ComparisonRow {
 
 const COMPARISON_TABLE: ComparisonRow[] = [
   { feature: "Included Minutes", starter: "200", growth: "500", scale: "1,500", enterprise: "Custom / Volume" },
-  { feature: "Per-minute Overage (INR)", starter: "₹5/min", growth: "₹4/min", scale: "₹3/min", enterprise: "Volume discounts" },
-  { feature: "Per-minute Overage (USD)", starter: "$0.08/min", growth: "$0.06/min", scale: "$0.04/min", enterprise: "Volume discounts" },
-  { feature: "AI Voice Agents", starter: "1", growth: "Plan Limits", scale: "Plan Limits", enterprise: "Plan Limits" },
-  { feature: "Languages Supported", starter: "20+ Languages", growth: "20+ Languages", scale: "20+ Languages", enterprise: "Custom Language Models" },
+  { feature: "Per-minute Overage", starter: "$0.25/min", growth: "$0.22/min", scale: "$0.20/min", enterprise: "Volume discounts" },
+  { feature: "AI Voice Agents", starter: "1", growth: "Multiple", scale: "Multiple", enterprise: "Multiple" },
+  { feature: "Languages Supported", starter: "English (US/UK/AU)", growth: "English (US/UK/AU)", scale: "English (US/UK/AU)", enterprise: "Custom dialects" },
   { feature: "Lead Capture & Sync", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Custom Schema" },
   { feature: "Instant Notifications", starter: "✓", growth: "✓", scale: "✓", enterprise: "✓ + Dedicated Channel" },
-  { feature: "Voice Training", starter: "Standard", growth: "Custom", scale: "Custom + Voice Clone", enterprise: "Custom Voice Studio" },
+  { feature: "Voice Training", starter: "Standard", growth: "Custom", scale: "Custom parameters", enterprise: "Custom Voice Studio" },
   { feature: "Integration Builder", starter: "Basic", growth: "✓ (50+ tools)", scale: "✓ (50+ tools)", enterprise: "Custom API Sync" },
   { feature: "Dashboard Analytics", starter: "Basic", growth: "Advanced", scale: "Advanced + Exports", enterprise: "Custom Analytics ETL" },
   { feature: "Support Channels", starter: "Email", growth: "Priority Email/Chat", scale: "24/7 Phone Support", enterprise: "Dedicated TAM 24/7" },
   { feature: "SSO Security", starter: "—", growth: "—", scale: "—", enterprise: "SAML / OIDC" },
   { feature: "HIPAA / Compliance", starter: "—", growth: "—", scale: "✓ (Scale+ Ready)", enterprise: "✓ Full Audits" },
-  { feature: "Support Response Time", starter: "—", growth: "—", scale: "Standard SLA", enterprise: "Standard Uptime" },
+  { feature: "SLA Guarantee", starter: "—", growth: "—", scale: "Custom SLA", enterprise: "High Uptime SLA" },
 ];
 
 const FAQS = [
   {
     q: "What if I exceed my monthly minutes?",
-    a: "You'll be charged the specified per-minute overage rate for your plan (e.g. ₹4/min on Growth). There is zero service interruption, and calls will process normally.",
+    a: "Bavio operates on flat monthly plans with prepaid top-up minutes (e.g. 100 minutes for $25 or 250 minutes for $55). There is zero postpaid overage shock. Monthly plan minutes do not roll over, but your top-up minutes remain active as long as your subscription is maintained.",
   },
   {
     q: "Can I change plans anytime?",
@@ -167,29 +166,28 @@ const FAQS = [
     a: "Yes, our white-label options are available on the Scale plan. You can configure custom domains, custom SMTP routing, and visual dashboards for your clients.",
   },
   {
-    q: "Does it support English voice support for initial launch markets?",
-    a: "Bavio supports primary launch languages including English (US, UK, Australia) with crystal clear voice quality.",
+    q: "Does it support multiple languages?",
+    a: "Bavio supports English voice profiles for US, UK, and Australia with crystal clear voice quality.",
   },
   {
     q: "Do I get a dedicated phone number?",
-    a: "Yes, each active plan gets a dedicated virtual landline or mobile trunk number generated instantly in the dashboard via Standard voice infrastructure.",
+    a: "Yes, each active plan gets a dedicated virtual landline or mobile number generated instantly in the dashboard.",
   },
   {
     q: "Can I port my existing number?",
-    a: "Yes. On the Growth and Scale plans, we support call forwarding from your existing business lines, or we can assist in porting standard numbers directly.",
+    a: "Yes. On the Growth and Scale plans, we support call forwarding from your existing business lines, or we can assist in porting your business number.",
   },
 ];
 
 const TRUST_BADGES = [
-  "SOC 2 Certified",
+  "Data Encryption",
   "No Contracts",
-  "Free Trial Minutes",
   "Cancel Anytime",
-  "Money-Back Guarantee",
+  "Secure Payments",
 ];
 
 export function PricingGrid() {
-  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
+  const currency = "USD";
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -209,36 +207,9 @@ export function PricingGrid() {
               Choose the plan that scales with your business
             </p>
 
-            {/* Currency Pill Toggle */}
+            {/* Annual Toggle */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               
-              {/* Currency Picker */}
-              <div className="inline-flex items-center bg-darkSurface border border-darkBorder rounded-full p-1 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => setCurrency("INR")}
-                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
-                    currency === "INR"
-                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
-                      : "text-darkTextMuted hover:text-white"
-                  }`}
-                >
-                  INR (₹)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrency("USD")}
-                  className={`px-5 py-2.5 rounded-full text-body-xs font-bold transition-all duration-200 ${
-                    currency === "USD"
-                      ? "bg-saffron text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)]"
-                      : "text-darkTextMuted hover:text-white"
-                  }`}
-                >
-                  USD ($)
-                </button>
-              </div>
-
-              {/* Annual Toggle */}
               <div className="inline-flex items-center bg-darkSurface border border-darkBorder rounded-full p-1 shadow-sm">
                 <button
                   type="button"
@@ -277,13 +248,10 @@ export function PricingGrid() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
             {PRICING_PLANS.map((plan, idx) => {
               const isAnnual = billingCycle === "annual";
-              const price = isAnnual 
-                ? (currency === "INR" ? plan.inrPriceAnnual : plan.usdPriceAnnual)
-                : (currency === "INR" ? plan.inrPriceMonthly : plan.usdPriceMonthly);
-              
-              const symbol = currency === "INR" ? "₹" : "$";
-              const minutes = currency === "INR" ? plan.inrMins : plan.usdMins;
-              const overage = currency === "INR" ? plan.inrOverage : plan.usdOverage;
+              const price = isAnnual ? plan.usdPriceAnnual : plan.usdPriceMonthly;
+              const symbol = "$";
+              const minutes = plan.usdMins;
+              const overage = plan.usdOverage;
               const isGrowth = plan.popular;
 
               return (
@@ -304,8 +272,8 @@ export function PricingGrid() {
 
                       <div>
                         {/* Title & Desc */}
-                        <h3 className="text-heading-sm font-bold text-white mb-2">{plan.name}</h3>
-                        <p className="text-body-xs text-darkTextMuted mb-6 min-h-[32px]">{plan.description}</p>
+                        <h3 className="text-xl font-bold text-white mb-2 font-sans">{plan.name}</h3>
+                        <p className="text-sm text-darkTextMuted mb-6 min-h-[32px] font-sans">{plan.description}</p>
                         
                         {/* Price */}
                         <div className="flex items-baseline gap-1 mb-1">
@@ -323,7 +291,7 @@ export function PricingGrid() {
                         <div className="w-full h-px bg-darkBorder/40 mb-6" />
 
                         {/* Features Checklist */}
-                        <ul className="space-y-3.5 text-body-xs text-darkText mb-8">
+                        <ul className="space-y-3.5 text-sm text-darkText mb-8 font-sans">
                           {plan.features.map((feature, fIdx) => (
                             <li key={fIdx} className="flex items-center gap-2.5">
                               <CheckCircle className="w-4 h-4 text-saffron shrink-0" weight="fill" />
@@ -337,7 +305,7 @@ export function PricingGrid() {
                       <div>
                         <Link
                           href={plan.buttonStyle === "outline" ? "/contact" : "/signup"}
-                          className={`w-full text-center py-4 rounded-button text-body-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center ${
+                          className={`w-full text-center py-4 rounded-button text-sm font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center font-sans ${
                             plan.buttonStyle === "saffron-large"
                               ? "bg-saffron hover:bg-saffron-hover text-white shadow-saffron py-4.5 scale-[1.02]"
                               : plan.buttonStyle === "saffron"
@@ -375,20 +343,20 @@ export function PricingGrid() {
                 </div>
 
                 <div className="flex-1 text-center lg:text-left">
-                  <span className="text-body-xs font-bold text-darkTextMuted uppercase tracking-wider block mb-1">
+                  <span className="text-sm font-bold text-darkTextMuted uppercase tracking-wider block mb-1 font-sans">
                     Enterprise
                   </span>
                   <h3 className="text-heading-md font-bold text-white mb-2">
                     Custom pricing, dedicated support, SLA & compliance
                   </h3>
-                  <p className="text-body-xs text-darkTextMuted leading-relaxed">
-                    Custom volume pricing, single sign-on (SSO), HIPAA compliant pipelines, and custom voice receptionists configured for enterprise operations.
+                  <p className="text-sm text-darkTextMuted leading-relaxed font-sans">
+                    Custom volume pricing, single sign-on (SSO), HIPAA compliant pipelines, and dedicated voice receptionists configured for enterprise operations.
                   </p>
                 </div>
 
                 <Link
                   href="/contact"
-                  className="border border-saffron/50 hover:border-saffron text-saffron hover:text-white bg-transparent text-body-xs font-bold uppercase tracking-wider px-8 py-4 rounded-button transition-all duration-200 shrink-0 text-center"
+                  className="border border-saffron/50 hover:border-saffron text-saffron hover:text-white bg-transparent text-sm font-bold uppercase tracking-wider px-8 py-4 rounded-button transition-all duration-200 shrink-0 text-center font-sans"
                 >
                   Schedule Call
                 </Link>
@@ -442,10 +410,7 @@ export function PricingGrid() {
 
                   <tbody>
                     {COMPARISON_TABLE.map((row, rIdx) => {
-                      if (row.feature.includes("INR") && currency === "USD") return null;
-                      if (row.feature.includes("USD") && currency === "INR") return null;
-
-                      const cleanFeatureName = row.feature.replace(" (INR)", "").replace(" (USD)", "");
+                      const cleanFeatureName = row.feature;
                       const isStriped = rIdx % 2 === 1;
 
                       return (

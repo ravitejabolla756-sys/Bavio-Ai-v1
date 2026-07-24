@@ -205,7 +205,7 @@ export default function LoginPage() {
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
               { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Appointment", label2: "Booking" },
+              { icon: Calendar, label1: "Request", label2: "Capture" },
             ].map((feat, i) => {
               const Icon = feat.icon;
               return (

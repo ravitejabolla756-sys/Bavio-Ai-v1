@@ -108,6 +108,7 @@ export interface SignupPayload {
   countryCode?: string;
   dialCode?: string;
   phoneNumber?: string;
+  plan?: string;
 }
 
 export interface LoginPayload {

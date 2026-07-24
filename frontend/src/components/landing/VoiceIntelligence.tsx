@@ -33,11 +33,12 @@ export default function VoiceIntelligence() {
           >
             {/* Mock Header */}
             <div className="bg-[#FFFDF8] border-b border-[#F3E4D4] px-5 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 bg-[#F97316]/40 rounded-full" />
-                <span className="text-[11px] font-bold text-[#140A02]">Call Recording & Transcript: #C-9281</span>
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 bg-[#F97316] rounded-full animate-pulse" />
+                <span className="text-[11px] font-bold text-[#140A02]">Bavio Dashboard &bull; Call Transcript</span>
+                <span className="bg-[#FFF7ED] border border-[#F3E4D4] px-2 py-0.5 rounded text-[9px] font-bold text-[#F97316]">Example data</span>
               </div>
-              <span className="text-[10px] font-mono text-[#6E6256]">ID: TR-9281-IN</span>
+              <span className="text-[10px] font-mono text-[#6E6256]">Caller: +1 555 010 2040</span>
             </div>
 
             {/* Transcript Log list */}
