@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     question: "How do payments work?",
-    answer: "Bavio offers monthly subscription packages starting at $49. Minutes are deducted based on active call talk-time. If you run out of minutes, you can easily top up from your dashboard at any time."
+    answer: "Bavio offers monthly subscription packages starting at $39. Minutes are deducted based on active call talk-time. If you run out of minutes, you can easily top up from your dashboard at any time."
   }
 ];
 

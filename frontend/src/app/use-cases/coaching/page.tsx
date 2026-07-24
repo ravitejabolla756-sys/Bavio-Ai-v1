@@ -34,7 +34,7 @@ export default function CoachingUseCase() {
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">Response Rate</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Consistent Call Coverage</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Parent calls answered instantly</span>
             </div>
             <div>
               <span className="text-2xl font-bold font-display text-saffron block">24/7 Availability</span>

@@ -92,7 +92,14 @@ export default function DemoPage() {
   // Phone number validation using libphonenumber-js
   const isPhoneValid = useMemo(() => {
     if (!phoneNumber) return false;
-    const fullPhone = selectedCountry.dialCode + phoneNumber.trim().replace(/\D/g, "");
+    const trimmed = phoneNumber.trim();
+    if (trimmed.startsWith("+91") || (trimmed.startsWith("91") && trimmed.length > 9)) {
+      return false;
+    }
+    let fullPhone = trimmed;
+    if (!fullPhone.startsWith("+")) {
+      fullPhone = selectedCountry.dialCode + trimmed.replace(/\D/g, "");
+    }
     const parsed = parsePhoneNumberFromString(fullPhone, selectedCountry.code as any);
     return Boolean(parsed && parsed.isValid() && parsed.country === selectedCountry.code);
   }, [phoneNumber, selectedCountry]);
@@ -174,7 +181,11 @@ export default function DemoPage() {
     setTranscript([]);
 
     try {
-      const response = await demoApi.start(phoneNumber, selectedCountry.code);
+      let fullPhone = phoneNumber.trim();
+      if (!fullPhone.startsWith("+")) {
+        fullPhone = selectedCountry.dialCode + fullPhone.replace(/\D/g, "");
+      }
+      const response = await demoApi.start(fullPhone, selectedCountry.code);
       if (response && response.success) {
         setCallStage("calling");
         
@@ -314,27 +325,28 @@ export default function DemoPage() {
               Talk to <span className="text-[#FF6B00]">Bavio</span>
             </h1>
 
-            <p className="text-[#5A5A66] text-xs md:text-sm leading-relaxed mb-8 font-semibold">
+            <p className="text-[#5A5A66] text-base leading-relaxed mb-8 font-medium font-sans">
               Speak with Bavio’s AI assistant and learn how Bavio can handle business calls, qualify customers and organize leads.
             </p>
 
             <div className="space-y-3">
-              <h3 className="text-[10px] uppercase font-black tracking-wider text-[#8A8A96]">
+              <h3 className="text-[10px] uppercase font-black tracking-wider text-[#8A8A96] font-sans">
                 Here&apos;s What to Expect
               </h3>
               <div className="space-y-2">
                 {[
-                  { step: 1, text: "Sign in or create an account" },
-                  { step: 2, text: "Start one free conversation" },
-                  { step: 3, text: "Ask Bavio how the platform works" },
-                  { step: 4, text: "Speak naturally" },
-                  { step: 5, text: "Demo ends automatically after 3 minutes" }
+                  { step: 1, text: "One demo call per verified account" },
+                  { step: 2, text: "Maximum call duration: three minutes" },
+                  { step: 3, text: "No payment card or commitment required" },
+                  { step: 4, text: "Supported countries: US (+1), GB (+44), AU (+61)" },
+                  { step: 5, text: "The demo explains Bavio; it is not a custom business receptionist" },
+                  { step: 6, text: "Standard carrier charges may apply where relevant" }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-xl hover:border-[#FF6B00]/40 transition-colors duration-200">
                     <div className="w-5 h-5 rounded bg-[#FF6B00] flex items-center justify-center text-white text-[11px] font-black shrink-0">
                       {item.step}
                     </div>
-                    <p className="text-xs text-[#140A02]/85 leading-normal font-bold">
+                    <p className="text-sm text-[#140A02]/85 leading-normal font-bold font-sans">
                       {item.text}
                     </p>
                   </div>
@@ -344,7 +356,7 @@ export default function DemoPage() {
           </div>
 
           <div className="relative z-10 grid grid-cols-3 gap-4 pt-4 border-t border-[#E5E0D8] mt-4">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 font-sans">
               <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5 text-[#FF6B00]" />
               </div>
@@ -354,7 +366,7 @@ export default function DemoPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 font-sans">
               <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
                 <span className="text-sm font-black text-[#FF6B00] select-none">$</span>
               </div>
@@ -364,7 +376,7 @@ export default function DemoPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 font-sans">
               <div className="w-10 h-10 rounded-full border border-[#E5E0D8] bg-white flex items-center justify-center shrink-0">
                 <Check className="w-5 h-5 text-[#FF6B00]" />
               </div>
@@ -403,9 +415,9 @@ export default function DemoPage() {
                   {step === 1 && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block">Step 1 of 2</span>
-                        <h2 className="text-xl font-bold text-[#140A02] tracking-tight">Step 1: Sign in with Google</h2>
-                        <p className="text-xs text-[#6B5A4C] leading-relaxed font-semibold">
+                        <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 1 of 2</span>
+                        <h3 className="text-lg font-bold text-[#140A02] tracking-tight font-sans">Step 1: Sign in with Google</h3>
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-medium font-sans">
                           We use this to identify you and track your call results.
                         </p>
                       </div>
@@ -414,7 +426,7 @@ export default function DemoPage() {
                         type="button"
                         onClick={handleGoogleSignIn}
                         disabled={isGoogleLoading}
-                        className="w-full flex items-center justify-center gap-3 border border-[#E5E0D8] hover:border-[#FF6B00]/40 bg-white text-[#140A02] py-3.5 rounded-[20px] font-bold text-sm transition-all duration-200 hover:shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-3 border border-[#E5E0D8] hover:border-[#FF6B00]/40 bg-white text-[#140A02] py-3.5 rounded-[20px] font-bold text-sm transition-all duration-200 hover:shadow-sm disabled:opacity-60 disabled:cursor-not-allowed font-sans"
                       >
                         {isGoogleLoading ? (
                           <>
@@ -465,15 +477,15 @@ export default function DemoPage() {
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block">Step 2 of 2</span>
+                          <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 2 of 2</span>
                           {googleUser && (
-                            <span className="text-[10px] bg-[#FF6B00]/8 text-[#FF6B00] font-bold px-2.5 py-0.5 rounded-md">
+                            <span className="text-[10px] bg-[#FF6B00]/8 text-[#FF6B00] font-bold px-2.5 py-0.5 rounded-md font-sans">
                               Signed in as {googleUser.name.split(" ")[0]}
                             </span>
                           )}
                         </div>
-                        <h2 className="text-xl font-bold text-[#140A02] tracking-tight">Step 2: Enter Your Phone Number</h2>
-                        <p className="text-xs text-[#6B5A4C] leading-relaxed font-semibold">
+                        <h3 className="text-lg font-bold text-[#140A02] tracking-tight font-sans">Step 2: Enter Your Phone Number</h3>
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-medium font-sans">
                           Verify your mobile number to start your 3-minute live conversation with Bavio.
                         </p>
                       </div>
@@ -499,11 +511,13 @@ export default function DemoPage() {
                             type="tel"
                             value={phoneNumber}
                             onChange={(e) => {
-                              const cleaned = e.target.value.replace(/\D/g, "");
+                              const val = e.target.value;
+                              // Allow leading + and then digits
+                              const cleaned = val.replace(/(?!^\+)\D/g, "");
                               setPhoneNumber(cleaned);
                             }}
                             placeholder="Enter mobile number"
-                            className="w-full bg-transparent pl-4 pr-11 py-4 text-sm text-[#14141A] placeholder-[#8A8A96] font-semibold outline-none"
+                            className="w-full bg-transparent pl-4 pr-11 py-4 text-base text-[#14141A] placeholder-[#8A8A96] font-semibold outline-none font-sans"
                           />
                           
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
@@ -517,14 +531,41 @@ export default function DemoPage() {
                           </div>
                         </div>
 
+                        {phoneNumber.length > 0 && !isPhoneValid && (
+                          <p className="text-[11px] text-red-500 font-bold font-sans mt-1">
+                            {phoneNumber.startsWith("+91") || phoneNumber.startsWith("91")
+                              ? "India (+91) is not supported for the Bavio phone demo."
+                              : `Please enter a valid mobile number for ${selectedCountry.name} (${selectedCountry.dialCode}).`}
+                          </p>
+                        )}
+
+                        {/* Consent Language directly above the button */}
+                        <div className="text-[11px] text-[#6B5A4C] leading-relaxed font-semibold text-center space-y-1.5 py-1 font-sans">
+                          <p>
+                            By continuing, you agree to receive one automated demonstration call from
+                            Bavio at this number. The call ends automatically after three minutes.
+                          </p>
+                          <p>
+                            Your number will not be used for marketing without your permission.
+                          </p>
+                          <p>
+                            <Link href="/legal/privacy" className="text-[#FF6B00] hover:underline font-bold">
+                              Privacy Policy
+                            </Link>
+                          </p>
+                        </div>
+
                         <button
                           type="button"
                           onClick={startCallDemo}
                           disabled={!isPhoneValid || actionLoading}
-                          className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#E5E0D8] disabled:text-[#8A8A96] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2"
+                          className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#E5E0D8] disabled:text-[#8A8A96] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2 font-sans"
                         >
                           {actionLoading ? (
-                            <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <>
+                              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              <span>Connecting Your Demo…</span>
+                            </>
                           ) : (
                             <>
                               Call Me Now
@@ -548,8 +589,8 @@ export default function DemoPage() {
                   className="flex flex-col items-center text-center space-y-6"
                 >
                   <div className="space-y-1">
-                    <h3 className="text-lg font-black text-[#140A02]">Connecting your call...</h3>
-                    <p className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider">
+                    <h3 className="text-lg font-black text-[#140A02] font-sans">Connecting your call...</h3>
+                    <p className="text-xs text-[#6B5A4C] font-semibold uppercase tracking-wider font-sans">
                       Status: {isCallConnected ? "Connected" : getCallStatusString()}
                     </p>
                   </div>
@@ -574,7 +615,7 @@ export default function DemoPage() {
                   <div className="w-full space-y-3 pt-4">
                     <button
                       onClick={endCall}
-                      className="w-full py-3.5 border border-[#E5E0D8] hover:border-red-500 hover:text-red-500 text-[#8A8A96] font-bold text-xs rounded-[20px] transition-all"
+                      className="w-full py-3.5 border border-[#E5E0D8] hover:border-red-500 hover:text-red-500 text-[#8A8A96] font-bold text-sm rounded-[20px] transition-all font-sans"
                     >
                       {isCallConnected ? "End Call" : "Cancel Call"}
                     </button>

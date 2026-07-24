@@ -267,7 +267,7 @@ export default function DashboardLayout({
               </div>
               <div className="flex items-center gap-1.5 border-l border-line pl-4">
                 <Pulse className="w-3.5 h-3.5 text-saffron animate-pulse" />
-                <span className="text-ink-secondary">Live latency: <span className="font-bold text-ink">420ms</span></span>
+                <span className="text-ink-secondary">Live latency: <span className="font-bold text-ink">650ms</span></span>
               </div>
             </div>
           </div>

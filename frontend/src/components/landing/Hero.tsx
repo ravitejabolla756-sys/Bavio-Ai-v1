@@ -67,7 +67,7 @@ export default function Hero() {
                 borderRadius="9999px"
                 className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
               >
-                <span>Try Bavio Free</span>
+                <span>Try the 3-Minute Demo</span>
                 <ArrowRight className="w-4 h-4" />
               </GlareHover>
             </Link>

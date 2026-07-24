@@ -118,25 +118,77 @@ router.post('/start', requireAuth, async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required' });
     }
+
+    const resolvedCountry = (countryCode || 'US').toUpperCase().trim();
+    const allowedCountries = ['US', 'GB', 'AU'];
+    if (!allowedCountries.includes(resolvedCountry)) {
+      return res.status(400).json({
+        error: 'unsupported_country',
+        message: 'Bavio phone demo only supports US, UK, and Australia numbers.'
+      });
+    }
     
     // Validate phone number
-    const validation = phoneValidation.validateAndNormalizePhone(phoneNumber, countryCode || 'US');
+    const validation = phoneValidation.validateAndNormalizePhone(phoneNumber, resolvedCountry);
     if (!validation.valid) {
       return res.status(400).json({ error: 'invalid_phone', message: validation.error || 'Invalid phone number format' });
     }
     
     const e164Phone = validation.normalized;
+
+    // Enforce E.164 country-specific prefixes strictly
+    if (resolvedCountry === 'US' && !e164Phone.startsWith('+1')) {
+      return res.status(400).json({ error: 'invalid_phone', message: 'US phone numbers must start with +1' });
+    }
+    if (resolvedCountry === 'GB' && !e164Phone.startsWith('+44')) {
+      return res.status(400).json({ error: 'invalid_phone', message: 'UK phone numbers must start with +44' });
+    }
+    if (resolvedCountry === 'AU' && !e164Phone.startsWith('+61')) {
+      return res.status(400).json({ error: 'invalid_phone', message: 'Australia phone numbers must start with +61' });
+    }
     
-    // 1. Confirm email verification if required (REQUIRE_EMAIL_VERIFICATION flag check)
-    const isEmailVerified = req.tokenData?.email_confirmed_at || req.tokenData?.email_verified || req.tokenData?.user_metadata?.email_verified;
-    if (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !isEmailVerified) {
+    // 1. Confirm email verification unconditionally from Database
+    const userRes = await db.query('SELECT email_verified, email_confirmed_at FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    const isEmailVerified = user && (user.email_verified || user.email_confirmed_at);
+    if (!isEmailVerified) {
       return res.status(400).json({
         error: 'email_not_verified',
         message: 'Please verify your email address before starting the demo.'
       });
     }
+
+    // 2. Rate Limit: Limit by account (max 3 calls/hour)
+    const accountCheck = await db.query(
+      `SELECT COUNT(*) FROM demo_sessions 
+       WHERE user_id = $1 
+         AND demo_started_at > NOW() - INTERVAL '1 hour'`,
+      [userId]
+    );
+    if (parseInt(accountCheck.rows[0].count) >= 3) {
+      return res.status(429).json({
+        error: 'account_rate_limited',
+        message: 'Too many demo requests. Please try again later.'
+      });
+    }
+
+    // 3. Rate Limit: Limit by phone number (no calls in last 24h by another user to avoid spam)
+    const phoneCheck = await db.query(
+      `SELECT * FROM calls 
+       WHERE from_number = $1 
+         AND created_at > NOW() - INTERVAL '24 hours' 
+         AND user_id != $2
+       LIMIT 1`,
+      [e164Phone, userId]
+    );
+    if (phoneCheck.rows.length > 0) {
+      return res.status(429).json({
+        error: 'phone_rate_limited',
+        message: 'This phone number has been recently used for a demo call. Please try again later.'
+      });
+    }
     
-    // 2. Confirm demo_used is false
+    // 4. Confirm demo_used is false
     const usedCheck = await db.query(
       'SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_used = true LIMIT 1',
       [userId]
@@ -148,7 +200,7 @@ router.post('/start', requireAuth, async (req, res) => {
       });
     }
     
-    // 3. Confirm there is no active demo session
+    // 5. Confirm there is no active demo session
     const activeCheck = await db.query(
       "SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_status = 'active' LIMIT 1",
       [userId]
@@ -160,7 +212,7 @@ router.post('/start', requireAuth, async (req, res) => {
       });
     }
     
-    // 4. Create server-controlled demo session
+    // 6. Create server-controlled demo session
     const sessionRes = await db.query(
       `INSERT INTO demo_sessions (user_id, demo_started_at, demo_status, demo_used)
        VALUES ($1, NOW(), 'active', false) RETURNING *`,
@@ -168,7 +220,7 @@ router.post('/start', requireAuth, async (req, res) => {
     );
     const session = sessionRes.rows[0];
     
-    // 5. Start outbound call using Twilio
+    // 7. Start outbound call using Twilio
     const host = req.headers.host || 'localhost:5001';
     const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
     const protocol = isSsl ? 'https' : 'http';
@@ -199,7 +251,7 @@ router.post('/start', requireAuth, async (req, res) => {
       );
       return res.status(500).json({
         error: 'twilio_error',
-        message: 'Failed to place call. Please make sure your phone number is correct and registered with Twilio if using a trial account.'
+        message: 'Failed to place the demonstration call. Please verify your phone number and try again.'
       });
     }
   } catch (err) {

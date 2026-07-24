@@ -59,9 +59,9 @@ export default function GettingStarted() {
 
             {/* Bottom Copy */}
             <div className="p-8 text-left space-y-3">
-              <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Connect Your Number</h3>
+              <h3 className="font-sans text-xl font-bold text-[#140A02]">Configure your business</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Forward your existing business mobile or landline number, or get a dedicated Bavio number instantly.
+                Add your business details, services, policies and receptionist instructions.
               </p>
             </div>
           </motion.div>
@@ -102,9 +102,9 @@ export default function GettingStarted() {
 
             {/* Bottom Copy */}
             <div className="p-8 text-left space-y-3">
-              <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Customize Your AI</h3>
+              <h3 className="font-sans text-xl font-bold text-[#140A02]">Activate your Bavio number</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Configure your English voice assistant, custom greeting text, and custom prompt guidelines.
+                After payment and onboarding, Bavio provisions a supported local business number.
               </p>
             </div>
           </motion.div>
@@ -117,17 +117,17 @@ export default function GettingStarted() {
             transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="bg-white border border-[#F3E4D4] rounded-[32px] overflow-hidden flex flex-col justify-between shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-[350ms] ease-out h-full min-h-[480px]"
           >
-            {/* Top Mockup: WhatsApp Alert UI */}
+            {/* Top Mockup: Bavio Notification UI */}
             <div className="p-6 bg-[#FFFDF8] border-b border-[#F3E4D4]/60 flex items-center justify-center min-h-[220px]">
-              <div className="w-full max-w-[280px] bg-[#128c7e]/5 border border-[#128c7e]/20 rounded-2xl p-4 shadow-sm text-left font-sans relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-[#25d366]/20 text-[#128c7e] text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">
-                  Bavio Alert
+              <div className="w-full max-w-[280px] bg-[#FFF7ED] border border-[#F3E4D4] rounded-2xl p-4 shadow-sm text-left font-sans relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-[#F97316] text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">
+                  Example data
                 </div>
                 <div className="space-y-2 pt-1">
-                  <div className="text-[10px] font-bold text-[#128c7e]">💬 Leads Manager</div>
+                  <div className="text-[10px] font-bold text-[#F97316]">Bavio Lead Notification</div>
                   <div className="bg-white border border-[#F3E4D4]/40 rounded-xl p-3 text-[11px] leading-relaxed shadow-sm space-y-1">
                     <span className="font-bold text-[#140A02] block border-b border-[#F3E4D4]/40 pb-1.5 mb-1.5">New Lead Captured!</span>
-                    <div className="flex justify-between"><span className="text-[#6E6256]">Name:</span> <span className="font-bold text-[#140A02]">Sarah Johnson</span></div>
+                    <div className="flex justify-between"><span className="text-[#6E6256]">Name:</span> <span className="font-bold text-[#140A02]">Alex Morgan</span></div>
                     <div className="flex justify-between"><span className="text-[#6E6256]">Budget:</span> <span className="font-bold text-[#F97316]">$450,000</span></div>
                     <div className="flex justify-between"><span className="text-[#6E6256]">Schedule:</span> <span className="font-bold text-[#140A02]">Tomorrow 11AM</span></div>
                   </div>
@@ -137,9 +137,9 @@ export default function GettingStarted() {
 
             {/* Bottom Copy */}
             <div className="p-8 text-left space-y-3">
-              <h3 className="font-display text-2xl font-extrabold text-[#140A02]">Instant Notifications</h3>
+              <h3 className="font-sans text-xl font-bold text-[#140A02]">Review every conversation</h3>
               <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-                Leads are qualified, summarized, and sent instantly via your preferred notification method (WhatsApp, email, or SMS).
+                Calls, transcripts and qualified lead details appear in your dashboard.
               </p>
             </div>
           </motion.div>

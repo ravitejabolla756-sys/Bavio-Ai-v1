@@ -23,18 +23,22 @@ html {
 
 /* ── Global heading typography — Instrument Serif (Famaura-style) ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
-  font-weight: 400 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 0.92 !important;
+  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 /* Utility class for explicit serif headings in JSX */
 .font-heading, .font-display, .font-serif {
   font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
   font-weight: 400 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 0.92 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.15 !important;
+}
+
+.font-sans {
+  font-family: var(--font-inter), "Inter", sans-serif !important;
 }
 
 body {

@@ -32,7 +32,7 @@ export default function SecurityPolicy() {
             <div className="bg-surface-raised border border-line p-5 rounded-2xl">
               <ShieldCheck className="w-6 h-6 text-saffron mb-3" weight="regular" />
               <h4 className="font-bold text-body-sm text-ink mb-1">Compliance Audits</h4>
-              <p className="text-body-xs text-ink-tertiary">SOC 2 Type II audit report, GDPR data mapping, and HIPAA physical storage audits conducted annually.</p>
+              <p className="text-body-xs text-ink-tertiary">GDPR data mapping and HIPAA-ready physical storage audits conducted annually to maintain absolute compliance.</p>
             </div>
           </div>
 

@@ -14,38 +14,31 @@ const footerColumns = [
   {
     heading: "Product",
     links: [
-      { label: "How it Works", href: "/how-it-works" },
-      { label: "Features", href: "/product" },
-      { label: "Integrations", href: "/integrations" },
+      { label: "How It Works", href: "/how-it-works" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Changelog", href: "/changelog" },
-    ],
-  },
-  {
-    heading: "Use Cases",
-    links: [
-      { label: "Real Estate", href: "/use-cases/real-estate" },
-      { label: "Restaurants", href: "/use-cases/restaurants" },
-      { label: "Healthcare", href: "/use-cases/healthcare" },
-      { label: "E-Commerce", href: "/use-cases/e-commerce" },
+      { label: "Demo", href: "/demo" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About Us", href: "/company" },
-      { label: "Customers", href: "/customers" },
-      { label: "Contact", href: "/contact" },
-      { label: "Blog", href: "/blog" },
+      { label: "About", href: "/company" },
+      { label: "Contact", href: "/company#contact" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Privacy Policy", href: "/legal/privacy" },
-      { label: "Terms of Service", href: "/legal/terms" },
-      { label: "Cookie Policy", href: "/legal/cookies" },
-      { label: "Security & Compliance", href: "/legal/security" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Refund Policy", href: "/refund-policy" },
+      { label: "Cookie Policy", href: "/cookie-policy" },
+    ],
+  },
+  {
+    heading: "Support",
+    links: [
+      { label: "hello@bavio.in", href: "mailto:hello@bavio.in" },
     ],
   },
 ];
@@ -81,7 +74,7 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
   };
 
   return (
-    <footer className={`relative border-t ${dark ? 'border-darkBorder bg-darkBg text-darkText' : 'border-line-subtle bg-canvas'}`}>
+    <footer className={`relative border-t ${dark ? 'border-darkBorder bg-darkBg text-darkText' : 'border-line-subtle bg-canvas'} font-sans`}>
       <div className="max-w-container mx-auto px-6 lg:px-8 pt-20 pb-10">
         {/* Top section: brand + newsletter | link columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-12">
@@ -90,13 +83,12 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
             <Link href="/" className="flex items-center gap-2.5 group w-fit">
               <Logo className="w-9 h-9 transition-transform duration-300 ease-premium group-hover:scale-105" color="text-saffron" />
               <span className={`font-display text-xl font-extrabold tracking-tight ${dark ? 'text-darkText' : 'text-ink'}`}>
-                Bavio AI
+                Bavio
               </span>
             </Link>
 
             <p className={`text-body-sm max-w-xs leading-relaxed ${dark ? 'text-darkTextMuted' : 'text-ink-tertiary'}`}>
-              Autonomous AI voice receptionists for business calls. Answer every call.
-              Capture every lead. 24/7.
+              AI receptionists for inbound business calls. Answer enquiries, qualify leads and organize conversations.
             </p>
 
             {/* Newsletter */}
@@ -161,19 +153,37 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
                   {col.heading}
                 </span>
                 <nav className="flex flex-col gap-2.5">
-                  {col.links.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      className={`text-body-sm transition-colors duration-200 ${
-                        dark 
-                          ? 'text-darkTextMuted hover:text-darkText' 
-                          : 'text-ink-tertiary hover:text-ink'
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {col.links.map((link) => {
+                    const isMail = link.href.startsWith("mailto:");
+                    if (isMail) {
+                      return (
+                        <a
+                          key={link.label}
+                          href={link.href}
+                          className={`text-body-sm transition-colors duration-200 font-bold ${
+                            dark 
+                              ? 'text-darkTextMuted hover:text-darkText' 
+                              : 'text-ink-tertiary hover:text-ink'
+                          }`}
+                        >
+                          {link.label}
+                        </a>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className={`text-body-sm transition-colors duration-200 ${
+                          dark 
+                            ? 'text-darkTextMuted hover:text-darkText' 
+                            : 'text-ink-tertiary hover:text-ink'
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
                 </nav>
               </div>
             ))}
@@ -183,10 +193,7 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
         {/* Bottom bar */}
         <div className={`mt-16 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 ${dark ? 'border-darkBorder' : 'border-line-subtle'}`}>
           <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
-            2026 Bavio AI. All rights reserved.
-          </p>
-          <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
-            Bavio AI | Global AI Receptionist
+            Copyright &copy; 2026 Bavio
           </p>
         </div>
       </div>

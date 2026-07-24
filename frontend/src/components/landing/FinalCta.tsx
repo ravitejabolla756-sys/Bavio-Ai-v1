@@ -45,7 +45,7 @@ export default function FinalCta() {
           transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="text-white/80 text-[20px] font-normal leading-[1.7] max-w-[720px] mb-8 font-sans"
         >
-          Every missed call is lost revenue. Bavio ensures every single customer gets a professional answer in seconds.
+          Every missed call is lost revenue. Bavio provides consistent call coverage for your business day and night.
         </motion.p>
 
         {/* Button */}
@@ -56,10 +56,10 @@ export default function FinalCta() {
           transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
-            href="/sign-up"
+            href="/signup"
             className="inline-flex items-center justify-center gap-2 bg-[#140B06] hover:bg-[#140B06]/85 text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-lg hover:shadow-[0_12px_36px_rgba(20,10,2,0.3)] font-sans"
           >
-            Try Bavio Free
+            Try the 3-Minute Demo
             <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>

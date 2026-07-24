@@ -16,7 +16,7 @@ export default function TermsOfService() {
 
         <div className="flex flex-col gap-6 text-body-sm text-ink-tertiary leading-relaxed">
           <p>
-            Please review these Terms of Service (&quot;Terms&quot;) carefully before using the Bavio AI platform, APIs, or voice services. By accessing or using the platform, you agree to comply with these terms.
+            Please review these Terms of Service (&quot;Terms&quot;) carefully before using the Bavio platform, APIs, or voice services. By accessing or using the platform, you agree to comply with these terms.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">1. Subscription & Account Terms</h3>
@@ -26,7 +26,7 @@ export default function TermsOfService() {
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">2. Billing & Overages</h3>
           <p>
-            Bavio AI subscriptions are billed monthly. Overage minutes beyond the plan budget are calculated on a per-minute rate and billed at the end of the billing cycle. Failure to settle outstanding invoices may result in temporary suspension of voice integrations.
+            Bavio subscriptions are billed monthly. Overage minutes beyond the plan budget are calculated on a per-minute rate and billed at the end of the billing cycle. Failure to settle outstanding invoices may result in temporary suspension of voice integrations.
           </p>
 
           <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">3. Acceptable Use</h3>
@@ -34,9 +34,9 @@ export default function TermsOfService() {
             You agree not to use the voice services for unauthorized outbound spam marketing, robocalls, fraud, or violation of local telecommunication guidelines.
           </p>
 
-          <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">4. Uptime SLA</h3>
+          <h3 className="font-bold text-heading-sm text-ink mt-6 mb-2">4. Service Availability</h3>
           <p>
-            We offer a 99.9% uptime SLA on our call processing pipelines. If uptime drops below the guaranteed SLA, you are eligible for service credits as outlined in our SLA policy document.
+            We aim to provide consistent call processing availability. If service disruptions occur, we work to restore access as quickly as possible.
           </p>
         </div>
       </div>

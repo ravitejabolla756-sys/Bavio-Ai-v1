@@ -3,12 +3,12 @@
 import React from "react";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
+import LiveProductExperience from "@/components/landing/LiveProductExperience";
 import GettingStarted from "@/components/landing/GettingStarted";
-import VoiceIntelligence from "@/components/landing/VoiceIntelligence";
-import CrmSection from "@/components/landing/CrmSection";
-import IndustriesTabs from "@/components/landing/IndustriesTabs";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
-import WaitlistSection from "@/components/landing/WaitlistSection";
+import IndustriesTabs from "@/components/landing/IndustriesTabs";
+import PricingPreview from "@/components/landing/PricingPreview";
+import CustomerProof from "@/components/landing/CustomerProof";
 import Faq from "@/components/landing/Faq";
 import FinalCta from "@/components/landing/FinalCta";
 import Footer from "@/components/landing/Footer";
@@ -19,12 +19,12 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-grow">
         <Hero />
+        <LiveProductExperience />
         <GettingStarted />
-        <VoiceIntelligence />
-        <CrmSection />
-        <IndustriesTabs />
         <FeaturesGrid />
-        <WaitlistSection />
+        <IndustriesTabs />
+        <PricingPreview />
+        <CustomerProof />
         <Faq />
         <FinalCta />
       </main>

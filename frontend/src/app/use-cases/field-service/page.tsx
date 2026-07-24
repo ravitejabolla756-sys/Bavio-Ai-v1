@@ -29,7 +29,7 @@ export default function FieldServiceUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Consistent Call Coverage</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Zero Missed Jobs</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">24/7 emergency dispatch</span>
             </div>
             <div>

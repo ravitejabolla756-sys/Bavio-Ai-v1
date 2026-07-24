@@ -59,10 +59,10 @@ export default function WaitlistSection() {
 
           {/* Action Button */}
           <Link
-            href="/sign-up"
+            href="/demo"
             className="bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
           >
-            <span>Try Bavio Free</span>
+            <span>Try the 3-Minute Demo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -70,7 +70,7 @@ export default function WaitlistSection() {
           <div className="mt-4 pt-6 border-t border-[#F3E4D4]/60 w-full flex flex-col sm:flex-row justify-center items-center gap-6 text-[10px] font-bold text-[#6E6256] uppercase tracking-wider">
             <div>✓ No Credit Card</div>
             <div>✓ Setup In 5 Minutes</div>
-            <div>✓ Standard Voice Setup</div>
+            <div>✓ Guided Business Setup</div>
           </div>
 
         </motion.div>

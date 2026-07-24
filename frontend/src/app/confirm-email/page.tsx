@@ -165,7 +165,7 @@ export default function ConfirmEmailPage() {
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
               { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Appointment", label2: "Booking" },
+              { icon: Calendar, label1: "Request", label2: "Capture" },
             ].map((feat, i) => {
               const Icon = feat.icon;
               return (
@@ -240,7 +240,7 @@ export default function ConfirmEmailPage() {
               <p 
                 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "16px", color: "#6B7280", lineHeight: 1.6, marginBottom: "32px" }}
               >
-                Your free trial has been successfully activated. Let&apos;s proceed to build your first AI receptionist.
+                Your account has been successfully created. Let&apos;s proceed to access your dashboard.
               </p>
 
               {/* Trial Details Box */}
@@ -253,14 +253,14 @@ export default function ConfirmEmailPage() {
                   <span className="text-[#374151] truncate max-w-[200px]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>{profile?.email}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-bold text-[#374151]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>Trial Limit:</span>
-                  <span className="text-[#374151]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>{profile?.trialMinutesAvailable || 30} Free Minutes</span>
+                  <span className="font-bold text-[#374151]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>Demo Access:</span>
+                  <span className="text-[#FF6B00] font-bold" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>1 Free Demo Available</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-bold text-[#374151]" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>Status:</span>
-                  <span className="text-[#10B981] font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
-                    <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                    Active
+                  <span className="text-[#FF6B00] font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}>
+                    <span className="w-2 h-2 rounded-full bg-[#FF6B00] animate-pulse" />
+                    Pre-Payment
                   </span>
                 </div>
               </div>

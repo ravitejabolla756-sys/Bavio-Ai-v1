@@ -37,7 +37,7 @@ export default function Customers() {
         { label: "Appt captured/mo", val: "840+" },
         { label: "FTE savings/mo", val: "$6,000" }
       ],
-      story: "Care Clinic was experiencing heavy call volumes during peak morning hours, leading to patient frustration and lost appointments. Bavio was trained on clinic schedules and indexed doctor availability rules. Now it schedules appointments, answers FAQ about consultation fees, and updates doctors' calendars instantly.",
+      story: "Care Clinic was experiencing heavy call volumes during peak morning hours, leading to patient frustration and lost calls. Bavio was trained on clinic schedules and indexed FAQ responses. Now it captures appointment requests, answers FAQ about consultation fees, and logs details inside the dashboard.",
       setup: ["2 AI Agents", "Custom Booking Database", "HIPAA Compliant Data Logs", "Email Alerts"]
     },
     {
@@ -49,11 +49,11 @@ export default function Customers() {
       author: "Marcus Vance, CEO",
       stats: [
         { label: "Enrolled from leads", val: "2,000+" },
-        { label: "SLA response time", val: "sub-500ms" },
+        { label: "SLA response time", val: "Real-time" },
         { label: "Sales growth", val: "+22%" }
       ],
-      story: "Peak Academy receives high volumes of course enquiries from social ads, often late at night when admissions staff are unavailable. Bavio qualifies intent, answers questions about batch timings, fees, syllabus details, and automatically logs details into Zoho CRM, sending SMS confirmations.",
-      setup: ["Multiple Agents", "Zoho CRM Sync", "SMS Integrations", "Custom Analytics Dashboard"]
+      story: "Peak Academy receives high volumes of course enquiries from social ads, often late at night when admissions staff are unavailable. Bavio qualifies intent, answers questions about batch timings, fees, syllabus details, and automatically logs details into Zoho workflows, sending SMS confirmations.",
+      setup: ["Multiple Agents", "Zoho Integration", "SMS Integrations", "Custom Analytics Dashboard"]
     }
   ];
 
@@ -92,8 +92,8 @@ export default function Customers() {
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Natural & Responsive</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">CRM Synced</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Automatic lead capture</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Lead Capture</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Immediate lead logging</span>
             </div>
           </div>
         </section>

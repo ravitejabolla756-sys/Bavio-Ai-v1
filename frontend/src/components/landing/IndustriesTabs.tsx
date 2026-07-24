@@ -14,7 +14,10 @@ const tabList = [
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Property Inquiries Database</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-[#140A02]">Property Inquiries Database</span>
+            <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Example data</span>
+          </div>
           <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Real-time Feed</span>
         </div>
         <div className="overflow-x-auto">
@@ -30,14 +33,14 @@ const tabList = [
             </thead>
             <tbody className="divide-y divide-[#F3E4D4]/40">
               <tr>
-                <td className="py-2 font-bold text-[#140A02]">Sarah Johnson</td>
+                <td className="py-2 font-bold text-[#140A02]">Alex Morgan</td>
                 <td className="py-2 text-[#6E6256]">Downtown NYC</td>
                 <td className="py-2 text-[#140A02]">3BR</td>
                 <td className="py-2 text-[#F97316] font-bold">$450,000</td>
                 <td className="py-2 text-right"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[9px]">Qualified</span></td>
               </tr>
               <tr>
-                <td className="py-2 font-bold text-[#140A02]">Michael Chen</td>
+                <td className="py-2 font-bold text-[#140A02]">Jamie Smith</td>
                 <td className="py-2 text-[#6E6256]">San Francisco</td>
                 <td className="py-2 text-[#140A02]">2BR</td>
                 <td className="py-2 text-[#F97316] font-bold">$375,000</td>
@@ -53,28 +56,31 @@ const tabList = [
     id: "healthcare",
     label: "Healthcare",
     icon: Stethoscope,
-    title: "Patient Scheduling & Intake",
+    title: "Patient Intake & Requests",
     desc: "Patients looking to request appointments get routed through Bavio. Collects symptoms, triages urgency level, and organizes details in your dashboard.",
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Patient Intake Desk</span>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">4 Slots Reserved</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-[#140A02]">Patient Intake Desk</span>
+            <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Example data</span>
+          </div>
+          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">4 Slots Requested</span>
         </div>
         <div className="space-y-3">
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Sarah Jenkins (Dental Intake)</div>
+              <div className="font-bold text-[#140A02]">Taylor Reed (Dental Intake)</div>
               <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Routine cleanup and cosmetic consultation</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Friday 4 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Requested: Fri 4 PM</span>
           </div>
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div>
-              <div className="font-bold text-[#140A02]">Robert Miller (General Medicine)</div>
+              <div className="font-bold text-[#140A02]">Casey Jordan (General Medicine)</div>
               <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Follow-up on blood pressure monitoring</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Today 6 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Requested: Today 6 PM</span>
           </div>
         </div>
       </div>
@@ -89,23 +95,26 @@ const tabList = [
     screenshot: (
       <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
         <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Consultation Request Log</span>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">{"Today's Schedule"}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-[#140A02]">Consultation Request Log</span>
+            <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Example data</span>
+          </div>
+          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Incoming Requests</span>
         </div>
         <div className="space-y-3">
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div className="text-left">
-              <div className="font-bold text-[#140A02]">Johnathan Doe &bull; 60 Min Strategy</div>
+              <div className="font-bold text-[#140A02]">Jordan Lee &bull; 60 Min Strategy</div>
               <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Reviewing marketing proposal prior to call</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Today 8 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Requested: Today 8 PM</span>
           </div>
           <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
             <div className="text-left">
               <div className="font-bold text-[#140A02]">Emily Watson &bull; 30 Min Discovery</div>
               <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Needs NDA signed beforehand</div>
             </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Today 9 PM</span>
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Requested: Today 9 PM</span>
           </div>
         </div>
       </div>
@@ -171,7 +180,7 @@ export default function IndustriesTabs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab)}
-                className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold transition-all duration-300 z-10 ${
+                className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold font-sans transition-all duration-300 z-10 ${
                   isActive ? "text-white" : "text-[#6E6256] hover:text-[#140A02]"
                 }`}
               >

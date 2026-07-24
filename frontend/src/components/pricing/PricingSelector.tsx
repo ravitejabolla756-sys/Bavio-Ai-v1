@@ -26,7 +26,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
     "Everything in Growth",
     "Custom notification channels",
     "Premium low-latency voices",
-    "Priority helpdesk",
+    "Priority SLA helpdesk",
   ],
 };
 
@@ -686,7 +686,7 @@ const COMPARISON_CATEGORIES = [
     name: "Support",
     rows: [
       { feature: "Standard support", starter: true, growth: true, scale: false },
-      { feature: "Priority helpdesk", starter: false, growth: false, scale: true }
+      { feature: "Priority SLA helpdesk", starter: false, growth: false, scale: true }
     ]
   }
 ];

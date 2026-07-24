@@ -1,51 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Phone,
-  Mic,
-  CheckCircle2,
+  Settings,
   MessageSquare,
-  Bell,
+  CheckCircle2,
+  ShieldCheck,
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
+  PhoneCall,
+  Loader2,
+  ListTodo,
   TrendingUp,
   Clock,
   Zap,
   Shield,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
-// ─── Animation configs ───────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.12 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] as const },
-  },
-};
-
-// ─── FAQ accordion ───────────────────────────────────────────────────────────
+// ─── FAQ Accordion ───────────────────────────────────────────────────────────
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="border-b border-[#F3E4D4] py-5 last:border-b-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center text-left py-2 font-bold text-base text-[#140A02] hover:text-[#FF6B00] transition-colors"
+        className="w-full flex justify-between items-center text-left py-2 font-bold text-base text-[#140A02] hover:text-[#FF6B00] transition-colors font-sans"
       >
         <span>{question}</span>
         {isOpen ? (
@@ -63,7 +48,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <p className="text-sm text-[#6B5A4C] leading-relaxed pt-2 pb-3 font-normal">
+            <p className="text-sm text-[#6B5A4C] leading-relaxed pt-2 pb-3 font-normal font-sans">
               {answer}
             </p>
           </motion.div>
@@ -73,352 +58,436 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Data & Step Configuration ──────────────────────────────────────────────
 const steps = [
   {
     number: "01",
     Icon: Phone,
     headline: "Customer Calls",
-    description:
-      "A customer calls your business number. Bavio answers the call instantly, day or night.",
-    detail: "Your business number. Powered by Bavio.",
+    description: "A customer calls your active Bavio business number.",
+    detail: "Your active Bavio number receives the inbound connection.",
   },
   {
     number: "02",
-    Icon: Mic,
-    headline: "Bavio Answers Call",
-    description:
-      "Bavio greets the caller and answers inquiries using the business’s saved information.",
-    detail: "Dynamic responses based on your business profile.",
+    Icon: Settings,
+    headline: "Bavio Loads Business Context",
+    description: "Bavio loads the correct business profile, receptionist instructions and saved knowledge.",
+    detail: "Retrieves customized greeting and FAQ matching rules.",
   },
   {
     number: "03",
-    Icon: CheckCircle2,
-    headline: "AI Qualifies Caller",
-    description:
-      "Bavio understands the caller's needs and asks custom qualification questions to collect details.",
-    detail: "Captures budget, requirements, and timeline.",
+    Icon: MessageSquare,
+    headline: "AI Handles the Conversation",
+    description: "The receptionist answers questions and asks the business’s configured qualification questions.",
+    detail: "Converses naturally in English and triages requirements.",
   },
   {
     number: "04",
-    Icon: MessageSquare,
-    headline: "Conversation Saved",
-    description:
-      "Caller details, qualified requirements, and the full call transcript are saved securely.",
-    detail: "Real-time logging of call conversation events.",
+    Icon: CheckCircle2,
+    headline: "Conversation Is Saved",
+    description: "The transcript and captured customer details are stored securely.",
+    detail: "Lead variables extracted and logged instantly.",
   },
   {
     number: "05",
-    Icon: Bell,
-    headline: "Review in Dashboard",
-    description:
-      "The business reviews the call logs, transcripts, and lead details directly in the dashboard.",
-    detail: "Actionable workspace for your team to follow up.",
-  },
-];
-
-const roiItems = [
-  {
-    Icon: Clock,
-    stat: "Fast",
-    label: "Call Answering",
-    description: "Bavio answers calls quickly without hold times.",
-  },
-  {
-    Icon: TrendingUp,
-    stat: "Consistent",
-    label: "Call Coverage",
-    description: "Bavio provides reliable coverage for your incoming calls.",
-  },
-  {
-    Icon: Zap,
-    stat: "24/7",
-    label: "Availability",
-    description: "Available Around the Clock Within Your Plan Limits.",
-  },
-  {
-    Icon: Shield,
-    stat: "Flexible",
-    label: "Front-Desk Coverage",
-    description: "Adaptable coverage without the overhead of a full-time front desk.",
+    Icon: ShieldCheck,
+    headline: "Team Reviews the Lead",
+    description: "The business reviews calls, transcripts and lead information in the dashboard.",
+    detail: "Ready for follow-up and CRM integration.",
   },
 ];
 
 const faqs = [
   {
-    key: 0,
     question: "How long does it take to set up Bavio?",
-    answer:
-      "Most businesses are fully live within 15 minutes. You sign up, enter your business details, and Bavio configures your AI assistant automatically. No technical skills required.",
+    answer: "Most businesses are fully configured in minutes. You sign up, enter your business details, and Bavio prepares your receptionist interface automatically. No coding skills required.",
   },
   {
-    key: 1,
     question: "What languages does Bavio support?",
-    answer:
-      "Bavio currently supports English voice conversations for our initial launch markets (US, UK, and Australia).",
+    answer: "Bavio currently supports English voice conversations for our initial launch markets (US, UK, and Australia).",
   },
   {
-    key: 2,
     question: "Do I need to change my existing phone number?",
-    answer:
-      "No. Bavio works by forwarding missed calls from your existing number to your Bavio-assigned number. Your customers keep calling the same number they always have.",
+    answer: "No. Bavio works by forwarding missed calls from your existing number to your assigned Bavio virtual number. Your customers keep calling the same number they always have.",
   },
   {
-    key: 3,
     question: "What happens if Bavio cannot understand the caller?",
-    answer:
-      "Bavio gracefully asks the caller to repeat or clarify, just like a human would. If the call still cannot be qualified, it logs it as an unresolved inquiry and sends you a notification so you can follow up.",
+    answer: "Bavio asks the caller to repeat or clarify. If the call cannot be qualified, it registers it as a generic inquiry and logs it so your team can follow up directly.",
   },
   {
-    key: 4,
-    question: "Can I customise what Bavio asks callers?",
-    answer:
-      "Yes. During onboarding, you specify the key questions Bavio should ask - budget, location, preferred visit time, etc. You can update these anytime from your dashboard.",
+    question: "Can I customize what Bavio asks callers?",
+    answer: "Yes. From your dashboard, you specify the greeting, instructions, and the target lead fields (such as budget, location, or inquiry type) that Bavio should capture.",
   },
   {
-    key: 5,
     question: "Is my data secure?",
-    answer:
-      "All call data is encrypted at rest and in transit. We never share your lead data with third parties. You own your data completely.",
+    answer: "All call data is encrypted in transit and at rest. We do not sell or share your lead data with external parties. You retain complete ownership.",
   },
 ];
 
-// ─── Page ────────────────────────────────────────────────────────────────────
 export default function HowItWorksPage() {
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-25% 0px -55% 0px",
+      threshold: 0.1,
+    };
+
+    const observers = steps.map((_, index) => {
+      const el = document.getElementById(`step-card-${index}`);
+      if (!el) return null;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveStep(index);
+          }
+        });
+      }, observerOptions);
+
+      observer.observe(el);
+      return observer;
+    });
+
+    return () => {
+      observers.forEach((obs) => obs?.disconnect());
+    };
+  }, []);
+
+  // Visual representations for each step
+  const renderVisualCard = (stepIndex: number) => {
+    switch (stepIndex) {
+      case 0:
+        return (
+          <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-3xl p-6 shadow-sm flex flex-col justify-center items-center text-center space-y-4 min-h-[300px]">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00] animate-pulse">
+                <PhoneCall className="w-7 h-7" />
+              </div>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-ping" />
+            </div>
+            <div>
+              <div className="text-xs text-[#6B5A4C] font-bold uppercase tracking-wider mb-1">Incoming Call</div>
+              <div className="text-lg font-black text-[#140A02] font-mono">+1 (555) 019-2834</div>
+              <div className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mt-2">
+                Ringing Inbound
+              </div>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-3xl p-6 shadow-sm flex flex-col justify-start text-left space-y-4 min-h-[300px] font-sans">
+            <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
+              <span className="font-bold text-[#140A02] text-xs">Context Parser</span>
+              <span className="text-[9px] text-[#FF6B00] font-bold bg-[#FF6B00]/5 border border-[#FF6B00]/10 px-2 py-0.5 rounded flex items-center gap-1">
+                <Loader2 className="w-2.5 h-2.5 animate-spin" /> Loading
+              </span>
+            </div>
+            <div className="space-y-2 text-[11px] text-[#6B5A4C]">
+              <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#F3E4D4]/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Profile: <strong className="text-[#140A02]">Green Valley Real Estate</strong></span>
+              </div>
+              <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#F3E4D4]/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Instructions: <strong className="text-[#140A02]">Verify budget & timeline</strong></span>
+              </div>
+              <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#F3E4D4]/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Knowledge Index: <strong className="text-[#140A02]">12 FAQs Loaded</strong></span>
+              </div>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="w-full bg-[#140A02] text-[#F3E4D4] rounded-3xl p-6 shadow-md flex flex-col justify-between min-h-[300px] font-sans text-xs">
+            <div className="border-b border-white/10 pb-2 mb-3">
+              <span className="text-[9px] uppercase font-bold text-[#FF6B00] tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-[#FF6B00] rounded-full animate-ping" />
+                Conversation Stream
+              </span>
+            </div>
+            <div className="space-y-4 flex-grow overflow-y-auto pr-1">
+              <div className="flex gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#FF6B00] text-white flex items-center justify-center shrink-0 font-bold text-[9px]">B</div>
+                <div className="bg-white/5 border border-white/10 p-2.5 rounded-2xl rounded-tl-none max-w-[85%] text-white/90 leading-relaxed text-[11px]">
+                  Hello! Green Valley Real Estate. How can I help you?
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <div className="bg-white/10 p-2.5 rounded-2xl rounded-tr-none max-w-[85%] text-white leading-relaxed text-[11px]">
+                  Hi, looking for a 2-bedroom rental starting next month.
+                </div>
+                <div className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center shrink-0 font-bold text-[9px]">C</div>
+              </div>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-3xl p-6 shadow-sm flex flex-col justify-start text-left space-y-4 min-h-[300px] font-sans">
+            <div className="border-b border-[#F3E4D4]/60 pb-3 flex justify-between items-center">
+              <span className="font-bold text-[#140A02] text-xs">Extracted Variables</span>
+              <span className="text-[9px] text-[#137333] font-bold bg-[#E6F4EA] border border-emerald-200 px-2 py-0.5 rounded-full">
+                Saved Securely
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-white p-3 rounded-xl border border-[#F3E4D4]/60">
+                <span className="text-[9px] text-[#6E6256] font-bold uppercase tracking-wider block mb-0.5">Name</span>
+                <span className="font-bold text-[#140A02]">Alex Carter</span>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-[#F3E4D4]/60">
+                <span className="text-[9px] text-[#6E6256] font-bold uppercase tracking-wider block mb-0.5">Requirement</span>
+                <span className="font-bold text-[#140A02]">2-Bedroom Rent</span>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-[#F3E4D4]/60">
+                <span className="text-[9px] text-[#6E6256] font-bold uppercase tracking-wider block mb-0.5">Budget</span>
+                <span className="font-bold text-[#140A02]">$3,000/mo</span>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-[#F3E4D4]/60">
+                <span className="text-[9px] text-[#6E6256] font-bold uppercase tracking-wider block mb-0.5">Timeline</span>
+                <span className="font-bold text-[#140A02]">Next Month</span>
+              </div>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-3xl p-6 shadow-sm flex flex-col justify-start text-left space-y-4 min-h-[300px] font-sans">
+            <div className="border-b border-[#F3E4D4]/60 pb-3 flex justify-between items-center">
+              <span className="font-bold text-[#140A02] text-xs">Bavio Dashboard Log</span>
+              <span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Real-time Feed</span>
+            </div>
+            <div className="bg-white border border-[#F3E4D4] rounded-xl p-3.5 space-y-2 shadow-sm text-xs relative overflow-hidden">
+              <div className="flex justify-between items-start">
+                <span className="font-bold text-[#140A02]">Request Capture</span>
+                <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-1.5 py-0.5 rounded text-[8px]">Inbound</span>
+              </div>
+              <div className="text-[10px] text-[#6E6256]">Green Valley Real Estate &bull; Alex Carter</div>
+              <div className="flex justify-between items-center text-[10px] font-mono text-[#6E6256] pt-1">
+                <span>Just now</span>
+                <span className="font-bold text-[#FF6B00]">Qualified Lead</span>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFDF8] text-[#140A02] font-sans antialiased selection:bg-[#FF6B00]/15 selection:text-[#FF6B00] relative overflow-hidden noise-overlay flex flex-col w-full">
       <Navbar />
 
       <main className="flex-grow pt-32 lg:pt-40">
+        
         {/* ── HERO ── */}
         <section className="max-w-[1440px] mx-auto px-6 md:px-8 pb-16 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-4xl mx-auto"
+            className="max-w-4xl mx-auto space-y-6"
           >
-            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-3 py-1 rounded-full border border-[#FF6B00]/10 w-fit mx-auto mb-6 block">
-              How It Works
+            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-5 py-1.5 rounded-full border border-[#FF6B00]/10 w-fit mx-auto block">
+              HOW IT WORKS
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1]">
-              Your Lead Capture{" "}
-              <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">Happens Here.</span>
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] leading-[1.1] font-display">
+              From Incoming Call <br />
+              to <span className="text-[#FF6B00]">Organized Lead</span>
             </h1>
             <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl mx-auto">
-              See how Bavio turns every missed call into a qualified lead in 60 seconds.
+              Bavio answers the call using your saved business information, asks relevant questions and stores the conversation in your dashboard.
             </p>
           </motion.div>
         </section>
 
         {/* ── 5-STEP FLOW ── */}
-        <section className="border-t border-[#F3E4D4] py-20 bg-white/40">
+        <section className="border-t border-[#F3E4D4] py-24 bg-white/40">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="max-w-3xl mb-16">
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                The Flow
+                The Process
               </span>
-              <h2 className="font-display text-4xl font-bold tracking-tight text-ink-primary mb-4">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
                 How Bavio Handles an Incoming Call
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-3">
-                From the moment a customer dials to the moment a lead hits your dashboard.
+                From the moment a customer dials to the moment a lead is structured inside your dashboard.
               </p>
             </div>
 
-            {/* Mobile: stacked cards */}
-            <div className="flex flex-col gap-6 md:hidden">
-              {steps.map((step, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.55, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-white border border-[#F3E4D4] rounded-3xl p-6 relative overflow-hidden"
-                >
-                  <div className="absolute top-4 right-5 text-5xl font-black text-[#FF6B00]/5 select-none leading-none">
-                    {step.number}
-                  </div>
-                  <div className="bg-[#FF6B00]/10 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shrink-0">
-                    <step.Icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-[#140A02] mb-2">{step.headline}</h3>
-                  <p className="text-sm text-[#6B5A4C] leading-relaxed mb-4">{step.description}</p>
-                  <div className="border-t border-[#F3E4D4] pt-3 text-xs text-[#FF6B00] font-bold uppercase tracking-wider">
-                    {step.detail}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            {/* Desktop Two-Column Layout */}
+            <div className="hidden md:flex gap-12 items-start relative">
+              
+              {/* Left Column: Interactive Steps Timeline */}
+              <div className="w-1/2 relative pl-10 border-l-2 border-[#F3E4D4]">
+                {steps.map((step, idx) => {
+                  const isLast = idx === steps.length - 1;
+                  const isActive = activeStep === idx;
+                  return (
+                    <div
+                      key={idx}
+                      id={`step-card-${idx}`}
+                      onClick={() => setActiveStep(idx)}
+                      className={`relative cursor-pointer transition-all duration-350 ${isLast ? "" : "mb-16"}`}
+                    >
+                      {/* Timeline dot */}
+                      <div className={`absolute -left-[49px] top-4 w-8 h-8 rounded-full border-4 border-[#FFFDF8] flex items-center justify-center z-10 shadow-sm transition-all duration-300 ${
+                        isActive ? "bg-[#FF6B00] text-white" : "bg-[#FF6B00]/10 text-[#FF6B00]"
+                      }`}>
+                        <step.Icon className="w-3.5 h-3.5" />
+                      </div>
 
-            {/* Desktop: vertical timeline */}
-            <div className="hidden md:block relative max-w-3xl pl-10 border-l-2 border-[#F3E4D4]">
-              {steps.map((step, idx) => {
-                const isLast = idx === steps.length - 1;
-                return (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: "-60px" }}
-                    transition={{ duration: 0.6, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                    className={`relative ${isLast ? "" : "mb-12"}`}
-                  >
-                    {/* Timeline dot */}
-                    <div className="absolute -left-[49px] top-4 w-8 h-8 rounded-full bg-[#FF6B00]/10 border-4 border-[#FFFDF8] flex items-center justify-center z-10 shadow-sm">
-                      <step.Icon className="w-3.5 h-3.5 text-[#FF6B00]" />
-                    </div>
+                      {/* Step card */}
+                      <div className={`bg-white border rounded-3xl p-8 hover:shadow-sm transition-all duration-300 relative overflow-hidden group ${
+                        isActive ? "border-[#FF6B00]" : "border-[#F3E4D4]"
+                      }`}>
+                        <span className="absolute top-4 right-6 text-7xl font-black text-[#FF6B00]/5 select-none leading-none pointer-events-none">
+                          {step.number}
+                        </span>
 
-                    {/* Step card */}
-                    <div className="bg-white border border-[#F3E4D4] rounded-3xl p-8 hover:border-[#FF6B00]/30 hover:shadow-sm transition-all duration-300 relative overflow-hidden group">
-                      <span className="absolute top-4 right-6 text-7xl font-black text-[#FF6B00]/5 select-none leading-none pointer-events-none">
-                        {step.number}
-                      </span>
-
-                      <div className="flex items-start gap-5">
-                        <div className="bg-[#FF6B00]/10 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-[#FF6B00]/15 transition-colors">
-                          <step.Icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-bold text-[#140A02] mb-2 leading-tight">
-                            {step.headline}
-                          </h3>
-                          <p className="text-[#6B5A4C] text-sm md:text-base leading-relaxed mb-4">
-                            {step.description}
-                          </p>
-                          <div className="border-t border-[#F3E4D4] pt-3 text-xs text-[#FF6B00] font-bold uppercase tracking-wider">
-                            {step.detail}
+                        <div className="flex items-start gap-5">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                            isActive ? "bg-[#FF6B00]/20 text-[#FF6B00]" : "bg-[#FF6B00]/10 text-[#FF6B00]"
+                          }`}>
+                            <step.Icon className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-bold text-[#140A02] mb-2 leading-tight font-sans">
+                              {step.headline}
+                            </h3>
+                            <p className="text-[#6B5A4C] text-sm md:text-base leading-relaxed mb-4 font-sans">
+                              {step.description}
+                            </p>
+                            <div className="border-t border-[#F3E4D4] pt-3 text-xs text-[#FF6B00] font-bold uppercase tracking-wider">
+                              {step.detail}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {/* Right Column: Sticky Visual Panel */}
+              <div className="w-1/2 sticky top-32 p-4 h-[350px] flex items-center justify-center">
+                <div className="w-full max-w-[420px] transition-all duration-350 ease-in-out">
+                  {renderVisualCard(activeStep)}
+                </div>
+              </div>
+
             </div>
+
+            {/* Mobile Layout: Stacked inline visuals */}
+            <div className="flex flex-col gap-8 md:hidden">
+              {steps.map((step, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-[#F3E4D4] rounded-3xl p-6 relative overflow-hidden space-y-6"
+                >
+                  <div className="absolute top-4 right-5 text-5xl font-black text-[#FF6B00]/5 select-none leading-none">
+                    {step.number}
+                  </div>
+                  
+                  <div className="flex gap-4 items-center">
+                    <div className="bg-[#FF6B00]/10 text-[#FF6B00] w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
+                      <step.Icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold text-[#140A02] leading-tight font-sans">{step.headline}</h3>
+                  </div>
+
+                  <p className="text-sm text-[#6B5A4C] leading-relaxed font-sans">{step.description}</p>
+                  
+                  {/* Inline visual below card */}
+                  <div className="border-t border-[#F3E4D4] pt-4">
+                    {renderVisualCard(idx)}
+                  </div>
+
+                  <div className="text-xs text-[#FF6B00] font-bold uppercase tracking-wider">
+                    {step.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </section>
 
-        {/* ── ROI STATS ── */}
-        <section className="py-20 border-t border-[#F3E4D4]">
+        {/* ── HONEST LIMITS SECTION ── */}
+        <section className="py-24 border-t border-[#F3E4D4] bg-[#FFFDF8]">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                The Numbers
+                Capability Matrix
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
-                Why This Changes Everything
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] tracking-tight font-display">
+                What Bavio Does (and Does Not Do)
               </h2>
-              <p className="text-[#6B5A4C] text-sm md:text-base mt-3">
-                Bavio is the difference between a missed opportunity and a booked client.
+              <p className="text-sm text-[#6B5A4C] leading-relaxed">
+                Bavio is exceptionally good at helping businesses manage inbound call flows. Review our honest capability parameters below.
               </p>
             </div>
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-80px" }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {roiItems.map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={itemVariants}
-                  className="bg-white border border-[#F3E4D4] p-7 rounded-3xl hover:border-[#FF6B00]/30 hover:shadow-md transition-all duration-300 flex flex-col"
-                >
-                  <div className="bg-[#FF6B00]/5 text-[#FF6B00] w-11 h-11 rounded-2xl flex items-center justify-center mb-5">
-                    <item.Icon className="w-5 h-5" />
-                  </div>
-                  <div className="text-4xl font-extrabold text-[#FF6B00] mb-1 leading-none">
-                    {item.stat}
-                  </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#140A02] mb-3">
-                    {item.label}
-                  </div>
-                  <p className="text-sm text-[#6B5A4C] leading-relaxed mt-auto">
-                    {item.description}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── HONEST LIMITS ── */}
-        <section className="py-20 border-t border-[#F3E4D4] bg-white/40">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Left: What Bavio Does */}
-              <div className="lg:col-span-6 space-y-6">
-                <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
-                  What to Expect
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              
+              {/* Left Column: What Bavio Does Today */}
+              <div className="bg-white border border-[#F3E4D4] rounded-3xl p-8 space-y-6">
+                <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold block">
+                  What Bavio Does Today
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02]">
-                  What Bavio Does (and Does Not Do)
-                </h2>
-                <p className="text-[#6B5A4C] text-sm md:text-base leading-relaxed">
-                  Bavio is exceptionally good at capturing leads from inbound calls.
-                  Here is exactly what you can count on.
-                </p>
-                <div className="space-y-3">
+                <h3 className="text-xl font-bold text-[#140A02] font-sans">Supported Capabilities</h3>
+                <div className="space-y-4 text-sm text-[#6B5A4C]">
                   {[
-                    "Answers every call instantly",
-                    "English voice support for initial launch markets",
-                    "Asks your custom qualifying questions",
-                    "Captures name, budget, intent & location",
-                    "Sends you instant notifications",
-                    "Stores a full transcript on your dashboard",
-                    "Available Around the Clock Within Your Plan Limits",
+                    "Answers inbound calls",
+                    "Uses saved business information",
+                    "Qualifies enquiries",
+                    "Captures customer requests",
+                    "Stores transcripts",
+                    "Organizes leads",
+                    "Supports English voice profiles for US, UK and Australia",
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-sm font-semibold text-[#140A02]">{item}</span>
+                      <span className="font-semibold text-[#140A02] font-sans text-sm">{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Right: Honest Limits */}
-              <div className="lg:col-span-6 bg-white border border-[#F3E4D4] rounded-3xl p-8">
-                <span className="text-xs uppercase tracking-widest text-[#6B5A4C] font-bold block mb-4">
-                  Honest Limits
-                </span>
-                <h3 className="text-xl font-bold text-[#140A02] mb-6">
+              {/* Right Column: What Bavio Does Not Replace */}
+              <div className="bg-white border border-[#F3E4D4] rounded-3xl p-8 space-y-6">
+                <span className="text-xs uppercase tracking-widest text-[#6E6256] font-bold block">
                   What Bavio Does Not Replace
-                </h3>
-                <div className="space-y-5">
+                </span>
+                <h3 className="text-xl font-bold text-[#140A02] font-sans">Explicit Boundaries</h3>
+                <div className="space-y-4 text-sm text-[#6B5A4C]">
                   {[
-                    {
-                      title: "Not a CRM",
-                      description:
-                        "Bavio captures qualified leads and logs them directly to your central dashboard and call records.",
-                    },
-                    {
-                      title: "Not a Sales Closer",
-                      description:
-                        "Bavio qualifies and captures. Closing deals is still your job. We hand you warm, pre-qualified leads ready to convert.",
-                    },
-                    {
-                      title: "Not an Outbound Dialer",
-                      description:
-                        "Bavio handles inbound calls. Outbound campaigns and cold calling are not part of the current product.",
-                    },
+                    { title: "Not a CRM", desc: "Logs leads but does not manage pipelines or customer relationship histories." },
+                    { title: "Not a sales closer", desc: "Captures and pre-qualifies details; final sales conversion is your job." },
+                    { title: "Not an outbound dialer", desc: "Exclusively handles incoming calls to your assigned numbers." },
+                    { title: "Not emergency-response infrastructure", desc: "Cannot route calls to standard emergency or critical helpline nodes." },
+                    { title: "Does not directly confirm appointments", desc: "Requests are logged. Confirmation requires a future scheduling integration." },
                   ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="border-b border-[#F3E4D4] pb-5 last:border-b-0 last:pb-0"
-                    >
-                      <h4 className="text-sm font-bold text-[#140A02] mb-1">{item.title}</h4>
-                      <p className="text-xs text-[#6B5A4C] leading-relaxed">{item.description}</p>
+                    <div key={i} className="flex items-start gap-3 border-b border-[#F3E4D4]/60 pb-3 last:border-0 last:pb-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
+                      <div>
+                        <h4 className="font-bold text-[#140A02] text-sm font-sans">{item.title}</h4>
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed mt-0.5 font-sans">{item.desc}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
           </div>
         </section>
@@ -431,11 +500,11 @@ export default function HowItWorksPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                   FAQ
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
                   Common Questions
                 </h2>
               </div>
-              <div className="bg-white border border-[#F3E4D4] rounded-3xl px-8 py-4">
+              <div className="bg-white border border-[#F3E4D4] rounded-3xl px-8 py-4 shadow-sm">
                 {faqs.map((faq, i) => (
                   <FaqItem key={i} question={faq.question} answer={faq.answer} />
                 ))}
@@ -445,40 +514,38 @@ export default function HowItWorksPage() {
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="py-20 border-t border-[#F3E4D4] bg-[#FF6B00]/5">
+        <section className="py-24 border-t border-[#F3E4D4] bg-[#FF6B00]/5 w-full">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="max-w-2xl mx-auto"
+              className="max-w-2xl mx-auto space-y-6"
             >
-              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold block mb-4">
-                Ready to Start?
+              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold block">
+                Speak With Bavio
               </span>
-              <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] mb-6 leading-tight">
-                Stop Losing Customers to{" "}
-                <span className="text-[#FF6B00]">Missed Calls.</span>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] leading-tight font-display">
+                Try One Live Bavio Conversation
               </h2>
-              <p className="text-[#6B5A4C] text-base md:text-lg mb-10 leading-relaxed">
-                Try the 3-Minute Bavio Demo. No credit card. Guided Business Setup.
-                See your first lead captured in minutes.
+              <p className="text-[#6B5A4C] text-base md:text-lg leading-relaxed max-w-lg mx-auto font-sans">
+                Create an account and speak with Bavio’s shared AI assistant for up to three minutes.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
+              
+              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                 <Link
-                  href="/pricing"
+                  href="/demo"
                   className="inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white font-bold px-8 py-4 rounded-full text-sm transition-all duration-200 shadow-sm active:scale-[0.98]"
                 >
-                  View Plans & Pricing
+                  Try the 3-Minute Demo
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  href="/demo"
+                  href="/pricing"
                   className="inline-flex items-center justify-center gap-2 bg-white border border-[#F3E4D4] hover:border-[#FF6B00]/30 text-[#140A02] font-bold px-8 py-4 rounded-full text-sm transition-all duration-200 active:scale-[0.98]"
                 >
-                  Try the Live Demo
-                  <Phone className="w-4 h-4 text-[#FF6B00]" />
+                  View Pricing
                 </Link>
               </div>
             </motion.div>

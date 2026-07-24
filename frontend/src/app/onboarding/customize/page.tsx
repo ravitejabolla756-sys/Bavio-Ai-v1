@@ -241,7 +241,7 @@ export default function OnboardingCustomizePage() {
           <textarea
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value.substring(0, 1000))}
-            placeholder="You are a professional AI receptionist for a business in India..."
+            placeholder="You are a professional AI receptionist for a local business..."
             rows={6}
             maxLength={1000}
             className="w-full bg-white border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl p-4 text-xs text-[#140A02] placeholder-[#5A5A66]/40 outline-none transition-all duration-200 resize-none leading-relaxed"
@@ -287,7 +287,7 @@ export default function OnboardingCustomizePage() {
             {[
               { code: "BUDGET", title: "Budget / Price Range", desc: "Helps qualify seriousness of lead" },
               { code: "LOCATION", title: "Location Preference", desc: "Geographic targeting" },
-              { code: "APPOINTMENT", title: "Available Appointment Times", desc: "Direct scheduling" },
+              { code: "APPOINTMENT", title: "Appointment Preferences", desc: "Preferred dates and times" },
               { code: "COMPANY", title: "Company Background", desc: "Learn about caller's business" },
               { code: "EXPERIENCE", title: "Past Experience", desc: "Context for recommendations" }
             ].map((question) => {

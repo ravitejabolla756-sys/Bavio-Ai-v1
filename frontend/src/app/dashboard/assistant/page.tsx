@@ -75,7 +75,7 @@ export default function AssistantDashboardPage() {
           </div>
           <div className="bg-[#FAF7F2] p-4 rounded-xl border border-[#E5E0D8]">
             <span className="text-[11px] font-bold text-[#8A8A96] uppercase tracking-wider block">Response Latency</span>
-            <span className="font-bold text-[#10B981]">Ultra-fast (&lt;500ms)</span>
+            <span className="font-bold text-[#10B981]">Optimized & stable</span>
           </div>
         </div>
 
