@@ -126,7 +126,7 @@ async function checkMinutesLimit(req, res, next) {
  * @param {number}  durationSeconds - Actual call duration in seconds
  * @param {string}  callSid         - Provider call SID for idempotency
  */
-async function deductCallSeconds(businessId, durationSeconds, callSid = null) {
+async function deductCallSeconds(businessId, durationSeconds, callSid = null, detailedMetrics = null) {
     try {
         if (!durationSeconds || durationSeconds <= 0) {
             console.warn(`[BILLING] Skipping deduction: invalid duration ${durationSeconds}s`);
@@ -150,7 +150,7 @@ async function deductCallSeconds(businessId, durationSeconds, callSid = null) {
         // ── Read current balances ─────────────────────────────────────
         const bizRes = await db.query(
             `SELECT
-                email, name,
+                email, name, country,
                 monthly_limit_seconds, monthly_usage_seconds,
                 topup_balance_seconds
              FROM businesses WHERE id = $1
@@ -203,11 +203,49 @@ async function deductCallSeconds(businessId, durationSeconds, callSid = null) {
 
         // ── Write to usage_logs (idempotency anchor) ──────────────────
         if (callSid) {
+            const telephony = detailedMetrics?.telephony || {};
+            const stt = detailedMetrics?.stt || {};
+            const llm = detailedMetrics?.llm || {};
+            const tts = detailedMetrics?.tts || {};
+            const infra = detailedMetrics?.infra || {};
+
+            // Wholesale Cost Estimation Formulas
+            const costTelephony = (telephony.billedSeconds || secondsToDeduct) * 0.0002167 +
+                                  (telephony.recordingUsed ? (telephony.billedSeconds || secondsToDeduct) * 0.0000417 : 0);
+            const costStt = (stt.seconds || 0) * 0.0000717;
+
+            let costLlm = 0;
+            const llmProv = (llm.provider || 'cerebras').toLowerCase();
+            if (llmProv === 'groq') {
+                costLlm = (llm.inputTokens || 0) * 0.0000007 + (llm.outputTokens || 0) * 0.0000009;
+            } else {
+                costLlm = ((llm.inputTokens || 0) + (llm.outputTokens || 0)) * 0.0000006;
+            }
+
+            const costTts = (tts.characters || 0) * 0.000015;
+            const costTotal = costTelephony + costStt + costLlm + costTts;
+
             await db.query(
-                `INSERT INTO usage_logs (user_id, call_sid, minutes_used, seconds_used, cost_total)
-                 VALUES ($1, $2, $3, $4, 0)
-                 ON CONFLICT DO NOTHING`,
-                [businessId, callSid, Math.ceil(secondsToDeduct / 60), secondsToDeduct]
+                `INSERT INTO usage_logs (
+                    business_id, client_id, user_id, call_sid, minutes_used, seconds_used, cost,
+                    cost_telephony, cost_stt, cost_tts, cost_total,
+                    telephony_provider, telephony_region, telephony_duration_seconds, telephony_billed_seconds, recording_used,
+                    stt_seconds, stt_model, stt_cost,
+                    llm_input_tokens, llm_output_tokens, llm_reasoning_tokens, llm_provider, llm_model, llm_tool_calls_count, llm_cost,
+                    tts_characters, tts_duration_seconds, tts_voice_id, tts_model, tts_cost,
+                    worker_region, session_duration_seconds, data_transferred_bytes
+                 )
+                 VALUES ($1, $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+                 ON CONFLICT (call_sid) DO NOTHING`,
+                [
+                    businessId, callSid, Math.ceil(secondsToDeduct / 60), secondsToDeduct, costTotal,
+                    costTelephony, costStt, costTts, costTotal,
+                    telephony.provider || 'twilio', telephony.region || biz.country || 'US', telephony.durationSeconds || secondsToDeduct, telephony.billedSeconds || secondsToDeduct, telephony.recordingUsed || false,
+                    stt.seconds || 0, stt.model || 'deepgram-flux', costStt,
+                    llm.inputTokens || 0, llm.outputTokens || 0, llm.reasoningTokens || 0, llm.provider || 'cerebras', llm.model || 'gpt-oss-120b', llm.toolCallsCount || 0, costLlm,
+                    tts.characters || 0, tts.durationSeconds || 0, tts.voiceId || null, tts.model || 'eleven-flash-2.5', costTts,
+                    infra.workerRegion || 'us-east-1', infra.sessionDurationSeconds || secondsToDeduct, infra.dataTransferredBytes || 0
+                ]
             );
         }
 
@@ -230,6 +268,17 @@ async function deductCallSeconds(businessId, durationSeconds, callSid = null) {
             if (totalAvailable < 1800 && totalAvailable > 0) {
                 const minsLeft = Math.ceil(totalAvailable / 60);
                 console.log(`[BILLING ALERT] Business ${businessId} has only ${minsLeft} min total remaining`);
+                await db.query(
+                    `INSERT INTO notifications (business_id, title, message, type, status, created_at)
+                     VALUES ($1, 'Low Call Minutes Remaining', $2, 'warning', 'unread', NOW())`,
+                    [businessId, `Your Bavio account has only ${minsLeft} minutes remaining. Please buy top-up minutes to avoid interruptions.`]
+                );
+            } else if (totalAvailable <= 0) {
+                await db.query(
+                    `INSERT INTO notifications (business_id, title, message, type, status, created_at)
+                     VALUES ($1, 'Call Minutes Exhausted', 'Your Bavio account call minutes are fully exhausted. Inbound call handling is paused.', 'error', 'unread', NOW())`,
+                    [businessId]
+                );
             }
         }
 

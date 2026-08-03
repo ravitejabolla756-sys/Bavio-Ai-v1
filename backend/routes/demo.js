@@ -6,6 +6,10 @@ const twilioProvider = require('../providers/twilio');
 const redisService = require('../services/redis/redisService');
 const emailService = require('../services/emailService');
 const phoneValidation = require('../utils/phoneValidation');
+const jwt = require('jsonwebtoken');
+const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
+const JWT_SECRET = process.env.JWT_SECRET || '7e0341f2ee874653ce795be1851359683e92e769db290b69965697ae80da0a5e5745972bd30e6b51088fbc878ea141f97acec678ca57855eb024064f44f4d220';
+const { selectWorkerRegionUrl } = require('../voice/routing/regionalWorkerRouter');
 
 // Helper to validate email format
 function isValidEmail(email) {
@@ -324,21 +328,49 @@ router.post('/incoming', async (req, res) => {
       [CallSid, From, To || '+15555550100']
     );
     
-    // 3. Connect to Media Stream WebSocket
-    const host = req.headers.host || 'localhost:5001';
-    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const wsProtocol = isSsl ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
-    
-    console.log(`[TWILIO DEMO Webhook] Routing to WebSocket: ${wsUrl}`);
-    
+    // ── Select Voice Stack (feature-flagged) ─────────────────────────────
+    let voiceStack = 'current_openai';
+    try {
+      voiceStack = selectVoiceStack('00000000-0000-0000-0000-000000000000', { callSid: CallSid });
+    } catch (routerErr) {
+      console.error('[TWILIO DEMO Webhook] selectVoiceStack error:', routerErr.message);
+    }
+
+    let wsUrl;
+    if (voiceStack === PROVIDER_MODULAR) {
+      const token = jwt.sign(
+        {
+          callSid: CallSid,
+          businessId: '00000000-0000-0000-0000-000000000000',
+          assistantId: '00000000-0000-0000-0000-000000000000', // demo placeholder
+          isDemo: true
+        },
+        JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      const { FromCountry = '', ToCountry = '' } = req.body;
+      const voiceWorkerBase = await selectWorkerRegionUrl({
+        toNumber: To,
+        toCountry: ToCountry,
+        fromCountry: FromCountry
+      });
+      wsUrl = `${voiceWorkerBase}/api/call-stream/ws?token=${token}`;
+      console.log(`[TWILIO DEMO Webhook] Routing to Modular Voice Worker: ${wsUrl}`);
+    } else {
+      const host = req.headers.host || 'localhost:5001';
+      const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      const wsProtocol = isSsl ? 'wss' : 'ws';
+      wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
+      console.log(`[TWILIO DEMO Webhook] Routing to Local Media Stream: ${wsUrl}`);
+    }
+
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
     <Stream url="${wsUrl}" />
   </Connect>
 </Response>`;
-    
+
     res.type('text/xml');
     return res.send(twiml);
   } catch (err) {

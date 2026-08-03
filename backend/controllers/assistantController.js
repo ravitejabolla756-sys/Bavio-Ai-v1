@@ -164,11 +164,62 @@ async function updateAssistantById(req, res) {
   }
 }
 
+async function updateAssistantVoice(req, res) {
+  try {
+    const { id } = req.params;
+    const businessId = req.user?.id || req.client?.id;
+    const { voiceId } = req.body;
+
+    if (!voiceId) {
+      return res.status(400).json({ error: 'invalid_voice', message: 'voiceId is required' });
+    }
+
+    const db = require('../database/db');
+
+    // 1. Revalidate Selected Voice from voices catalog table
+    const voiceCheck = await db.query(
+      'SELECT * FROM voices WHERE voice_id = $1',
+      [voiceId]
+    );
+
+    if (voiceCheck.rows.length === 0) {
+      return res.status(400).json({ error: 'invalid_voice', message: 'The selected voice is unavailable or removed' });
+    }
+
+    const selectedVoice = voiceCheck.rows[0];
+
+    // 2. Save voice_id in assistants table
+    const result = await db.query(
+      `UPDATE assistants 
+       SET voice_id = $1, updated_at = NOW()
+       WHERE id = $2 AND (business_id = $3 OR client_id = $3)
+       RETURNING *`,
+      [voiceId, id, businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'not_found', message: 'Assistant not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      voice_id: voiceId,
+      voice_display_name: selectedVoice.voice_display_name,
+      updatedAt: result.rows[0].updated_at
+    });
+
+  } catch (err) {
+    console.error('updateAssistantVoice error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
 module.exports = { 
   createAssistant, 
   updateAssistant, 
   getAssistants, 
   getAssistantConfig,
   getAssistantById,
-  updateAssistantById
+  updateAssistantById,
+  updateAssistantVoice
 };

@@ -5,6 +5,8 @@ const voiceOrchestrator = require('../services/voiceOrchestrator');
 const { requireAuth } = require('../middleware/auth');
 const { checkMinutesLimit } = require('../middleware/planEnforcement');
 const multer = require('multer');
+const db = require('../database/db');
+const axios = require('axios');
 
 // Configure multer for audio file uploads
 const upload = multer({ 
@@ -120,6 +122,65 @@ router.post('/chat', requireAuth, async (req, res) => {
     } catch (error) {
         console.error('Chat test error:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /voice/catalog - Expose curated voices catalog
+ */
+router.get('/catalog', requireAuth, async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT voice_id, voice_display_name, voice_gender, voice_accent, voice_language, voice_style, preview_url
+             FROM voices
+             ORDER BY voice_language, voice_accent, voice_display_name`
+        );
+        
+        const catalog = result.rows.map(v => ({
+            voice_id: v.voice_id,
+            voice_display_name: v.voice_display_name,
+            voice_gender: v.voice_gender,
+            voice_accent: v.voice_accent,
+            voice_language: v.voice_language,
+            voice_style: v.voice_style,
+            preview_url: `/voice/preview/${v.voice_id}`
+        }));
+        
+        res.json(catalog);
+    } catch (error) {
+        console.error('Failed to retrieve voices catalog:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /voice/preview/:voiceId - Proxied preview stream to protect provider credentials
+ */
+router.get('/preview/:voiceId', async (req, res) => {
+    try {
+        const { voiceId } = req.params;
+        
+        const result = await db.query('SELECT * FROM voices WHERE voice_id = $1', [voiceId]);
+        const voice = result.rows[0];
+        if (!voice) {
+            return res.status(404).json({ error: 'Voice not found' });
+        }
+        
+        const previewUrl = `https://api.elevenlabs.io/v1/voices/${voiceId}/previews`;
+        
+        const response = await axios({
+            method: 'get',
+            url: previewUrl,
+            responseType: 'stream',
+            timeout: 5000
+        });
+        
+        res.set('Content-Type', response.headers['content-type'] || 'audio/mpeg');
+        response.data.pipe(res);
+        
+    } catch (error) {
+        console.error('Failed to proxy voice preview:', error);
+        res.status(500).json({ error: 'Failed to retrieve preview' });
     }
 });
 

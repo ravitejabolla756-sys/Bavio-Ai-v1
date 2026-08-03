@@ -31,6 +31,18 @@ if (process.env.NODE_ENV === 'production') {
     }
 }
 
+// ── Voice stack configuration validation ──────────────────────────────────────
+// Validates voice stack env vars on startup.
+// Fails fast with a clear error when modular_v1 is enabled but keys are missing.
+// Silent no-op when VOICE_STACK_PROVIDER=current_openai (default).
+try {
+    const { getVoiceConfig } = require('./voice/config/voiceConfig');
+    getVoiceConfig();  // Singleton init — throws on invalid config
+} catch (voiceConfigErr) {
+    console.error('❌ CRITICAL: Voice stack configuration error:', voiceConfigErr.message);
+    process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const { generalLimiter, apiLimiter } = require('./middleware/rateLimit');
@@ -110,8 +122,10 @@ const telephonyRoutes = require('./routes/telephony');
 const leadsRoutes = require('./routes/leads');
 const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
+const indiaTelephonyRoutes = require('./routes/indiaTelephony');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
+const cogsDashboardRoutes = require('./routes/cogsDashboard');
 
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const phoneRoutes = require('./routes/phone');
@@ -134,6 +148,8 @@ app.use('/telephony', telephonyRoutes);
 app.use('/leads', apiLimiter, leadsRoutes);
 app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
+app.use('/india-telephony', apiLimiter, indiaTelephonyRoutes);
+app.use('/cogs', apiLimiter, cogsDashboardRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/phone', phoneRoutes);
 app.use('/demo', demoRoutes);

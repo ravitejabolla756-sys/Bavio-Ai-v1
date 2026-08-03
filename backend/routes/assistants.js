@@ -10,4 +10,6 @@ router.get('/:client_id/config', requireAuth, assistantController.getAssistantCo
 router.get('/by-id/:id', requireAuth, assistantController.getAssistantById);
 router.put('/by-id/:id', requireAuth, assistantController.updateAssistantById);
 
+router.patch('/:id/voice', requireAuth, assistantController.updateAssistantVoice);
+
 module.exports = router;

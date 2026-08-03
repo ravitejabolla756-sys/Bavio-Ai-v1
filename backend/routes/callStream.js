@@ -4,6 +4,10 @@ const openAIService = require('../services/openAIService');
 const deepgramService = require('../services/deepgramService');
 const encryption = require('../utils/encryption');
 
+// ── Voice stack routing (feature-flagged; default is current_openai) ─────────
+const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
+const ModularVoiceSession = require('../voice/sessions/ModularVoiceSession');
+
 const twilioWss = new WebSocket.Server({ noServer: true });
 
 // Convert mulaw to 16-bit linear PCM (for energy/volume calculations)
@@ -125,6 +129,68 @@ twilioWss.on('connection', async (ws, request) => {
     ws.close();
     return;
   }
+
+  // ── Voice stack selection (feature-flagged) ─────────────────────────────
+  // selectVoiceStack() returns 'current_openai' or 'modular_v1' based on:
+  //   VOICE_STACK_PROVIDER, VOICE_STACK_ALLOWED_BUSINESS_IDS, VOICE_STACK_ROLLOUT_PERCENT
+  // All current customers continue using the existing pipeline (current_openai).
+  let voiceStack = 'current_openai';
+  try {
+    voiceStack = selectVoiceStack(businessId, { callSid });
+  } catch (routerErr) {
+    console.error('[Twilio Stream] VoiceRouter error, defaulting to current_openai:', routerErr.message);
+  }
+
+  // ── modular_v1 path ─────────────────────────────────────────────────────
+  // Only entered when explicitly enabled. On any startup failure the session
+  // throws and the connection is closed gracefully — NO fallback into the
+  // current pipeline mid-call to avoid silent failures.
+  if (voiceStack === PROVIDER_MODULAR) {
+    console.log(`[Twilio Stream] Using modular_v1 session for callSid=${callSid}`);
+    const modularSession = new ModularVoiceSession();
+    const systemPromptForModular = isDemo
+      ? openAIService.buildSystemPrompt(assistant, business)
+      : openAIService.buildSystemPrompt(assistant, business);
+
+    ws.on('message', async (message) => {
+      try {
+        const data = JSON.parse(message);
+        if (data.event === 'start') {
+          const sid = data.start.streamSid;
+          try {
+            await modularSession.start({
+              ws,
+              callSid,
+              streamSid : sid,
+              business,
+              assistant,
+              systemPrompt: systemPromptForModular,
+              isDemo,
+            });
+          } catch (startErr) {
+            console.error('[Twilio Stream] ModularVoiceSession.start() failed:', startErr.message);
+            ws.close();
+          }
+        } else if (data.event === 'media') {
+          const chunk = Buffer.from(data.media.payload, 'base64');
+          modularSession.handleAudio(chunk);
+        } else if (data.event === 'stop') {
+          await modularSession.end();
+        }
+      } catch (err) {
+        console.error('[Twilio Stream][modular_v1] Message error:', err.message);
+      }
+    });
+
+    ws.on('close', async () => {
+      console.log('[Twilio Stream][modular_v1] WebSocket closed.');
+      if (demoTimer) clearTimeout(demoTimer);
+      await modularSession.end().catch(e => console.error('[Twilio Stream] modularSession.end error:', e.message));
+    });
+
+    return;  // Do NOT fall through to the current_openai code path
+  }
+  // ── END modular_v1 path ─────────────────────────────────────────────────
 
   const voiceId = assistant.voice;
   const language = assistant.language || 'en-US';
@@ -355,17 +421,18 @@ Speak naturally, keep your answers concise and conversational, and let the calle
 
       console.log(`[Twilio Stream] Saving Call Summary. Duration: ${durationSec}s`);
 
-      // Save call record
+      // Save call record — voice_stack column records which pipeline ran this call
       const callInsert = await db.query(
         `INSERT INTO calls (
           user_id, business_id, caller_number, provider_call_id, call_status, status,
-          provider, duration, duration_seconds, transcript, direction, started_at, ended_at
+          provider, voice_stack, duration, duration_seconds, transcript, direction, started_at, ended_at
          )
-         VALUES ($1, $1, 'unknown', $2, 'completed', 'completed', 'twilio_stream', $3, $4, $5, 'inbound', $6, NOW())
+         VALUES ($1, $1, 'unknown', $2, 'completed', 'completed', 'twilio_stream', $3, $4, $5, $6, 'inbound', $7, NOW())
          RETURNING id`,
         [
           businessId,
           callSid || 'stream_call',
+          voiceStack,        // 'current_openai' (always for this code path)
           durationMin,
           durationSec,
           JSON.stringify(conversationHistory),

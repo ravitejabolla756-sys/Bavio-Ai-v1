@@ -7,6 +7,11 @@ const storageService = require('../services/storage/storageService');
 const audioService = require('../services/audio/audioService');
 const axios = require('axios');
 const { checkCallBalance, deductCallSeconds } = require('../middleware/planEnforcement');
+const jwt = require('jsonwebtoken');
+const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
+const JWT_SECRET = process.env.JWT_SECRET || '7e0341f2ee874653ce795be1851359683e92e769db290b69965697ae80da0a5e5745972bd30e6b51088fbc878ea141f97acec678ca57855eb024064f44f4d220';
+const { selectWorkerRegionUrl } = require('../voice/routing/regionalWorkerRouter');
+
 
 const activeRequests = {};
 
@@ -185,13 +190,41 @@ async function handleIncomingCall(req, res) {
       console.warn('[TWILIO] Skipping call record and session storage for unresolved business');
     }
 
-    // ── Twilio Media Stream over WebSocket ──────────────────────────────
-    const host = req.headers.host || 'localhost:3000';
-    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const wsProtocol = isSsl ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
+    // ── Select Voice Stack (feature-flagged) ─────────────────────────────
+    let voiceStack = 'current_openai';
+    try {
+      voiceStack = selectVoiceStack(businessId, { callSid: CallSid });
+    } catch (routerErr) {
+      console.error('[TWILIO] selectVoiceStack error:', routerErr.message);
+    }
 
-    console.log(`[TWILIO] Routing call to Media Stream WebSocket: ${wsUrl}`);
+    let wsUrl;
+    if (voiceStack === PROVIDER_MODULAR) {
+      const token = jwt.sign(
+        {
+          callSid: CallSid,
+          businessId,
+          assistantId: assistant?.id,
+          isDemo: false
+        },
+        JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      const { FromCountry = '', ToCountry = '' } = req.body;
+      const voiceWorkerBase = await selectWorkerRegionUrl({
+        toNumber: To,
+        toCountry: ToCountry,
+        fromCountry: FromCountry
+      });
+      wsUrl = `${voiceWorkerBase}/api/call-stream/ws?token=${token}`;
+      console.log(`[TWILIO] Routing call to Modular Voice Worker: ${wsUrl}`);
+    } else {
+      const host = req.headers.host || 'localhost:3000';
+      const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      const wsProtocol = isSsl ? 'wss' : 'ws';
+      wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
+      console.log(`[TWILIO] Routing call to Local Media Stream: ${wsUrl}`);
+    }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
