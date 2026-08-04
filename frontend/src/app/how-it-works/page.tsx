@@ -535,7 +535,7 @@ export default function HowItWorksPage() {
               
               <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                 <Link
-                  href="/demo"
+                  href="/signup"
                   className="inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white font-bold px-8 py-4 rounded-full text-sm transition-all duration-200 shadow-sm active:scale-[0.98]"
                 >
                   Try the 3-Minute Demo

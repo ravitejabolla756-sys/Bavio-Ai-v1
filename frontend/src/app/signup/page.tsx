@@ -20,29 +20,7 @@ import {
 import Logo from "@/components/Logo";
 import { setCookie } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
-
-function formatPhoneNumber(value: string, countryCode: string) {
-  const digits = value.replace(/\D/g, "");
-  if (countryCode === "IN") {
-    if (digits.length <= 5) return digits;
-    return `${digits.slice(0, 5)} ${digits.slice(5, 10)}`;
-  }
-  if (countryCode === "US" || countryCode === "CA") {
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  }
-  if (countryCode === "GB") {
-    if (digits.length <= 4) return digits;
-    return `${digits.slice(0, 4)} ${digits.slice(4, 10)}`;
-  }
-  if (countryCode === "AU") {
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
-  }
-  return digits;
-}
+import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -61,52 +39,8 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneVal, setPhoneVal] = useState("");
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [password, setPassword] = useState("");
-
-  const COUNTRIES: {
-    name: string;
-    code: string;
-    dialCode: string;
-    flag: string;
-    mask: string;
-    minLength: number;
-    maxLength: number;
-  }[] = [
-    { name: "India", code: "IN", dialCode: "+91", flag: "🇮🇳", mask: "XXXXX XXXXX", minLength: 10, maxLength: 10 },
-    { name: "United States", code: "US", dialCode: "+1", flag: "🇺🇸", mask: "(XXX) XXX-XXXX", minLength: 10, maxLength: 10 },
-    { name: "United Kingdom", code: "GB", dialCode: "+44", flag: "🇬🇧", mask: "XXXX XXXXXX", minLength: 10, maxLength: 10 },
-    { name: "Australia", code: "AU", dialCode: "+61", flag: "🇦🇺", mask: "XXX XXX XXX", minLength: 9, maxLength: 9 },
-    { name: "Canada", code: "CA", dialCode: "+1", flag: "🇨🇦", mask: "(XXX) XXX-XXXX", minLength: 10, maxLength: 10 },
-    { name: "Germany", code: "DE", dialCode: "+49", flag: "🇩🇪", mask: "XXX XXXXXXX", minLength: 10, maxLength: 11 },
-    { name: "France", code: "FR", dialCode: "+33", flag: "🇫🇷", mask: "X XX XX XX XX", minLength: 9, maxLength: 9 },
-    { name: "Singapore", code: "SG", dialCode: "+65", flag: "🇸🇬", mask: "XXXX XXXX", minLength: 8, maxLength: 8 },
-    { name: "United Arab Emirates", code: "AE", dialCode: "+971", flag: "🇦🇪", mask: "XX XXX XXXX", minLength: 9, maxLength: 9 },
-  ];
-
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [focusedIndex, setFocusedIndex] = useState(0);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Click outside to close dropdown
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Auto-focus search input when dropdown opens
-  useEffect(() => {
-    if (isDropdownOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isDropdownOpen]);
 
   // URL Parameter Detection States
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -252,11 +186,10 @@ export default function SignUpPage() {
       temp.email = "Email already in use";
     }
 
-    const cleanDigits = phoneVal.replace(/\D/g, "");
-    if (!cleanDigits) {
+    if (!phoneVal) {
       temp.phone = "Phone number is required";
-    } else if (cleanDigits.length < selectedCountry.minLength || cleanDigits.length > selectedCountry.maxLength) {
-      temp.phone = `Phone number must be ${selectedCountry.minLength} digits`;
+    } else if (!isPhoneValid) {
+      temp.phone = "Enter a valid phone number";
     }
 
     if (!password) {
@@ -266,7 +199,7 @@ export default function SignUpPage() {
     }
 
     return temp;
-  }, [name, email, phoneVal, selectedCountry, password, isEmailUnique]);
+  }, [name, email, phoneVal, isPhoneValid, password, isEmailUnique]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -295,7 +228,7 @@ export default function SignUpPage() {
       const result = await authApi.signup({
         name: name.trim(),
         email: email.trim(),
-        phone: selectedCountry.dialCode + phoneVal.replace(/\D/g, ""),
+        phone: phoneVal,
         password,
         plan: selectedPlan || undefined,
         demoCompleted: demoCompletedFlag
@@ -549,144 +482,17 @@ export default function SignUpPage() {
                   </div>
 
                   {/* Phone Number */}
-                  <div className="relative">
-                    <label htmlFor="phone-input" className="block font-semibold text-sm text-[#14141A] mb-1.5 pl-1 font-sans">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <div 
-                      className={`flex items-center w-full h-[56px] bg-[#FAF7F2] border ${
-                        blurredFields.phone && clientErrors.phone ? "border-red-500" : "border-[#E5E0D8] focus-within:border-[#FF6B00]"
-                      } focus-within:ring-4 focus-within:ring-[#FF6B00]/10 rounded-xl transition-all duration-200 relative`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-1.5 px-3.5 h-full hover:bg-black/5 rounded-l-xl transition-all duration-200 outline-none select-none shrink-0"
-                        style={{ width: "115px" }}
-                      >
-                        <span className="text-xl leading-none">{selectedCountry.flag}</span>
-                        <span className="text-sm font-semibold text-[#14141A]">{selectedCountry.dialCode}</span>
-                        <span className="text-[9px] text-[#8A8A96]">▼</span>
-                      </button>
-                      <div className="w-[1px] h-[24px] bg-[#E5E0D8] shrink-0" />
-                      <input
-                        id="phone-input"
-                        type="tel"
-                        required
-                        aria-required="true"
-                        aria-describedby={blurredFields.phone && clientErrors.phone ? "phone-error" : undefined}
-                        placeholder={selectedCountry.mask.replace(/X/g, "•")}
-                        value={formatPhoneNumber(phoneVal, selectedCountry.code)}
-                        onFocus={() => handleFieldFocus("phone")}
-                        onBlur={() => markBlurred("phone")}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/\D/g, "");
-                          setPhoneVal(raw.slice(0, selectedCountry.maxLength));
-                        }}
-                        className="flex-1 bg-transparent h-full px-4 text-base text-[#14141A] placeholder-[#8A8A96] outline-none font-sans"
-                      />
-                    </div>
-                    {blurredFields.phone && clientErrors.phone && (
-                      <p id="phone-error" className="text-red-500 text-xs mt-1.5 pl-1 font-semibold">{clientErrors.phone}</p>
-                    )}
-
-                    {/* Premium Dropdown */}
-                    {isDropdownOpen && (
-                      <div
-                        ref={dropdownRef}
-                        className="absolute z-50 left-0 right-0 mt-1 bg-white border border-[#E5E0D8] rounded-[16px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-2 w-full animate-in fade-in slide-in-from-top-2 duration-200"
-                        style={{ top: "100%" }}
-                      >
-                        {/* Search Input */}
-                        <div className="relative mb-2">
-                          <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder="Search country or code..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              setFocusedIndex(0);
-                            }}
-                            onKeyDown={(e) => {
-                              const filtered = COUNTRIES.filter(c =>
-                                c.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-                                c.dialCode.includes(searchQuery.toLowerCase().trim()) ||
-                                c.code.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                              );
-                              if (e.key === "ArrowDown") {
-                                e.preventDefault();
-                                setFocusedIndex(prev => (prev + 1) % filtered.length);
-                              } else if (e.key === "ArrowUp") {
-                                e.preventDefault();
-                                setFocusedIndex(prev => (prev - 1 + filtered.length) % filtered.length);
-                              } else if (e.key === "Enter") {
-                                if (filtered[focusedIndex]) {
-                                  e.preventDefault();
-                                  setSelectedCountry(filtered[focusedIndex]);
-                                  setPhoneVal("");
-                                  setIsDropdownOpen(false);
-                                  setSearchQuery("");
-                                }
-                              } else if (e.key === "Escape") {
-                                setIsDropdownOpen(false);
-                              }
-                            }}
-                            className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2 px-3 text-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200 font-sans"
-                          />
-                        </div>
-                        {/* List */}
-                        <div 
-                          className="flex flex-col max-h-[200px] overflow-y-auto custom-scrollbar"
-                          style={{
-                            scrollbarWidth: "thin",
-                            scrollbarColor: "#FF6B00 rgba(0,0,0,0.05)"
-                          }}
-                        >
-                          {COUNTRIES.filter(c =>
-                            c.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-                            c.dialCode.includes(searchQuery.toLowerCase().trim()) ||
-                            c.code.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                          ).map((c, idx) => {
-                            const isSelected = c.code === selectedCountry.code;
-                            const isFocused = idx === focusedIndex;
-                            return (
-                              <button
-                                key={c.code}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedCountry(c);
-                                  setPhoneVal("");
-                                  setIsDropdownOpen(false);
-                                  setSearchQuery("");
-                                }}
-                                className={`flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
-                                  isFocused || isSelected
-                                    ? "bg-[#FF6B00]/10 text-[#FF6B00]"
-                                    : "hover:bg-[#FAF7F2] text-[#14141A]"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg leading-none select-none">{c.flag}</span>
-                                  <span className="font-semibold">{c.name}</span>
-                                </div>
-                                <span className={`text-xs ${isSelected ? "text-[#FF6B00]" : "text-[#8A8A96]"} font-bold`}>{c.dialCode}</span>
-                              </button>
-                            );
-                          })}
-                          {COUNTRIES.filter(c =>
-                            c.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-                            c.dialCode.includes(searchQuery.toLowerCase().trim()) ||
-                            c.code.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                          ).length === 0 && (
-                            <div className="text-center py-4 text-xs text-[#8A8A96] font-semibold font-sans">
-                              No countries found
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <PhoneInput
+                    id="phone-input"
+                    value={phoneVal}
+                    onChange={(val, valid) => {
+                      setPhoneVal(val);
+                      setIsPhoneValid(valid);
+                    }}
+                    onBlur={() => markBlurred("phone")}
+                    error={blurredFields.phone && clientErrors.phone ? clientErrors.phone : undefined}
+                    required
+                  />
 
                   {/* Password */}
                   <div>

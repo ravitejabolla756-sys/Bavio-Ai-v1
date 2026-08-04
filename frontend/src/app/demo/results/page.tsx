@@ -210,10 +210,10 @@ export default function DemoResultsPage() {
 
                   <div className="pt-4 border-t border-[#F3E4D4]/60 flex flex-col md:flex-row gap-3">
                     <Link
-                      href="/pricing"
+                      href="/dashboard"
                       className="flex-1 bg-[#FF6B00] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 text-sm"
                     >
-                      View Plans
+                      Go to Dashboard
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                     <Link

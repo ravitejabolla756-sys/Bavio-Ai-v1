@@ -894,7 +894,7 @@ export default function PricingPage() {
             </button>
 
             <Link
-              href="/demo"
+              href="/signup"
               className="w-full sm:w-auto border border-[#FF6B00] hover:bg-[#FF6B00] hover:text-white text-[#FF6B00] font-bold text-sm py-3.5 px-8 rounded-xl uppercase tracking-wider transition-all duration-200 text-center hover:scale-[1.02] active:scale-[0.98] font-sans"
             >
               Try the AI Assistant Demo

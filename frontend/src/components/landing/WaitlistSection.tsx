@@ -59,7 +59,7 @@ export default function WaitlistSection() {
 
           {/* Action Button */}
           <Link
-            href="/demo"
+            href="/signup"
             className="bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
           >
             <span>Try the 3-Minute Demo</span>

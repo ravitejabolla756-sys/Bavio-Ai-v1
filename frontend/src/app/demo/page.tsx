@@ -26,13 +26,7 @@ import Logo from "@/components/Logo";
 import Navbar from "@/components/landing/Navbar";
 import { setCookie, getCookie } from "@/lib/auth-utils";
 import { setAuthData, leadsApi, demoApi } from "@/lib/api";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
-
-const STATIC_COUNTRIES = [
-  { code: "US", flag: "🇺🇸", dialCode: "+1", name: "United States" },
-  { code: "GB", flag: "🇬🇧", dialCode: "+44", name: "United Kingdom" },
-  { code: "AU", flag: "🇦🇺", dialCode: "+61", name: "Australia" }
-];
+import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function DemoPage() {
   const router = useRouter();
@@ -45,7 +39,8 @@ export default function DemoPage() {
 
   // Phone input states
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState(STATIC_COUNTRIES[0]);
+  const [countryCode, setCountryCode] = useState("IN");
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Call stages: 'form' | 'calling'
@@ -88,21 +83,6 @@ export default function DemoPage() {
       }
     }
   }, []);
-
-  // Phone number validation using libphonenumber-js
-  const isPhoneValid = useMemo(() => {
-    if (!phoneNumber) return false;
-    const trimmed = phoneNumber.trim();
-    if (trimmed.startsWith("+91") || (trimmed.startsWith("91") && trimmed.length > 9)) {
-      return false;
-    }
-    let fullPhone = trimmed;
-    if (!fullPhone.startsWith("+")) {
-      fullPhone = selectedCountry.dialCode + trimmed.replace(/\D/g, "");
-    }
-    const parsed = parsePhoneNumberFromString(fullPhone, selectedCountry.code as any);
-    return Boolean(parsed && parsed.isValid() && parsed.country === selectedCountry.code);
-  }, [phoneNumber, selectedCountry]);
 
   const cleanPhone = phoneNumber.replace(/\D/g, "");
 
@@ -181,11 +161,7 @@ export default function DemoPage() {
     setTranscript([]);
 
     try {
-      let fullPhone = phoneNumber.trim();
-      if (!fullPhone.startsWith("+")) {
-        fullPhone = selectedCountry.dialCode + fullPhone.replace(/\D/g, "");
-      }
-      const response = await demoApi.start(fullPhone, selectedCountry.code);
+      const response = await demoApi.start(phoneNumber, countryCode);
       if (response && response.success) {
         setCallStage("calling");
         
@@ -491,51 +467,20 @@ export default function DemoPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <div className="relative flex items-center w-full bg-[#FAF7F2] border border-[#E5E0D8] focus-within:border-[#FF6B00] focus-within:ring-4 focus-within:ring-[#FF6B00]/10 rounded-[20px] transition-all duration-200">
-                          <div className="relative pl-4 flex items-center select-none cursor-pointer shrink-0 border-r border-[#E5E0D8]/60 pr-2">
-                            <select
-                              value={selectedCountry.code}
-                              onChange={(e) => {
-                                const c = STATIC_COUNTRIES.find((x) => x.code === e.target.value);
-                                if (c) setSelectedCountry(c);
-                              }}
-                              className="bg-transparent border-none text-sm font-bold text-[#6B5A4C] outline-none cursor-pointer pr-1 flex items-center gap-1"
-                            >
-                              <option value="US">🇺🇸 +1</option>
-                              <option value="GB">🇬🇧 +44</option>
-                              <option value="AU">🇦🇺 +61</option>
-                            </select>
-                          </div>
-                          
-                          <input
-                            type="tel"
-                            value={phoneNumber}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              // Allow leading + and then digits
-                              const cleaned = val.replace(/(?!^\+)\D/g, "");
-                              setPhoneNumber(cleaned);
-                            }}
-                            placeholder="Enter mobile number"
-                            className="w-full bg-transparent pl-4 pr-11 py-4 text-base text-[#14141A] placeholder-[#8A8A96] font-semibold outline-none font-sans"
-                          />
-                          
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
-                            {phoneNumber.length > 0 && (
-                              isPhoneValid ? (
-                                <span className="text-green-500 font-bold text-sm select-none">✓</span>
-                              ) : (
-                                <span className="text-red-500 font-bold text-sm select-none">✗</span>
-                              )
-                            )}
-                          </div>
-                        </div>
+                        <PhoneInput
+                          value={phoneNumber}
+                          onChange={(val, valid, country) => {
+                            setPhoneNumber(val);
+                            setIsPhoneValid(valid);
+                            setCountryCode(country.code);
+                          }}
+                          label=""
+                          required
+                        />
 
                         {phoneNumber.length > 0 && !isPhoneValid && (
                           <p className="text-[11px] text-red-500 font-bold font-sans mt-1">
-                            {phoneNumber.startsWith("+91") || phoneNumber.startsWith("91")
-                              ? "India (+91) is not supported for the Bavio phone demo."
-                              : `Please enter a valid mobile number for ${selectedCountry.name} (${selectedCountry.dialCode}).`}
+                            Please enter a valid mobile number.
                           </p>
                         )}
 
