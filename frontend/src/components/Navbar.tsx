@@ -45,9 +45,9 @@ export default function Navbar() {
         initial={reduce ? {} : { opacity: 0, y: -12, x: "-50%" }}
         animate={reduce ? {} : { opacity: 1, y: 0, x: "-50%" }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="fixed top-5 left-1/2 z-[1000] w-[96%] max-w-[1180px] h-16 bg-black rounded-full flex items-center justify-between pl-4 pr-2.5 pointer-events-auto"
+        className="fixed top-5 left-1/2 z-[1000] w-[96%] max-w-[1180px] h-16 bg-white/95 backdrop-blur-md border border-[#EADFD3] rounded-full flex items-center justify-between pl-4 pr-2.5 pointer-events-auto"
         style={{
-          boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          boxShadow: "0 4px 20px rgba(20,10,2,0.05)",
         }}
       >
         
@@ -58,8 +58,8 @@ export default function Navbar() {
           style={{ gap: "10px" }}
           aria-label="Bavio AI home"
         >
-          <Logo className="w-8 h-8 flex-shrink-0" color="text-[#FF6B17]" />
-          <span className="font-sans font-bold text-[20px] text-white leading-none tracking-tight">
+          <Logo className="w-8 h-8 flex-shrink-0" />
+          <span className="font-sans font-bold text-[20px] text-[#140B06] leading-none tracking-tight">
             Bavio AI
           </span>
         </Link>
@@ -72,9 +72,9 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="font-sans font-medium text-[15px] transition-colors duration-250 ease-out hover:text-white"
+                className="font-sans font-semibold text-[15px] transition-colors duration-250 ease-out hover:text-[#FF6B00]"
                 style={{
-                  color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.72)",
+                  color: isActive ? "#FF6B00" : "#6E6256",
                 }}
               >
                 {link.label}
@@ -87,10 +87,11 @@ export default function Navbar() {
         <div className="hidden md:flex items-center shrink-0">
           <Link
             href={!isAuthenticated ? "/signup" : authHref}
-            className="flex items-center justify-center bg-[#FF6B17] hover:bg-[#FF7C32] text-white font-sans font-semibold text-[15px] rounded-full transition-colors duration-250 ease-out text-center"
+            className="flex items-center justify-center bg-[#FF6B00] hover:bg-[#EA580C] text-white font-sans font-semibold text-[15px] rounded-full transition-all duration-250 ease-out text-center hover:scale-[1.03] active:scale-[0.98]"
             style={{
               height: "42px",
               padding: "0 26px",
+              boxShadow: "0 4px 12px rgba(255,107,0,0.15)",
             }}
           >
             {!isAuthenticated ? "Get Started" : authText}
@@ -100,7 +101,7 @@ export default function Navbar() {
         {/* Mobile Hamburger Trigger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-white/80 hover:text-white transition-colors"
+          className="md:hidden p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
         >
@@ -117,7 +118,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl md:hidden"
+            className="fixed inset-0 z-40 bg-[#FFFDF8]/98 backdrop-blur-xl md:hidden"
           >
             <div className="flex flex-col pt-28 px-6 pb-8 h-full overflow-y-auto">
               <nav className="flex flex-col gap-3">
@@ -134,7 +135,7 @@ export default function Navbar() {
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
                         className={`block px-4 py-3.5 text-[20px] font-semibold rounded-xl transition-colors ${
-                          isActive ? "text-[#FF6B17] bg-white/5" : "text-white/70 hover:text-white hover:bg-neutral-900"
+                          isActive ? "text-[#FF6B00] bg-[#FF6B00]/5" : "text-[#6E6256] hover:text-[#FF6B00] hover:bg-[#FF6B00]/5"
                         }`}
                       >
                         {link.label}
@@ -148,7 +149,7 @@ export default function Navbar() {
                 <Link
                   href={!isAuthenticated ? "/signup" : authHref}
                   onClick={() => setMobileOpen(false)}
-                  className="text-center text-base font-bold text-white py-3.5 rounded-full bg-[#FF6B17] hover:bg-[#FF7C32] transition-colors duration-250 ease-out"
+                  className="text-center text-base font-bold text-white py-3.5 rounded-full bg-[#FF6B00] hover:bg-[#EA580C] transition-colors duration-250 ease-out"
                 >
                   {!isAuthenticated ? "Get Started" : authText}
                 </Link>
