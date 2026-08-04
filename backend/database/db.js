@@ -51,6 +51,17 @@ pool.query('SELECT NOW()')
         );
       `);
       console.log('✅ demo_sessions table initialized/verified.');
+
+      // Drop country and currency check constraints from the users table to support all countries worldwide
+      try {
+        await pool.query(`
+          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_country_code;
+          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_currency_code;
+        `);
+        console.log('✅ Global country/currency constraints verified/dropped.');
+      } catch (constErr) {
+        console.warn('⚠️ Non-critical: Failed to drop users country constraints:', constErr.message);
+      }
     } catch (tblErr) {
       console.error('❌ Failed to initialize demo_sessions table:', tblErr.message);
     }
