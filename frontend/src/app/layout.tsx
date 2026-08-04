@@ -3,6 +3,7 @@ import "./globals.css";
 import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
 import NavigationProgress from "@/components/NavigationProgress";
 import { CountryProvider } from "@/context/CountryContext";
+import AuthHashHandler from "@/components/AuthHashHandler";
 
 export const metadata: Metadata = {
   title: "Bavio AI - Autonomous Voice Agents for Business Calls",
@@ -51,6 +52,7 @@ export default function RootLayout({
     >
       <body className="antialiased bg-[#FCF8F3] text-[#140B06] min-h-[100dvh] font-sans noise-overlay">
         <CountryProvider>
+          <AuthHashHandler />
           <NavigationProgress />
           {children}
         </CountryProvider>
