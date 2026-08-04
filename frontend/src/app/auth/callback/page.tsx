@@ -70,6 +70,30 @@ function AuthCallback() {
       try {
         const { supabase } = await import('@/lib/supabase');
         
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type') || 'signup';
+
+        if (tokenHash) {
+          setStatus('Verifying your verification link...');
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type as any
+          });
+          if (error) throw error;
+
+          if (data.session) {
+            if (type === 'recovery') {
+              setStatus('Verification successful! Redirecting to password reset...');
+              router.push('/reset-password');
+              return;
+            }
+            await fetchProfileAndLogin(data.session.access_token);
+            return;
+          } else {
+            throw new Error('Verification succeeded but no session was established.');
+          }
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) throw sessionError;
@@ -96,6 +120,11 @@ function AuthCallback() {
 
         // ─── NORMAL MODE: redirect as usual ───
         if (session) {
+          if (type === 'recovery') {
+            setStatus('Redirecting to password reset...');
+            router.push('/reset-password');
+            return;
+          }
           await fetchProfileAndLogin(session.access_token);
           return;
         }
