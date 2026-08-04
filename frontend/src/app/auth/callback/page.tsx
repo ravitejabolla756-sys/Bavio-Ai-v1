@@ -52,8 +52,8 @@ function AuthCallback() {
             }
           } else {
             setCookie("bavio_onboarding_completed", "false");
-            setStatus('Welcome! Redirecting to Onboarding...');
-            router.push('/onboarding');
+            setStatus('Welcome! Redirecting to confirmation page...');
+            router.push('/confirm-email');
           }
         } else {
           throw new Error(result.error || 'Invalid response from profile server.');
