@@ -108,7 +108,6 @@ export interface SignupPayload {
   countryCode?: string;
   dialCode?: string;
   phoneNumber?: string;
-  plan?: string;
 }
 
 export interface LoginPayload {
@@ -155,6 +154,13 @@ export const authApi = {
     apiFetch<BusinessProfile>('/auth/profile', {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  resendVerification: (email: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      skipAuth: true,
     }),
 
   logout: () => {

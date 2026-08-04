@@ -93,11 +93,13 @@ async function signup(req, res) {
             finalNormalizedPhone = phoneValidationResult.normalized;
         }
 
+        const isDev = process.env.NODE_ENV === 'development';
+
         // 2. Create user in Supabase Auth via Admin client
         const createParams = {
             email: finalEmail,
             password: finalPassword,
-            email_confirm: true,
+            email_confirm: isDev,
             user_metadata: {
                 full_name: finalName,
                 country: finalCountry
@@ -186,26 +188,73 @@ Questions? Chat with us →
 
 Bavio Team`
         ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
-        
-        // 5. Generate token via Supabase Auth signin
-        const authClient = db.createAuthClient();
-        const { data: sessionData, error: sessionError } = await authClient.auth.signInWithPassword({
-            email: finalEmail,
-            password: finalPassword
-        });
 
-        if (sessionError) {
-            console.error('Supabase Auth signin error after signup:', sessionError);
-            return res.status(500).json({ success: false, error: 'Sign in failed after registration: ' + sessionError.message });
+        // Generate verification link from Supabase
+        let verificationLink = '';
+        try {
+            const { data: linkData, error: linkError } = await db.supabase.auth.admin.generateLink({
+                type: 'signup',
+                email: finalEmail,
+                password: finalPassword,
+                options: {
+                    redirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
+                }
+            });
+            if (linkError) {
+                console.error('[signup] Failed to generate verification link:', linkError.message);
+            } else if (linkData && linkData.properties) {
+                verificationLink = linkData.properties.action_link;
+            }
+        } catch (linkErr) {
+            console.error('[signup] Exception generating verification link:', linkErr.message);
         }
 
-        const token = sessionData.session.access_token;
+        if (verificationLink) {
+            console.log('\n=========================================');
+            console.log('[DEVELOPMENT] Email Verification Link Generated:');
+            console.log(verificationLink);
+            console.log('=========================================\n');
+
+            emailService.sendMail(
+                finalEmail,
+                'Verify your Bavio account',
+                `Hi ${finalName},
+
+Thank you for signing up for Bavio AI. Please click the link below to verify your email address:
+
+${verificationLink}
+
+If the link above does not work, copy and paste it into your browser.
+
+Bavio Team`
+            ).catch(e => console.error('[EMAIL] Failed to send verification email:', e.message));
+        }
+
+        // Programmatic sign-in in development to get JWT token
+        let devToken = null;
+        if (isDev) {
+            try {
+                const authClient = db.createAuthClient();
+                const { data: signInData, error: signInError } = await authClient.auth.signInWithPassword({
+                    email: finalEmail,
+                    password: finalPassword
+                });
+                if (!signInError && signInData.session) {
+                    devToken = signInData.session.access_token;
+                }
+            } catch (signInErr) {
+                console.error('[signup] Programmatic sign-in failed:', signInErr.message);
+            }
+        }
+
+        // Since email verification is required in production, we return redirection.
+        // In development, we return token to bypass verification.
+        const verificationRequired = !isDev || !devToken;
         
-        // 6. Return response
         res.status(201).json({
             success: true,
-            token,
-            jwt: token, 
+            emailVerificationRequired: verificationRequired,
+            token: devToken,
             client_id: user.id,
             userId: user.id, 
             businessId: user.id, 
@@ -218,7 +267,7 @@ Bavio Team`
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
             country_code: user.country_code,
-            redirectTo: '/demo'
+            redirectTo: verificationRequired ? '/verify-email' : '/demo'
         });
     } catch (err) {
         if (err.code === '23505') {
@@ -487,10 +536,140 @@ async function updateProfile(req, res) {
     }
 }
 
+async function changeEmail(req, res) {
+    try {
+        const { userId, newEmail } = req.body;
+        if (!userId || !newEmail) {
+            return res.status(400).json({ success: false, error: 'User ID and new email are required' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+            return res.status(400).json({ success: false, error: 'Invalid email address format' });
+        }
+
+        // Check if user exists
+        const userRes = await db.query(
+            'SELECT email, onboarding_status FROM businesses WHERE id = $1',
+            [userId]
+        );
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Check if email already in use by another user
+        const duplicateRes = await db.query(
+            'SELECT id FROM businesses WHERE email = $1 AND id != $2',
+            [newEmail.trim().toLowerCase(), userId]
+        );
+        if (duplicateRes.rows.length > 0) {
+            return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+        }
+
+        // Update email in Supabase Auth via Admin client
+        const { data: authData, error: authError } = await db.supabase.auth.admin.updateUserById(
+            userId,
+            { email: newEmail.trim() }
+        );
+
+        if (authError) {
+            console.error('Supabase Auth update email error:', authError);
+            return res.status(400).json({ success: false, error: authError.message });
+        }
+
+        // Update email in businesses table
+        await db.query(
+            'UPDATE businesses SET email = $1, updated_at = NOW() WHERE id = $2',
+            [newEmail.trim().toLowerCase(), userId]
+        );
+
+        // Resend confirmation to the new email address
+        try {
+            const authClient = db.createAuthClient();
+            await authClient.auth.resend({
+                type: 'signup',
+                email: newEmail.trim(),
+                options: {
+                    emailRedirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
+                }
+            });
+        } catch (resendErr) {
+            console.warn('[changeEmail] Failed to auto-resend verification link:', resendErr.message);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Email address updated successfully and verification link sent.'
+        });
+    } catch (err) {
+        console.error('Change email error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
+async function resendVerification(req, res) {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: 'Email is required' });
+        }
+
+        const trimmedEmail = email.trim();
+
+        // 1. Generate verification link using Supabase Admin API
+        const { data: linkData, error: linkError } = await db.supabase.auth.admin.generateLink({
+            type: 'signup',
+            email: trimmedEmail,
+            options: {
+                redirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
+            }
+        });
+
+        if (linkError) {
+            console.error('[resendVerification] Supabase generateLink error:', linkError.message);
+            return res.status(400).json({ success: false, error: linkError.message });
+        }
+
+        const verificationLink = linkData.properties.action_link;
+
+        // Print to console log
+        console.log('\n=========================================');
+        console.log('[DEVELOPMENT] Email Verification Link Resent:');
+        console.log(verificationLink);
+        console.log('=========================================\n');
+
+        // 2. Send the link via email service
+        const emailService = require('../services/emailService');
+        await emailService.sendMail(
+            trimmedEmail,
+            'Verify your Bavio account',
+            `Hi,
+
+Please click the link below to verify your email address:
+
+${verificationLink}
+
+If the link above does not work, copy and paste it into your browser.
+
+Bavio Team`
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Verification email resent successfully.'
+        });
+    } catch (err) {
+        console.error('resendVerification error:', err);
+        res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
+    }
+}
+
 module.exports = {
     signup,
     login,
     getProfile,
     updateProfile,
-    checkEmail
+    checkEmail,
+    changeEmail,
+    resendVerification
 };
