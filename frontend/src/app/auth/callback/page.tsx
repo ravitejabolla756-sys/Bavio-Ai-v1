@@ -42,20 +42,14 @@ function AuthCallback() {
           // Check if onboarding is completed by looking at phone number fallback or status
           const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
           
-          if (isOnboardingComplete) {
-            setCookie("bavio_onboarding_completed", "true");
-            setStatus('Authentication successful! Redirecting...');
-            const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-            if (redirectUrl) {
-              localStorage.removeItem("bavio_auth_redirect");
-              navigateAfterAuth(redirectUrl);
-            } else {
-              navigateAfterAuth('/workspace');
-            }
+          setCookie("bavio_onboarding_completed", "true");
+          setStatus('Authentication successful! Redirecting...');
+          const redirectUrl = localStorage.getItem("bavio_auth_redirect");
+          if (redirectUrl) {
+            localStorage.removeItem("bavio_auth_redirect");
+            navigateAfterAuth(redirectUrl);
           } else {
-            setCookie("bavio_onboarding_completed", "false");
-            setStatus('Welcome! Redirecting to Onboarding...');
-            navigateAfterAuth('/onboarding');
+            navigateAfterAuth('/workspace');
           }
         } else {
           throw new Error(result.error || 'Invalid response from profile server.');

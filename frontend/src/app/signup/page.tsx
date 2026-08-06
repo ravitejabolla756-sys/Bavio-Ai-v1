@@ -148,8 +148,8 @@ export default function SignUpPage() {
           // Dev mode OR email already verified — log in directly
           setAuthData(result.token, result.client_id, businessName);
           setCookie("bavio_auth", "true");
-          setCookie("bavio_onboarding_completed", "false");
-          navigateAfterAuth("/onboarding");
+          setCookie("bavio_onboarding_completed", "true");
+          navigateAfterAuth("/workspace");
         } else if ((result as any).emailVerificationRequired) {
           // Production: email verification email was sent
           setNeedsEmailVerification(true);

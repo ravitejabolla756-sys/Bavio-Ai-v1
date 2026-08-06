@@ -82,8 +82,8 @@ export default function LoginPage() {
             navigateAfterAuth("/workspace");
           }
         } else {
-          setCookie("bavio_onboarding_completed", "false");
-          navigateAfterAuth("/onboarding");
+          setCookie("bavio_onboarding_completed", "true");
+          navigateAfterAuth("/workspace");
         }
       }
     } catch (err: any) {
@@ -110,22 +110,13 @@ export default function LoginPage() {
 
   const handleSocialAuth = () => {
     setCookie("bavio_auth", "true");
-    if (isSignUp) {
-      navigateAfterAuth("/onboarding");
+    setCookie("bavio_onboarding_completed", "true");
+    const redirectUrl = localStorage.getItem("bavio_auth_redirect");
+    if (redirectUrl) {
+      localStorage.removeItem("bavio_auth_redirect");
+      navigateAfterAuth(redirectUrl);
     } else {
-      const savedState = localStorage.getItem("bavio_premium_onboarding_state");
-      if (!savedState) {
-        setCookie("bavio_onboarding_completed", "true");
-        const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-        if (redirectUrl) {
-          localStorage.removeItem("bavio_auth_redirect");
-          navigateAfterAuth(redirectUrl);
-        } else {
-          navigateAfterAuth("/workspace");
-        }
-      } else {
-        navigateAfterAuth("/onboarding");
-      }
+      navigateAfterAuth("/workspace");
     }
   };
 
