@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Phone,
   User,
@@ -17,11 +17,12 @@ import {
   ArrowRight,
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
-import { setCookie } from "@/lib/auth-utils";
+import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,25 +40,33 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("mode") === "signup" || params.get("signup") === "true") {
-        router.replace("/signup");
-        return;
+        setIsSignUp(true);
       }
       const redirectUrl = params.get("redirect");
       if (redirectUrl) {
         localStorage.setItem("bavio_auth_redirect", redirectUrl);
       }
     }
-  }, [router]);
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form states
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    if (isSignUp) {
+      router.push("/signup");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -76,13 +85,13 @@ export default function LoginPage() {
           const redirectUrl = localStorage.getItem("bavio_auth_redirect");
           if (redirectUrl) {
             localStorage.removeItem("bavio_auth_redirect");
-            router.push(redirectUrl);
+            navigateAfterAuth(redirectUrl);
           } else {
-            router.push("/workspace");
+            navigateAfterAuth("/workspace");
           }
         } else {
           setCookie("bavio_onboarding_completed", "false");
-          router.push("/onboarding");
+          navigateAfterAuth("/onboarding");
         }
       }
     } catch (err: any) {
@@ -109,18 +118,22 @@ export default function LoginPage() {
 
   const handleSocialAuth = () => {
     setCookie("bavio_auth", "true");
-    const savedState = localStorage.getItem("bavio_premium_onboarding_state");
-    if (!savedState) {
-      setCookie("bavio_onboarding_completed", "true");
-      const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-      if (redirectUrl) {
-        localStorage.removeItem("bavio_auth_redirect");
-        router.push(redirectUrl);
-      } else {
-        router.push("/workspace");
-      }
+    if (isSignUp) {
+      navigateAfterAuth("/onboarding");
     } else {
-      router.push("/onboarding");
+      const savedState = localStorage.getItem("bavio_premium_onboarding_state");
+      if (!savedState) {
+        setCookie("bavio_onboarding_completed", "true");
+        const redirectUrl = localStorage.getItem("bavio_auth_redirect");
+        if (redirectUrl) {
+          localStorage.removeItem("bavio_auth_redirect");
+          navigateAfterAuth(redirectUrl);
+        } else {
+          navigateAfterAuth("/workspace");
+        }
+      } else {
+        navigateAfterAuth("/onboarding");
+      }
     }
   };
 
@@ -183,7 +196,7 @@ export default function LoginPage() {
             <span className="text-[#FF6B00]">never sleeps.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and capture customer requests automatically.
+            Answer calls, qualify leads, and book appointments automatically.
           </p>
 
           {/* Features horizontal/grid row */}
@@ -192,7 +205,7 @@ export default function LoginPage() {
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
               { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Request", label2: "Capture" },
+              { icon: Calendar, label1: "Appointment", label2: "Booking" },
             ].map((feat, i) => {
               const Icon = feat.icon;
               return (
@@ -209,6 +222,8 @@ export default function LoginPage() {
             })}
           </div>
         </div>
+
+
 
       </section>
 
@@ -244,10 +259,12 @@ export default function LoginPage() {
               </span>
             </div>
             <h1 className="font-display text-3xl font-bold text-[#14141A] tracking-tight mb-2">
-              Welcome Back
+              {isSignUp ? "Get Started" : "Welcome Back"}
             </h1>
             <p className="text-body-sm text-[#5A5A66]">
-              Manage your voice agents and telemetry.
+              {isSignUp
+                ? "Launch your AI receptionist in minutes."
+                : "Manage your voice agents and telemetry."}
             </p>
           </div>
 
@@ -307,11 +324,32 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {errorMsg && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-semibold">
-                {errorMsg}
-              </div>
-            )}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {isSignUp && (
+                <motion.div
+                  key="name-field"
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="relative"
+                >
+                  <label htmlFor="name-input" className="sr-only">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+                    <input
+                      id="name-input"
+                      type="text"
+                      required={isSignUp}
+                      placeholder="Full Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-4 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="relative">
               <label htmlFor="email-input" className="sr-only">Work Email</label>
@@ -353,14 +391,53 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-body-xs font-semibold text-[#8A8A96] hover:text-[#FF6B00] transition-colors"
-              >
-                Forgot Password?
-              </Link>
-            </div>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {isSignUp && (
+                <motion.div
+                  key="confirm-password-field"
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="relative"
+                >
+                  <label htmlFor="confirm-password-input" className="sr-only">Confirm Password</label>
+                  <Lock className="absolute left-4 top-3.5 w-4 h-4 text-[#8A8A96]" />
+                  <input
+                    id="confirm-password-input"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required={isSignUp}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 pl-11 pr-11 text-body-sm text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-3.5 text-[#8A8A96] hover:text-[#14141A] transition-colors"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlash className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!isSignUp && (
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-body-xs font-semibold text-[#8A8A96] hover:text-[#FF6B00] transition-colors"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            )}
 
             {/* Submit CTA */}
             <button
@@ -371,11 +448,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Signing In...</span>
+                  <span>{isSignUp ? "Creating Account..." : "Signing In..."}</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>{isSignUp ? "Create Account" : "Sign In"}</span>
                   <ArrowRight className="w-4 h-4" weight="bold" />
                 </>
               )}
@@ -384,13 +461,24 @@ export default function LoginPage() {
 
           {/* Form mode switcher */}
           <div className="mt-8 text-center text-body-sm text-[#5A5A66]">
-            <span>Don&apos;t have an account?</span>
-            <Link
-              href="/signup"
+            <span>
+              {isSignUp
+                ? "Already have an account? "
+                : "Don't have an account? "}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setName("");
+                setEmail("");
+                setPassword("");
+                setConfirmPassword("");
+              }}
               className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] transition-colors ml-1 focus:outline-none"
             >
-              Sign Up
-            </Link>
+              {isSignUp ? "Sign In" : "Sign Up"}
+            </button>
           </div>
         </motion.div>
 

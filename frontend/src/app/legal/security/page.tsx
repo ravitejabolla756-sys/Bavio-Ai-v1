@@ -19,7 +19,7 @@ export default function SecurityPolicy() {
 
         <div className="flex flex-col gap-6 text-body-sm text-ink-tertiary leading-relaxed">
           <p>
-            Bavio AI enforces enterprise-grade security protocols across all voice agents, call queues, data records, and integration pathways to keep your business records safe.
+            Bavio AI enforces enterprise-grade security protocols across all voice agents, call queues, data records, and notification systems to keep your business records safe.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
@@ -32,7 +32,7 @@ export default function SecurityPolicy() {
             <div className="bg-surface-raised border border-line p-5 rounded-2xl">
               <ShieldCheck className="w-6 h-6 text-saffron mb-3" weight="regular" />
               <h4 className="font-bold text-body-sm text-ink mb-1">Compliance Audits</h4>
-              <p className="text-body-xs text-ink-tertiary">GDPR data mapping and HIPAA-ready physical storage audits conducted annually to maintain absolute compliance.</p>
+              <p className="text-body-xs text-ink-tertiary">SOC 2 Type II audit report, GDPR data mapping, and HIPAA physical storage audits conducted annually.</p>
             </div>
           </div>
 

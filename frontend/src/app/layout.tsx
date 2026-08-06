@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
+import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans } from "@/lib/fonts";
 import NavigationProgress from "@/components/NavigationProgress";
 import { CountryProvider } from "@/context/CountryContext";
-import AuthHashHandler from "@/components/AuthHashHandler";
 
 export const metadata: Metadata = {
   title: "Bavio AI - Autonomous Voice Agents for Business Calls",
@@ -29,15 +28,6 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon.png", type: "image/png" },
-      { url: "/icon.png", type: "image/png" }
-    ],
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export default function RootLayout({
@@ -48,11 +38,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmSans.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${inter.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmSans.variable}`}
     >
-      <body className="antialiased bg-[#FCF8F3] text-[#140B06] min-h-[100dvh] font-sans noise-overlay">
+
+      <body className="antialiased bg-[#FFFDF8] text-[#140A02] min-h-[100dvh] font-sans noise-overlay">
         <CountryProvider>
-          <AuthHashHandler />
           <NavigationProgress />
           {children}
         </CountryProvider>
@@ -60,6 +50,5 @@ export default function RootLayout({
     </html>
   );
 }
-
 
 

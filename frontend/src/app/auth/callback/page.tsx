@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { setCookie } from '@/lib/auth-utils';
+import { setCookie, navigateAfterAuth } from '@/lib/auth-utils';
+
 
 function AuthCallback() {
   const router = useRouter();
@@ -38,7 +39,8 @@ function AuthCallback() {
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
-          const isOnboardingComplete = user.phone && !user.phone.startsWith('google_oauth_fallback');
+          // Check if onboarding is completed by looking at phone number fallback or status
+          const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
           
           if (isOnboardingComplete) {
             setCookie("bavio_onboarding_completed", "true");
@@ -46,14 +48,14 @@ function AuthCallback() {
             const redirectUrl = localStorage.getItem("bavio_auth_redirect");
             if (redirectUrl) {
               localStorage.removeItem("bavio_auth_redirect");
-              router.push(redirectUrl);
+              navigateAfterAuth(redirectUrl);
             } else {
-              router.push('/workspace');
+              navigateAfterAuth('/workspace');
             }
           } else {
             setCookie("bavio_onboarding_completed", "false");
-            setStatus('Welcome! Redirecting to confirmation page...');
-            router.push('/confirm-email');
+            setStatus('Welcome! Redirecting to Onboarding...');
+            navigateAfterAuth('/onboarding');
           }
         } else {
           throw new Error(result.error || 'Invalid response from profile server.');
@@ -70,65 +72,17 @@ function AuthCallback() {
       try {
         const { supabase } = await import('@/lib/supabase');
         
-        const tokenHash = searchParams.get('token_hash');
-        const type = searchParams.get('type') || 'signup';
-
-        if (tokenHash) {
-          setStatus('Verifying your verification link...');
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: type as any
-          });
-          if (error) throw error;
-
-          if (data.session) {
-            if (type === 'recovery') {
-              setStatus('Verification successful! Redirecting to password reset...');
-              router.push('/reset-password');
-              return;
-            }
-            await fetchProfileAndLogin(data.session.access_token);
-            return;
-          } else {
-            throw new Error('Verification succeeded but no session was established.');
-          }
-        }
-
+        // Try getting session from hash (handled automatically by Supabase SDK)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) throw sessionError;
-
-        // ─── POPUP MODE: send result back to opener and close ───
-        if (window.opener && !window.opener.closed) {
-          if (session?.user) {
-            const user = session.user;
-            window.opener.postMessage({
-              type: 'GOOGLE_AUTH_SUCCESS',
-              user: {
-                name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-                email: user.email || '',
-                avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
-                accessToken: session.access_token,
-              }
-            }, window.location.origin);
-          } else {
-            window.opener.postMessage({ type: 'GOOGLE_AUTH_CANCELLED' }, window.location.origin);
-          }
-          window.close();
-          return;
-        }
-
-        // ─── NORMAL MODE: redirect as usual ───
+        
         if (session) {
-          if (type === 'recovery') {
-            setStatus('Redirecting to password reset...');
-            router.push('/reset-password');
-            return;
-          }
           await fetchProfileAndLogin(session.access_token);
           return;
         }
 
+        // Fallback to query param
         const token = searchParams.get('token');
         if (token) {
           await fetchProfileAndLogin(token);
@@ -136,12 +90,6 @@ function AuthCallback() {
           throw new Error('No authentication session or token found in URL.');
         }
       } catch (err: any) {
-        // If in popup, send error back and close
-        if (window.opener && !window.opener.closed) {
-          window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: err.message }, window.location.origin);
-          setTimeout(() => window.close(), 1500);
-          return;
-        }
         console.error('[OAuth Callback] Session error:', err.message);
         setError(err.message || 'Error occurred while establishing session.');
         setStatus('');

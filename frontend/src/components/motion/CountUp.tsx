@@ -39,7 +39,7 @@ export default function CountUp({ value, duration = 0.8 }: CountUpProps) {
         if (isDecimal) {
           formattedNum = latest.toFixed(1);
         } else {
-          formattedNum = Math.floor(latest).toLocaleString("en-US");
+          formattedNum = Math.floor(latest).toLocaleString("en-IN");
         }
         setDisplayValue(`${prefix}${formattedNum}${suffix}`);
       },

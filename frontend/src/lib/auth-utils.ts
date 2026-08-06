@@ -12,7 +12,21 @@ export function setCookie(name: string, value: string, days = 365) {
   if (typeof document === "undefined") return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};path=/;expires=${expires.toUTCString()}`;
+  // SameSite=Lax is required so the cookie is included in the subsequent
+  // navigation request that Next.js middleware reads.
+  document.cookie = `${name}=${value};path=/;expires=${expires.toUTCString()};SameSite=Lax`;
+}
+
+/**
+ * Navigate to a URL after setting auth cookies.
+ * Uses window.location.href (hard redirect) instead of router.push() so the
+ * browser sends the freshly-written cookies in the very next HTTP request,
+ * which is what Next.js middleware reads to decide access.
+ */
+export function navigateAfterAuth(url: string) {
+  if (typeof window !== "undefined") {
+    window.location.href = url;
+  }
 }
 
 /**

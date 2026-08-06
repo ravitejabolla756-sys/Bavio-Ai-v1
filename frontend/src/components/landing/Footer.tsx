@@ -14,49 +14,50 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-3 shrink-0">
               <Logo className="w-9 h-9" />
               <span className="font-display text-xl font-extrabold tracking-tight text-[#140A02]">
-                Bavio
+                bavio
               </span>
             </Link>
             <p className="text-xs text-[#6B5A4C] leading-relaxed max-w-[200px]">
-              AI receptionists for inbound business calls. Answer enquiries, qualify leads and organize conversations.
+              Autonomous AI voice receptionists for Indian SMBs. Answer, qualify, and capture leads 24x7.
             </p>
           </div>
 
           {/* Product links */}
           <div>
-            <h4 className="text-[12px] text-[#140B06] font-bold uppercase tracking-wider mb-4 font-sans">Product</h4>
-            <ul className="space-y-2.5 text-sm text-[#6B5A4C] font-sans">
-              <li><Link href="/how-it-works" className="hover:text-[#FF6B00] transition-colors">How It Works</Link></li>
-              <li><Link href="/pricing" className="hover:text-[#FF6B00] transition-colors">Pricing</Link></li>
-              <li><Link href="/demo" className="hover:text-[#FF6B00] transition-colors">Demo</Link></li>
+            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Product</h4>
+            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
+              <li><Link href="/how-it-works" className="hover:text-[#F97316] transition-colors">How it Works</Link></li>
+              <li><Link href="/pricing" className="hover:text-[#F97316] transition-colors">Pricing</Link></li>
+              <li><Link href="/demo" className="hover:text-[#F97316] transition-colors">Demo</Link></li>
+              <li><Link href="/pricing#faq" className="hover:text-[#F97316] transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
           {/* Company links */}
           <div>
-            <h4 className="text-[12px] text-[#140B06] font-bold uppercase tracking-wider mb-4 font-sans">Company</h4>
-            <ul className="space-y-2.5 text-sm text-[#6B5A4C] font-sans">
-              <li><Link href="/company" className="hover:text-[#FF6B00] transition-colors">About</Link></li>
-              <li><Link href="/company#contact" className="hover:text-[#FF6B00] transition-colors">Contact</Link></li>
+            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Company</h4>
+            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
+              <li><Link href="/company" className="hover:text-[#F97316] transition-colors">About Us</Link></li>
+              <li><Link href="/careers" className="hover:text-[#F97316] transition-colors">Careers</Link></li>
+              <li><Link href="/blog" className="hover:text-[#F97316] transition-colors">Blog</Link></li>
+            </ul>
+          </div>
+
+          {/* Resources links */}
+          <div>
+            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Resources</h4>
+            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
+              <li><Link href="/docs" className="hover:text-[#F97316] transition-colors">Documentation</Link></li>
+              <li><Link href="/api" className="hover:text-[#F97316] transition-colors">API</Link></li>
             </ul>
           </div>
 
           {/* Legal links */}
           <div>
-            <h4 className="text-[12px] text-[#140B06] font-bold uppercase tracking-wider mb-4 font-sans">Legal</h4>
-            <ul className="space-y-2.5 text-sm text-[#6B5A4C] font-sans">
-              <li><Link href="/privacy" className="hover:text-[#FF6B00] transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-[#FF6B00] transition-colors">Terms of Service</Link></li>
-              <li><Link href="/refund-policy" className="hover:text-[#FF6B00] transition-colors">Refund Policy</Link></li>
-              <li><Link href="/cookie-policy" className="hover:text-[#FF6B00] transition-colors">Cookie Policy</Link></li>
-            </ul>
-          </div>
-
-          {/* Support links */}
-          <div>
-            <h4 className="text-[12px] text-[#140B06] font-bold uppercase tracking-wider mb-4 font-sans">Support</h4>
-            <ul className="space-y-2.5 text-sm text-[#6B5A4C] font-sans">
-              <li><a href="mailto:hello@bavio.in" className="hover:text-[#FF6B00] transition-colors font-bold">hello@bavio.in</a></li>
+            <h4 className="text-[11px] text-[#140A02] font-bold uppercase tracking-wider mb-4">Legal</h4>
+            <ul className="space-y-2.5 text-xs text-[#6B5A4C]">
+              <li><Link href="/legal/privacy" className="hover:text-[#F97316] transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-[#F97316] transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>

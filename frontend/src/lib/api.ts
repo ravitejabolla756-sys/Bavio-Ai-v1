@@ -103,11 +103,6 @@ export interface SignupPayload {
   business_name?: string;
   business_phone?: string;
   industry?: string;
-  businessName?: string;
-  businessPhone?: string;
-  countryCode?: string;
-  dialCode?: string;
-  phoneNumber?: string;
 }
 
 export interface LoginPayload {
@@ -127,14 +122,7 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-  checkEmail: (email: string) =>
-    apiFetch<{ available: boolean; email: string; message?: string }>('/auth/check-email', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-      skipAuth: true,
-    }),
-
-  signup: (data: SignupPayload & { demoCompleted?: boolean }) =>
+  signup: (data: SignupPayload) =>
     apiFetch<AuthResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -154,13 +142,6 @@ export const authApi = {
     apiFetch<BusinessProfile>('/auth/profile', {
       method: 'PATCH',
       body: JSON.stringify(data),
-    }),
-
-  resendVerification: (email: string) =>
-    apiFetch<{ success: boolean; message: string }>('/auth/resend-verification', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-      skipAuth: true,
     }),
 
   logout: () => {
@@ -194,16 +175,6 @@ export interface BusinessProfile {
   business_description?: string;
   city?: string;
   website?: string;
-  twilio_number?: string | null;
-  subscription_status?: string;
-  businessName?: string;
-  country_code?: string;
-  assistant_name?: string;
-  assistant_status?: string;
-  voice?: string;
-  greeting?: string;
-  nextRoute?: string;
-  success?: boolean;
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
@@ -371,12 +342,6 @@ export const knowledgeBaseApi = {
 
   search: (q: string) =>
     apiFetch<SearchResult[]>(`/knowledge-base/search?q=${encodeURIComponent(q)}`),
-
-  syncToAssistant: () =>
-    apiFetch<{ docsCount: number; success: boolean; message: string }>(
-      '/knowledge-base/sync',
-      { method: 'POST' }
-    ),
 };
 
 
@@ -420,7 +385,6 @@ export interface PaymentRecord {
   amount: number;
   currency: string;
   plan: string;
-  payment_type?: string;
   created_at: string;
   status: string;
 }
@@ -477,32 +441,3 @@ export const billingApi = {
       body: JSON.stringify(data),
     }),
 };
-
-// ─── Demo ─────────────────────────────────────────────────────────────────────
-
-export const demoApi = {
-  start: (phoneNumber: string, countryCode: string) =>
-    apiFetch<{ success: boolean; session: any; callSid: string }>('/demo/start', {
-      method: 'POST',
-      body: JSON.stringify({ phoneNumber, countryCode }),
-    }),
-  getStatus: () =>
-    apiFetch<{ eligible: boolean; session: any; transcript?: any[] }>('/demo/status', {
-      method: 'GET',
-    }),
-  hangup: () =>
-    apiFetch<{ success: boolean }>('/demo/hangup', {
-      method: 'POST',
-    }),
-  saveCall: (data: {
-    caller_number: string;
-    duration?: number;
-    call_status?: string;
-    transcript?: string;
-  }) =>
-    apiFetch('/calls/demo', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-};
-

@@ -33,12 +33,11 @@ export default function VoiceIntelligence() {
           >
             {/* Mock Header */}
             <div className="bg-[#FFFDF8] border-b border-[#F3E4D4] px-5 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 bg-[#F97316] rounded-full animate-pulse" />
-                <span className="text-[11px] font-bold text-[#140A02]">Bavio Dashboard &bull; Call Transcript</span>
-                <span className="bg-[#FFF7ED] border border-[#F3E4D4] px-2 py-0.5 rounded text-[9px] font-bold text-[#F97316]">Example data</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 bg-[#F97316]/40 rounded-full" />
+                <span className="text-[11px] font-bold text-[#140A02]">Call Recording & Transcript: #C-9281</span>
               </div>
-              <span className="text-[10px] font-mono text-[#6E6256]">Caller: +1 555 010 2040</span>
+              <span className="text-[10px] font-mono text-[#6E6256]">ID: TR-9281-IN</span>
             </div>
 
             {/* Transcript Log list */}
@@ -52,7 +51,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1">
                   <div className="text-[10px] text-[#6E6256] font-bold">Bavio AI Assistant</div>
                   <div className="p-3 bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl rounded-tl-none text-xs text-[#140A02] max-w-[480px] leading-relaxed font-sans">
-                    {"Hello! I'm Bavio, an AI assistant. How can I help today?"}
+                    Namaste. Bavio AI se bol raha hu.
                   </div>
                 </div>
               </div>
@@ -62,7 +61,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1 text-right">
                   <div className="text-[10px] text-[#6E6256] font-bold">Customer (Caller)</div>
                   <div className="p-3 bg-[#F97316] text-white rounded-2xl rounded-tr-none text-xs max-w-[480px] leading-relaxed text-left font-sans">
-                    {"I'm looking for a 3-bedroom home."}
+                    3BHK dekhna tha.
                   </div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#140A02] flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -78,7 +77,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1">
                   <div className="text-[10px] text-[#6E6256] font-bold">Bavio AI Assistant</div>
                   <div className="p-3 bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl rounded-tl-none text-xs text-[#140A02] max-w-[480px] leading-relaxed font-sans">
-                    What is your budget range?
+                    Budget kya hai sir?
                   </div>
                 </div>
               </div>
@@ -88,7 +87,7 @@ export default function VoiceIntelligence() {
                 <div className="space-y-1 text-right">
                   <div className="text-[10px] text-[#6E6256] font-bold">Customer (Caller)</div>
                   <div className="p-3 bg-[#F97316] text-white rounded-2xl rounded-tr-none text-xs max-w-[480px] leading-relaxed text-left font-sans">
-                    Around $450,000.
+                    90 lakh tak.
                   </div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#140A02] flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -122,34 +121,34 @@ export default function VoiceIntelligence() {
                 <User className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Caller:</span>
-                  <span className="font-bold text-[#140A02]">Sarah Johnson</span>
+                  <span className="font-bold text-[#140A02]">Rahul Sharma</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Landmark className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Requirement:</span>
-                  <span className="font-bold text-[#140A02]">Interested in 3-Bedroom Home</span>
+                  <span className="font-bold text-[#140A02]">Interested in 3BHK</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Budget:</span>
-                  <span className="font-bold text-[#F97316]">$450,000</span>
+                  <span className="font-bold text-[#F97316]">₹90L</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <CalendarClock className="w-4 h-4 text-[#6E6256]" />
                 <div className="flex-1 flex justify-between">
                   <span className="text-[#6E6256]">Follow-up:</span>
-                  <span className="font-bold text-[#140A02]">Notification sent</span>
+                  <span className="font-bold text-[#140A02]">WhatsApp sent</span>
                 </div>
               </div>
             </div>
 
             <div className="text-[10px] font-mono text-[#6E6256] text-center bg-[#FFF7ED] border border-[#F3E4D4] rounded-xl py-2 mt-2">
-              Saved to Lead Dashboard
+              Auto-saved to Hubspot & Salesforce
             </div>
           </motion.div>
 

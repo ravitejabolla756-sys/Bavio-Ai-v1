@@ -30,8 +30,12 @@ export function middleware(request: NextRequest) {
 
   // 3. Prevent logged-in users from seeing /login page
   if (pathname === "/login") {
-    if (isAuthenticated && isOnboardingComplete) {
-      return NextResponse.redirect(new URL("/workspace", request.url));
+    if (isAuthenticated) {
+      if (isOnboardingComplete) {
+        return NextResponse.redirect(new URL("/workspace", request.url));
+      } else {
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
     }
   }
 

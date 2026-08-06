@@ -40,7 +40,7 @@ export default function WorkspaceLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("");
+  const [workspace, setWorkspace] = useState("Sunstar Real Estate");
   const [planName, setPlanName] = useState("Free Trial");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -124,9 +124,9 @@ export default function WorkspaceLayout({
   );
 
   return (
-    <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col md:flex-row relative font-sans">
       
-      {/* Background Subtle mesh orbs (removed to use body background) */}
+      {/* Background Subtle mesh orbs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-saffron/3 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-saffron/2 blur-[100px] pointer-events-none z-0" />
 
@@ -190,23 +190,22 @@ export default function WorkspaceLayout({
                     exit={{ opacity: 0, y: 5 }}
                     className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border border-line rounded-xl p-1.5 shadow-premium z-20"
                   >
-                    {/* Only show the user's own real workspace — no mock workspaces */}
-                    <div className="px-3 py-2 rounded-lg bg-saffron/10">
-                      <span className="text-xs font-bold text-saffron block">{workspace || "My Workspace"}</span>
-                      <span className="text-[9px] text-ink-muted mt-0.5 block">{planName} · Active</span>
-                    </div>
-                    <div className="border-t border-line my-1.5" />
-                    <button
-                      onClick={() => {
-                        setShowWorkspaceDropdown(false);
-                        localStorage.removeItem("bavio_token");
-                        window.location.href = "/login";
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-ink-secondary hover:bg-line-subtle/50 hover:text-state-error transition-all flex items-center gap-2"
-                    >
-                      <SignOut className="w-3.5 h-3.5" />
-                      Sign out
-                    </button>
+                    {["Sunstar Real Estate", "Apex Healthcare", "Bavio Dev Space"].map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => {
+                          setWorkspace(name);
+                          setShowWorkspaceDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          workspace === name 
+                            ? "bg-saffron/10 text-saffron" 
+                            : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
                   </motion.div>
                 </>
               )}
@@ -315,11 +314,11 @@ export default function WorkspaceLayout({
             {/* Search Box Trigger */}
             <button 
               onClick={() => setCommandKOpen(true)}
-              className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-60"
+              className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-52"
             >
-              <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
-              <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Workspace...</span>
-              <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted whitespace-nowrap shrink-0">Ctrl K</kbd>
+              <MagnifyingGlass className="w-3.5 h-3.5" />
+              <span className="flex-grow text-left">Search Workspace...</span>
+              <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted">Ctrl K</kbd>
             </button>
 
             {/* Notification alert */}

@@ -18,15 +18,15 @@
  * It is only reached when the voiceStackRouter selects 'modular_v1'.
  */
 
-const VoiceWorkerSession       = require('../providers/interfaces/VoiceWorkerSession');
-const DeepgramStt              = require('../providers/modular/DeepgramStt');
-const CerebraLlm               = require('../providers/modular/CerebraLlm');
-const GroqLlm                  = require('../providers/modular/GroqLlm');
-const ElevenLabsTts            = require('../providers/modular/ElevenLabsTts');
-const CurrentTwilioTelephony   = require('../providers/current/CurrentTwilioTelephony');
+const VoiceWorkerSession       = require('../interfaces/VoiceWorkerSession');
+const DeepgramStt              = require('../modular/DeepgramStt');
+const CerebraLlm               = require('../modular/CerebraLlm');
+const GroqLlm                  = require('../modular/GroqLlm');
+const ElevenLabsTts            = require('../modular/ElevenLabsTts');
+const CurrentTwilioTelephony   = require('../current/CurrentTwilioTelephony');
 const { getVoiceConfig }       = require('../../config/voiceConfig');
-const db                       = require('../../database/db');
-const { deductCallSeconds }    = require('../../middleware/planEnforcement');
+const db                       = require('../../../database/db');
+const { deductCallSeconds }    = require('../../../middleware/planEnforcement');
 
 class ModularVoiceSession extends VoiceWorkerSession {
   constructor() {

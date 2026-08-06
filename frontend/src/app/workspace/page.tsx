@@ -141,30 +141,6 @@ export default function WorkspaceHome() {
         </div>
       </div>
 
-      {/* Warning/Action Banner if no number is assigned */}
-      {!profile.twilio_number && (
-        <div className="bg-amber-500/10 border border-amber-500/25 text-[#140A02] rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shrink-0">
-              <Phone className="w-5.5 h-5.5" weight="bold" />
-            </div>
-            <div>
-              <div className="font-sans font-extrabold text-[13px] tracking-wide text-amber-950">No Dedicated Phone Number Assigned</div>
-              <p className="text-[11px] text-amber-800/80 leading-relaxed mt-1">
-                {"You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls."}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/workspace/subscription"
-            className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-body-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span>Choose a Plan</span>
-            <ArrowRight className="w-3.5 h-3.5" weight="bold" />
-          </Link>
-        </div>
-      )}
-
       {/* Grid HUD details */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
@@ -174,7 +150,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <Building className="w-4.5 h-4.5 text-saffron" />
-                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Business Setup</div>
+                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Business Setup</h3>
               </div>
               <span className="text-[9px] font-mono text-ink-muted">V1 Status</span>
             </div>
@@ -208,7 +184,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <CreditCard className="w-4.5 h-4.5 text-saffron" />
-                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Subscription</div>
+                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Subscription</h3>
               </div>
               <Link href="/workspace/subscription" className="text-[10px] font-bold text-saffron hover:underline">
                 Billing
@@ -241,7 +217,7 @@ export default function WorkspaceHome() {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <Clock className="w-4.5 h-4.5 text-saffron" />
-                <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Usage Telemetry</div>
+                <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink">Usage Telemetry</h3>
               </div>
               <span className="text-[9px] font-mono text-ink-muted">Inbound calls</span>
             </div>
@@ -250,7 +226,7 @@ export default function WorkspaceHome() {
               <div>
                 <div className="flex justify-between text-[11px] font-bold text-ink-secondary mb-1.5">
                   <span>Talk Time Minutes</span>
-                  <span>{profile.minutes_used || 0} / {profile.minutes_limit || 30} mins</span>
+                  <span>{profile.minutes_used || 0} / {profile.minutes_limit || 100} mins</span>
                 </div>
                 <div className="w-full h-2 bg-[#EBE6DD] rounded-full overflow-hidden">
                   <div
@@ -258,8 +234,8 @@ export default function WorkspaceHome() {
                     style={{
                       width: `${Math.min(
                         100,
-                        (profile.minutes_limit || 30) > 0
-                          ? ((profile.minutes_used || 0) / (profile.minutes_limit || 30)) * 100
+                        (profile.minutes_limit || 100) > 0
+                          ? ((profile.minutes_used || 0) / (profile.minutes_limit || 100)) * 100
                           : 0
                       )}%`,
                     }}

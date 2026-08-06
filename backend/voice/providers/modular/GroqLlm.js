@@ -1,11 +1,31 @@
 'use strict';
 
+/**
+ * GroqLlm — Groq LLM fallback provider
+ *
+ * Groq uses the OpenAI-compatible API at api.groq.com/openai/v1.
+ * Acts as the fallback when the primary LLM (Cerebras) fails or times out.
+ *
+ * Note: The existing openAIService.js already routes to Groq when the
+ * OPENAI_API_KEY starts with 'gsk_'.  This provider makes that routing
+ * explicit and injectable.
+ *
+ * Status: IMPLEMENTED — feature-flagged behind modular_v1.
+ *
+ * Required env: GROQ_API_KEY, GROQ_MODEL
+ */
+
 const axios                  = require('axios');
 const LanguageModelProvider  = require('../interfaces/LanguageModelProvider');
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 class GroqLlm extends LanguageModelProvider {
+  /**
+   * @param {object} opts
+   * @param {string} opts.apiKey  Groq API key (required)
+   * @param {string} opts.model   Groq model name
+   */
   constructor({ apiKey, model = 'llama-3.3-70b-versatile' } = {}) {
     super('GroqLlm');
     if (!apiKey) throw new Error('[GroqLlm] apiKey is required');
@@ -14,6 +34,8 @@ class GroqLlm extends LanguageModelProvider {
     this._sessions = new Map();
   }
 
+  // ── LanguageModelProvider implementation ──────────────────────────────────
+
   async createSession({ systemPrompt, callSid = '' }) {
     const sessionId = `grq_${callSid || Date.now()}`;
     this._sessions.set(sessionId, { systemPrompt, history: [] });
@@ -21,7 +43,7 @@ class GroqLlm extends LanguageModelProvider {
     return sessionId;
   }
 
-  async streamResponse({ sessionId, userTranscript, onChunk, onComplete, abortSignal = null }) {
+  async streamResponse({ sessionId, userTranscript, onChunk, onComplete }) {
     const session = this._sessions.get(sessionId);
     if (!session) throw new Error(`[GroqLlm] Unknown session: ${sessionId}`);
 
@@ -53,24 +75,11 @@ class GroqLlm extends LanguageModelProvider {
           },
           responseType: 'stream',
           timeout     : 20000,
-          signal      : abortSignal,
         }
       );
 
       await new Promise((resolve, reject) => {
         let buffer = '';
-
-        const onAbort = () => {
-          response.data.destroy();
-          reject(new Error('AbortError'));
-        };
-
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            return onAbort();
-          }
-          abortSignal.addEventListener('abort', onAbort);
-        }
 
         response.data.on('data', (chunk) => {
           buffer += chunk.toString();
@@ -93,18 +102,8 @@ class GroqLlm extends LanguageModelProvider {
           }
         });
 
-        response.data.on('end', () => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
-          resolve();
-        });
-        response.data.on('error', (err) => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
-          reject(err);
-        });
+        response.data.on('end',   resolve);
+        response.data.on('error', reject);
       });
 
     } catch (err) {
@@ -112,11 +111,13 @@ class GroqLlm extends LanguageModelProvider {
       throw err;
     }
 
+    // Clean [END_CALL] marker
     if (fullText.includes('[END_CALL]')) {
       shouldEnd = true;
       fullText  = fullText.replace('[END_CALL]', '').trim();
     }
 
+    // Basic [LEAD_CAPTURED] fallback (compatibility with current prompts)
     if (fullText.includes('[LEAD_CAPTURED]')) {
       try {
         const parts   = fullText.split('[LEAD_CAPTURED]');
@@ -127,7 +128,7 @@ class GroqLlm extends LanguageModelProvider {
           leadData = JSON.parse(jsonPart.slice(start, end + 1));
         }
         fullText = parts[0].trim();
-      } catch { /* ignore */ }
+      } catch { /* ignore parse failures */ }
     }
 
     session.history.push({ role: 'assistant', content: fullText });
@@ -138,6 +139,7 @@ class GroqLlm extends LanguageModelProvider {
     console.warn(`[GroqLlm] cancelResponse(${sessionId}) — streaming cancellation not yet implemented`);
   }
 
+  // eslint-disable-next-line no-unused-vars
   async callTool({ sessionId, toolName, toolArgs }) {
     console.warn(`[GroqLlm] callTool not supported — use CerebraLlm for tool calling`);
     return { result: null };
