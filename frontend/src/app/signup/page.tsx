@@ -66,15 +66,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const { country } = useCountry();
   
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(err => {
-        console.warn("Video autoplay failed or was prevented:", err);
-      });
-    }
-  }, []);
+
 
   // Navigation redirect parameter
   const [redirectUrl, setRedirectUrl] = useState("/workspace");
@@ -195,7 +187,6 @@ export default function SignUpPage() {
         }}
       >
         <video
-          ref={videoRef}
           autoPlay
           muted
           loop

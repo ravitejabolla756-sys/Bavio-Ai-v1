@@ -26,15 +26,7 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  React.useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(err => {
-        console.warn("Video autoplay failed or was prevented:", err);
-      });
-    }
-  }, []);
+
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -155,7 +147,6 @@ export default function LoginPage() {
         
         {/* Full-height background video */}
         <video
-          ref={videoRef}
           autoPlay
           muted
           loop
