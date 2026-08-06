@@ -48,21 +48,21 @@ export default function WaitlistSection() {
 
           {/* Heading */}
           <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.04em] text-[#140A02] mb-6 leading-[0.9] max-w-[620px]">
-            Get Early Access <br />
-            To Bavio.
+            Start Answering Calls <br />
+            With Bavio.
           </h2>
 
           {/* Subtext */}
           <p className="text-[#6B5A4C] text-[20px] font-normal leading-[1.7] max-w-[720px] mx-auto font-sans mb-8">
-            We are onboarding Indian businesses in batches to guarantee low-latency telephony and perfect voice quality. Secure your spot now to claim your dedicated AI receptionist.
+            Start answering business calls, qualifying leads, and capturing customer details automatically. Sign up today to speak with Bavio’s AI assistant.
           </p>
 
           {/* Action Button */}
           <Link
             href="/signup"
-            className="bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-bold px-10 py-4 rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
+            className="bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-10 h-[52px] rounded-full transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shadow-sm relative z-10 font-sans shrink-0 mb-8"
           >
-            <span>Join Waitlist</span>
+            <span>Try the 3-Minute Demo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -70,7 +70,7 @@ export default function WaitlistSection() {
           <div className="mt-4 pt-6 border-t border-[#F3E4D4]/60 w-full flex flex-col sm:flex-row justify-center items-center gap-6 text-[10px] font-bold text-[#6E6256] uppercase tracking-wider">
             <div>✓ No Credit Card</div>
             <div>✓ Setup In 5 Minutes</div>
-            <div>✓ Dedicated SIP Trunks</div>
+            <div>✓ Guided Business Setup</div>
           </div>
 
         </motion.div>

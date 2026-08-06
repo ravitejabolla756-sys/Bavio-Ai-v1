@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import { useCountry, countries } from "@/context/CountryContext";
+import { useCountry } from "@/context/CountryContext";
 import { GlobeSimple, Spinner } from "@phosphor-icons/react";
 import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
 
 export default function CountrySelector() {
-  const { country, isLoading, detectedMethod, changeCountry, detectCountry } = useCountry();
+  const { country, countriesList, isLoading, detectedMethod, changeCountry, detectCountry } = useCountry();
 
-  const options = countries.map((c) => ({
+  const options = countriesList.map((c) => ({
     value: c.code,
     label: c.name,
     icon: c.flag,
