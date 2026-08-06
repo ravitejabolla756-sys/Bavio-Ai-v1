@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { Envelope, Phone, MapPin, CheckCircle, InstagramLogo, XLogo, LinkedinLogo } from "@phosphor-icons/react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/landing/Navbar";
+import Footer from "@/components/landing/Footer";
 
 export default function Contact() {
   const [formSubmitted, setFormSubmitted] = useState(false);
