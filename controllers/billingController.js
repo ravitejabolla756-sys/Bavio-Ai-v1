@@ -4,13 +4,18 @@ const onboardingController = require('./onboardingController');
 const emailService = require('../services/emailService');
 const axios = require('axios');
 
-// Map user-facing subscription plan name to the plan_type enum used in DB
+// plan_type enum: free | starter | pro | enterprise
 const DB_PLAN_MAP = {
-    'free': 'free',
-    'starter': 'starter',
-    'growth': 'pro',
-    'scale': 'enterprise'
+    'free':     'free',
+    'starter':  'starter',
+    'growth':   'pro',
+    'scale':    'enterprise',
+    'business': 'enterprise',
 };
+
+const { PLANS_CONFIG, getPlanLimitSeconds } = require('../config/plans');
+const { TOPUPS_CONFIG, getTopupProductId, productIdToTopup, isTopupCheckoutAvailable } = require('../config/topups');
+const { applyTopupSeconds, resetMonthlySeconds } = require('../middleware/planEnforcement');
 
 async function subscribe(req, res) {
     try {
@@ -155,47 +160,59 @@ async function getStatus(req, res) {
             }
         }
 
-        const planKey = (client.plan || 'free').toLowerCase();
-        const overageRate = dodoService.OVERAGE_RATES[planKey] || 0;
-        const baseCost = dodoService.BASE_COSTS[planKey] || 0;
-        const overageMinutes = Math.max(0, (client.minutes_used || 0) - (client.minutes_limit || 30));
-        const overageCost = overageMinutes * overageRate;
-        const totalCostThisMonth = baseCost + overageCost;
-
-        const dataPayload = {
-            id: client.id,
-            email: client.email,
-            plan: client.plan,
-            status: client.status,
-            minutes_limit: client.minutes_limit,
-            minutes_used: client.minutes_used,
-            current_period_end: client.current_period_end,
-            dodo_subscription_id: client.dodo_subscription_id,
-            dodo_customer_id: client.dodo_customer_id,
-            country: client.country
-        };
+        // Second-based balance (new model)
+        const monthlyLimitSec  = client.monthly_limit_seconds  || (client.minutes_limit  || 0) * 60;
+        const monthlyUsedSec   = client.monthly_usage_seconds  || (client.minutes_used   || 0) * 60;
+        const topupBalanceSec  = client.topup_balance_seconds  || 0;
+        const monthlyRemSec    = Math.max(0, monthlyLimitSec - monthlyUsedSec);
+        const totalAvailableSec = monthlyRemSec + topupBalanceSec;
 
         res.status(200).json({
             success: true,
-            data: dataPayload,
+            data: {
+                id:                   client.id,
+                email:                client.email,
+                plan:                 client.plan,
+                status:               client.status,
+                minutes_limit:        Math.ceil(monthlyLimitSec / 60),
+                minutes_used:         Math.ceil(monthlyUsedSec  / 60),
+                current_period_end:   client.current_period_end,
+                dodo_subscription_id: client.dodo_subscription_id,
+                dodo_customer_id:     client.dodo_customer_id,
+                country:              client.country,
+                // Second-based fields
+                monthly_limit_seconds:  monthlyLimitSec,
+                monthly_usage_seconds:  monthlyUsedSec,
+                topup_balance_seconds:  topupBalanceSec,
+                total_available_seconds: totalAvailableSec,
+            },
             client: {
-                id: client.id,
-                email: client.email,
-                plan: client.plan,
-                subscriptionPlan: client.plan_name || client.plan,
-                status: client.status,
-                minutesLimit: client.minutes_limit,
-                minutesUsed: client.minutes_used,
-                minutesRemaining: Math.max(0, (client.minutes_limit || 30) - (client.minutes_used || 0)),
-                planExpiresAt: client.current_period_end,
-                dodoSubscriptionId: client.dodo_subscription_id,
-                dodoCustomerId: client.dodo_customer_id,
-                country: client.country,
-                overageMinutes: overageMinutes,
-                overageRate: overageRate,
-                baseCost: baseCost,
-                overageCost: overageCost,
-                totalCostThisMonth: totalCostThisMonth
+                id:                   client.id,
+                email:                client.email,
+                plan:                 client.plan,
+                subscriptionPlan:     client.plan_name || client.plan,
+                subscriptionStatus:   client.subscription_status || client.status,
+                status:               client.status,
+                // Minute-based (for display)
+                monthlyMinutesLimit:     Math.ceil(monthlyLimitSec / 60),
+                monthlyMinutesUsed:      Math.ceil(monthlyUsedSec  / 60),
+                monthlyMinutesRemaining: Math.ceil(monthlyRemSec   / 60),
+                topupMinutesRemaining:   Math.ceil(topupBalanceSec / 60),
+                totalMinutesAvailable:   Math.ceil(totalAvailableSec / 60),
+                usagePercent:            monthlyLimitSec > 0 ? Math.min(100, Math.round((monthlyUsedSec / monthlyLimitSec) * 100)) : 0,
+                // Second-based (for enforcement)
+                monthlyLimitSeconds:     monthlyLimitSec,
+                monthlyUsedSeconds:      monthlyUsedSec,
+                monthlyRemainingSeconds: monthlyRemSec,
+                topupBalanceSeconds:     topupBalanceSec,
+                totalAvailableSeconds:   totalAvailableSec,
+                // Meta
+                planExpiresAt:        client.current_period_end,
+                billingPeriodStart:   client.billing_period_start,
+                billingPeriodEnd:     client.billing_period_end,
+                dodoSubscriptionId:   client.dodo_subscription_id,
+                dodoCustomerId:       client.dodo_customer_id,
+                country:              client.country,
             },
             dodoSubscription: dodoStatus
         });
@@ -503,7 +520,7 @@ async function getInvoice(req, res) {
             paymentMethod: 'Dodo Payments',
             dodoPaymentId: payment.dodo_payment_id,
             periodStart: payment.period_start,
-            periodEnd: payment.period_end,
+                        periodEnd: payment.period_end,
             company: {
                 name: 'Bavio AI',
                 email: 'billing@bavio.in',
@@ -523,18 +540,108 @@ async function getInvoice(req, res) {
 }
 
 async function handleWebhook(req, res) {
-    try {
-        // Verify webhook signature
-        const providedSecret = req.headers['x-webhook-secret'];
-        const expectedSecret = process.env.DODO_WEBHOOK_SECRET;
-        if (expectedSecret && providedSecret !== expectedSecret) {
-            console.error('Invalid webhook secret');
-            return res.status(401).json({ error: 'Invalid webhook secret' });
-        }
-        const event = req.body;
-        const eventType = event.event;
+    const crypto = require('crypto');
+    const webhookId = req.headers['webhook-id'] || req.headers['svix-id'];
+    const signatureHeader = req.headers['webhook-signature'] || req.headers['svix-signature'];
+    const timestamp = req.headers['webhook-timestamp'] || req.headers['svix-timestamp'];
 
-        console.log(`Received Dodo webhook: ${eventType}`, event);
+    if (!webhookId || !signatureHeader || !timestamp) {
+        console.error('[PAYMENT WEBHOOK] Missing standard webhook headers');
+        return res.status(400).json({ error: 'Missing standard webhook headers' });
+    }
+
+    // Validate timestamp drift (replay prevention - 5 minutes)
+    const now = Math.floor(Date.now() / 1000);
+    const eventTime = parseInt(timestamp, 10);
+    if (isNaN(eventTime) || Math.abs(now - eventTime) > 300) {
+        console.error(`[PAYMENT WEBHOOK] Webhook timestamp drift too large: ${timestamp}`);
+        return res.status(400).json({ error: 'Webhook timestamp outside accepted replay window' });
+    }
+
+    // Extract raw payload (handles Express raw buffer or fallback strings/objects)
+    const rawBody = req.body instanceof Buffer 
+        ? req.body.toString('utf8') 
+        : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
+
+    const secret = process.env.DODO_WEBHOOK_SECRET || '';
+    let cleanSecret = secret;
+    if (cleanSecret.startsWith('whsec_')) {
+        cleanSecret = cleanSecret.substring(6);
+    }
+
+    let verified = false;
+    try {
+        const secretBuffer = Buffer.from(cleanSecret, 'base64');
+        const toSign = `${webhookId}.${timestamp}.${rawBody}`;
+        const signatures = signatureHeader.split(' ');
+        
+        for (const sig of signatures) {
+            const parts = sig.split(',');
+            if (parts.length === 2 && parts[0] === 'v1') {
+                const expectedHash = parts[1];
+                const hmac = crypto.createHmac('sha256', secretBuffer);
+                hmac.update(toSign);
+                const computedHash = hmac.digest('base64');
+                
+                if (crypto.timingSafeEqual(Buffer.from(expectedHash, 'utf8'), Buffer.from(computedHash, 'utf8'))) {
+                    verified = true;
+                    break;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[PAYMENT WEBHOOK] Signature decryption error:', e.message);
+    }
+
+    if (!verified) {
+        console.error('[PAYMENT WEBHOOK] Standard signature validation failed');
+        return res.status(401).json({ error: 'Invalid webhook signature' });
+    }
+
+    // Parse verified payload
+    let event;
+    try {
+        event = JSON.parse(rawBody);
+    } catch (e) {
+        console.error('[PAYMENT WEBHOOK] Failed to parse payload JSON:', e.message);
+        return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
+    const eventType = event.event;
+    const eventId = webhookId;
+
+    console.log(`Received Dodo webhook event: ${eventType} (ID: ${eventId})`);
+
+    try {
+        // Idempotency: verify webhook state in webhook_events
+        const existingEvent = await db.query(
+            "SELECT * FROM webhook_events WHERE provider = 'dodo' AND webhook_id = $1 LIMIT 1",
+            [eventId]
+        );
+
+        if (existingEvent.rows.length > 0) {
+            const record = existingEvent.rows[0];
+            if (record.processing_status === 'completed') {
+                console.log(`[DODO WEBHOOK] Webhook ${eventId} already processed successfully. Acknowledging.`);
+                return res.status(200).json({ success: true, message: 'Event already processed' });
+            }
+            if (record.processing_status === 'processing') {
+                console.log(`[DODO WEBHOOK] Webhook ${eventId} is currently processing.`);
+                return res.status(409).json({ error: 'Conflict: Webhook is processing' });
+            }
+            // If failed, permit retry
+            await db.query(
+                "UPDATE webhook_events SET processing_status = 'processing', received_at = NOW(), error_message = NULL WHERE id = $1",
+                [record.id]
+            );
+        } else {
+            const payloadHash = crypto.createHash('sha256').update(rawBody).digest('hex');
+            await db.query(
+                `INSERT INTO webhook_events (provider, webhook_id, event_type, payload_hash, processing_status, received_at)
+                 VALUES ('dodo', $1, $2, $3, 'processing', NOW())`,
+                [eventId, eventType, payloadHash]
+            );
+        }
 
         switch (eventType) {
             case 'subscription.active': {
@@ -542,25 +649,69 @@ async function handleWebhook(req, res) {
                 const businessId = subscription.metadata?.business_id || subscription.metadata?.client_id;
                 
                 if (businessId) {
-                    // Determine plan from product ID
-                    let plan = 'starter';
-                    const productId = subscription.product_id;
-                    if (productId === dodoService.PRODUCT_IDS.growth) plan = 'growth';
-                    if (productId === dodoService.PRODUCT_IDS.scale) plan = 'scale';
+                    // Out-of-order event protection
+                    const bizRes = await db.query('SELECT plan, plan_changed_at FROM businesses WHERE id = $1', [businessId]);
+                    if (bizRes.rows.length > 0) {
+                        const current = bizRes.rows[0];
+                        const eventTimestamp = new Date(eventTime * 1000);
+                        if (current.plan_changed_at && eventTimestamp < new Date(current.plan_changed_at)) {
+                            console.warn(`[DODO WEBHOOK] Skipping out-of-order event ${eventId} (event time ${eventTimestamp} is older than last change ${current.plan_changed_at}).`);
+                            await db.query(
+                                "UPDATE webhook_events SET processing_status = 'completed', processed_at = NOW() WHERE provider = 'dodo' AND webhook_id = $1",
+                                [eventId]
+                            );
+                            return res.status(200).json({ success: true, message: 'Skipped: Out-of-order event' });
+                        }
+                    }
 
-                    const minutesLimit = dodoService.getPlanMinutes(plan);
+                    const productId = subscription.product_id;
+                    const plan = dodoService.productIdToPlan(productId);
+                    if (!plan) {
+                        console.error(`[DODO WEBHOOK] Unknown product ID: ${productId}. Cannot activate subscription.`);
+                        throw new Error(`Unknown product ID: ${productId}`);
+                    }
+
+                    const planConfig = PLANS_CONFIG[plan.toLowerCase()];
                     const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
-                    
+                    const minutesLimit = planConfig.includedMinutes || 120;
+                    const overageRate = planConfig.overagePerMinute || 0.18;
+                    const includedNumbers = planConfig.includedNumbers || 1;
+
+                    const periodStart = subscription.current_period_start ? new Date(subscription.current_period_start) : new Date();
+                    const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end) : new Date();
+
                     await db.query(
                         `UPDATE businesses 
                          SET plan = $1::plan_type,
                              plan_name = $2,
-                             current_period_end = $3,
-                             minutes_limit = $4,
+                             subscription_status = 'active',
                              status = 'active',
-                             dodo_subscription_id = $5
-                         WHERE id = $6`,
-                        [dbPlan, plan, subscription.current_period_end, minutesLimit, subscription.id || subscription.subscription_id, businessId]
+                             dodo_product_id = $3,
+                             dodo_subscription_id = $4,
+                             dodo_customer_id = $5,
+                             billing_period_start = $6,
+                             billing_period_end = $7,
+                             current_period_end = $7,
+                             minutes_limit = $8,
+                             minutes_used = 0,
+                             overage_rate = $9,
+                             included_phone_numbers = $10,
+                             billing_cycle = 'monthly',
+                             updated_at = NOW()
+                         WHERE id = $11`,
+                        [
+                            dbPlan,
+                            plan,
+                            productId,
+                            subscription.id || subscription.subscription_id,
+                            subscription.customer?.id || subscription.customer_id,
+                            periodStart,
+                            periodEnd,
+                            minutesLimit,
+                            overageRate,
+                            includedNumbers,
+                            businessId
+                        ]
                     );
                     
                     console.log(`Activated subscription for business ${businessId}: ${plan}`);
@@ -622,75 +773,111 @@ async function handleWebhook(req, res) {
             case 'payment.succeeded': {
                 const payment = event.data;
                 const customerId = payment.customer_id;
-                
-                // Idempotency: check if we already logged this payment
-                const existingPayment = await db.query(
-                    'SELECT id FROM payment_logs WHERE dodo_payment_id = $1',
-                    [payment.id]
-                );
-                
-                if (existingPayment.rows.length > 0) {
-                    console.log(`Payment ${payment.id} already processed, skipping`);
-                    break;
-                }
 
-                // Resolve business_id from metadata or customer mapping
-                const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
-                const planName = payment.metadata?.plan || null;
-                const countryCode = payment.metadata?.country_code || null;
-                const dialCode = payment.metadata?.dial_code || null;
+                // ── Check if this is a top-up payment ────────────────────
+                const topupType = payment.metadata?.topup_type || payment.metadata?.topup_id;
+                const topupConfig = topupType ? require('../config/topups').TOPUPS_CONFIG[topupType] : null;
 
-                // Log payment in database with enhanced fields
-                await db.query(
-                    `INSERT INTO payment_logs 
-                     (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, plan_name, metadata)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                    [
-                        payment.id,
-                        customerId,
-                        businessId || null,
-                        payment.amount,
-                        payment.currency || 'USD',
-                        'succeeded',
-                        planName,
-                        JSON.stringify(payment)
-                    ]
-                );
-                
-                console.log(`Logged successful payment: ${payment.id} for business ${businessId}`);
-                
-                if (businessId) {
-                    // Update business subscription status
-                    const dbPlan = DB_PLAN_MAP[(planName || 'starter').toLowerCase()] || 'starter';
-                    await db.query(
-                        `UPDATE businesses SET plan = $1::plan_type, plan_name = $2, status = 'active', subscription_status = 'active', billing_cycle = $3 WHERE id = $4`,
-                        [dbPlan, planName || 'starter', payment.billing_cycle || 'monthly', businessId]
-                    );
-                    // Provision phone number via internal endpoint
-                    try {
-                        await axios.post(`${process.env.INTERNAL_API_BASE_URL || ''}/api/phone/provision`, {
-                            businessId,
-                            countryCode,
-                            dialCode
-                        });
-                        console.log('Provisioned phone number for business', businessId);
-                    } catch (provErr) {
-                        console.error('Phone provisioning failed:', provErr.message);
+                if (topupConfig) {
+                    // ── TOP-UP PAYMENT ────────────────────────────────────
+                    const topupBusinessId = payment.metadata?.business_id || payment.metadata?.client_id;
+                    if (!topupBusinessId) {
+                        console.warn('[DODO WEBHOOK] Top-up payment missing business_id in metadata.');
+                        break;
                     }
-                    // Mark intent completed if exists
-                    await db.query(
-                        `UPDATE subscription_intents SET status = 'completed' WHERE business_id = $1`,
-                        [businessId]
+
+                    console.log(`[DODO WEBHOOK] Processing top-up ${topupType} for business ${topupBusinessId}`);
+
+                    // Idempotency: check payment_logs
+                    const existingTopup = await db.query(
+                        'SELECT id FROM payment_logs WHERE dodo_payment_id = $1', [payment.id]
                     );
-                    // Send success email
-                    try {
-                        await emailService.sendMail(
-                            payment.customer_email || payment.email || payment.metadata?.customer_email,
-                            'Payment Successful',
-                            `Your payment of ${payment.amount} ${payment.currency} was successful. Your virtual number is being set up.`
+                    if (existingTopup.rows.length === 0) {
+                        await db.query(
+                            `INSERT INTO payment_logs
+                             (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, plan_name, payment_type, metadata)
+                             VALUES ($1, $2, $3, $4, $5, $6, $7, 'topup', $8)`,
+                            [payment.id, customerId, topupBusinessId, payment.amount, payment.currency || 'USD', 'succeeded', topupType,
+                             JSON.stringify(payment)]
                         );
-                    } catch (emailErr) {
-                        console.error('Failed to send success email:', emailErr.message);
+                    }
+
+                    // Apply seconds atomically
+                    await applyTopupSeconds(
+                        topupBusinessId,
+                        topupType,
+                        topupConfig.seconds,
+                        payment.id,
+                        eventId,
+                        { amount: payment.amount, currency: payment.currency || 'USD', dodoProductId: payment.product_id }
+                    );
+                    console.log(`[DODO WEBHOOK] Top-up applied: +${topupConfig.seconds}s for ${topupBusinessId}`);
+
+                } else {
+                    // ── SUBSCRIPTION PAYMENT ──────────────────────────────
+                    const existingPayment = await db.query(
+                        'SELECT id FROM payment_logs WHERE dodo_payment_id = $1', [payment.id]
+                    );
+                    if (existingPayment.rows.length > 0) {
+                        console.log(`Payment ${payment.id} already processed, skipping`);
+                        break;
+                    }
+
+                    const businessId = payment.metadata?.business_id || payment.metadata?.client_id;
+                    const planName   = payment.metadata?.plan || null;
+
+                    await db.query(
+                        `INSERT INTO payment_logs
+                         (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, plan_name, metadata)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                        [payment.id, customerId, businessId || null, payment.amount, payment.currency || 'USD',
+                         'succeeded', planName, JSON.stringify(Object.assign({}, payment, { event_id: eventId }))]
+                    );
+
+                    console.log(`Logged successful subscription payment: ${payment.id} for business ${businessId}`);
+
+                    if (businessId) {
+                        const resolvedPlan  = (planName || 'starter').toLowerCase();
+                        const planConfig    = PLANS_CONFIG[resolvedPlan] || PLANS_CONFIG.starter;
+                        const dbPlan        = DB_PLAN_MAP[resolvedPlan] || 'starter';
+                        const limitSeconds  = planConfig.monthlyLimitSeconds || planConfig.includedMinutes * 60 || 12000;
+                        const limitMinutes  = planConfig.monthlyMinutes     || planConfig.includedMinutes || 200;
+                        const inclNumbers   = planConfig.includedPhoneNumbers || planConfig.includedNumbers || 1;
+
+                        await db.query(
+                            `UPDATE businesses SET
+                                plan = $1::plan_type,
+                                plan_name = $2,
+                                status = 'active',
+                                subscription_status = 'active',
+                                onboarding_status = 'pending',
+                                onboarding_step = 0,
+                                minutes_limit = $3,
+                                monthly_limit_seconds = $4,
+                                monthly_usage_seconds = 0,
+                                billing_cycle = $5,
+                                dodo_customer_id = $6,
+                                included_phone_numbers = $7,
+                                updated_at = NOW()
+                             WHERE id = $8`,
+                            [dbPlan, planConfig.id, limitMinutes, limitSeconds,
+                             payment.billing_cycle || 'monthly', customerId || 'cust_dodo', inclNumbers, businessId]
+                        );
+
+                        await db.query(
+                            `UPDATE subscription_intents SET status = 'completed' WHERE business_id = $1`,
+                            [businessId]
+                        );
+
+                        try {
+                            await emailService.sendMail(
+                                payment.customer_email || payment.email || payment.metadata?.customer_email,
+                                'Payment Successful — Welcome to Bavio',
+                                `Your payment of $${payment.amount} ${payment.currency} was successful. Your AI receptionist is being set up.`
+                            );
+                        } catch (emailErr) {
+                            console.error('Failed to send success email:', emailErr.message);
+                        }
                     }
                 }
                 break;
@@ -742,35 +929,117 @@ async function handleWebhook(req, res) {
             case 'subscription.updated': {
                 const subscription = event.data;
                 const businessId = subscription.metadata?.business_id || subscription.metadata?.client_id;
-                
+
                 if (businessId) {
-                    let plan = dodoService.productIdToPlan(subscription.product_id) || 'starter';
-                    const minutesLimit = dodoService.getPlanMinutes(plan);
-                    const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
-                    
+                    const plan = dodoService.productIdToPlan(subscription.product_id);
+                    if (!plan) {
+                        console.error(`[DODO WEBHOOK] Unknown product ID in subscription.updated: ${subscription.product_id}.`);
+                        throw new Error(`Unknown product ID: ${subscription.product_id}`);
+                    }
+
+                    const planConfig      = PLANS_CONFIG[plan.toLowerCase()];
+                    const dbPlan          = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
+                    const limitMinutes    = planConfig.monthlyMinutes || planConfig.includedMinutes || 200;
+                    const limitSeconds    = planConfig.monthlyLimitSeconds || limitMinutes * 60;
+                    const includedNumbers = planConfig.includedPhoneNumbers || planConfig.includedNumbers || 1;
+
                     await db.query(
-                        `UPDATE businesses 
-                         SET plan = $1,
+                        `UPDATE businesses
+                         SET plan = $1::plan_type,
                              plan_name = $2,
                              minutes_limit = $3,
-                             plan_changed_at = NOW()
-                         WHERE id = $4`,
-                        [dbPlan, plan, minutesLimit, businessId]
+                             monthly_limit_seconds = $4,
+                             included_phone_numbers = $5,
+                             plan_changed_at = NOW(),
+                             updated_at = NOW()
+                         WHERE id = $6`,
+                        [dbPlan, plan, limitMinutes, limitSeconds, includedNumbers, businessId]
                     );
-                    
+
                     console.log(`Updated subscription for business ${businessId}: ${plan}`);
                 }
                 break;
             }
 
+            case 'subscription.renewed': {
+                // Monthly renewal: reset monthly seconds, preserve top-up balance
+                const subscription = event.data;
+                const businessId   = subscription.metadata?.business_id || subscription.metadata?.client_id;
+
+                if (businessId) {
+                    const plan = dodoService.productIdToPlan(subscription.product_id);
+                    if (!plan) {
+                        console.warn(`[DODO WEBHOOK] Unknown product ID in subscription.renewed: ${subscription.product_id}. Skipping reset.`);
+                        break;
+                    }
+
+                    const planConfig   = PLANS_CONFIG[plan.toLowerCase()];
+                    const limitSeconds = planConfig.monthlyLimitSeconds || (planConfig.monthlyMinutes || 200) * 60;
+
+                    const periodEnd = subscription.current_period_end
+                        ? new Date(subscription.current_period_end)
+                        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+                    // Reset monthly usage — idempotent via eventId
+                    await resetMonthlySeconds(businessId, limitSeconds, eventId);
+
+                    // Update billing period
+                    await db.query(
+                        `UPDATE businesses
+                         SET billing_period_end = $1,
+                             current_period_end = $1,
+                             subscription_status = 'active',
+                             updated_at = NOW()
+                         WHERE id = $2`,
+                        [periodEnd, businessId]
+                    );
+
+                    console.log(`[DODO WEBHOOK] Monthly renewal processed for ${businessId}: ${limitSeconds}s reset.`);
+
+                    // Renewal email
+                    db.query('SELECT email, name FROM businesses WHERE id = $1', [businessId])
+                        .then(r => {
+                            if (r.rows.length > 0) {
+                                const { email, name } = r.rows[0];
+                                const mins = Math.ceil(limitSeconds / 60);
+                                emailService.sendMail(
+                                    email,
+                                    'Your Bavio Monthly Minutes Have Renewed',
+                                    `Hi ${name},\n\nYour monthly plan has renewed and your ${mins} call minutes have been reset.\n\nYour prepaid top-up minutes (if any) carry over to the new period.\n\nBest regards,\nThe Bavio Team`
+                                ).catch(e => console.error('[EMAIL] Renewal email failed:', e.message));
+                            }
+                        })
+                        .catch(err => console.error('[EMAIL] Renewal query error:', err.message));
+                }
+                break;
+            }
+
             default:
-                console.log(`Unhandled webhook event: ${eventType}`);
+                console.log(`[DODO WEBHOOK] Unhandled event type: ${eventType}`);
+                break;
         }
 
-        res.status(200).json({ received: true });
+        // Mark event as completed in webhook_events
+        await db.query(
+            "UPDATE webhook_events SET processing_status = 'completed', processed_at = NOW() WHERE provider = 'dodo' AND webhook_id = $1",
+            [eventId]
+        );
+
+        res.status(200).json({ success: true, received: true });
     } catch (err) {
-        console.error('Webhook error:', err);
-        res.status(500).json({ error: err.message });
+        console.error('[DODO WEBHOOK] Webhook error:', err);
+
+        // Mark event as failed in webhook_events
+        try {
+            await db.query(
+                "UPDATE webhook_events SET processing_status = 'failed', error_message = $1, processed_at = NOW() WHERE provider = 'dodo' AND webhook_id = $2",
+                [err.message, webhookId]
+            );
+        } catch (dbErr) {
+            console.error('[DODO WEBHOOK] Failed to update fail state in DB:', dbErr.message);
+        }
+
+        res.status(500).json({ error: 'internal_error', message: err.message });
     }
 }
 
@@ -896,123 +1165,22 @@ async function autoProvisionBusiness(clientId) {
     }
 }
 
-// Create Razorpay Order
+// Create Razorpay Order - Retired in Production (Phase 1 Hardening)
 async function createRazorpayOrder(req, res) {
-    try {
-        const { planName, topupMinutes, amount } = req.body;
-        const clientId = req.client.id;
-        
-        console.log(`[RAZORPAY] Creating order for client ${clientId}: planName=${planName}, topupMinutes=${topupMinutes}, amount=${amount}`);
-        
-        const orderId = 'order_rcpt_' + Math.random().toString(36).substring(2, 15);
-        
-        res.status(201).json({
-            success: true,
-            id: orderId,
-            amount: amount,
-            currency: 'USD',
-            receipt: 'receipt_' + Date.now()
-        });
-    } catch (err) {
-        console.error('createRazorpayOrder error:', err);
-        res.status(500).json({ error: err.message });
-    }
+    console.warn(`[RETIRED] Attempted to call retired Razorpay create order endpoint for client ${req.client.id}`);
+    return res.status(410).json({
+        error: "Gone",
+        message: "Razorpay integrations are no longer supported. Please subscribe via Dodo Payments."
+    });
 }
 
-// Verify Razorpay Payment
+// Verify Razorpay Payment - Retired in Production (Phase 1 Hardening)
 async function verifyRazorpayPayment(req, res) {
-    try {
-        const { 
-            razorpay_order_id, 
-            razorpay_payment_id, 
-            razorpay_signature, 
-            planName, 
-            topupMinutes, 
-            amount, 
-            gstNumber, 
-            gstBusinessName 
-        } = req.body;
-        
-        const clientId = req.client.id;
-        console.log(`[RAZORPAY] Verifying payment for client ${clientId}: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
-
-        const paymentId = razorpay_payment_id || 'pay_' + Math.random().toString(36).substring(2, 12);
-        const invoiceNum = 'BAV-RP-' + Date.now();
-
-        // 1. Process Subscription upgrade
-        if (planName) {
-            const dbPlan = DB_PLAN_MAP[planName.toLowerCase()] || 'free';
-            const minutesLimit = dodoService.PLAN_LIMITS[planName.toLowerCase()] || 100;
-            
-            await db.query(
-                `UPDATE businesses 
-                 SET plan = $1,
-                     plan_name = $2,
-                     minutes_limit = $3,
-                     minutes_used = 0,
-                     current_period_end = NOW() + INTERVAL '30 days',
-                     status = 'active',
-                     subscription_status = 'active',
-                     plan_changed_at = NOW()
-                 WHERE id = $4`,
-                [dbPlan, planName, minutesLimit, clientId]
-            );
-            
-            console.log(`[RAZORPAY] Upgraded client ${clientId} to plan ${planName}`);
-        }
-        // 2. Process minutes top-up
-        else if (topupMinutes) {
-            const parsedMinutes = parseInt(topupMinutes);
-            await db.query(
-                `UPDATE businesses 
-                 SET minutes_limit = minutes_limit + $1,
-                     current_period_end = COALESCE(current_period_end, NOW()) + INTERVAL '30 days'
-                 WHERE id = $2`,
-                [parsedMinutes, clientId]
-            );
-            console.log(`[RAZORPAY] Credited client ${clientId} with ${parsedMinutes} top-up minutes`);
-        }
-
-        // 3. Save GST details if provided
-        if (gstNumber) {
-            await db.query(
-                `UPDATE businesses 
-                 SET business_description = COALESCE(business_description, '') || '\nGST: ' || $1 || ' (' || $2 || ')'
-                 WHERE id = $3`,
-                [gstNumber, gstBusinessName || '', clientId]
-            );
-        }
-
-        // 4. Log the transaction in payment_logs
-        await db.query(
-            `INSERT INTO payment_logs 
-             (dodo_payment_id, dodo_customer_id, business_id, amount, currency, status, plan_name, invoice_number, payment_type, period_start, period_end)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW() + INTERVAL '30 days')`,
-            [
-                paymentId,
-                'razorpay_cust_' + clientId,
-                clientId,
-                amount || 0,
-                'USD',
-                'succeeded',
-                planName || 'topup',
-                invoiceNum,
-                planName ? 'subscription' : 'topup'
-            ]
-        );
-
-        res.status(200).json({
-            success: true,
-            message: 'Payment verified and credited successfully.',
-            invoiceNumber: invoiceNum,
-            amount: amount,
-            planName: planName || 'Top-Up Minutes'
-        });
-
-    } catch (err) {
-        console.error('verifyRazorpayPayment error:', err);
-        res.status(500).json({ error: err.message });
-    }
+    console.warn(`[RETIRED] Attempted to call retired Razorpay verify endpoint for client ${req.client.id}`);
+    return res.status(410).json({
+        error: "Gone",
+        message: "Razorpay integrations are no longer supported. Please subscribe via Dodo Payments."
+    });
 }
 
 // Fetch active trial status and usage summaries for onboarding
@@ -1061,46 +1229,189 @@ async function getTrialStatus(req, res) {
   }
 }
 
-// Fetch available pricing packages
+// Fetch available pricing packages and top-ups
 async function getPricing(req, res) {
   try {
-    const plans = [
-      {
-        id: "STARTER",
-        name: "Starter",
-        price: 1999,
-        currency: "INR",
-        minutes: 200,
-        overageRate: 5,
-        features: ["200 minutes/month", "₹5 per extra minute", "Basic analytics", "Email support"]
-      },
-      {
-        id: "GROWTH",
-        name: "Growth",
-        price: 3999,
-        currency: "INR",
-        minutes: 500,
-        overageRate: 4,
-        popular: true,
-        features: ["500 minutes/month", "₹4 per extra minute", "Advanced analytics", "Lead prioritization", "24/7 support"]
-      },
-      {
-        id: "SCALE",
-        name: "Scale",
-        price: 7999,
-        currency: "INR",
-        minutes: 1500,
-        overageRate: 3,
-        features: ["1500 minutes/month", "₹3 per extra minute", "Full analytics suite", "API access", "Priority support", "White-label option"]
+    const sanitizedPlans = Object.values(PLANS_CONFIG).map(plan => {
+      if (plan.id === 'business') {
+        return { id: plan.id, name: plan.name, contactSales: true, checkoutAvailable: false };
       }
-    ];
-
-    return res.status(200).json({
-      plans,
-      yearlyDiscount: 0.17
+      const productEnvVal = plan.dodoProductEnv ? process.env[plan.dodoProductEnv] : null;
+      return {
+        id:                   plan.id,
+        name:                 plan.name,
+        priceMonthly:         plan.priceMonthly,
+        currency:             plan.currency,
+        monthlyMinutes:       plan.monthlyMinutes,
+        monthlyLimitSeconds:  plan.monthlyLimitSeconds,
+        includedPhoneNumbers: plan.includedPhoneNumbers,
+        // No overagePerMinute — prepaid model
+        checkoutAvailable:    !!(productEnvVal && productEnvVal.trim())
+      };
     });
+
+    // Top-ups — visibility available always, checkout depends on env var
+    const sanitizedTopups = Object.values(TOPUPS_CONFIG).map(t => ({
+      id:                 t.id,
+      name:               t.name,
+      price:              t.price,
+      currency:           t.currency,
+      minutes:            t.minutes,
+      seconds:            t.seconds,
+      description:        t.description,
+      noAutoRenewal:      t.noAutoRenewal,
+      checkoutAvailable:  isTopupCheckoutAvailable(t.id),
+    }));
+
+    return res.status(200).json({ plans: sanitizedPlans, topups: sanitizedTopups });
   } catch (err) {
     console.error('getPricing error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Create a top-up one-time checkout
+async function createTopupCheckout(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    const email      = req.client?.email || req.user?.email || 'billing@bavio.in';
+
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { topupId } = req.body;
+    if (!topupId) {
+      return res.status(400).json({ error: 'missing_fields', message: 'topupId is required' });
+    }
+
+    const topupConfig = TOPUPS_CONFIG[topupId];
+    if (!topupConfig) {
+      return res.status(400).json({ error: 'invalid_topup', message: `Top-up ID ${topupId} is not valid.` });
+    }
+
+    // Require active subscription
+    const bizRes = await db.query(
+      'SELECT subscription_status, billing_period_end FROM businesses WHERE id = $1',
+      [businessId]
+    );
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found' });
+    }
+    const biz = bizRes.rows[0];
+    const isActive = biz.subscription_status === 'active' && (!biz.billing_period_end || new Date(biz.billing_period_end) >= new Date());
+    if (!isActive) {
+      return res.status(403).json({
+        error: 'subscription_required',
+        message: 'An active Bavio subscription is required to purchase top-up minutes.'
+      });
+    }
+
+    // Check product ID configured
+    const productId = getTopupProductId(topupId);
+    if (!productId) {
+      console.error(`[BILLING] Missing ${topupConfig.dodoProductEnv} environment variable`);
+      return res.status(503).json({
+        error:   'service_unavailable',
+        message: 'This top-up is being prepared for launch. Please try again shortly.'
+      });
+    }
+
+    // Create Dodo one-time checkout
+    let checkout;
+    try {
+      checkout = await dodoService.createTopupCheckout(businessId, topupId, email);
+    } catch (dodoErr) {
+      console.error('[BILLING] Top-up checkout creation failed:', dodoErr.message);
+      return res.status(503).json({
+        error:   'service_unavailable',
+        message: 'Payment system temporarily unavailable. Please try again.'
+      });
+    }
+
+    return res.status(200).json({
+      checkoutUrl: checkout.checkoutUrl,
+      topupId,
+      minutes:  topupConfig.minutes,
+      amount:   topupConfig.price,
+      currency: topupConfig.currency,
+    });
+
+  } catch (err) {
+    console.error('createTopupCheckout error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Get top-up transaction history for the authenticated business
+async function getTopupTransactions(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const result = await db.query(
+      `SELECT id, topup_type, minutes_added, seconds_added, amount, currency,
+              payment_status, created_at, applied_at
+       FROM topup_transactions
+       WHERE business_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [businessId]
+    );
+
+    return res.status(200).json({ transactions: result.rows });
+  } catch (err) {
+    console.error('getTopupTransactions error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Get current second-based balance for the authenticated business
+async function getBalance(req, res) {
+  try {
+    const businessId = req.client?.id || req.user?.id;
+    if (!businessId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const result = await db.query(
+      `SELECT monthly_limit_seconds, monthly_usage_seconds, topup_balance_seconds,
+              minutes_limit, minutes_used, subscription_status, billing_period_end, plan, plan_name
+       FROM businesses WHERE id = $1`,
+      [businessId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found' });
+    }
+
+    const b = result.rows[0];
+    const limitSec  = b.monthly_limit_seconds  || (b.minutes_limit || 0) * 60;
+    const usedSec   = b.monthly_usage_seconds  || (b.minutes_used  || 0) * 60;
+    const topupSec  = b.topup_balance_seconds  || 0;
+    const remSec    = Math.max(0, limitSec - usedSec);
+    const totalSec  = remSec + topupSec;
+
+    return res.status(200).json({
+      plan:                    b.plan_name || b.plan,
+      subscriptionStatus:      b.subscription_status,
+      billingPeriodEnd:        b.billing_period_end,
+      monthlyLimitMinutes:     Math.ceil(limitSec / 60),
+      monthlyUsedMinutes:      Math.ceil(usedSec  / 60),
+      monthlyRemainingMinutes: Math.ceil(remSec   / 60),
+      topupRemainingMinutes:   Math.ceil(topupSec / 60),
+      totalAvailableMinutes:   Math.ceil(totalSec / 60),
+      usagePercent:            limitSec > 0 ? Math.min(100, Math.round((usedSec / limitSec) * 100)) : 0,
+      // Raw seconds for enforcement
+      monthlyLimitSeconds:     limitSec,
+      monthlyUsedSeconds:      usedSec,
+      monthlyRemainingSeconds: remSec,
+      topupBalanceSeconds:     topupSec,
+      totalAvailableSeconds:   totalSec,
+    });
+  } catch (err) {
+    console.error('getBalance error:', err);
     return res.status(500).json({ error: 'internal_error', message: err.message });
   }
 }
@@ -1115,20 +1426,40 @@ async function createCheckout(req, res) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { planId, billingPeriod } = req.body;
+    const { planId } = req.body;
     if (!planId) {
       return res.status(400).json({ error: 'missing_fields', message: 'planId is required' });
     }
 
     const normalizedPlan = planId.toLowerCase();
-    const cycle = billingPeriod?.toLowerCase() === 'yearly' ? 'annual' : 'monthly';
+
+    const planConfig = PLANS_CONFIG[normalizedPlan];
+    if (!planConfig) {
+      return res.status(400).json({ error: 'invalid_plan', message: `Plan ${planId} is invalid.` });
+    }
+
+    if (planConfig.id === 'business') {
+      return res.status(400).json({ error: 'checkout_unavailable', message: 'Please contact sales to activate the Business plan.' });
+    }
+
+    // Verify Dodo Product ID is present in environment
+    const productId = process.env[planConfig.dodoProductEnv];
+    if (!productId || !productId.trim()) {
+      console.error(`[BILLING] Missing environment variable: ${planConfig.dodoProductEnv}`);
+      return res.status(503).json({
+        error: 'service_unavailable',
+        message: 'This plan is being prepared for launch. Please try again shortly.'
+      });
+    }
+
+    const price = planConfig.priceMonthly;
 
     const dodoService = require('../services/dodoBillingService');
     let checkoutUrl = '';
     let orderId = `order_${Math.random().toString(36).substring(2, 11)}`;
 
     try {
-      const response = await dodoService.createSubscription(businessId, normalizedPlan, email, cycle);
+      const response = await dodoService.createSubscription(businessId, normalizedPlan, email, 'monthly');
       if (response && response.checkoutUrl) {
         checkoutUrl = response.checkoutUrl;
         orderId = response.subscriptionId || orderId;
@@ -1138,15 +1469,19 @@ async function createCheckout(req, res) {
     }
 
     if (!checkoutUrl) {
-      checkoutUrl = `https://checkout.dodopayments.com/mock-checkout?plan=${planId}&period=${billingPeriod}&client=${businessId}`;
+      // Return 503 since Dodo creation failed or checkouts are disabled
+      return res.status(503).json({
+        error: 'service_unavailable',
+        message: 'This plan is being prepared for launch. Please try again shortly.'
+      });
     }
 
-    // Save initial payment log
+    // Save initial payment log (using USD currency and price)
     await db.query(
       `INSERT INTO payment_logs 
        (dodo_payment_id, business_id, amount, currency, status, plan_name, payment_type, period_start, period_end)
        VALUES ($1, $2, $3, $4, $5, $6, 'subscription', NOW(), NOW() + INTERVAL '30 days')`,
-      [orderId, businessId, normalizedPlan === 'scale' ? 7999 : normalizedPlan === 'growth' ? 3999 : 1999, 'INR', 'pending', planId]
+      [orderId, businessId, price, 'USD', 'pending', planId]
     );
 
     return res.status(200).json({
@@ -1184,31 +1519,48 @@ async function handleDodoWebhook(req, res) {
         return res.status(200).json({ received: true, warning: 'No business linked' });
       }
 
+      let planName = req.body.metadata?.plan || req.body.metadata?.plan_name;
+      if (!planName) {
+        const logRes = await db.query(
+          'SELECT plan_name FROM payment_logs WHERE dodo_payment_id = $1 LIMIT 1',
+          [orderId]
+        );
+        if (logRes.rows.length > 0) {
+          planName = logRes.rows[0].plan_name;
+        }
+      }
+
+      const billingPeriod = req.body.metadata?.billing_period || req.body.metadata?.billing_cycle || 'monthly';
+      const resolvedPlan = planName || 'growth';
+      const dbPlan = DB_PLAN_MAP[resolvedPlan.toLowerCase()] || 'starter';
+      const minutesLimit = resolvedPlan.toLowerCase() === 'scale' ? 1500 : resolvedPlan.toLowerCase() === 'growth' ? 500 : 200;
+
       // Update business table
       await db.query(
         `UPDATE businesses
-         SET plan = $1,
+         SET plan = $1::plan_type,
              plan_name = $2,
-             trial_status = 'CONVERTED',
              status = 'active',
-             billing_period = $3,
-             onboarding_step = 6,
+             subscription_status = 'active',
+             onboarding_status = 'pending',
+             onboarding_step = 0,
+             minutes_limit = $3,
+             billing_cycle = $4,
              updated_at = NOW()
-         WHERE id = $4`,
-        ['pro', 'GROWTH', 'monthly', businessId]
+         WHERE id = $5`,
+        [dbPlan, resolvedPlan, minutesLimit, billingPeriod, businessId]
       );
 
       // Upgrade payment log to succeeded
       await db.query(
         `UPDATE payment_logs 
          SET status = 'succeeded',
-             dodo_customer_id = $1,
-             updated_at = NOW()
+             dodo_customer_id = $1
          WHERE dodo_payment_id = $2`,
         [customerId || 'cust_dodo', orderId]
       );
 
-      console.log(`[DODO WEBHOOK] Successfully upgraded business ${businessId} to GROWTH plan`);
+      console.log(`[DODO WEBHOOK] Successfully upgraded business ${businessId} to ${resolvedPlan} plan`);
 
       // Send Subscription Activation Email
       db.query('SELECT email, name, plan_name, minutes_limit FROM businesses WHERE id = $1', [businessId])
@@ -1246,6 +1598,10 @@ module.exports = {
     getTrialStatus,
     getPricing,
     createCheckout,
-    handleDodoWebhook
+    handleDodoWebhook,
+    // New top-up endpoints
+    createTopupCheckout,
+    getTopupTransactions,
+    getBalance,
 };
 

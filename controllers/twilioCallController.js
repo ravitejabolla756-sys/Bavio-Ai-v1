@@ -2,10 +2,16 @@ const db = require('../database/db');
 // ── Voice pipeline: OpenAI Whisper (STT) + GPT-4o (LLM) + ElevenLabs (TTS) ──
 const sttService   = require('../services/openAIService');   // transcribeAudio()
 const llmService   = require('../services/openAIService');   // chat(), buildSystemPrompt()
-const ttsService   = require('../services/elevenLabsService'); // synthesizeSpeech()
+const ttsService   = require('../services/openAIService'); // synthesizeSpeech()
 const storageService = require('../services/storage/storageService');
 const audioService = require('../services/audio/audioService');
 const axios = require('axios');
+const { checkCallBalance, deductCallSeconds } = require('../middleware/planEnforcement');
+const jwt = require('jsonwebtoken');
+const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
+const JWT_SECRET = process.env.JWT_SECRET || '7e0341f2ee874653ce795be1851359683e92e769db290b69965697ae80da0a5e5745972bd30e6b51088fbc878ea141f97acec678ca57855eb024064f44f4d220';
+const { selectWorkerRegionUrl } = require('../voice/routing/regionalWorkerRouter');
+
 
 const activeRequests = {};
 
@@ -107,54 +113,118 @@ async function handleIncomingCall(req, res) {
       console.error('[TWILIO] DB lookup error:', dbErr.message);
     }
 
+    if (!businessId) {
+      console.warn(`[TWILIO] Incoming call to unregistered number To: ${To}. Hanging up.`);
+      res.type('text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="en-US">Sorry, this number is not registered with Bavio. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
+    }
+
     const firstMessage =
       assistant?.first_message || 'Namaste! Main aapki kaise madad kar sakta hoon?';
     const language = assistant?.language || 'hi-IN';
 
-    // ── Check if business has remaining minutes ──────────────────────────
+    // ── Check dual-balance (monthly seconds + top-up seconds) ────────────
     if (businessId) {
       try {
-        const bizResult = await db.query(
-          'SELECT minutes_limit, minutes_used FROM businesses WHERE id = $1',
-          [businessId]
-        );
-        if (bizResult.rows.length > 0) {
-          const { minutes_limit, minutes_used } = bizResult.rows[0];
-          if (minutes_limit !== null && minutes_used !== null && minutes_limit - minutes_used <= 0) {
-            console.log(`[TWILIO] Limit reached for business ${businessId} (${minutes_used}/${minutes_limit})`);
-            res.type('text/xml');
-            return res.send(`<?xml version="1.0" encoding="UTF-8"?>
+        const balance = await checkCallBalance(businessId);
+        if (!balance.allowed) {
+          const reason = balance.reason || 'usage_exhausted';
+          console.log(`[TWILIO] Call blocked for business ${businessId}. Reason: ${reason}. Balance: monthly=${balance.monthlyRemainingSeconds}s topup=${balance.topupRemainingSeconds}s`);
+
+          // Log the blocked call
+          try {
+            await db.query(
+              `INSERT INTO blocked_calls (business_id, provider_call_sid, blocked_reason, created_at)
+               VALUES ($1, $2, $3, NOW())`,
+              [businessId, CallSid, reason]
+            );
+          } catch (blockLogErr) {
+            console.error('[TWILIO] Failed to log blocked call:', blockLogErr.message);
+          }
+
+          res.type('text/xml');
+          return res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say language="${language}">Aapke account ka monthly limit poora ho chuka hai. Kripya upgrade/recharge karein.</Say>
+  <Say language="en-US">Your account has no remaining call minutes. Please log in to your Bavio dashboard to purchase additional minutes.</Say>
   <Hangup/>
 </Response>`);
-          }
         }
-      } catch (bizErr) {
-        console.error('[TWILIO] Business limit check error:', bizErr.message);
+      } catch (balanceErr) {
+        console.error('[TWILIO] Balance check error:', balanceErr.message);
+        // Non-fatal: allow call to proceed if check fails
       }
     }
 
     // ── Create call record (include business_id!) ──────────────────────────
-    try {
-      const countryCode = phoneResult.rows[0]?.country_code || 'US';
-      const currency = 'USD';
-      await db.query(
-        `INSERT INTO calls (
-          user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
-        ) VALUES ($1, $2, $3, 'twilio', $4, $5, NOW(), $6, NOW())`,
-        [businessId, countryCode, CallSid, From, To, currency]
-      );
-    } catch (dbErr) {
-      console.error('[TWILIO] Call record error:', dbErr.message);
-    }
-    // ── Twilio Media Stream over WebSocket ──────────────────────────────
-    const host = req.headers.host || 'localhost:3000';
-    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const wsProtocol = isSsl ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?businessId=${businessId}`;
+    if (businessId) {
+      try {
+        const countryCode = phoneResult.rows[0]?.country_code || 'US';
+        const currency = 'USD';
+        await db.query(
+          `INSERT INTO calls (
+            user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
+          ) VALUES ($1, $2, $3, 'twilio', $4, $5, NOW(), $6, NOW())`,
+          [businessId, countryCode, CallSid, From, To, currency]
+        );
+      } catch (dbErr) {
+        console.error('[TWILIO] Call record error:', dbErr.message);
+      }
 
-    console.log(`[TWILIO] Routing call to Media Stream WebSocket: ${wsUrl}`);
+      // Create/update active call session in call_sessions table for WebSocket authorization
+      try {
+        await db.query(
+          `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
+           VALUES ($1, $2, $3, $4, 'active', NOW())
+           ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
+          [CallSid, businessId, From, To]
+        );
+        console.log(`[TWILIO] Active call session stored in database for CallSid: ${CallSid}`);
+      } catch (sessionErr) {
+        console.error('[TWILIO] Failed to insert call session to database:', sessionErr.message);
+      }
+    } else {
+      console.warn('[TWILIO] Skipping call record and session storage for unresolved business');
+    }
+
+    // ── Select Voice Stack (feature-flagged) ─────────────────────────────
+    let voiceStack = 'current_openai';
+    try {
+      voiceStack = selectVoiceStack(businessId, { callSid: CallSid });
+    } catch (routerErr) {
+      console.error('[TWILIO] selectVoiceStack error:', routerErr.message);
+    }
+
+    let wsUrl;
+    if (voiceStack === PROVIDER_MODULAR) {
+      const token = jwt.sign(
+        {
+          callSid: CallSid,
+          businessId,
+          assistantId: assistant?.id,
+          isDemo: false
+        },
+        JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      const { FromCountry = '', ToCountry = '' } = req.body;
+      const voiceWorkerBase = await selectWorkerRegionUrl({
+        toNumber: To,
+        toCountry: ToCountry,
+        fromCountry: FromCountry
+      });
+      wsUrl = `${voiceWorkerBase}/api/call-stream/ws?token=${token}`;
+      console.log(`[TWILIO] Routing call to Modular Voice Worker: ${wsUrl}`);
+    } else {
+      const host = req.headers.host || 'localhost:3000';
+      const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      const wsProtocol = isSsl ? 'wss' : 'ws';
+      wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
+      console.log(`[TWILIO] Routing call to Local Media Stream: ${wsUrl}`);
+    }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -528,6 +598,29 @@ async function handleCallStatus(req, res) {
     if (!callData) return res.sendStatus(200);
 
     const duration = parseInt(CallDuration) || 0;
+
+    // Check if it's a demo session call
+    try {
+        const demoSession = await db.query(
+            "SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_status = 'active'",
+            [callData.user_id]
+        );
+        if (demoSession.rows.length > 0) {
+            const statusVal = duration >= 180 ? 'expired' : 'completed';
+            const terminationReason = duration >= 180 ? 'duration_limit' : 'user_hangup';
+            await db.query(
+                `UPDATE demo_sessions 
+                 SET demo_status = $1, demo_used = true, demo_ended_at = NOW(), 
+                     demo_duration_seconds = $2, termination_reason = $3
+                 WHERE user_id = $4 AND demo_status = 'active'`,
+                [statusVal, duration, terminationReason, callData.user_id]
+            );
+            console.log(`[DEMO STATUS CALLBACK] Finished demo call session for user ${callData.user_id} with status ${statusVal}`);
+        }
+    } catch (demoErr) {
+        console.error('[TWILIO] Demo session status update error:', demoErr.message);
+    }
+
     const mins = duration / 60;
 
     // Update call record

@@ -2,7 +2,7 @@ const db = require('../database/db');
 const providerFactory = require('../providers/index');
 
 async function buyAndSaveNumber({ business_id, country, assistant_id }) {
-    const providerName = country.toUpperCase() === 'IN' ? 'exotel' : 'twilio';
+    const providerName = 'twilio';
     
     // For testing/pre-launch: look for an unassigned number of the provider in the database
     const unassignedRes = await db.query(
@@ -27,21 +27,12 @@ async function buyAndSaveNumber({ business_id, country, assistant_id }) {
     );
 
     // Update the business table as well to associate this number
-    if (providerName === 'twilio') {
-        await db.query(
-            `UPDATE businesses 
-             SET twilio_number = $1, twilio_number_sid = $2 
-             WHERE id = $3`,
-            [dbNum.phone_number, dbNum.twilio_sid || 'PN_mock_sid', business_id]
-        );
-    } else {
-        await db.query(
-            `UPDATE businesses 
-             SET original_phone_number = $1 
-             WHERE id = $2`,
-            [dbNum.phone_number, business_id]
-        );
-    }
+    await db.query(
+        `UPDATE businesses 
+         SET twilio_number = $1, twilio_number_sid = $2 
+         WHERE id = $3`,
+        [dbNum.phone_number, dbNum.twilio_sid || 'PN_mock_sid', business_id]
+    );
 
     return result.rows[0];
 }

@@ -1,164 +1,570 @@
 const db = require('../database/db');
 const axios = require('axios');
 
-// Save onboarding step data (Step 1, Step 2, Step 3)
-async function saveStep(req, res) {
+// Helper function to verify active subscription
+async function verifyActiveSubscription(clientId) {
+  if (!clientId) {
+    return { authorized: false, error: 'unauthorized', message: 'Authentication required', status: 401 };
+  }
+
+  const bizRes = await db.query(
+    'SELECT id, subscription_status, plan, plan_name, onboarding_status, onboarding_step, country_code FROM businesses WHERE id = $1',
+    [clientId]
+  );
+
+  if (bizRes.rows.length === 0) {
+    return { authorized: false, error: 'business_not_found', message: 'Business record not found', status: 404 };
+  }
+
+  const business = bizRes.rows[0];
+  const subStatus = business.subscription_status || 'inactive';
+
+  if (subStatus !== 'active') {
+    return {
+      authorized: false,
+      error: 'subscription_required',
+      message: 'An active paid subscription is required to access paid onboarding.',
+      status: 403
+    };
+  }
+
+  return { authorized: true, business };
+}
+
+// Build system prompt from onboarding data
+function buildSystemPrompt(config) {
+  const {
+    agent_name,
+    greeting,
+    industry,
+    language,
+    tone = 'professional',
+    mainResponsibilities = '',
+    leadInfoToCapture = '',
+    escalationRules = '',
+    humanContactNumber = '',
+    knowledge = {}
+  } = config;
+
+  const baseRole = `You are ${agent_name || 'Bavio Assistant'}, an AI receptionist representing the business (${industry || 'general'}).`;
+
+  let prompt = `${baseRole} Tone: ${tone}.
+
+GREETING:
+Always start with: "${greeting || `Hello! I am ${agent_name}, how can I help you today?`}"
+
+MAIN RESPONSIBILITIES:
+${mainResponsibilities || 'Answer caller questions, provide accurate business information, and capture qualified leads.'}
+
+LEAD INFORMATION TO CAPTURE:
+${leadInfoToCapture || 'Caller Name, Phone Number, Email, and Reason for Calling.'}
+
+ESCALATION & HUMAN CONTACT:
+${escalationRules ? escalationRules : 'If caller demands a human representative, notify them that a senior manager will call them back shortly.'} ${humanContactNumber ? `Transfer/Contact Number: ${humanContactNumber}` : ''}
+`;
+
+  if (knowledge) {
+    if (knowledge.serviceDetails) prompt += `\nSERVICE DETAILS:\n${knowledge.serviceDetails}\n`;
+    if (knowledge.pricingGuidance) prompt += `\nPRICING GUIDANCE:\n${knowledge.pricingGuidance}\n`;
+    if (knowledge.policies) prompt += `\nPOLICIES:\n${knowledge.policies}\n`;
+    if (knowledge.importantInstructions) prompt += `\nIMPORTANT INSTRUCTIONS:\n${knowledge.importantInstructions}\n`;
+    if (knowledge.qualificationQuestions) prompt += `\nQUALIFICATION QUESTIONS:\n${knowledge.qualificationQuestions}\n`;
+    if (knowledge.doNotInvent) prompt += `\nINFORMATION NEVER TO INVENT (STRICT RULE):\n${knowledge.doNotInvent}\n`;
+    if (Array.isArray(knowledge.faqs) && knowledge.faqs.length > 0) {
+      prompt += `\nFREQUENTLY ASKED QUESTIONS:\n` + knowledge.faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n') + '\n';
+    }
+  }
+
+  prompt += `
+STRICT OPERATIONAL RULES:
+1. Keep responses concise (maximum 2 sentences per turn).
+2. Ask ONE clarifying question at a time.
+3. NEVER invent prices, addresses, or commitments not explicitly stated in the knowledge base.
+4. When lead information is fully captured, output [LEAD_CAPTURED] on a separate line with lead JSON.
+5. Conclude calls politely and output [END_CALL].`;
+
+  return prompt;
+}
+
+// STEP 1 — BUSINESS
+async function saveBusinessStep(req, res) {
   try {
-    const { step, data } = req.body;
     const clientId = req.client?.id || req.user?.id;
-
-    if (!step || !data) {
-      return res.status(400).json({ error: 'step and data are required' });
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
     }
 
-    if (!clientId) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const {
+      businessName,
+      industry,
+      businessDescription,
+      website,
+      country,
+      timezone,
+      businessPhone,
+      officeHours,
+      locationsServed,
+      servicesProvided
+    } = req.body;
+
+    if (!businessName || !industry) {
+      return res.status(400).json({ error: 'invalid_input', message: 'Business name and industry are required' });
     }
 
-    console.log(`[ONBOARDING] Saving step ${step} for client ${clientId}`);
+    const countryCode = (country || 'US').trim().toUpperCase().substring(0, 2);
+    const intentsObj = {
+      officeHours: officeHours || '',
+      locationsServed: locationsServed || '',
+      servicesProvided: servicesProvided || '',
+      timezone: timezone || 'UTC'
+    };
 
     await db.query(
-      'UPDATE businesses SET onboarding_step = $1 WHERE id = $2',
-      [step, clientId]
+      `UPDATE businesses SET
+        name = $1,
+        business_name = $2,
+        industry = $3,
+        business_description = $4,
+        website = $5,
+        country_code = $6,
+        country = $7,
+        phone = COALESCE($8, phone),
+        intents = $9,
+        onboarding_step = GREATEST(onboarding_step, 1),
+        updated_at = NOW()
+      WHERE id = $10`,
+      [
+        businessName.trim(),
+        businessName.trim(),
+        industry.trim(),
+        (businessDescription || '').trim(),
+        (website || '').trim(),
+        countryCode,
+        countryCode,
+        businessPhone ? businessPhone.trim() : null,
+        JSON.stringify(intentsObj),
+        clientId
+      ]
     );
 
-    switch (step) {
-      case 1: {
-        // Step 1 — Country Selection
-        const countryCode = (data.country_code || 'US').trim().toUpperCase().substring(0, 2);
-        let currencyCode = 'USD';
-        if (countryCode === 'IN') currencyCode = 'INR';
-        if (countryCode === 'GB') currencyCode = 'GBP';
+    return res.status(200).json({
+      success: true,
+      step: 1,
+      nextStep: '/onboarding/knowledge',
+      message: 'Business details saved successfully'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] saveBusinessStep error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
 
-        await db.query(
-          `UPDATE businesses SET
-            country_code = $1::varchar,
-            country = $1::text,
-            updated_at = NOW()
-          WHERE id = $2`,
-          [countryCode, clientId]
-        );
-        break;
-      }
-
-      case 2: {
-        // Step 2 — Subscription Plan
-        const plan = (data.plan || 'starter').toLowerCase();
-        await db.query(
-          `UPDATE businesses SET
-            plan = $1,
-            plan_name = $1,
-            updated_at = NOW()
-          WHERE id = $2`,
-          [plan, clientId]
-        );
-        break;
-      }
-
-      case 3: {
-        // Step 3 — Business & AI Agent Setup
-        const { businessName, industry, ownerMobile, agentName, voice, pdfs } = data;
-
-        // Update business details
-        await db.query(
-          `UPDATE businesses SET
-            name = $1,
-            industry = $2,
-            owner_mobile = $3,
-            phone = $4,
-            business_description = COALESCE($6, business_description),
-            updated_at = NOW()
-          WHERE id = $5`,
-          [businessName, industry, ownerMobile, ownerMobile, clientId, data.businessDescription]
-        );
-
-        // Check if assistant exists
-        const assistantResult = await db.query(
-          'SELECT id FROM assistants WHERE business_id = $1',
-          [clientId]
-        );
-
-        const systemPrompt = buildSystemPrompt({
-          agent_name: agentName,
-          greeting: `Hello. This is ${agentName} from ${businessName}. How may I assist you today?`,
-          industry: industry,
-          language: 'en-US',
-          faqs: []
-        });
-
-        let assistantId;
-        if (assistantResult.rows.length > 0) {
-          assistantId = assistantResult.rows[0].id;
-          await db.query(
-            `UPDATE assistants SET
-              agent_name = $1,
-              name = $2,
-              voice = $3,
-              voice_id = $4,
-              industry = $5,
-              system_prompt = $6,
-              updated_at = NOW()
-            WHERE business_id = $7`,
-            [agentName, agentName, voice || 'meera', voice || 'meera', industry, systemPrompt, clientId]
-          );
-        } else {
-          const insertResult = await db.query(
-            `INSERT INTO assistants
-              (business_id, name, agent_name, greeting, voice, voice_id, industry, language, system_prompt, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'en-US', $8, false)
-             RETURNING id`,
-            [
-              clientId,
-              agentName,
-              agentName,
-              `Hello. This is ${agentName} from ${businessName}. How may I assist you today?`,
-              voice || 'meera',
-              voice || 'meera',
-              industry,
-              systemPrompt
-            ]
-          );
-          assistantId = insertResult.rows[0].id;
-        }
-
-        // Link assistant to business
-        await db.query(
-          'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
-          [assistantId, clientId]
-        );
-
-        // Handle PDF uploads (max 5)
-        if (Array.isArray(pdfs) && pdfs.length > 0) {
-          // Clear older docs
-          await db.query('DELETE FROM knowledge_base_docs WHERE business_id = $1', [clientId]);
-          
-          // Insert new ones (up to 5)
-          const docsToInsert = pdfs.slice(0, 5);
-          for (const pdf of docsToInsert) {
-            await db.query(
-              `INSERT INTO knowledge_base_docs (business_id, name, content)
-               VALUES ($1, $2, $3)`,
-              [clientId, pdf.name || 'document.pdf', pdf.content || 'Uploaded PDF document.']
-            );
-          }
-        }
-        break;
-      }
-
-      default:
-        return res.status(400).json({ error: 'Invalid step number' });
+// STEP 2 — KNOWLEDGE
+async function saveKnowledgeStep(req, res) {
+  try {
+    const clientId = req.client?.id || req.user?.id;
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
     }
 
-    res.status(200).json({
+    const {
+      faqs,
+      serviceDetails,
+      pricingGuidance,
+      policies,
+      importantInstructions,
+      qualificationQuestions,
+      doNotInvent
+    } = req.body;
+
+    // Clear previous knowledge docs for clean manual entry update
+    await db.query('DELETE FROM knowledge_base_docs WHERE business_id = $1', [clientId]);
+
+    const knowledgeItems = [
+      { name: 'Service Details', content: serviceDetails },
+      { name: 'Pricing Guidance', content: pricingGuidance },
+      { name: 'Policies', content: policies },
+      { name: 'Important Instructions', content: importantInstructions },
+      { name: 'Qualification Questions', content: qualificationQuestions },
+      { name: 'Do Not Invent Rules', content: doNotInvent }
+    ];
+
+    for (const item of knowledgeItems) {
+      if (item.content && item.content.trim()) {
+        await db.query(
+          `INSERT INTO knowledge_base_docs (business_id, name, content) VALUES ($1, $2, $3)`,
+          [clientId, item.name, item.content.trim()]
+        );
+      }
+    }
+
+    const formattedFaqs = Array.isArray(faqs) ? faqs.filter(f => f && f.question && f.answer) : [];
+
+    const intentsRes = await db.query('SELECT intents FROM businesses WHERE id = $1', [clientId]);
+    let currentIntents = {};
+    try {
+      currentIntents = typeof intentsRes.rows[0]?.intents === 'string'
+        ? JSON.parse(intentsRes.rows[0].intents)
+        : (intentsRes.rows[0]?.intents || {});
+    } catch (e) {}
+
+    currentIntents.faqs = formattedFaqs;
+    currentIntents.serviceDetails = serviceDetails || '';
+    currentIntents.pricingGuidance = pricingGuidance || '';
+    currentIntents.policies = policies || '';
+    currentIntents.importantInstructions = importantInstructions || '';
+    currentIntents.qualificationQuestions = qualificationQuestions || '';
+    currentIntents.doNotInvent = doNotInvent || '';
+
+    await db.query(
+      `UPDATE businesses SET
+        intents = $1,
+        onboarding_step = GREATEST(onboarding_step, 2),
+        updated_at = NOW()
+      WHERE id = $2`,
+      [JSON.stringify(currentIntents), clientId]
+    );
+
+    await db.query(
+      `UPDATE assistants SET faqs = $1, updated_at = NOW() WHERE business_id = $2`,
+      [JSON.stringify(formattedFaqs), clientId]
+    );
+
+    return res.status(200).json({
       success: true,
-      step,
-      message: `Step ${step} saved successfully`
+      step: 2,
+      nextStep: '/onboarding/agent',
+      message: 'Knowledge base saved successfully'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] saveKnowledgeStep error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// STEP 3 — AGENT
+async function saveAgentStep(req, res) {
+  try {
+    const clientId = req.client?.id || req.user?.id;
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
+    }
+
+    const {
+      assistantName,
+      language,
+      voice,
+      greeting,
+      tone,
+      mainResponsibilities,
+      leadInfoToCapture,
+      escalationRules,
+      humanContactNumber
+    } = req.body;
+
+    const agentName = (assistantName || 'Bavio Assistant').trim();
+    const voiceId = (voice || 'meera').trim();
+    const lang = (language || 'en-US').trim();
+
+    const bizRes = await db.query('SELECT name, industry, intents FROM businesses WHERE id = $1', [clientId]);
+    const biz = bizRes.rows[0] || {};
+
+    let intents = {};
+    try {
+      intents = typeof biz.intents === 'string' ? JSON.parse(biz.intents) : (biz.intents || {});
+    } catch (e) {}
+
+    const customGreeting = (greeting || `Hello. This is ${agentName} from ${biz.name || 'our business'}. How may I assist you today?`).trim();
+
+    const systemPrompt = buildSystemPrompt({
+      agent_name: agentName,
+      greeting: customGreeting,
+      industry: biz.industry || 'general',
+      language: lang,
+      tone: tone || 'professional',
+      mainResponsibilities,
+      leadInfoToCapture,
+      escalationRules,
+      humanContactNumber,
+      knowledge: intents
+    });
+
+    const astRes = await db.query('SELECT id FROM assistants WHERE business_id = $1', [clientId]);
+    let assistantId;
+
+    if (astRes.rows.length > 0) {
+      assistantId = astRes.rows[0].id;
+      await db.query(
+        `UPDATE assistants SET
+          name = $1,
+          agent_name = $2,
+          greeting = $3,
+          voice = $4,
+          voice_id = $4,
+          language = $5,
+          system_prompt = $6,
+          faqs = $7,
+          is_active = true,
+          updated_at = NOW()
+        WHERE id = $8`,
+        [agentName, agentName, customGreeting, voiceId, lang, systemPrompt, JSON.stringify(intents.faqs || []), assistantId]
+      );
+    } else {
+      const insRes = await db.query(
+        `INSERT INTO assistants (business_id, name, agent_name, greeting, system_prompt, voice_id, voice, language, faqs, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, true)
+         RETURNING id`,
+        [clientId, agentName, agentName, customGreeting, systemPrompt, voiceId, lang, JSON.stringify(intents.faqs || [])]
+      );
+      assistantId = insRes.rows[0].id;
+    }
+
+    await db.query(
+      `UPDATE businesses SET
+        assistant_id = $1,
+        onboarding_step = GREATEST(onboarding_step, 3),
+        updated_at = NOW()
+      WHERE id = $2`,
+      [assistantId, clientId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      step: 3,
+      assistantId,
+      nextStep: '/onboarding/phone',
+      message: 'AI Agent configured successfully'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] saveAgentStep error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// STEP 4 — PHONE (Search & purchase Twilio number)
+async function assignPhone(req, res) {
+  try {
+    const clientId = req.client?.id || req.user?.id;
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
+    }
+
+    const { country } = req.body;
+    const bizRes = await db.query(
+      'SELECT id, name, twilio_number, country_code, assistant_id FROM businesses WHERE id = $1',
+      [clientId]
+    );
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found', message: 'Business profile missing' });
+    }
+
+    const business = bizRes.rows[0];
+
+    // Require assistant to exist prior to number purchase
+    if (!business.assistant_id) {
+      return res.status(400).json({ error: 'assistant_required', message: 'Please configure your AI Agent prior to purchasing a phone number.' });
+    }
+
+    const targetCountry = (country || business.country_code || 'US').trim().toUpperCase();
+
+    // Disallow unsupported or India country code for Twilio provisioning
+    if (targetCountry === 'IN') {
+      return res.status(400).json({ error: 'unsupported_country', message: 'Indian virtual numbers are currently unavailable.' });
+    }
+
+    if (business.twilio_number) {
+      await db.query(
+        `UPDATE businesses SET onboarding_step = GREATEST(onboarding_step, 4), updated_at = NOW() WHERE id = $1`,
+        [clientId]
+      );
+
+      return res.status(200).json({
+        success: true,
+        phoneNumber: business.twilio_number,
+        country: targetCountry,
+        provider: 'TWILIO',
+        status: 'ACTIVE',
+        monthlyCharge: 1,
+        currency: 'USD',
+        nextStep: '/onboarding/test-call'
+      });
+    }
+
+    let assignedPhone = null;
+    let providerSid = null;
+
+    try {
+      const twilioProvider = require('../providers/twilio');
+      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${targetCountry}...`);
+      const twilioResult = await twilioProvider.buyNumberWithDetails(targetCountry);
+      assignedPhone = twilioResult.phoneNumber;
+      providerSid = twilioResult.sid;
+      console.log(`[PROVISION] Successfully purchased dedicated Twilio number: ${assignedPhone} (SID: ${providerSid})`);
+    } catch (e) {
+      console.error(`[PROVISION] Twilio purchase failed: ${e.message}`);
+      return res.status(500).json({
+        error: 'provisioning_failed',
+        message: `Failed to purchase a phone number for ${targetCountry} via Twilio: ${e.message}. Do not assign mock numbers.`
+      });
+    }
+
+    // Insert into phone_numbers table
+    const phoneNumRes = await db.query(
+      `INSERT INTO phone_numbers (business_id, phone_number, country_code, provider, status, type, is_active, twilio_sid)
+       VALUES ($1, $2, $3, 'twilio', 'active', 'dedicated', true, $4)
+       RETURNING id`,
+      [clientId, assignedPhone, targetCountry, providerSid || 'PN_twilio_real']
+    );
+    const phoneId = phoneNumRes.rows[0].id;
+
+    // Update business record
+    await db.query(
+      `UPDATE businesses 
+       SET twilio_number = $1, 
+           twilio_number_sid = $2,
+           phone_number_id = $3, 
+           onboarding_step = GREATEST(onboarding_step, 4),
+           updated_at = NOW()
+       WHERE id = $4`,
+      [assignedPhone, providerSid || 'PN_twilio_real', phoneId, clientId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      phoneNumber: assignedPhone,
+      country: targetCountry,
+      provider: 'TWILIO',
+      status: 'ACTIVE',
+      monthlyCharge: 1,
+      currency: 'USD',
+      nextStep: '/onboarding/test-call'
     });
 
   } catch (err) {
-    console.error('[ONBOARDING] saveStep error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('[ONBOARDING] assignPhone error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
   }
+}
+
+// Preview TTS Greeting
+async function previewTts(req, res) {
+  try {
+    const { text, voice } = req.body;
+    return res.status(200).json({
+      success: true,
+      text: text || 'Hello! Thank you for calling.',
+      voice: voice || 'meera',
+      audioUrl: null
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// STEP 5 — TEST CALL
+async function testCallStep(req, res) {
+  try {
+    const clientId = req.client?.id || req.user?.id;
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
+    }
+
+    const bizRes = await db.query(
+      `SELECT b.twilio_number, b.name, a.agent_name, a.greeting, a.system_prompt
+       FROM businesses b
+       LEFT JOIN assistants a ON b.assistant_id = a.id
+       WHERE b.id = $1`,
+      [clientId]
+    );
+    const business = bizRes.rows[0];
+
+    if (!business || !business.twilio_number) {
+      return res.status(400).json({ error: 'phone_required', message: 'Please provision a phone number first.' });
+    }
+
+    await db.query(
+      `UPDATE businesses SET onboarding_step = GREATEST(onboarding_step, 5), updated_at = NOW() WHERE id = $1`,
+      [clientId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      step: 5,
+      twilioNumber: business.twilio_number,
+      businessName: business.name,
+      assistantName: business.agent_name || 'Bavio Assistant',
+      greeting: business.greeting,
+      nextStep: '/onboarding/complete',
+      message: 'Test call step verified'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] testCallStep error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// STEP 6 — COMPLETE
+async function completeOnboardingStep(req, res) {
+  try {
+    const clientId = req.client?.id || req.user?.id;
+    const check = await verifyActiveSubscription(clientId);
+    if (!check.authorized) {
+      return res.status(check.status).json({ error: check.error, message: check.message });
+    }
+
+    await db.query(
+      `UPDATE businesses SET onboarding_status = 'completed', onboarding_step = 6, updated_at = NOW() WHERE id = $1`,
+      [clientId]
+    );
+
+    const bizRes = await db.query(
+      `SELECT b.name, b.industry, b.country_code, b.twilio_number, b.plan_name, a.agent_name, a.voice, a.language
+       FROM businesses b
+       LEFT JOIN assistants a ON b.assistant_id = a.id
+       WHERE b.id = $1`,
+      [clientId]
+    );
+
+    const summary = bizRes.rows[0] || {};
+
+    return res.status(200).json({
+      success: true,
+      step: 6,
+      summary: {
+        businessName: summary.name || 'Your Business',
+        industry: summary.industry || 'General',
+        country: summary.country_code || 'US',
+        phoneNumber: summary.twilio_number || 'Not assigned',
+        assistantName: summary.agent_name || 'Bavio Assistant',
+        voice: summary.voice || 'meera',
+        language: summary.language || 'en-US',
+        plan: (summary.plan_name || 'growth').toUpperCase(),
+        status: 'Active'
+      },
+      nextRoute: '/dashboard'
+    });
+  } catch (err) {
+    console.error('[ONBOARDING] completeOnboardingStep error:', err);
+    return res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+}
+
+// Legacy saveStep compatibility method
+async function saveStep(req, res) {
+  const { step } = req.body;
+  if (step === 1) return saveBusinessStep(req, res);
+  if (step === 2) return saveKnowledgeStep(req, res);
+  if (step === 3) return saveAgentStep(req, res);
+  if (step === 4) return assignPhone(req, res);
+  if (step === 5) return testCallStep(req, res);
+  if (step === 6) return completeOnboardingStep(req, res);
+  return res.status(400).json({ error: 'invalid_step' });
 }
 
 // Get onboarding status
@@ -184,7 +590,8 @@ async function getStatus(req, res) {
         country_code,
         owner_mobile,
         assistant_id,
-        phone_number_id
+        phone_number_id,
+        subscription_status
       FROM businesses WHERE id = $1`,
       [client_id]
     );
@@ -195,10 +602,9 @@ async function getStatus(req, res) {
 
     const business = result.rows[0];
 
-    // Fetch assistant details if linked
     let assistant = null;
     if (business.assistant_id) {
-      const astRes = await db.query('SELECT agent_name, voice, greeting FROM assistants WHERE id = $1', [business.assistant_id]);
+      const astRes = await db.query('SELECT agent_name, voice, greeting, language FROM assistants WHERE id = $1', [business.assistant_id]);
       if (astRes.rows.length > 0) {
         assistant = astRes.rows[0];
       }
@@ -207,6 +613,7 @@ async function getStatus(req, res) {
     res.status(200).json({
       status: business.onboarding_status || 'pending',
       step: business.onboarding_step || 1,
+      subscription_status: business.subscription_status || 'inactive',
       twilio_number: business.twilio_number,
       business: {
         id: business.id,
@@ -218,70 +625,13 @@ async function getStatus(req, res) {
         owner_mobile: business.owner_mobile,
         assistant_name: assistant?.agent_name || '',
         voice: assistant?.voice || '',
-        greeting: assistant?.greeting || ''
+        greeting: assistant?.greeting || '',
+        language: assistant?.language || 'en-US'
       }
     });
 
   } catch (err) {
     console.error('[ONBOARDING] getStatus error:', err);
-    res.status(500).json({ error: err.message });
-  }
-}
-
-// Build system prompt from onboarding data
-function buildSystemPrompt(config) {
-  const {
-    agent_name,
-    greeting,
-    industry,
-    language
-  } = config;
-
-  const industryPrompt = {
-    restaurant: `You are ${agent_name}, an AI voice assistant for a restaurant. Your job: Take table reservations, answer menu questions, and handle customer inquiries. Capture: customer name, phone, reservation date/time, party size.`,
-    clinic: `You are ${agent_name}, an AI voice assistant for a medical clinic. Your job: Help patients book appointments and answer basic health questions. Capture: patient name, phone, health concern, preferred appointment date/time.`,
-    'real-estate': `You are ${agent_name}, an AI voice assistant for a real estate agency. Your job: Qualify property buyers and capture their requirements. Capture: name, phone, budget, location preference, BHK type (1/2/3).`,
-    other: `You are ${agent_name}, an AI voice assistant. Your job: Help callers and capture their contact information and requirements. Capture: caller name, phone number, and reason for calling.`
-  }[industry] || `You are ${agent_name}, an AI voice assistant. Your job: Help callers and capture their contact information and requirements. Capture: caller name, phone number, and reason for calling.`;
-
-  return `${industryPrompt}
-
-Speak in a natural, friendly and professional tone.
-
-GREETING:
-Always start with: "${greeting || `Hello! I am ${agent_name}, how can I help you today?`}"
-
-IMPORTANT RULES:
-1. Keep responses SHORT — maximum 2 sentences per turn
-2. Ask ONE question at a time
-3. Be warm, helpful, and conversational
-4. Never mention you are an AI unless directly asked
-5. If caller is rude, end the call
-6. Confirm caller's name and phone before ending
-
-LEAD CAPTURE:
-When collected name + phone + key details, append [LEAD_CAPTURED] on a new line with JSON payload.
-At natural end of call, append [END_CALL].`;
-}
-
-// Complete onboarding flow (simulated or direct trigger for local testing / bypass)
-async function completeTrial(req, res) {
-  // Mock endpoint to simulate successful payment and trigger auto-provisioning
-  try {
-    const clientId = req.client?.id || req.user?.id;
-    if (!clientId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const { autoProvisionBusiness } = require('./billingController');
-    await autoProvisionBusiness(clientId);
-
-    res.status(200).json({
-      success: true,
-      message: 'Onboarding and automated setup completed successfully.'
-    });
-  } catch (err) {
-    console.error('[ONBOARDING] completeTrial error:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -312,412 +662,16 @@ async function setCountry(req, res) {
   }
 }
 
-// Assign virtual phone number for onboarding
-async function assignPhone(req, res) {
-  try {
-    const clientId = req.client?.id || req.user?.id;
-    if (!clientId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const { country } = req.body;
-    if (!country || typeof country !== 'string' || country.trim().length !== 2) {
-      return res.status(400).json({ error: 'invalid_country', message: 'Invalid or unsupported country' });
-    }
-
-    const normCountry = country.trim().toUpperCase();
-
-    // 1. Get business info
-    const bizRes = await db.query(
-      'SELECT id, name, twilio_number, country_code, industry FROM businesses WHERE id = $1',
-      [clientId]
-    );
-
-    if (bizRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Business not found' });
-    }
-
-    const business = bizRes.rows[0];
-
-    // 2. Check if already has a phone assigned
-    if (business.twilio_number) {
-      return res.status(200).json({
-        phoneNumber: business.twilio_number,
-        country: business.country_code || normCountry,
-        provider: 'TWILIO',
-        status: 'ACTIVE',
-        monthlyCharge: 1,
-        currency: 'USD'
-      });
-    }
-
-    // 3. Purchase dynamically from Twilio via API credentials (or fallback if unconfigured)
-    let assignedPhone = null;
-    let isMock = false;
-
-    try {
-      const twilioProvider = require('../providers/twilio');
-      console.log(`[PROVISION] Purchasing dedicated Twilio number for country: ${normCountry}...`);
-      assignedPhone = await twilioProvider.buyNumber(normCountry);
-      console.log(`[PROVISION] Successfully purchased dedicated number: ${assignedPhone}`);
-    } catch (e) {
-      isMock = true;
-      console.warn(`[PROVISION] Twilio purchase failed (${e.message}), using dedicated mock number fallback.`);
-      
-      // Generate a realistic dedicated mock number depending on the country
-      if (normCountry === 'IN') {
-        const randomDigits = Math.floor(7000000000 + Math.random() * 2999999999);
-        assignedPhone = `+91${randomDigits}`;
-      } else if (normCountry === 'UK') {
-        const randomDigits = Math.floor(700000000 + Math.random() * 299999999);
-        assignedPhone = `+447${randomDigits}`;
-      } else if (normCountry === 'AU') {
-        const randomDigits = Math.floor(400000000 + Math.random() * 599999999);
-        assignedPhone = `+61${randomDigits}`;
-      } else if (normCountry === 'SG') {
-        const randomDigits = Math.floor(80000000 + Math.random() * 19999999);
-        assignedPhone = `+65${randomDigits}`;
-      } else if (normCountry === 'NZ') {
-        const randomDigits = Math.floor(20000000 + Math.random() * 79999999);
-        assignedPhone = `+642${randomDigits}`;
-      } else {
-        // US / default
-        const areaCode = [201, 302, 415, 512, 602, 702, 802, 902][Math.floor(Math.random() * 8)];
-        const randomDigits = Math.floor(1000000 + Math.random() * 8999999);
-        assignedPhone = `+1${areaCode}${randomDigits}`;
-      }
-    }
-
-    // 4. Store in phone_numbers table as dedicated
-    const phoneNumRes = await db.query(
-      `INSERT INTO phone_numbers (business_id, phone_number, country_code, provider, status, type, is_active)
-       VALUES ($1, $2, $3, $4, 'active', 'dedicated', true)
-       RETURNING id`,
-      [clientId, assignedPhone, country, isMock ? 'mock' : 'twilio']
-    );
-    const phoneId = phoneNumRes.rows[0].id;
-
-    // 5. Update business record
-    await db.query(
-      `UPDATE businesses 
-       SET twilio_number = $1, 
-           phone_number_id = $2, 
-           onboarding_step = 2,
-           updated_at = NOW()
-       WHERE id = $3`,
-      [assignedPhone, phoneId, clientId]
-    );
-
-    // 6. Generate default AI assistant for this business in the background/inline
-    const assistantResult = await db.query(
-      'SELECT id FROM assistants WHERE business_id = $1',
-      [clientId]
-    );
-    if (assistantResult.rows.length === 0) {
-      const agentName = 'Bavio Assistant';
-      const industry = business.industry || 'other';
-      const greeting = `Hello. This is ${agentName} from ${business.name || 'our business'}. How may I assist you today?`;
-      const systemPrompt = buildSystemPrompt({
-        agent_name: agentName,
-        greeting: greeting,
-        industry: industry,
-        language: country === 'IN' ? 'hi-IN' : 'en-US',
-      });
-
-      const newAssistant = await db.query(
-        `INSERT INTO assistants (business_id, name, agent_name, greeting, system_prompt, voice_id, language, is_active)
-         VALUES ($1, $2, $2, $3, $4, 'meera', $5, true)
-         RETURNING id`,
-        [clientId, agentName, greeting, systemPrompt, country === 'IN' ? 'hi-IN' : 'en-US']
-      );
-      
-      const assistantId = newAssistant.rows[0].id;
-      // Link assistant to business
-      await db.query(
-        'UPDATE businesses SET assistant_id = $1 WHERE id = $2',
-        [assistantId, clientId]
-      );
-    }
-
-    // Return response
-    return res.status(200).json({
-      phoneNumber: assignedPhone,
-      country: country,
-      provider: isMock ? 'MOCK' : 'TWILIO',
-      status: 'ACTIVE',
-      monthlyCharge: 1,
-      currency: 'USD'
-    });
-
-  } catch (err) {
-    console.error('[ONBOARDING] assignPhone error:', err);
-    return res.status(500).json({
-      error: 'assignment_failed',
-      message: 'Failed to assign phone number. Please try again.'
-    });
-  }
-}
-
-// Generate preview tts audio
-async function previewTts(req, res) {
-  const fs = require('fs');
-  const path = require('path');
-  const crypto = require('crypto');
-
-  try {
-    const { text, language } = req.body;
-
-    if (!text || text.trim().length === 0) {
-      return res.status(400).json({ error: 'invalid_text', message: 'Text cannot be empty' });
-    }
-    if (text.length > 150) {
-      return res.status(400).json({ error: 'invalid_text', message: 'Text cannot exceed 150 characters' });
-    }
-
-    let langCode = 'hi-IN';
-    if (language === 'ENGLISH') {
-      langCode = 'en-IN';
-    } else if (language === 'HINGLISH') {
-      langCode = 'hi-IN';
-    }
-
-    const ttsService = require('../services/sarvam/tts');
-    let audioBuffer;
-    try {
-      const result = await ttsService.synthesizeSpeech(text, langCode, 'anushka');
-      audioBuffer = result.audioBuffer;
-    } catch (ttsErr) {
-      console.error('Sarvam TTS failed, using mock placeholder:', ttsErr.message);
-      audioBuffer = Buffer.from(
-        'UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAD',
-        'base64'
-      );
-    }
-
-    const audioDir = '/tmp/bavio-audio';
-    if (!fs.existsSync(audioDir)) {
-      fs.mkdirSync(audioDir, { recursive: true });
-    }
-
-    const fileHash = crypto.createHash('md5').update(`${text}_${language}`).digest('hex');
-    const fileName = `preview_${fileHash}.wav`;
-    const filePath = path.join(audioDir, fileName);
-
-    await fs.promises.writeFile(filePath, audioBuffer);
-
-    const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-    const audioUrl = `${baseUrl}/audio/${fileName}`;
-
-    return res.status(200).json({
-      audioUrl,
-      duration: 3.5,
-      cached: false
-    });
-
-  } catch (err) {
-    console.error('[ONBOARDING] previewTts error:', err);
-    return res.status(500).json({
-      error: 'preview_failed',
-      message: 'Failed to generate preview audio.'
-    });
-  }
-}
-
-// Save AI assistant configurations
-async function saveAiSetup(req, res) {
-  try {
-    const clientId = req.client?.id || req.user?.id;
-    if (!clientId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const { language, firstMessage, industry } = req.body;
-    if (!language || !firstMessage) {
-      return res.status(400).json({ error: 'missing_fields', message: 'Language and first message are required' });
-    }
-
-    const bizRes = await db.query(
-      'SELECT id, name, industry, assistant_id FROM businesses WHERE id = $1',
-      [clientId]
-    );
-    if (bizRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Business not found' });
-    }
-    const business = bizRes.rows[0];
-
-    let assistantId = business.assistant_id;
-    const assistantResult = await db.query(
-      'SELECT id FROM assistants WHERE business_id = $1',
-      [clientId]
-    );
-
-    let mappedLanguage = 'en-US';
-    if (language === 'HINDI') {
-      mappedLanguage = 'hi-IN';
-    } else if (language === 'ENGLISH') {
-      mappedLanguage = 'en-US';
-    } else if (language === 'HINGLISH') {
-      mappedLanguage = 'hi-IN';
-    } else if (language) {
-      mappedLanguage = language;
-    }
-
-    if (assistantResult.rows.length === 0) {
-      const agentName = 'Bavio Assistant';
-      const selectedIndustry = industry || business.industry || 'other';
-      const systemPrompt = buildSystemPrompt({
-        agent_name: agentName,
-        greeting: firstMessage,
-        industry: selectedIndustry.toLowerCase().replace('_', '-'),
-        language: mappedLanguage,
-      });
-
-      const newAssistant = await db.query(
-        `INSERT INTO assistants (business_id, name, agent_name, greeting, first_message, system_prompt, voice_id, language, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, 'meera', $7, true)
-         RETURNING id`,
-        [clientId, agentName, agentName, firstMessage, firstMessage, systemPrompt, mappedLanguage]
-      );
-      assistantId = newAssistant.rows[0].id;
-    } else {
-      assistantId = assistantResult.rows[0].id;
-      const agentName = 'Bavio Assistant';
-      const selectedIndustry = industry || business.industry || 'other';
-      const systemPrompt = buildSystemPrompt({
-        agent_name: agentName,
-        greeting: firstMessage,
-        industry: selectedIndustry.toLowerCase().replace('_', '-'),
-        language: mappedLanguage,
-      });
-
-      await db.query(
-        `UPDATE assistants
-         SET language = $1,
-             first_message = $2,
-             greeting = $3,
-             system_prompt = $4,
-             updated_at = NOW()
-         WHERE business_id = $5`,
-        [mappedLanguage, firstMessage, firstMessage, systemPrompt, clientId]
-      );
-    }
-
-    await db.query(
-      `UPDATE businesses 
-       SET assistant_id = $1, 
-           onboarding_step = 6,
-           onboarding_status = 'ready',
-           updated_at = NOW()
-       WHERE id = $2`,
-      [assistantId, clientId]
-    );
-
-    return res.status(200).json({
-      success: true,
-      assistantId,
-      message: 'AI setup saved. Ready to test!'
-    });
-
-  } catch (err) {
-    console.error('[ONBOARDING] saveAiSetup error:', err);
-    return res.status(500).json({
-      error: 'save_failed',
-      message: 'Failed to save settings. Try again.'
-    });
-  }
-}
-
-// Fetch the first captured lead for onboarding verification
-async function getFirstLead(req, res) {
-  try {
-    const businessId = req.client?.id || req.user?.id;
-    if (!businessId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Query most recent completed call
-    const callRes = await db.query(
-      `SELECT * FROM calls 
-       WHERE business_id = $1 AND call_status = 'completed'
-       ORDER BY created_at DESC LIMIT 1`,
-      [businessId]
-    );
-
-    if (callRes.rows.length === 0) {
-      return res.status(404).json({
-        error: 'not_found',
-        message: 'No completed call found yet'
-      });
-    }
-
-    const call = callRes.rows[0];
-
-    // Fetch lead details
-    const leadRes = await db.query(
-      `SELECT * FROM leads 
-       WHERE business_id = $1 AND call_id = $2 
-       ORDER BY created_at DESC LIMIT 1`,
-      [businessId, call.id]
-    );
-
-    let leadData = null;
-    if (leadRes.rows.length > 0) {
-      const dbLead = leadRes.rows[0];
-      leadData = {
-        id: dbLead.id,
-        name: dbLead.name || 'Anonymous Caller',
-        phone: dbLead.phone || dbLead.caller_number || '',
-        propertyType: dbLead.intent || 'Residential Apartment',
-        budget: dbLead.budget || '₹45L - ₹55L',
-        location: dbLead.location || 'Whitefield, Bangalore',
-        sentiment: dbLead.notes?.includes('Positive') ? 'positive' : 'neutral',
-        status: dbLead.status ? dbLead.status.toUpperCase() : 'NEW',
-        createdAt: dbLead.created_at
-      };
-    } else {
-      // Fallback lead data if call exists but lead extraction didn't find anything
-      leadData = {
-        id: `lead_fallback_${call.id}`,
-        name: 'Anonymous Caller',
-        phone: call.caller_number || '',
-        propertyType: 'Inquiry',
-        budget: 'N/A',
-        location: 'Unknown',
-        sentiment: 'neutral',
-        status: 'NEW',
-        createdAt: call.created_at
-      };
-    }
-
-    return res.status(200).json({
-      lead: leadData,
-      call: {
-        duration: call.duration_seconds || (call.duration * 60) || 120,
-        callSid: call.provider_call_id || 'mock_call_sid',
-        transcript: Array.isArray(call.transcript) ? call.transcript : []
-      },
-      whatsappAlert: {
-        sent: true,
-        sentAt: new Date(new Date(call.created_at).getTime() + 30000).toISOString(),
-        deliveredAt: new Date(new Date(call.created_at).getTime() + 45000).toISOString()
-      }
-    });
-
-  } catch (err) {
-    console.error('[ONBOARDING] getFirstLead error:', err);
-    return res.status(500).json({ error: 'internal_error', message: err.message });
-  }
-}
-
 module.exports = {
-  saveStep,
-  getStatus,
-  buildSystemPrompt,
-  completeTrial,
-  detectCountry,
-  setCountry,
+  saveBusinessStep,
+  saveKnowledgeStep,
+  saveAgentStep,
   assignPhone,
   previewTts,
-  saveAiSetup,
-  getFirstLead
+  testCallStep,
+  completeOnboardingStep,
+  saveStep,
+  getStatus,
+  detectCountry,
+  setCountry
 };

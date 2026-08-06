@@ -6,6 +6,8 @@ const { requireAuth } = require('../middleware/auth');
 router.post('/check-email', authController.checkEmail);
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+router.post('/change-email', authController.changeEmail);
+router.post('/resend-verification', authController.resendVerification);
 router.get('/profile', requireAuth, authController.getProfile);
 router.get('/me', requireAuth, authController.getProfile); // Alias
 router.patch('/profile', requireAuth, authController.updateProfile);

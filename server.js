@@ -1,4 +1,48 @@
 require('dotenv').config();
+
+// Enforce environment validation on startup when running in production
+if (process.env.NODE_ENV === 'production') {
+    const requiredEnv = [
+        'DATABASE_URL',
+        'SUPABASE_URL',
+        'SUPABASE_SERVICE_ROLE_KEY',
+        'JWT_SECRET',
+        'OPENAI_API_KEY',
+        'TWILIO_ACCOUNT_SID',
+        'TWILIO_AUTH_TOKEN',
+        'DODO_API_KEY',
+        'DODO_WEBHOOK_SECRET',
+        'DODO_STARTER_PRODUCT_ID',
+        'DODO_GROWTH_PRODUCT_ID',
+        'DODO_SCALE_PRODUCT_ID',
+        'REDIS_URL',
+        'PUBLIC_API_BASE_URL',
+        'VOICE_WEBSOCKET_URL'
+    ];
+    const missing = [];
+    for (const key of requiredEnv) {
+        if (!process.env[key]) {
+            missing.push(key);
+        }
+    }
+    if (missing.length > 0) {
+        console.error('❌ CRITICAL: Missing required environment variables for production startup:', missing.join(', '));
+        process.exit(1);
+    }
+}
+
+// ── Voice stack configuration validation ──────────────────────────────────────
+// Validates voice stack env vars on startup.
+// Fails fast with a clear error when modular_v1 is enabled but keys are missing.
+// Silent no-op when VOICE_STACK_PROVIDER=current_openai (default).
+try {
+    const { getVoiceConfig } = require('./voice/config/voiceConfig');
+    getVoiceConfig();  // Singleton init — throws on invalid config
+} catch (voiceConfigErr) {
+    console.error('❌ CRITICAL: Voice stack configuration error:', voiceConfigErr.message);
+    process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const { generalLimiter, apiLimiter } = require('./middleware/rateLimit');
@@ -42,8 +86,25 @@ const corsOptions = {
 
 // ------- Global Middleware -------
 app.set('trust proxy', 1); // Trust first proxy (ngrok / load balancer)
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Conditional JSON body parsing (bypasses webhooks to preserve raw payload)
+app.use((req, res, next) => {
+  if (req.originalUrl === '/billing/webhook' || req.originalUrl === '/billing/dodo-webhook' || req.originalUrl.includes('/webhook')) {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
+// Conditional Urlencoded body parsing
+app.use((req, res, next) => {
+  if (req.originalUrl === '/billing/webhook' || req.originalUrl === '/billing/dodo-webhook' || req.originalUrl.includes('/webhook')) {
+    next();
+  } else {
+    express.urlencoded({ extended: false })(req, res, next);
+  }
+});
+
 app.use(cors(corsOptions));
 app.use(generalLimiter);
 
@@ -61,9 +122,11 @@ const telephonyRoutes = require('./routes/telephony');
 const leadsRoutes = require('./routes/leads');
 const billingRoutes = require('./routes/billing');
 const voiceRoutes = require('./routes/voice');
+const indiaTelephonyRoutes = require('./routes/indiaTelephony');
 const twilioRoutes = require('./routes/twilioRoutes');
 const onboardingRoutes = require('./routes/onboarding');
-const exotelRoutes = require('./routes/exotelRoutes');
+const cogsDashboardRoutes = require('./routes/cogsDashboard');
+
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const phoneRoutes = require('./routes/phone');
 const demoRoutes = require('./routes/demo');
@@ -74,7 +137,7 @@ const userRoutes = require('./routes/user');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
-app.use('/calls/exotel', exotelRoutes);
+
 app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
@@ -85,6 +148,8 @@ app.use('/telephony', telephonyRoutes);
 app.use('/leads', apiLimiter, leadsRoutes);
 app.use('/billing', billingRoutes);
 app.use('/voice', apiLimiter, voiceRoutes);
+app.use('/india-telephony', apiLimiter, indiaTelephonyRoutes);
+app.use('/cogs', apiLimiter, cogsDashboardRoutes);
 app.use('/knowledge-base', knowledgeBaseRoutes);
 app.use('/phone', phoneRoutes);
 app.use('/demo', demoRoutes);
@@ -284,6 +349,30 @@ server.on('upgrade', (request, socket, head) => {
         wss.emit('connection', ws, request, businessId);
       });
     } else if (pathname === '/api/call-stream/ws') {
+      const twilio = require('twilio');
+      const token = process.env.TWILIO_AUTH_TOKEN;
+      const signature = request.headers['x-twilio-signature'] || request.headers['X-Twilio-Signature'];
+      const isProd = process.env.NODE_ENV === 'production';
+      const isPlaceholder = !token || token.includes('your_');
+
+      if (isProd && isPlaceholder) {
+        console.error('[WS UPGRADE] Twilio Auth Token not configured in production. Aborting.');
+        socket.destroy();
+        return;
+      }
+
+      if (!isPlaceholder) {
+        const publicBaseUrl = process.env.PUBLIC_API_BASE_URL || `http://${request.headers.host || 'localhost'}`;
+        const url = publicBaseUrl + request.url;
+        const isValid = twilio.validateRequest(token, signature, url, {});
+        if (!isValid) {
+          console.error(`[WS UPGRADE] Twilio WebSocket signature validation failed for URL: ${url}`);
+          socket.destroy();
+          return;
+        }
+        console.log(`[WS UPGRADE] Twilio WebSocket signature verified successfully for: ${url}`);
+      }
+
       const { twilioWss } = require('./routes/callStream');
       twilioWss.handleUpgrade(request, socket, head, (ws) => {
         twilioWss.emit('connection', ws, request);
