@@ -194,18 +194,19 @@ export default function Navbar() {
                       <div className="col-span-8 grid grid-cols-2 gap-3.5 max-h-[380px] overflow-y-auto pr-1">
                         {industriesList.map((ind) => {
                           const Icon = ind.icon;
+                          const isActive = pathname === ind.href;
                           return (
                             <Link
                               key={ind.value}
                               href={ind.href}
                               className={`p-3 rounded-[16px] text-left transition-all duration-200 flex gap-3 border ${
-                                ind.isPrimary
+                                isActive
                                   ? "bg-[#FFF7ED] border-[#FF6B00]/25 hover:border-[#FF6B00]/45"
                                   : "bg-white border-transparent hover:bg-[#FAF7F2] hover:border-[#EADFD3]/50"
                               }`}
                             >
                               <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border ${
-                                ind.isPrimary
+                                isActive
                                   ? "bg-white border-[#FF6B00]/20 text-[#FF6B00]"
                                   : "bg-[#FAF7F2] border-[#EADFD3]/40 text-[#8A8A96]"
                               }`}>
@@ -213,7 +214,7 @@ export default function Navbar() {
                               </div>
                               <div className="flex flex-col min-w-0">
                                 <span className={`text-[13px] font-bold tracking-tight truncate ${
-                                  ind.isPrimary ? "text-[#FF6B00]" : "text-[#140A02]"
+                                  isActive ? "text-[#FF6B00]" : "text-[#140A02]"
                                 }`}>
                                   {ind.label}
                                 </span>
@@ -336,14 +337,19 @@ export default function Navbar() {
                     >
                       {industriesList.map((ind) => {
                         const Icon = ind.icon;
+                        const isActive = pathname === ind.href;
                         return (
                           <Link
                             key={ind.value}
                             href={ind.href}
                             onClick={() => setMobileOpen(false)}
-                            className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-body-xs font-bold text-[#6D5E51] hover:text-[#FF6B00] hover:bg-[#FFF7ED]/30 transition-all"
+                            className={`flex items-center gap-3 py-2.5 px-3 rounded-lg text-body-xs font-bold transition-all ${
+                              isActive
+                                ? "text-[#FF6B00] bg-[#FFF7ED]/60"
+                                : "text-[#6D5E51] hover:text-[#FF6B00] hover:bg-[#FFF7ED]/30"
+                            }`}
                           >
-                            <Icon className="w-4 h-4 text-[#8A8A96]" />
+                            <Icon className={`w-4 h-4 ${isActive ? "text-[#FF6B00]" : "text-[#8A8A96]"}`} />
                             <span>{ind.label}</span>
                           </Link>
                         );
