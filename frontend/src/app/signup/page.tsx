@@ -215,14 +215,14 @@ export default function SignUpPage() {
 
         <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
           <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block text-xs">
-            AI RECEPTIONIST FOR YOUR BUSINESS
+            AI employee for your business
           </span>
           <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
-            Your AI receptionist <br />
-            <span className="text-[#FF6B00]">never sleeps.</span>
+            Your AI employee, <br />
+            <span className="text-[#FF6B00]">always ready.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and book appointments automatically.
+            Answers calls, qualifies leads, books appointments, and works 24/7.
           </p>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
