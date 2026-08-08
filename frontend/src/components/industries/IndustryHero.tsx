@@ -130,22 +130,22 @@ export default function IndustryHero({
               <div className="flex flex-col gap-3.5">
                 <div className="self-end max-w-[85%] bg-[#FAF7F2] border border-[#E5E0D8] rounded-[18px] px-4 py-2.5 text-body-xs text-[#6B5A4C] font-sans">
                   <p className="font-bold text-[10px] text-[#8A8A96] mb-0.5">Caller</p>
-                  "{visualData.callerInput}"
+                  {"\""}{visualData.callerInput}{"\""}
                 </div>
 
                 <div className="self-start max-w-[85%] bg-[#FFF7ED] border border-[#F3E4D4] rounded-[18px] px-4 py-2.5 text-body-xs text-[#140A02] font-sans">
                   <p className="font-bold text-[10px] text-[#FF6B00] mb-0.5 font-mono">Bavio AI</p>
-                  "{visualData.bavioReply1}"
+                  {"\""}{visualData.bavioReply1}{"\""}
                 </div>
 
                 <div className="self-end max-w-[85%] bg-[#FAF7F2] border border-[#E5E0D8] rounded-[18px] px-4 py-2.5 text-body-xs text-[#6B5A4C] font-sans">
                   <p className="font-bold text-[10px] text-[#8A8A96] mb-0.5">Caller</p>
-                  "{visualData.callerInput2}"
+                  {"\""}{visualData.callerInput2}{"\""}
                 </div>
 
                 <div className="self-start max-w-[85%] bg-[#FFF7ED] border border-[#F3E4D4] rounded-[18px] px-4 py-2.5 text-body-xs text-[#140A02] font-sans">
                   <p className="font-bold text-[10px] text-[#FF6B00] mb-0.5 font-mono">Bavio AI</p>
-                  "{visualData.bavioReply2}"
+                  {"\""}{visualData.bavioReply2}{"\""}
                 </div>
               </div>
             </div>

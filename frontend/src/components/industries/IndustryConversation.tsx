@@ -62,7 +62,7 @@ export default function IndustryConversation({
                 </div>
                 <div>
                   <h4 className="text-[14px] font-extrabold text-[#140A02] uppercase tracking-wider mb-1 font-mono">{uc.title}</h4>
-                  <p className="text-body-xs text-[#6B5A4C] font-semibold italic">"{uc.quote}"</p>
+                  <p className="text-body-xs text-[#6B5A4C] font-semibold italic">{"\""}{uc.quote}{"\""}</p>
                 </div>
               </motion.div>
             ))}
@@ -108,7 +108,7 @@ export default function IndustryConversation({
                       <span className={`block text-[9px] font-bold uppercase tracking-wider mb-1 font-mono ${isBavio ? "text-[#FF6B00]" : "text-[#8A8A96]"}`}>
                         {isBavio ? "Bavio AI" : "Caller"}
                       </span>
-                      "{line.text}"
+                      {"\""}{line.text}{"\""}
                     </div>
                   );
                 })}
