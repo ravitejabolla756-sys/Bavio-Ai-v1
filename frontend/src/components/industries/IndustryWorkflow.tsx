@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { PhoneIncoming, ChatsText, ShieldCheck, HardDrives } from "@phosphor-icons/react";
+import { PhoneIncoming, ChatText, ShieldCheck, HardDrives } from "@phosphor-icons/react";
 
 interface WorkflowStep {
   number: string;
@@ -21,7 +21,7 @@ const getWorkflowIcon = (iconKey: string) => {
     case "answer":
       return PhoneIncoming;
     case "understand":
-      return ChatsText;
+      return ChatText;
     case "qualify":
       return ShieldCheck;
     case "follow":

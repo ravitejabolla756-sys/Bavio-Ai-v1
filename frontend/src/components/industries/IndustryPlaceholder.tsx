@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowLeft, Envelope } from "@phosphor-icons/react";
+import { Sparkle, ArrowLeft, Envelope } from "@phosphor-icons/react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
@@ -30,7 +30,7 @@ export default function IndustryPlaceholder({
             transition={{ duration: 0.4 }}
             className="w-14 h-14 rounded-2xl bg-[#FFF7ED] border border-[#F3E4D4]/60 text-[#FF6B00] flex items-center justify-center shadow-sm"
           >
-            <Sparkles className="w-6 h-6 animate-pulse" weight="bold" />
+            <Sparkle className="w-6 h-6 animate-pulse" weight="bold" />
           </motion.div>
 
           <div className="space-y-3">

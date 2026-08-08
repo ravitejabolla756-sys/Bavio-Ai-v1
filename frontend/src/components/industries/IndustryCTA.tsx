@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, PhoneCall, Sparkles } from "@phosphor-icons/react";
+import { ArrowRight, PhoneCall, Sparkle } from "@phosphor-icons/react";
 import GlareHover from "@/components/motion/GlareHover";
 
 interface IndustryCTAProps {
@@ -43,7 +43,7 @@ export default function IndustryCTA({
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center gap-1.5 bg-[#EA580C]/30 border border-white/20 px-5 py-2 rounded-full text-xs font-bold text-white mb-6 uppercase tracking-wider font-mono"
         >
-          <Sparkles className="w-3.5 h-3.5 fill-current" />
+          <Sparkle className="w-3.5 h-3.5 fill-current" />
           <span>Capture More Leads</span>
         </motion.div>
 

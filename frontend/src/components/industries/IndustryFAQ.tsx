@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react";
 
 interface FaqItem {
   question: string;
@@ -53,7 +53,7 @@ export default function IndustryFAQ({
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   >
-                    <ChevronDown className="w-4 h-4 text-[#6B5A4C] shrink-0" weight="bold" />
+                    <CaretDown className="w-4 h-4 text-[#6B5A4C] shrink-0" weight="bold" />
                   </motion.div>
                 </button>
 
