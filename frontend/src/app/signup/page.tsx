@@ -21,44 +21,68 @@ import Logo from "@/components/Logo";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
-import { SearchableDropdown } from "@/components/shared/SearchableDropdown";
+import IndustrySelector from "@/components/signup/IndustrySelector";
 
 const industryOptions = [
   {
     value: "real_estate",
     label: "Real Estate",
-    icon: "🏠",
-    description: "Property sales, rentals, site visits, and lead qualification.",
+    description: "Property sales, site visits, and lead qualification.",
   },
   {
     value: "healthcare",
     label: "Healthcare",
-    icon: "🏥",
-    description: "Patient triage, appointment bookings, and clinical inquiry routing.",
+    description: "Patient triage and appointment scheduling.",
   },
   {
     value: "legal",
     label: "Legal Services",
-    icon: "⚖️",
-    description: "Case consultation bookings, legal intake, and document processing.",
+    description: "Consultation bookings and case intake routing.",
   },
   {
     value: "finance",
     label: "Finance & Banking",
-    icon: "💰",
-    description: "Loan processing, wealth advisory, and account setup inquiries.",
+    description: "Loan processing and account setup inquiries.",
   },
   {
-    value: "retail",
-    label: "Retail & E-commerce",
-    icon: "🛒",
-    description: "Order tracking, returns, product catalogs, and support.",
+    value: "education",
+    label: "Education & Coaching",
+    description: "Student queries, batch scheduling, and admissions.",
+  },
+  {
+    value: "restaurants",
+    label: "Restaurants & Hospitality",
+    description: "Reservation confirmations and table bookings.",
+  },
+  {
+    value: "home_services",
+    label: "Home Services",
+    description: "Plumbing, electrical, and dispatch scheduling.",
+  },
+  {
+    value: "professional_services",
+    label: "Professional Services",
+    description: "Consulting intake and client scheduling.",
+  },
+  {
+    value: "ecommerce",
+    label: "E-commerce",
+    description: "Order inquiries, returns, and catalog queries.",
+  },
+  {
+    value: "travel",
+    label: "Travel & Hospitality",
+    description: "Booking assistance and itinerary coordination.",
+  },
+  {
+    value: "automotive",
+    label: "Automotive",
+    description: "Service booking and test drive scheduling.",
   },
   {
     value: "other",
-    label: "Other Industry",
-    icon: "🏢",
-    description: "General administrative routing and custom webhook actions.",
+    label: "Other",
+    description: "Custom voice workflows and routing tasks.",
   },
 ];
 
@@ -377,7 +401,7 @@ export default function SignUpPage() {
                     <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Industry Sector
                     </label>
-                    <SearchableDropdown
+                    <IndustrySelector
                       options={industryOptions}
                       value={industry}
                       onChange={(val) => setIndustry(val)}
