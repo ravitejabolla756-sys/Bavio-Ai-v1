@@ -235,21 +235,21 @@ export default function SignUpPage() {
           </Link>
         </div>
 
-        <div className="flex-1" />
-
-        <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
-          <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block text-xs">
+        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full pb-8 md:pb-12 lg:pb-16 translate-y-[-40px]">
+          <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-xs block mb-[18px]">
             AI employee for your business
           </span>
-          <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
+          
+          <h2 className="font-display text-4xl lg:text-[3rem] leading-[1.1] font-bold text-white mb-[22px]">
             Your AI employee, <br />
             <span className="text-[#FF6B00]">always ready.</span>
           </h2>
-          <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
+          
+          <p className="text-body-md text-white/85 max-w-[520px] leading-relaxed mb-[48px]">
             Answers calls, qualifies leads, books appointments, and works 24/7.
           </p>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
