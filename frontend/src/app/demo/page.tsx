@@ -25,14 +25,16 @@ import {
 import Logo from "@/components/Logo";
 import Navbar from "@/components/landing/Navbar";
 import { setCookie, getCookie } from "@/lib/auth-utils";
-import { setAuthData, leadsApi, demoApi } from "@/lib/api";
+import { setAuthData, leadsApi, demoApi, billingApi } from "@/lib/api";
 import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function DemoPage() {
   const router = useRouter();
 
   // Step and auth states
-  const [step, setStep] = useState(1); // 1 = Login Required, 2 = Phone Form
+  const [step, setStep] = useState(1); // 1 = Login, 2 = Info/Confirmation, 3 = Credit Verification, 4 = Phone Form
+  const [balance, setBalance] = useState<any>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [googleUser, setGoogleUser] = useState<{ name: string; email: string; avatar?: string } | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const googlePopupRef = useRef<Window | null>(null);
@@ -83,6 +85,33 @@ export default function DemoPage() {
       }
     }
   }, []);
+
+  const fetchBalance = async () => {
+    setBalanceLoading(true);
+    try {
+      const res = await billingApi.getBalance();
+      setBalance(res);
+    } catch (e: any) {
+      console.error("Failed to fetch balance:", e);
+      showToast("Failed to fetch account balance. Please reload.", "error");
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  const checkCreditsAndContinue = async () => {
+    setBalanceLoading(true);
+    try {
+      const res = await billingApi.getBalance();
+      setBalance(res);
+      setStep(3); // Navigate to credit/payment verification screen
+    } catch (e: any) {
+      console.error("Failed to check credits:", e);
+      showToast("Failed to verify credits. Please try again.", "error");
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   const cleanPhone = phoneNumber.replace(/\D/g, "");
 
@@ -311,12 +340,12 @@ export default function DemoPage() {
               </h3>
               <div className="space-y-2">
                 {[
-                  { step: 1, text: "One demo call per verified account" },
+                  { step: 1, text: "Demo requires 3 minutes of call credits ($0.75 value)" },
                   { step: 2, text: "Maximum call duration: three minutes" },
-                  { step: 3, text: "No payment card or commitment required" },
+                  { step: 3, text: "Uses actual production voice infrastructure" },
                   { step: 4, text: "Supported countries: US (+1), GB (+44), AU (+61)" },
                   { step: 5, text: "The demo explains Bavio; it is not a custom business receptionist" },
-                  { step: 6, text: "Standard carrier charges may apply where relevant" }
+                  { step: 6, text: "Charges apply at standard prepaid rates" }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-3 bg-white border border-[#E5E0D8] p-3 rounded-xl hover:border-[#FF6B00]/40 transition-colors duration-200">
                     <div className="w-5 h-5 rounded bg-[#FF6B00] flex items-center justify-center text-white text-[11px] font-black shrink-0">
@@ -347,8 +376,8 @@ export default function DemoPage() {
                 <span className="text-sm font-black text-[#FF6B00] select-none">$</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">Free</span>
-                <span className="text-[10px] text-[#8A8A96] font-bold">Try at No Cost</span>
+                <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">Paid</span>
+                <span className="text-[10px] text-[#8A8A96] font-bold">Usage Charged</span>
               </div>
             </div>
 
@@ -357,8 +386,8 @@ export default function DemoPage() {
                 <Check className="w-5 h-5 text-[#FF6B00]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">No Commitment</span>
-                <span className="text-[10px] text-[#8A8A96] font-bold">Cancel Anytime</span>
+                <span className="text-[11px] font-black text-[#140A02] uppercase tracking-wider">Prepaid</span>
+                <span className="text-[10px] text-[#8A8A96] font-bold">From Wallet</span>
               </div>
             </div>
           </div>
@@ -448,21 +477,145 @@ export default function DemoPage() {
                     </div>
                   )}
 
-                  {/* Step 2: Phone number Form */}
+                  {/* Step 2: Demo Information & Pricing Card */}
                   {step === 2 && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 2 of 2</span>
-                          {googleUser && (
-                            <span className="text-[10px] bg-[#FF6B00]/8 text-[#FF6B00] font-bold px-2.5 py-0.5 rounded-md font-sans">
-                              Signed in as {googleUser.name.split(" ")[0]}
-                            </span>
+                        <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 2 of 4</span>
+                        <h3 className="text-xl font-bold text-[#140A02] tracking-tight font-sans">Experience Bavio Live.</h3>
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-medium font-sans">
+                          Talk to Bavio&apos;s AI employee in a real 3-minute voice call.
+                        </p>
+                      </div>
+
+                      {/* Pricing Card */}
+                      <div className="bg-[#FFF7ED] border border-[#FF6B00]/15 rounded-2xl p-5 space-y-4">
+                        <div className="flex justify-between items-center border-b border-[#FF6B00]/10 pb-3">
+                          <div>
+                            <span className="text-[10px] uppercase font-black tracking-wider text-[#FF6B00] block">LIVE VOICE DEMO</span>
+                            <span className="text-sm font-bold text-[#140A02] mt-0.5 block">Call Session</span>
+                          </div>
+                          <span className="text-2xl font-black text-[#FF6B00] font-sans">3 min</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-[#6B5A4C] font-semibold">Demo Price:</span>
+                          <span className="text-sm font-bold text-[#140A02]">3 Minutes Call Credit</span>
+                        </div>
+                        <p className="text-[10px] text-[#8A7A6E] leading-normal font-sans">
+                          This is a live AI voice call using Bavio&apos;s production voice infrastructure. Usage charges apply.
+                        </p>
+                      </div>
+
+                      {/* What you'll experience */}
+                      <div className="space-y-2.5">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-[#8A8A96] block">WHAT YOU&apos;LL EXPERIENCE</span>
+                        <ul className="space-y-2 text-xs font-semibold text-[#6B5A4C]">
+                          {["Natural voice conversation", "Real-time AI responses", "Customer enquiry handling", "Lead qualification", "Appointment booking"].map((item) => (
+                            <li key={item} className="flex items-center gap-2">
+                              <span className="text-[#10B981] font-bold">✓</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={checkCreditsAndContinue}
+                        disabled={balanceLoading}
+                        className="w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] flex items-center justify-center gap-2 font-sans"
+                      >
+                        {balanceLoading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <span>Verifying Credits...</span>
+                          </>
+                        ) : (
+                          <>
+                            Continue to Demo
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 3: Payment / Credit Balance Verification */}
+                  {step === 3 && (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 3 of 4</span>
+                        <h3 className="text-xl font-bold text-[#140A02] tracking-tight font-sans font-display">Confirm Call Credits</h3>
+                        <p className="text-sm text-[#6B5A4C] leading-relaxed font-medium font-sans">
+                          Usage charges are deducted directly from your Bavio balance.
+                        </p>
+                      </div>
+
+                      {balanceLoading ? (
+                        <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                          <div className="w-6 h-6 border-2 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs font-semibold text-[#8A8A96]">Checking wallet balance...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-5">
+                          <div className="border border-[#E5E0D8] rounded-2xl p-5 space-y-3 bg-[#FAF9F6]">
+                            <div className="flex justify-between text-xs py-1 border-b border-[#E5E0D8]/60">
+                              <span className="text-[#8A7A6E] font-semibold">Demo Cost:</span>
+                              <span className="font-bold text-[#140A02]">3 Minutes (180s)</span>
+                            </div>
+                            <div className="flex justify-between text-xs py-1">
+                              <span className="text-[#8A7A6E] font-semibold">Your Balance:</span>
+                              <span className={`font-bold ${balance?.totalAvailableMinutes >= 3 ? "text-[#059669]" : "text-red-500"}`}>
+                                {balance?.totalAvailableMinutes ?? 0} Minutes
+                              </span>
+                            </div>
+                          </div>
+
+                          {balance?.totalAvailableMinutes >= 3 ? (
+                            <div className="space-y-4">
+                              <div className="bg-[#ECFDF5] border border-[#10B981]/25 text-[#059669] rounded-xl p-3.5 text-xs font-semibold leading-normal">
+                                ✓ Balance verified. 3 minutes of call credit will be reserved for this demonstration call.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setStep(4)}
+                                className="w-full bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold py-4 rounded-[20px] text-sm transition-all"
+                              >
+                                Use 3 credits for this demo
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="bg-red-50 border border-red-500/20 text-red-600 rounded-xl p-3.5 text-xs font-semibold leading-normal">
+                                ✕ Insufficient balance. You need at least 3 minutes of call credit to start the demo call.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => router.push("/dashboard/billing")}
+                                className="w-full bg-[#140A02] hover:bg-[#251A12] text-white font-bold py-4 rounded-[20px] text-sm transition-all"
+                              >
+                                Add Credits
+                              </button>
+                            </div>
                           )}
                         </div>
-                        <h3 className="text-lg font-bold text-[#140A02] tracking-tight font-sans">Step 2: Enter Your Phone Number</h3>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step 4: Phone number Form ("READY TO TALK") */}
+                  {step === 4 && (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-black text-[#FF6B00] tracking-widest block font-sans">Step 4 of 4</span>
+                          <span className="text-[10px] bg-[#ECFDF5] border border-[#10B981]/20 text-[#059669] font-bold px-2.5 py-0.5 rounded-md font-sans">
+                            Ready to Talk
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-[#140A02] tracking-tight font-sans">Enter Your Phone Number</h3>
                         <p className="text-sm text-[#6B5A4C] leading-relaxed font-medium font-sans">
-                          Verify your mobile number to start your 3-minute live conversation with Bavio.
+                          Enter the phone number you would like the Bavio AI employee to call.
                         </p>
                       </div>
 
@@ -504,7 +657,7 @@ export default function DemoPage() {
                           type="button"
                           onClick={startCallDemo}
                           disabled={!isPhoneValid || actionLoading}
-                          className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-[#E5E0D8] disabled:text-[#8A8A96] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2 font-sans"
+                          className="w-full bg-[#FF6B00] hover:bg-[#EA580C] disabled:bg-[#E5E0D8] disabled:text-[#8A8A96] text-white font-bold py-4 rounded-[20px] text-sm transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] flex items-center justify-center gap-2 font-sans"
                         >
                           {actionLoading ? (
                             <>
@@ -513,7 +666,7 @@ export default function DemoPage() {
                             </>
                           ) : (
                             <>
-                              Call Me Now
+                              Start Talking
                               <ArrowRight className="w-4 h-4" />
                             </>
                           )}

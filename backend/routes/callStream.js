@@ -95,11 +95,24 @@ twilioWss.on('connection', async (ws, request) => {
   // Fetch business & assistant details from DB
   let business = null;
   let assistant = null;
-  const isDemo = businessId === '00000000-0000-0000-0000-000000000000';
+  let isDemo = businessId === '00000000-0000-0000-0000-000000000000';
+  if (!isDemo) {
+    try {
+      const demoCheck = await db.query(
+        "SELECT id FROM demo_sessions WHERE termination_reason = $1 LIMIT 1",
+        [callSid]
+      );
+      if (demoCheck.rows.length > 0) {
+        isDemo = true;
+      }
+    } catch (e) {
+      console.error('[Twilio Stream] Demo check error:', e.message);
+    }
+  }
 
   if (isDemo) {
     business = {
-      id: '00000000-0000-0000-0000-000000000000',
+      id: businessId, // use real businessId for plan/billing consumption
       name: 'Bavio Demo',
       email: 'demo@bavio.in',
       phone: '+15555550100'

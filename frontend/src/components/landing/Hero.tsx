@@ -47,33 +47,38 @@ export default function Hero() {
           transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center gap-3 mb-16"
         >
-          <div className="flex items-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[52px]"
-            >
-              <GlareHover
-                glareColor="#ffffff"
-                glareOpacity={0.25}
-                glareAngle={-30}
-                glareSize={200}
-                borderRadius="9999px"
-                className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
+          <div className="flex flex-col items-center gap-2.5">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/demo"
+                className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[52px]"
               >
-                <span>Try the 3-Minute Demo</span>
-                <ArrowRight className="w-4 h-4" />
-              </GlareHover>
-            </Link>
-            <Link
-              href="/signup?next=/demo"
-              className="inline-flex items-center justify-center gap-2 border border-[#EADFD3] bg-white hover:bg-[#FAF4EE] text-[#140B06] text-[15px] font-semibold px-8 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] font-sans"
-            >
-              <Play className="w-3.5 h-3.5 text-[#FF6B00] fill-current" />
-              Watch Demo
-            </Link>
+                <GlareHover
+                  glareColor="#ffffff"
+                  glareOpacity={0.25}
+                  glareAngle={-30}
+                  glareSize={200}
+                  borderRadius="9999px"
+                  className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
+                >
+                  <span>Try the 3-Minute Demo</span>
+                  <ArrowRight className="w-4 h-4" />
+                </GlareHover>
+              </Link>
+              <Link
+                href="/signup?next=/demo"
+                className="inline-flex items-center justify-center gap-2 border border-[#EADFD3] bg-white hover:bg-[#FAF4EE] text-[#140B06] text-[15px] font-semibold px-8 h-[52px] rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] font-sans"
+              >
+                <Play className="w-3.5 h-3.5 text-[#FF6B00] fill-current" />
+                Watch Demo
+              </Link>
+            </div>
+            <p className="text-[12px] text-[#FF6B00] font-bold font-sans">
+              3-minute live demo · charges apply
+            </p>
           </div>
-          <p className="text-[13px] text-[#6B5A4C]/80 font-medium font-sans mt-1">
-            Create an account and speak with Bavio’s AI assistant for up to 3 minutes. No card required.
+          <p className="text-[13px] text-[#6B5A4C]/80 font-medium font-sans mt-2">
+            Experience Bavio in a live 3-minute voice demo. Demo usage is charged at the applicable rate.
           </p>
         </motion.div>
 

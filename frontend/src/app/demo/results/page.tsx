@@ -64,13 +64,13 @@ export default function DemoResultsPage() {
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-1.5 bg-[#E6F4EA] border border-[#A3E635]/25 text-[#137333] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Demo Call Completed
+              Demo Complete
             </span>
             <h1 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight text-[#140A02] leading-tight">
-              Review Your Experience
+              Demo Complete
             </h1>
             <p className="text-base text-[#6B5A4C] leading-relaxed font-sans font-normal">
-              Here is the summary of the demonstration call handled by Bavio’s shared AI receptionist.
+              Your 3-minute Bavio voice demo has ended.
             </p>
           </div>
 
@@ -100,9 +100,9 @@ export default function DemoResultsPage() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#6E6256] font-bold uppercase tracking-wider block mb-1">Country</span>
+                      <span className="text-[10px] text-[#6E6256] font-bold uppercase tracking-wider block mb-1">Usage</span>
                       <span className="text-base font-bold text-[#140A02]">
-                        {session?.termination_reason?.startsWith("CA") ? "Verified Connection" : "Demo Simulation"}
+                        {formatDuration(session?.demo_duration_seconds)}
                       </span>
                     </div>
                   </div>
@@ -174,53 +174,40 @@ export default function DemoResultsPage() {
                   </div>
                 </div>
 
-                {/* Explanation of Paid Bavio */}
+                {/* WHAT BAVIO HANDLED */}
                 <div className="bg-white border border-[#E5E0D8] rounded-[24px] p-6 md:p-8 shadow-sm space-y-6">
-                  <h3 className="font-sans text-base font-bold text-[#140A02] flex items-center gap-2">
+                  <h3 className="font-sans text-base font-bold text-[#140A02] flex items-center gap-2 border-b border-[#F3E4D4]/60 pb-4">
                     <ShieldCheck className="w-5 h-5 text-[#FF6B00]" />
-                    How Paid Bavio Works
+                    What Bavio Handled
                   </h3>
                   
-                  <ul className="space-y-4 text-sm text-[#6B5A4C] leading-relaxed font-sans">
-                    <li className="flex gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
-                      <div>
-                        <strong className="text-[#140A02]">Provision a Dedicated Number:</strong> Get your own local business phone number (available in United States, United Kingdom, and Australia).
-                      </div>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
-                      <div>
-                        <strong className="text-[#140A02]">Custom Configuration:</strong> Train the AI on your specific business details, scripts, greetings, and custom fields to collect.
-                      </div>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
-                      <div>
-                        <strong className="text-[#140A02]">Lead Sync & Dashboard:</strong> Real-time call streams log directly in your workspace. Capture requests, record transcripts, and view lead analytics.
-                      </div>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
-                      <div>
-                        <strong className="text-[#140A02]">No Postpaid Shock:</strong> Easy monthly flat plans with prepaid minute top-ups. Zero postpaid overages.
-                      </div>
-                    </li>
+                  <ul className="space-y-3.5 text-sm text-[#6B5A4C] font-semibold">
+                    {[
+                      "Customer enquiry",
+                      "Conversation understanding",
+                      "Lead qualification",
+                      "Appointment intent"
+                    ].map(item => (
+                      <li key={item} className="flex items-center gap-2.5">
+                        <span className="text-[#10B981] font-bold text-base">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
 
-                  <div className="pt-4 border-t border-[#F3E4D4]/60 flex flex-col md:flex-row gap-3">
+                  <div className="pt-4 border-t border-[#F3E4D4]/60 flex flex-col sm:flex-row gap-3">
                     <Link
-                      href="/dashboard"
-                      className="flex-1 bg-[#FF6B00] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 text-sm"
+                      href="/signup"
+                      className="flex-grow bg-[#FF6B00] hover:bg-[#EA580C] text-white py-3.5 rounded-full font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 text-sm"
                     >
-                      Go to Dashboard
+                      Create Your Bavio Account
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                     <Link
-                      href="/"
-                      className="flex-1 border border-[#D1D5DB] hover:bg-[#FAF4EE] text-[#6B7280] py-3.5 rounded-full font-bold transition-all active:scale-[0.98] flex items-center justify-center text-sm"
+                      href="/demo"
+                      className="flex-grow border border-[#D1D5DB] hover:bg-[#FAF4EE] text-[#6B7280] py-3.5 rounded-full font-bold transition-all active:scale-[0.98] flex items-center justify-center text-sm"
                     >
-                      Return Home
+                      Run Another Demo
                     </Link>
                   </div>
                 </div>

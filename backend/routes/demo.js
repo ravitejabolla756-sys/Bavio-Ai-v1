@@ -198,16 +198,33 @@ router.post('/start', requireAuth, async (req, res) => {
       });
     }
     
-    // 4. Confirm demo_used is false
-    const usedCheck = await db.query(
-      'SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_used = true LIMIT 1',
+    // 4. Confirm user has enough credit balance (at least 3 minutes = 180 seconds)
+    const DEVELOPER_EMAILS = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
+    const balanceRes = await db.query(
+      `SELECT email, subscription_status, billing_period_end, monthly_limit_seconds, monthly_usage_seconds, topup_balance_seconds
+       FROM businesses WHERE id = $1`,
       [userId]
     );
-    if (usedCheck.rows.length > 0) {
-      return res.status(400).json({
-        error: 'demo_already_used',
-        message: 'You have already completed your free demo session.'
-      });
+    if (balanceRes.rows.length === 0) {
+      return res.status(404).json({ error: 'business_not_found', message: 'Business account not found.' });
+    }
+    const biz = balanceRes.rows[0];
+    const isDeveloper = biz.email && DEVELOPER_EMAILS.includes(biz.email.trim().toLowerCase());
+    
+    if (!isDeveloper) {
+      const isActive = biz.subscription_status === 'active' && (!biz.billing_period_end || new Date(biz.billing_period_end) >= new Date());
+      const monthlyLimit = Math.max(0, biz.monthly_limit_seconds || 0);
+      const monthlyUsed = Math.max(0, biz.monthly_usage_seconds || 0);
+      const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
+      const topupBalance = Math.max(0, biz.topup_balance_seconds || 0);
+      const totalAvailable = (isActive ? monthlyRemaining : 0) + topupBalance;
+
+      if (totalAvailable < 180) {
+        return res.status(403).json({
+          error: 'insufficient_balance',
+          message: 'Insufficient balance. You need at least 3 minutes of call credit to start the demo.'
+        });
+      }
     }
     
     // 5. Confirm there is no active demo session
@@ -329,15 +346,15 @@ router.post('/incoming', async (req, res) => {
     // 2. Create/update active call session in call_sessions table for WebSocket authorization
     await db.query(
       `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
-       VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, 'active', NOW())
+       VALUES ($1, $2, $3, $4, 'active', NOW())
        ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
-      [CallSid, From, To || '+15555550100']
+      [CallSid, userId, From, To || '+15555550100']
     );
     
     // ── Select Voice Stack (feature-flagged) ─────────────────────────────
     let voiceStack = 'current_openai';
     try {
-      voiceStack = selectVoiceStack('00000000-0000-0000-0000-000000000000', { callSid: CallSid });
+      voiceStack = selectVoiceStack(userId, { callSid: CallSid });
     } catch (routerErr) {
       console.error('[TWILIO DEMO Webhook] selectVoiceStack error:', routerErr.message);
     }
@@ -347,7 +364,7 @@ router.post('/incoming', async (req, res) => {
       const token = jwt.sign(
         {
           callSid: CallSid,
-          businessId: '00000000-0000-0000-0000-000000000000',
+          businessId: userId,
           assistantId: '00000000-0000-0000-0000-000000000000', // demo placeholder
           isDemo: true
         },

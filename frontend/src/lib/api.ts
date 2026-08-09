@@ -440,6 +440,25 @@ export const billingApi = {
   getPayments: (clientId: string) =>
     apiFetch<PaymentRecord[]>(`/billing/payments/${clientId}`),
 
+  getBalance: () =>
+    apiFetch<{
+      plan: string;
+      subscriptionStatus: string;
+      billingPeriodEnd: string | null;
+      monthlyLimitMinutes: number;
+      monthlyUsedMinutes: number;
+      monthlyRemainingMinutes: number;
+      topupRemainingMinutes: number;
+      totalAvailableMinutes: number;
+      usagePercent: number;
+      monthlyLimitSeconds: number;
+      monthlyUsedSeconds: number;
+      monthlyRemainingSeconds: number;
+      topupBalanceSeconds: number;
+    }>('/billing/balance', {
+      method: 'GET',
+    }),
+
   subscribe: (plan: string, country_code?: string) =>
     apiFetch<{ subscriptionId: string; url: string; checkoutUrl: string }>('/billing/subscribe', {
       method: 'POST',
