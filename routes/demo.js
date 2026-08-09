@@ -7,8 +7,11 @@ const redisService = require('../services/redis/redisService');
 const emailService = require('../services/emailService');
 const phoneValidation = require('../utils/phoneValidation');
 const jwt = require('jsonwebtoken');
-const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
+const axios = require('axios');
+const industryProfiles = require('../voice/profiles/industryProfiles');
+
 const JWT_SECRET = process.env.JWT_SECRET || '7e0341f2ee874653ce795be1851359683e92e769db290b69965697ae80da0a5e5745972bd30e6b51088fbc878ea141f97acec678ca57855eb024064f44f4d220';
+const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
 const { selectWorkerRegionUrl } = require('../voice/routing/regionalWorkerRouter');
 
 // Helper to validate email format
@@ -17,7 +20,7 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-// POST /demo/subscribe-email
+// POST /demo/subscribe-email (Kept for backwards compatibility)
 router.post('/subscribe-email', async (req, res) => {
   try {
     const { email, sessionId } = req.body;
@@ -32,16 +35,12 @@ router.post('/subscribe-email', async (req, res) => {
     const safeSessionId = sessionId || `demo_sess_${Math.random().toString(36).substring(2, 11)}`;
     const redisKey = `demo:email:${safeSessionId}`;
 
-    // Store in Redis with a 30-day TTL (30 days * 24 hrs * 3600 secs)
     const thirtyDaysInSeconds = 30 * 24 * 3600;
     await redisService.setSession(redisKey, { email, sessionId: safeSessionId, subscribedAt: new Date().toISOString() }, thirtyDaysInSeconds);
 
-    console.log(`[DEMO SUBSCRIBE] Saved email ${email} to Redis with key ${redisKey} (30-day TTL)`);
+    console.log(`[DEMO SUBSCRIBE] Saved email ${email} to Redis with key ${redisKey}`);
 
-    // Schedule email to be sent in 24 hours (simulated low-priority via setTimeout + console log)
     const twentyFourHoursMs = 24 * 60 * 60 * 1000;
-    console.log(`[EmailService] Scheduled email to be sent in 24 hours to: ${email} (Session: ${safeSessionId})`);
-    
     setTimeout(() => {
       emailService.sendMail(
         email,
@@ -54,8 +53,7 @@ router.post('/subscribe-email', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Email saved. We'll send you updates soon.",
-      nextAction: "close_modal"
+      message: "Email saved. We'll send you updates soon."
     });
   } catch (err) {
     console.error('[DEMO SUBSCRIBE] Exception:', err.message);
@@ -63,29 +61,172 @@ router.post('/subscribe-email', async (req, res) => {
   }
 });
 
-// GET /demo/status
-router.get('/status', requireAuth, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW PAID 3-MINUTE VOICE DEMO ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /demo/create-session
+router.post('/create-session', async (req, res) => {
   try {
-    const userId = req.user.id;
-    
-    // Fetch latest demo session
-    const result = await db.query(
-      'SELECT * FROM demo_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(200).json({ eligible: true, session: null });
+    const { industry, language } = req.body;
+    if (!industry || !language) {
+      return res.status(400).json({ error: 'missing_fields', message: 'Industry and language are required.' });
     }
-    
+
+    // Resolve Twilio number mapping
+    const industryKey = (industry || 'REAL_ESTATE').toUpperCase().replace('-', '_');
+    const twilioNumber = process.env[`TWILIO_NUMBER_${industryKey}`] || process.env.TWILIO_PHONE_NUMBER || '+15555550100';
+
+    // 1. Create a pending session in database
+    const sessionRes = await db.query(
+      `INSERT INTO public_demo_sessions (industry, language, product_id, twilio_number, agent_profile, status)
+       VALUES ($1, $2, $3, $4, $5, 'pending_payment') RETURNING *`,
+      [industry, language, 'pdt_0Nl1J57f2MHnLBxSbFHNO', twilioNumber, `${industry.toLowerCase()}_demo`]
+    );
+    const session = sessionRes.rows[0];
+
+    // 2. Generate Dodo checkout link
+    const DODO_API_KEY = process.env.DODO_API_KEY;
+    const DODO_BASE_URL = 'https://api.dodopayments.com';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://bavio.in';
+    const redirectUrl = `${frontendUrl}/demo?session_id=${session.id}`;
+
+    let checkoutUrl = '';
+    try {
+      const response = await axios.post(
+        `${DODO_BASE_URL}/v1/payments`,
+        {
+          product_id: 'pdt_0Nl1J57f2MHnLBxSbFHNO',
+          customer: {
+            email: 'public-demo@bavio.in'
+          },
+          billing_address: {
+            country: 'US'
+          },
+          metadata: {
+            demo_session_id: session.id,
+            is_public_demo: 'true',
+            industry,
+            language
+          },
+          return_url: redirectUrl
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${DODO_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      checkoutUrl = response.data.checkout_url;
+      const paymentId = response.data.payment_id || response.data.id;
+      
+      await db.query(
+        "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2",
+        [paymentId, session.id]
+      );
+    } catch (dodoErr) {
+      console.warn('[DEMO CHECKOUT] Dodo payment creation failed, using mock fallback:', dodoErr.response?.data || dodoErr.message);
+      if (process.env.NODE_ENV !== 'production') {
+        const mockPaymentId = 'pay_mock_' + Math.random().toString(36).substring(2, 15);
+        checkoutUrl = `${frontendUrl}/demo?session_id=${session.id}&mock_paid=true`;
+        await db.query(
+          "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2",
+          [mockPaymentId, session.id]
+        );
+      } else {
+        throw dodoErr;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      sessionId: session.id,
+      checkoutUrl
+    });
+  } catch (err) {
+    console.error('[DEMO CREATE SESSION] Error:', err.message);
+    return res.status(500).json({ error: 'server_error', message: err.message });
+  }
+});
+
+// GET /demo/verify-payment
+router.get('/verify-payment', async (req, res) => {
+  try {
+    const { session_id, mock_paid } = req.query;
+    if (!session_id) {
+      return res.status(400).json({ error: 'missing_session', message: 'Session ID is required.' });
+    }
+
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [session_id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
+    }
+
+    let session = result.rows[0];
+
+    // If session is already paid or active, return it immediately
+    if (session.status !== 'pending_payment') {
+      return res.status(200).json({ success: true, session });
+    }
+
+    // Check if mock_paid parameter is passed in dev mode
+    if (mock_paid === 'true' && process.env.NODE_ENV !== 'production') {
+      const updated = await db.query(
+        "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 RETURNING *",
+        [session_id]
+      );
+      return res.status(200).json({ success: true, session: updated.rows[0] });
+    }
+
+    // Secure server-side check with Dodo API
+    if (session.payment_id) {
+      const DODO_API_KEY = process.env.DODO_API_KEY;
+      const DODO_BASE_URL = 'https://api.dodopayments.com';
+      try {
+        const response = await axios.get(
+          `${DODO_BASE_URL}/v1/payments/${session.payment_id}`,
+          {
+            headers: { Authorization: `Bearer ${DODO_API_KEY}` }
+          }
+        );
+        const dodoStatus = response.data.status;
+        if (dodoStatus === 'succeeded' || dodoStatus === 'SUCCESS') {
+          const updated = await db.query(
+            "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 RETURNING *",
+            [session_id]
+          );
+          session = updated.rows[0];
+        }
+      } catch (dodoErr) {
+        console.error('[DEMO VERIFY] Error fetching payment from Dodo:', dodoErr.message);
+      }
+    }
+
+    return res.status(200).json({ success: true, session });
+  } catch (err) {
+    console.error('[DEMO VERIFY ERROR] Exception:', err.message);
+    return res.status(500).json({ error: 'server_error', message: err.message });
+  }
+});
+
+// GET /demo/session-status/:id
+router.get('/session-status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
+    }
+
     const session = result.rows[0];
-    
-    // Fetch real-time transcript if session is active
+
+    // Fetch live transcript if active
     let transcriptData = [];
-    if (session.demo_status === 'active') {
+    if (session.status === 'active' && session.call_sid) {
       const callRes = await db.query(
-        "SELECT id FROM calls WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
-        [userId]
+        "SELECT id FROM calls WHERE call_sid = $1 LIMIT 1",
+        [session.call_sid]
       );
       if (callRes.rows.length > 0) {
         const transRes = await db.query(
@@ -103,222 +244,194 @@ router.get('/status', requireAuth, async (req, res) => {
     }
 
     return res.status(200).json({
-      eligible: !session.demo_used,
+      success: true,
       session,
       transcript: transcriptData
     });
   } catch (err) {
-    console.error('[DEMO STATUS] Error:', err.message);
+    console.error('[DEMO SESSION STATUS ERROR] Exception:', err.message);
     return res.status(500).json({ error: 'server_error', message: err.message });
   }
 });
 
-// POST /demo/start
-router.post('/start', requireAuth, async (req, res) => {
+// POST /demo/configure-session/:id
+router.post('/configure-session/:id', async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { phoneNumber, countryCode } = req.body;
-    
-    if (!phoneNumber) {
-      return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required' });
+    const { id } = req.params;
+    const { industry, language } = req.body;
+    if (!industry || !language) {
+      return res.status(400).json({ error: 'missing_fields', message: 'Industry and language are required.' });
     }
 
-    const resolvedCountry = (countryCode || 'US').toUpperCase().trim();
-    const allowedCountries = ['US', 'GB', 'AU'];
-    if (!allowedCountries.includes(resolvedCountry)) {
-      return res.status(400).json({
-        error: 'unsupported_country',
-        message: 'Bavio phone demo only supports US, UK, and Australia numbers.'
-      });
+    // Resolve Twilio number mapping dynamically
+    const industryKey = (industry || 'REAL_ESTATE').toUpperCase().replace('-', '_');
+    const twilioNumber = process.env[`TWILIO_NUMBER_${industryKey}`] || process.env.TWILIO_PHONE_NUMBER || '+15555550100';
+
+    const updated = await db.query(
+      `UPDATE public_demo_sessions 
+       SET industry = $1, language = $2, twilio_number = $3, agent_profile = $4
+       WHERE id = $5 RETURNING *`,
+      [industry, language, twilioNumber, `${industry.toLowerCase()}_demo`, id]
+    );
+
+    return res.status(200).json({ success: true, session: updated.rows[0] });
+  } catch (err) {
+    console.error('[DEMO CONFIGURE ERROR] Exception:', err.message);
+    return res.status(500).json({ error: 'server_error', message: err.message });
+  }
+});
+
+// POST /demo/start-session-call/:id
+router.post('/start-session-call/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { phoneNumber, countryCode } = req.body;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required.' });
     }
-    
-    // Validate phone number
+
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
+    }
+
+    const session = result.rows[0];
+    if (session.status !== 'paid') {
+      return res.status(400).json({ error: 'invalid_status', message: 'Session is not paid or already consumed.' });
+    }
+
+    // Validate phone number format
+    const resolvedCountry = (countryCode || 'US').toUpperCase().trim();
     const validation = phoneValidation.validateAndNormalizePhone(phoneNumber, resolvedCountry);
     if (!validation.valid) {
       return res.status(400).json({ error: 'invalid_phone', message: validation.error || 'Invalid phone number format' });
     }
-    
     const e164Phone = validation.normalized;
 
-    // Enforce E.164 country-specific prefixes strictly
-    if (resolvedCountry === 'US' && !e164Phone.startsWith('+1')) {
-      return res.status(400).json({ error: 'invalid_phone', message: 'US phone numbers must start with +1' });
-    }
-    if (resolvedCountry === 'GB' && !e164Phone.startsWith('+44')) {
-      return res.status(400).json({ error: 'invalid_phone', message: 'UK phone numbers must start with +44' });
-    }
-    if (resolvedCountry === 'AU' && !e164Phone.startsWith('+61')) {
-      return res.status(400).json({ error: 'invalid_phone', message: 'Australia phone numbers must start with +61' });
-    }
-    
-    // 1. Confirm email verification unconditionally from Database
-    let isEmailVerified = false;
-    if (process.env.NODE_ENV === 'development') {
-      isEmailVerified = true;
-    } else {
-      const userRes = await db.query('SELECT email_verified, email_confirmed_at FROM users WHERE id = $1', [userId]);
-      const user = userRes.rows[0];
-      isEmailVerified = user && (user.email_verified || user.email_confirmed_at);
-    }
-    
-    if (!isEmailVerified) {
-      return res.status(400).json({
-        error: 'email_not_verified',
-        message: 'Please verify your email address before starting the demo.'
-      });
-    }
+    // Resolve Twilio number mapping
+    const industryKey = (session.industry || 'REAL_ESTATE').toUpperCase().replace('-', '_');
+    const fromNumber = process.env[`TWILIO_NUMBER_${industryKey}`] || process.env.TWILIO_PHONE_NUMBER || '+15555550100';
 
-    // 2. Rate Limit: Limit by account (max 3 calls/hour)
-    const accountCheck = await db.query(
-      `SELECT COUNT(*) FROM demo_sessions 
-       WHERE user_id = $1 
-         AND demo_started_at > NOW() - INTERVAL '1 hour'`,
-      [userId]
-    );
-    if (parseInt(accountCheck.rows[0].count) >= 3) {
-      return res.status(429).json({
-        error: 'account_rate_limited',
-        message: 'Too many demo requests. Please try again later.'
-      });
-    }
-
-    // 3. Rate Limit: Limit by phone number (no calls in last 24h by another user to avoid spam)
-    const phoneCheck = await db.query(
-      `SELECT * FROM calls 
-       WHERE from_number = $1 
-         AND created_at > NOW() - INTERVAL '24 hours' 
-         AND user_id != $2
-       LIMIT 1`,
-      [e164Phone, userId]
-    );
-    if (phoneCheck.rows.length > 0) {
-      return res.status(429).json({
-        error: 'phone_rate_limited',
-        message: 'This phone number has been recently used for a demo call. Please try again later.'
-      });
-    }
-    
-    // 4. Confirm demo_used is false
-    const usedCheck = await db.query(
-      'SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_used = true LIMIT 1',
-      [userId]
-    );
-    if (usedCheck.rows.length > 0) {
-      return res.status(400).json({
-        error: 'demo_already_used',
-        message: 'You have already completed your free demo session.'
-      });
-    }
-    
-    // 5. Confirm there is no active demo session
-    const activeCheck = await db.query(
-      "SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_status = 'active' LIMIT 1",
-      [userId]
-    );
-    if (activeCheck.rows.length > 0) {
-      return res.status(400).json({
-        error: 'active_session_exists',
-        message: 'An active demo session is already running.'
-      });
-    }
-    
-    // 6. Create server-controlled demo session
-    const sessionRes = await db.query(
-      `INSERT INTO demo_sessions (user_id, demo_started_at, demo_status, demo_used)
-       VALUES ($1, NOW(), 'active', false) RETURNING *`,
-      [userId]
-    );
-    const session = sessionRes.rows[0];
-    
-    // 7. Start outbound call using Twilio
+    // Build the webhook callback URL for Twilio
     const host = req.headers.host || 'localhost:5001';
     const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
     const protocol = isSsl ? 'https' : 'http';
-    const webhookUrl = `${protocol}://${host}/demo/incoming?userId=${userId}&sessionId=${session.id}`;
-    
-    console.log(`[DEMO START] Placing demo call to ${e164Phone} with webhook: ${webhookUrl}`);
-    
+    const webhookUrl = `${protocol}://${host}/demo/incoming?isPublicDemo=true&sessionId=${session.id}`;
+
+    console.log(`[PUBLIC DEMO START] Calling ${e164Phone} from ${fromNumber} for session ${session.id}`);
+
     try {
       const callSid = await twilioProvider.createOutboundCall({
         to: e164Phone,
-        from: process.env.TWILIO_PHONE_NUMBER || '+15555550100',
+        from: fromNumber,
         webhookUrl
       });
-      
-      // Update session record with the CallSid
+
+      // Update session to active
       await db.query(
-        "UPDATE demo_sessions SET termination_reason = $1 WHERE id = $2",
-        [callSid, session.id]
+        `UPDATE public_demo_sessions
+         SET status = 'active', call_sid = $1, phone_number = $2, twilio_number = $3, started_at = NOW()
+         WHERE id = $4`,
+        [callSid, e164Phone, fromNumber, session.id]
       );
-      
-      console.log(`[DEMO START] Twilio call created. CallSid: ${callSid}`);
-      return res.status(200).json({ success: true, session, callSid });
+
+      return res.status(200).json({ success: true, callSid });
     } catch (twilioErr) {
-      console.error('[DEMO START] Twilio call placement failed:', twilioErr.message);
-      await db.query(
-        "UPDATE demo_sessions SET demo_status = 'failed', termination_reason = $1, demo_ended_at = NOW() WHERE id = $2",
-        ['Twilio call failed: ' + twilioErr.message, session.id]
-      );
+      console.error('[PUBLIC DEMO START] Twilio call failed:', twilioErr.message);
       return res.status(500).json({
         error: 'twilio_error',
         message: 'Failed to place the demonstration call. Please verify your phone number and try again.'
       });
     }
   } catch (err) {
-    console.error('[DEMO START] Exception:', err.message);
+    console.error('[DEMO START CALL ERROR] Exception:', err.message);
     return res.status(500).json({ error: 'server_error', message: err.message });
   }
 });
 
-// POST /demo/hangup
-router.post('/hangup', requireAuth, async (req, res) => {
+// POST /demo/hangup-session-call/:id
+router.post('/hangup-session-call/:id', async (req, res) => {
   try {
-    const userId = req.user.id;
-    
-    // Find active demo session
-    const active = await db.query(
-      "SELECT * FROM demo_sessions WHERE user_id = $1 AND demo_status = 'active' ORDER BY created_at DESC LIMIT 1",
-      [userId]
-    );
-    
-    if (active.rows.length > 0) {
-      const session = active.rows[0];
-      const callSid = session.termination_reason; // we stored callSid in termination_reason on start
-      
-      if (callSid && callSid.startsWith('CA')) {
-        try {
-          await twilioProvider.client.calls(callSid).update({ status: 'completed' });
-        } catch (termErr) {
-          console.error('[DEMO HANGUP] Failed to terminate call at Twilio:', termErr.message);
-        }
+    const { id } = req.params;
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
+    }
+
+    const session = result.rows[0];
+    if (session.status === 'active' && session.call_sid) {
+      try {
+        await twilioProvider.client.calls(session.call_sid).update({ status: 'completed' });
+      } catch (termErr) {
+        console.error('[DEMO HANGUP] Failed to terminate call at Twilio:', termErr.message);
       }
       
-      // Update session status in DB
       await db.query(
-        `UPDATE demo_sessions 
-         SET demo_status = 'completed', demo_used = true, demo_ended_at = NOW(),
-             termination_reason = 'user_hangup'
-         WHERE id = $1`,
+        "UPDATE public_demo_sessions SET status = 'completed', expires_at = NOW() WHERE id = $1",
         [session.id]
       );
     }
-    
+
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error('[DEMO HANGUP] Exception:', err.message);
+    console.error('[DEMO HANGUP CALL ERROR] Exception:', err.message);
     return res.status(500).json({ error: 'server_error', message: err.message });
   }
 });
 
-// POST /demo/incoming (public Twilio webhook)
+// POST /demo/incoming (Public Twilio webhook callback)
 router.post('/incoming', async (req, res) => {
   try {
     const { CallSid, From, To } = req.body;
-    const { userId, sessionId } = req.query;
+    const { isPublicDemo, sessionId } = req.query;
     
-    console.log(`[TWILIO DEMO Webhook] Connected demo call: ${From} → ${To} | CallSid: ${CallSid}`);
+    console.log(`[TWILIO DEMO Webhook] Connected demo call: ${From} → ${To} | CallSid: ${CallSid} | Public: ${isPublicDemo}`);
     
-    // 1. Create call record for demo in calls table
+    const placeholderUser = '00000000-0000-0000-0000-000000000000';
+
+    if (isPublicDemo === 'true' && sessionId) {
+      // Fetch public demo session
+      const sessionRes = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [sessionId]);
+      if (sessionRes.rows.length === 0) {
+        console.error(`[TWILIO DEMO Webhook] Public demo session ${sessionId} not found.`);
+        res.type('text/xml');
+        return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>Demo session not found. Goodbye.</Say><Hangup/></Response>`);
+      }
+      
+      // Create call logs & session records
+      await db.query(
+        `INSERT INTO calls (
+          user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
+         ) VALUES ($1, 'US', $2, 'twilio', $3, $4, NOW(), 'USD', NOW())`,
+        [placeholderUser, CallSid, From, To || '+15555550100']
+      );
+      
+      await db.query(
+        `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
+         VALUES ($1, $2, $3, $4, 'active', NOW())
+         ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
+        [CallSid, placeholderUser, From, To || '+15555550100']
+      );
+
+      const host = req.headers.host || 'localhost:5001';
+      const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      const wsProtocol = isSsl ? 'wss' : 'ws';
+      const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}&isPublicDemo=true&sessionId=${sessionId}`;
+
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Connect>
+    <Stream url="${wsUrl}" />
+  </Connect>
+</Response>`;
+
+      res.type('text/xml');
+      return res.send(twiml);
+    }
+
+    // Default flow for registered user (backwards compatibility)
+    const userId = req.query.userId || placeholderUser;
+    
     await db.query(
       `INSERT INTO calls (
         user_id, country_code, call_sid, provider, from_number, virtual_number, started_at, cost_currency, created_at
@@ -326,18 +439,16 @@ router.post('/incoming', async (req, res) => {
       [userId, CallSid, From, To || '+15555550100']
     );
     
-    // 2. Create/update active call session in call_sessions table for WebSocket authorization
     await db.query(
       `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
-       VALUES ($1, '00000000-0000-0000-0000-000000000000', $2, $3, 'active', NOW())
+       VALUES ($1, $2, $3, $4, 'active', NOW())
        ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
-      [CallSid, From, To || '+15555550100']
+      [CallSid, userId, From, To || '+15555550100']
     );
     
-    // ── Select Voice Stack (feature-flagged) ─────────────────────────────
     let voiceStack = 'current_openai';
     try {
-      voiceStack = selectVoiceStack('00000000-0000-0000-0000-000000000000', { callSid: CallSid });
+      voiceStack = selectVoiceStack(userId, { callSid: CallSid });
     } catch (routerErr) {
       console.error('[TWILIO DEMO Webhook] selectVoiceStack error:', routerErr.message);
     }
@@ -347,8 +458,8 @@ router.post('/incoming', async (req, res) => {
       const token = jwt.sign(
         {
           callSid: CallSid,
-          businessId: '00000000-0000-0000-0000-000000000000',
-          assistantId: '00000000-0000-0000-0000-000000000000', // demo placeholder
+          businessId: userId,
+          assistantId: '00000000-0000-0000-0000-000000000000',
           isDemo: true
         },
         JWT_SECRET,
@@ -361,13 +472,11 @@ router.post('/incoming', async (req, res) => {
         fromCountry: FromCountry
       });
       wsUrl = `${voiceWorkerBase}/api/call-stream/ws?token=${token}`;
-      console.log(`[TWILIO DEMO Webhook] Routing to Modular Voice Worker: ${wsUrl}`);
     } else {
       const host = req.headers.host || 'localhost:5001';
       const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
       const wsProtocol = isSsl ? 'wss' : 'ws';
       wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
-      console.log(`[TWILIO DEMO Webhook] Routing to Local Media Stream: ${wsUrl}`);
     }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -388,6 +497,17 @@ router.post('/incoming', async (req, res) => {
   <Hangup/>
 </Response>`);
   }
+});
+
+// Legacy stubs (kept for backwards-compat, return eligible: false to redirect to new billing demo)
+router.get('/status', requireAuth, async (req, res) => {
+  return res.status(200).json({ eligible: false, session: null });
+});
+router.post('/start', requireAuth, async (req, res) => {
+  return res.status(400).json({ error: 'deprecated', message: 'This endpoint is deprecated. Use the new paid demo flow.' });
+});
+router.post('/hangup', requireAuth, async (req, res) => {
+  return res.status(200).json({ success: true });
 });
 
 module.exports = router;
