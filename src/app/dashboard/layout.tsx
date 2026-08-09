@@ -29,9 +29,12 @@ import {
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
-  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
-  { name: "Analytics", href: "/dashboard/analytics", icon: ChartBar },
+  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
+  { name: "Assistant", href: "/dashboard/assistant", icon: Users },
+  { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
+  { name: "Phone Numbers", href: "/dashboard/phone-numbers", icon: GitFork },
+  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Gear },
 ];
 
@@ -98,9 +101,9 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="min-h-screen bg-canvas text-ink flex flex-col md:flex-row relative font-sans">
+    <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
       
-      {/* Background Subtle mesh orbs */}
+      {/* Background Subtle mesh orbs (removed to use body background) */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-saffron/3 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-saffron/2 blur-[100px] pointer-events-none z-0" />
 
@@ -264,7 +267,7 @@ export default function DashboardLayout({
               </div>
               <div className="flex items-center gap-1.5 border-l border-line pl-4">
                 <Pulse className="w-3.5 h-3.5 text-saffron animate-pulse" />
-                <span className="text-ink-secondary">Live latency: <span className="font-bold text-ink">420ms</span></span>
+                <span className="text-ink-secondary">Live latency: <span className="font-bold text-ink">650ms</span></span>
               </div>
             </div>
           </div>

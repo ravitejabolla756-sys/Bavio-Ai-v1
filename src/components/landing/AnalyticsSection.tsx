@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Phone, Users, Clock, Percent, Activity, IndianRupee, ArrowUpRight } from "lucide-react";
+import { Phone, Users, Clock, Percent, Activity, DollarSign, ArrowUpRight } from "lucide-react";
 
 const stats = [
   {
@@ -17,7 +17,7 @@ const stats = [
     icon: Users,
     title: "Qualified Leads",
     value: "3,124",
-    change: "+42% lead sync",
+    change: "Qualified lead list",
     color: "#FF8C3A",
     sparkline: [10, 15, 12, 22, 18, 30, 28, 38]
   },
@@ -33,7 +33,7 @@ const stats = [
     icon: Percent,
     title: "Conversion Rate",
     value: "84.3%",
-    change: "+12.1% booking rate",
+    change: "High conversion rate",
     color: "#FF8C3A",
     sparkline: [60, 65, 62, 70, 72, 80, 78, 84]
   },
@@ -41,14 +41,14 @@ const stats = [
     icon: Activity,
     title: "Peak Hours Load",
     value: "5:00 - 8:00 PM",
-    change: "99.9% trunk uptime",
+    change: "High trunk availability",
     color: "#FF6B00",
     sparkline: [10, 20, 15, 45, 50, 90, 85, 95]
   },
   {
-    icon: IndianRupee,
+    icon: DollarSign,
     title: "Revenue Recovered",
-    value: "₹8.4 Lakhs",
+    value: "$42,000",
     change: "Estimated missed call value",
     color: "#FF6B00",
     sparkline: [30, 40, 35, 55, 48, 70, 68, 80]

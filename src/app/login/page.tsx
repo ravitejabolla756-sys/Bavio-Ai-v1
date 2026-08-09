@@ -26,15 +26,22 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  React.useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(err => {
-        console.warn("Video autoplay failed or was prevented:", err);
+
+
+  async function handleGoogleLogin(isPopup = false) {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`
+        }
       });
+      if (error) throw error;
+    } catch (err: any) {
+      alert("Google login failed: " + err.message);
     }
-  }, []);
+  }
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -45,6 +52,10 @@ export default function LoginPage() {
       const redirectUrl = params.get("redirect");
       if (redirectUrl) {
         localStorage.setItem("bavio_auth_redirect", redirectUrl);
+      }
+      if (params.get("oauth_popup") === "true") {
+        // Automatically trigger Google sign in for the popup window
+        handleGoogleLogin(true);
       }
     }
   }, []);
@@ -90,8 +101,8 @@ export default function LoginPage() {
             navigateAfterAuth("/workspace");
           }
         } else {
-          setCookie("bavio_onboarding_completed", "false");
-          navigateAfterAuth("/onboarding");
+          setCookie("bavio_onboarding_completed", "true");
+          navigateAfterAuth("/workspace");
         }
       }
     } catch (err: any) {
@@ -101,39 +112,17 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      alert("Google login failed: " + err.message);
-    }
-  };
+  // Google login handler is defined above to allow hoisting inside useEffect
 
   const handleSocialAuth = () => {
     setCookie("bavio_auth", "true");
-    if (isSignUp) {
-      navigateAfterAuth("/onboarding");
+    setCookie("bavio_onboarding_completed", "true");
+    const redirectUrl = localStorage.getItem("bavio_auth_redirect");
+    if (redirectUrl) {
+      localStorage.removeItem("bavio_auth_redirect");
+      navigateAfterAuth(redirectUrl);
     } else {
-      const savedState = localStorage.getItem("bavio_premium_onboarding_state");
-      if (!savedState) {
-        setCookie("bavio_onboarding_completed", "true");
-        const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-        if (redirectUrl) {
-          localStorage.removeItem("bavio_auth_redirect");
-          navigateAfterAuth(redirectUrl);
-        } else {
-          navigateAfterAuth("/workspace");
-        }
-      } else {
-        navigateAfterAuth("/onboarding");
-      }
+      navigateAfterAuth("/workspace");
     }
   };
 
@@ -155,7 +144,6 @@ export default function LoginPage() {
         
         {/* Full-height background video */}
         <video
-          ref={videoRef}
           autoPlay
           muted
           loop
@@ -189,14 +177,14 @@ export default function LoginPage() {
         {/* Copy & Feature bullets */}
         <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
           <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block">
-            AI RECEPTIONIST FOR YOUR BUSINESS
+            AI employee for your business
           </span>
           <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
-            Your AI receptionist <br />
-            <span className="text-[#FF6B00]">never sleeps.</span>
+            Your AI employee, <br />
+            <span className="text-[#FF6B00]">always ready.</span>
           </h2>
           <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answer calls, qualify leads, and book appointments automatically.
+            Answers calls, qualifies leads, books appointments, and works 24/7.
           </p>
 
           {/* Features horizontal/grid row */}
@@ -272,7 +260,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
-              onClick={handleGoogleLogin}
+              onClick={() => handleGoogleLogin(false)}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#FAF7F2] text-[#3A3A42] border border-[#E5E0D8] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
               {/* Google Vector Icon */}
