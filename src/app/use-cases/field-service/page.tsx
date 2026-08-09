@@ -33,12 +33,12 @@ export default function FieldServiceUseCase() {
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">24/7 emergency dispatch</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">15 Min Capture</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Faster booking resolution</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Rapid Capture</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Fast booking detail capture</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">35% Cost Cut</span>
-              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">On manual intake centers</span>
+              <span className="text-2xl font-bold font-display text-saffron block">Cost deflection</span>
+              <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Automated first-line intake</span>
             </div>
           </div>
 
@@ -47,7 +47,7 @@ export default function FieldServiceUseCase() {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <h2 className="font-display font-bold text-heading-lg text-ink">Urgent Call Dispatch</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                Homeowners with leakage or AC failures call multiple providers until someone answers. If your phone is busy or goes to voicemail, you lose the job. Bavio answers calls on the first ring, diagnostic-scores the urgency, logs location pin coordinates, and dispatches the lead.
+                Homeowners with leakage or AC failures call multiple providers until someone answers. If your phone is busy or goes to voicemail, you lose the job. Bavio answers calls on the first ring, diagnostic-scores the urgency, logs location details, and dispatches the lead.
               </p>
 
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
@@ -63,10 +63,10 @@ export default function FieldServiceUseCase() {
               <div className="flex flex-col gap-4 bg-surface border border-line rounded-3xl p-6 md:p-8">
                 <h3 className="font-bold text-body-md text-ink flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-saffron" />
-                  Address & Coordinates Parsing
+                  Address & Location Parsing
                 </h3>
                 <p className="text-body-sm text-ink-tertiary leading-relaxed">
-                  Bavio captures complicated address details and location parameters, cross-checks coordinates via postal databases, and formats address lines for clean dispatcher use.
+                  Bavio captures complicated address details and location parameters, and formats address lines for clean dispatcher use.
                 </p>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default function FieldServiceUseCase() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-saffron mt-0.5 shrink-0" weight="bold" />
-                  <span>Technical dispatcher CRM alerts</span>
+                  <span>Technical dispatcher notifications</span>
                 </li>
               </ul>
               <Link

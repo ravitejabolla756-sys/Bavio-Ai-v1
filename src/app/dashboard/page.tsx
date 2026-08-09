@@ -253,12 +253,12 @@ export default function DashboardOverview() {
                       </span>
                     </div>
                     <p className="text-[10px] text-ink-tertiary font-mono mt-0.5">
-                      {new Date(call.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
+                      {new Date(call.created_at).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })}
                       {call.duration ? ` · ${Math.ceil(call.duration / 60)}m ${call.duration % 60}s` : ""}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono text-ink-muted">{call.provider || "exotel"}</span>
+                    <span className="text-[10px] font-mono text-ink-muted">Voice Trunk</span>
                   </div>
                 </motion.div>
               ))}
