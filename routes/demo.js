@@ -66,9 +66,10 @@ router.post('/subscribe-email', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // POST /demo/create-session
-router.post('/create-session', async (req, res) => {
+router.post('/create-session', requireAuth, async (req, res) => {
   try {
     const { industry, language } = req.body;
+    const userId = req.user.id;
     if (!industry || !language) {
       return res.status(400).json({ error: 'missing_fields', message: 'Industry and language are required.' });
     }
@@ -79,26 +80,27 @@ router.post('/create-session', async (req, res) => {
 
     // 1. Create a pending session in database
     const sessionRes = await db.query(
-      `INSERT INTO public_demo_sessions (industry, language, product_id, twilio_number, agent_profile, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending_payment') RETURNING *`,
-      [industry, language, 'pdt_0Nl1J57f2MHnLBxSbFHNO', twilioNumber, `${industry.toLowerCase()}_demo`]
+      `INSERT INTO public_demo_sessions (industry, language, product_id, twilio_number, agent_profile, status, user_id)
+       VALUES ($1, $2, $3, $4, $5, 'pending_payment', $6) RETURNING *`,
+      [industry, language, 'pdt_0Nl1J57f2MHnLBxSbFHNO', twilioNumber, `${industry.toLowerCase()}_demo`, userId]
     );
     const session = sessionRes.rows[0];
 
     // 2. Generate Dodo checkout link
     const DODO_API_KEY = process.env.DODO_API_KEY;
+    const DEMO_PRODUCT_ID = process.env.DODO_DEMO_PRODUCT_ID || 'pdt_0Nl1J57f2MHnLBxSbFHNO';
     const DODO_BASE_URL = 'https://api.dodopayments.com';
     const frontendUrl = process.env.FRONTEND_URL || 'https://bavio.in';
-    const redirectUrl = `${frontendUrl}/demo?session_id=${session.id}`;
+    const redirectUrl = `${frontendUrl}/workspace/demo?session_id=${session.id}`;
 
     let checkoutUrl = '';
     try {
       const response = await axios.post(
         `${DODO_BASE_URL}/v1/payments`,
         {
-          product_id: 'pdt_0Nl1J57f2MHnLBxSbFHNO',
+          product_id: DEMO_PRODUCT_ID,
           customer: {
-            email: 'public-demo@bavio.in'
+            email: req.user.email || 'public-demo@bavio.in'
           },
           billing_address: {
             country: 'US'
@@ -122,17 +124,17 @@ router.post('/create-session', async (req, res) => {
       const paymentId = response.data.payment_id || response.data.id;
       
       await db.query(
-        "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2",
-        [paymentId, session.id]
+        "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2 AND user_id = $3",
+        [paymentId, session.id, userId]
       );
     } catch (dodoErr) {
       console.warn('[DEMO CHECKOUT] Dodo payment creation failed, using mock fallback:', dodoErr.response?.data || dodoErr.message);
       if (process.env.NODE_ENV !== 'production') {
         const mockPaymentId = 'pay_mock_' + Math.random().toString(36).substring(2, 15);
-        checkoutUrl = `${frontendUrl}/demo?session_id=${session.id}&mock_paid=true`;
+        checkoutUrl = `${frontendUrl}/workspace/demo?session_id=${session.id}&mock_paid=true`;
         await db.query(
-          "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2",
-          [mockPaymentId, session.id]
+          "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2 AND user_id = $3",
+          [mockPaymentId, session.id, userId]
         );
       } else {
         throw dodoErr;
@@ -151,14 +153,15 @@ router.post('/create-session', async (req, res) => {
 });
 
 // GET /demo/verify-payment
-router.get('/verify-payment', async (req, res) => {
+router.get('/verify-payment', requireAuth, async (req, res) => {
   try {
     const { session_id, mock_paid } = req.query;
+    const userId = req.user.id;
     if (!session_id) {
       return res.status(400).json({ error: 'missing_session', message: 'Session ID is required.' });
     }
 
-    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [session_id]);
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1 AND user_id = $2', [session_id, userId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
     }
@@ -173,8 +176,8 @@ router.get('/verify-payment', async (req, res) => {
     // Check if mock_paid parameter is passed in dev mode
     if (mock_paid === 'true' && process.env.NODE_ENV !== 'production') {
       const updated = await db.query(
-        "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 RETURNING *",
-        [session_id]
+        "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 AND user_id = $2 RETURNING *",
+        [session_id, userId]
       );
       return res.status(200).json({ success: true, session: updated.rows[0] });
     }
@@ -193,8 +196,8 @@ router.get('/verify-payment', async (req, res) => {
         const dodoStatus = response.data.status;
         if (dodoStatus === 'succeeded' || dodoStatus === 'SUCCESS') {
           const updated = await db.query(
-            "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 RETURNING *",
-            [session_id]
+            "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 AND user_id = $2 RETURNING *",
+            [session_id, userId]
           );
           session = updated.rows[0];
         }
@@ -211,10 +214,11 @@ router.get('/verify-payment', async (req, res) => {
 });
 
 // GET /demo/session-status/:id
-router.get('/session-status/:id', async (req, res) => {
+router.get('/session-status/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    const userId = req.user.id;
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1 AND user_id = $2', [id, userId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
     }
@@ -255,12 +259,19 @@ router.get('/session-status/:id', async (req, res) => {
 });
 
 // POST /demo/configure-session/:id
-router.post('/configure-session/:id', async (req, res) => {
+router.post('/configure-session/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { industry, language } = req.body;
+    const userId = req.user.id;
     if (!industry || !language) {
       return res.status(400).json({ error: 'missing_fields', message: 'Industry and language are required.' });
+    }
+
+    // Verify ownership first
+    const checkRes = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
     }
 
     // Resolve Twilio number mapping dynamically
@@ -270,8 +281,8 @@ router.post('/configure-session/:id', async (req, res) => {
     const updated = await db.query(
       `UPDATE public_demo_sessions 
        SET industry = $1, language = $2, twilio_number = $3, agent_profile = $4
-       WHERE id = $5 RETURNING *`,
-      [industry, language, twilioNumber, `${industry.toLowerCase()}_demo`, id]
+       WHERE id = $5 AND user_id = $6 RETURNING *`,
+      [industry, language, twilioNumber, `${industry.toLowerCase()}_demo`, id, userId]
     );
 
     return res.status(200).json({ success: true, session: updated.rows[0] });
@@ -282,15 +293,16 @@ router.post('/configure-session/:id', async (req, res) => {
 });
 
 // POST /demo/start-session-call/:id
-router.post('/start-session-call/:id', async (req, res) => {
+router.post('/start-session-call/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { phoneNumber, countryCode } = req.body;
+    const userId = req.user.id;
     if (!phoneNumber) {
       return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required.' });
     }
 
-    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1 AND user_id = $2', [id, userId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
     }
@@ -331,8 +343,8 @@ router.post('/start-session-call/:id', async (req, res) => {
       await db.query(
         `UPDATE public_demo_sessions
          SET status = 'active', call_sid = $1, phone_number = $2, twilio_number = $3, started_at = NOW()
-         WHERE id = $4`,
-        [callSid, e164Phone, fromNumber, session.id]
+         WHERE id = $4 AND user_id = $5`,
+        [callSid, e164Phone, fromNumber, session.id, userId]
       );
 
       return res.status(200).json({ success: true, callSid });
@@ -350,10 +362,11 @@ router.post('/start-session-call/:id', async (req, res) => {
 });
 
 // POST /demo/hangup-session-call/:id
-router.post('/hangup-session-call/:id', async (req, res) => {
+router.post('/hangup-session-call/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1', [id]);
+    const userId = req.user.id;
+    const result = await db.query('SELECT * FROM public_demo_sessions WHERE id = $1 AND user_id = $2', [id, userId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'session_not_found', message: 'Demo session not found.' });
     }
@@ -367,8 +380,8 @@ router.post('/hangup-session-call/:id', async (req, res) => {
       }
       
       await db.query(
-        "UPDATE public_demo_sessions SET status = 'completed', expires_at = NOW() WHERE id = $1",
-        [session.id]
+        "UPDATE public_demo_sessions SET status = 'completed', expires_at = NOW() WHERE id = $1 AND user_id = $2",
+        [session.id, userId]
       );
     }
 
