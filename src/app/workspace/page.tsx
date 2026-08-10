@@ -141,6 +141,32 @@ export default function WorkspaceHome() {
         </div>
       </div>
 
+      {/* Goal 1: Experience Bavio Live */}
+      <div className="bg-gradient-to-r from-saffron/10 via-saffron/5 to-transparent border border-saffron/30 rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-saffron/10 rounded-full blur-[50px] pointer-events-none" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-saffron text-white rounded-full flex items-center justify-center shrink-0 shadow-md">
+            <Sparkle className="w-6 h-6 animate-pulse" weight="fill" />
+          </div>
+          <div>
+            <span className="text-[9px] font-mono tracking-wider text-saffron font-bold uppercase bg-saffron/10 border border-saffron/20 px-2 py-0.5 rounded inline-block mb-1.5">
+              Goal 1 — Active Setup
+            </span>
+            <div className="font-sans font-extrabold text-[15px] tracking-wide text-ink">Try Bavio Live Voice Demo</div>
+            <p className="text-[11.5px] text-ink-secondary leading-relaxed mt-1 max-w-xl">
+              Experience your AI employee's conversational capability first-hand. Place a real 3-minute voice call to your mobile device for just $0.99 one-time.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/workspace/demo"
+          className="flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-saffron/20"
+        >
+          <span>Try Live Demo</span>
+          <ArrowRight className="w-4 h-4" weight="bold" />
+        </Link>
+      </div>
+
       {/* Warning/Action Banner if no number is assigned */}
       {!profile.twilio_number && (
         <div className="bg-amber-500/10 border border-amber-500/25 text-[#140A02] rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
