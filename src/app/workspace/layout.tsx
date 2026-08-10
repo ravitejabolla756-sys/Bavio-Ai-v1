@@ -27,6 +27,7 @@ import {
 
 const workspaceNavigationItems = [
   { name: "Overview", href: "/workspace", icon: Layout },
+  { name: "Try Bavio Live", href: "/workspace/demo", icon: Sparkle },
   { name: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
   { name: "Settings & Profile", href: "/workspace/settings", icon: Gear },
 ];
