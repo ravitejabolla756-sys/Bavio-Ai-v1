@@ -3,6 +3,7 @@ const db = require('../database/db');
 const openAIService = require('../services/openAIService');
 const deepgramService = require('../services/deepgramService');
 const encryption = require('../utils/encryption');
+const industryProfiles = require('../voice/profiles/industryProfiles');
 
 // ── Voice stack routing (feature-flagged; default is current_openai) ─────────
 const { selectVoiceStack, PROVIDER_MODULAR } = require('../voice/routing/voiceStackRouter');
@@ -55,6 +56,8 @@ twilioWss.on('connection', async (ws, request) => {
 
   const urlObj = new URL(request.url, 'http://localhost');
   let callSid = urlObj.searchParams.get('callSid') || urlObj.searchParams.get('CallSid');
+  const isPublicDemo = urlObj.searchParams.get('isPublicDemo') === 'true';
+  const publicDemoSessionId = urlObj.searchParams.get('sessionId');
 
   if (!callSid) {
     console.error('[Twilio Stream] No callSid provided. Closing connection.');
@@ -95,8 +98,24 @@ twilioWss.on('connection', async (ws, request) => {
   // Fetch business & assistant details from DB
   let business = null;
   let assistant = null;
-  let isDemo = businessId === '00000000-0000-0000-0000-000000000000';
-  if (!isDemo) {
+  let isDemo = businessId === '00000000-0000-0000-0000-000000000000' || isPublicDemo;
+
+  let publicDemoSession = null;
+  if (isPublicDemo && publicDemoSessionId) {
+    try {
+      const demoRes = await db.query(
+        "SELECT * FROM public_demo_sessions WHERE id = $1 LIMIT 1",
+        [publicDemoSessionId]
+      );
+      if (demoRes.rows.length > 0) {
+        publicDemoSession = demoRes.rows[0];
+      }
+    } catch (e) {
+      console.error('[Twilio Stream] Public demo session lookup error:', e.message);
+    }
+  }
+
+  if (!isPublicDemo && !isDemo) {
     try {
       const demoCheck = await db.query(
         "SELECT id FROM demo_sessions WHERE termination_reason = $1 LIMIT 1",
@@ -110,7 +129,32 @@ twilioWss.on('connection', async (ws, request) => {
     }
   }
 
-  if (isDemo) {
+  if (isPublicDemo && publicDemoSession) {
+    const LANGUAGE_CODES = {
+      english: 'en-US',
+      spanish: 'es-ES',
+      french: 'fr-FR',
+      german: 'de-DE',
+      portuguese: 'pt-BR',
+      arabic: 'ar-AE',
+      hindi: 'hi-IN'
+    };
+    const langName = publicDemoSession.language || 'english';
+    const bcp47Code = LANGUAGE_CODES[langName.toLowerCase()] || 'en-US';
+
+    business = {
+      id: '00000000-0000-0000-0000-000000000000',
+      name: 'Bavio Public Demo',
+      email: 'public-demo@bavio.in',
+      phone: publicDemoSession.twilio_number || '+15555550100'
+    };
+    assistant = {
+      name: `Bavio AI ${publicDemoSession.industry} Employee`,
+      language: bcp47Code,
+      voice: 'alloy',
+      first_message: industryProfiles.getDemoGreeting(publicDemoSession.industry, langName)
+    };
+  } else if (isDemo) {
     business = {
       id: businessId, // use real businessId for plan/billing consumption
       name: 'Bavio Demo',
@@ -221,38 +265,86 @@ Answer questions about:
 
 Speak naturally, keep your answers concise and conversational, and let the caller know that this demo session will end automatically after 3 minutes.`;
 
-  const systemPrompt = isDemo ? SHARED_DEMO_PROMPT : openAIService.buildSystemPrompt(assistant, business);
+  const systemPrompt = isPublicDemo && publicDemoSession
+    ? industryProfiles.buildDemoSystemPrompt(publicDemoSession.industry, publicDemoSession.language || 'english')
+    : (isDemo ? SHARED_DEMO_PROMPT : openAIService.buildSystemPrompt(assistant, business));
 
   // Fetch client API keys if they exist
   let clientKeys = { deepgram: null, openai: null, elevenlabs: null };
-  try {
-    const apiRes = await db.query(
-      'SELECT service_name, api_key_encrypted FROM api_integrations WHERE business_id = $1',
-      [businessId]
-    );
-    apiRes.rows.forEach(row => {
-      try {
-        clientKeys[row.service_name] = encryption.decrypt(row.api_key_encrypted);
-      } catch (decErr) {
-        console.error(`[Twilio Stream] Failed to decrypt ${row.service_name} API key:`, decErr.message);
-      }
-    });
-  } catch (dbErr) {
-    console.error('[Twilio Stream] Failed to fetch api_integrations:', dbErr.message);
+  if (!isPublicDemo) {
+    try {
+      const apiRes = await db.query(
+        'SELECT service_name, api_key_encrypted FROM api_integrations WHERE business_id = $1',
+        [businessId]
+      );
+      apiRes.rows.forEach(row => {
+        try {
+          clientKeys[row.service_name] = encryption.decrypt(row.api_key_encrypted);
+        } catch (decErr) {
+          console.error(`[Twilio Stream] Failed to decrypt ${row.service_name} API key:`, decErr.message);
+        }
+      });
+    } catch (dbErr) {
+      console.error('[Twilio Stream] Failed to fetch api_integrations:', dbErr.message);
+    }
   }
 
   let streamSid = null;
   let demoTimer = null;
+  let demoWarningTimer = null;
 
   if (isDemo) {
+    // 30 Seconds Remaining Warning Timer
+    demoWarningTimer = setTimeout(async () => {
+      console.log(`[Twilio Stream] Demo call session reached 2.5 minutes (30s remaining) warning limit for CallSid: ${callSid}.`);
+      try {
+        const warnMsg = {
+          english: "This call will end in 30 seconds. Thanks for trying Bavio.",
+          hindi: "यह कॉल 30 सेकंड में समाप्त हो जाएगी। Bavio का उपयोग करने के लिए धन्यवाद।",
+          spanish: "Esta llamada terminará en 30 segundos. Gracias por probar Bavio.",
+          french: "Cet appel se terminera dans 30 secondes. Merci d'avoir essayé Bavio.",
+          german: "Dieser Anruf endet in 30 Sekunden. Vielen Dank, dass Sie Bavio ausprobiert haben.",
+          portuguese: "Esta chamada terminará em 30 segundos. Obrigado por experimentar a Bavio.",
+          arabic: "ستنتهي هذه المكالمة خلال 30 ثانية. شكراً لتجربة Bavio."
+        };
+        const currentLang = (publicDemoSession ? publicDemoSession.language : 'english').toLowerCase();
+        const msg = warnMsg[currentLang] || warnMsg.english;
+        const mulawAudio = await openAIService.textToSpeech(msg, voiceId, language, 'ulaw_8000', clientKeys.openai);
+        streamAudioToTwilio(mulawAudio);
+      } catch (warnErr) {
+        console.error('[Twilio Stream] Graceful demo warning TTS failed:', warnErr.message);
+      }
+    }, 150000); // 2.5 minutes (150 seconds)
+
+    // Complete Call Termination Timer
     demoTimer = setTimeout(async () => {
       console.log(`[Twilio Stream] Demo call session reached 3 minutes limit for CallSid: ${callSid}. Terminating.`);
       try {
-        const twilioProvider = require('../providers/twilio');
-        await twilioProvider.client.calls(callSid).update({ status: 'completed' });
-      } catch (termErr) {
-        console.error('[Twilio Stream] Failed to terminate demo call at Twilio:', termErr.message);
+        const endMsg = {
+          english: "Thanks for experiencing Bavio. Your 3-minute demo has ended. Goodbye.",
+          hindi: "Bavio का अनुभव करने के लिए धन्यवाद। आपका 3 मिनट का डेमो समाप्त हो गया है। अलविदा।",
+          spanish: "Gracias por experimentar Bavio. Su demostración de 3 minutos ha terminado. Adiós.",
+          french: "Merci d'avoir fait l'expérience de Bavio. Votre démo de 3 minutes est terminée. Au revoir.",
+          german: "Vielen Dank, dass Sie Bavio erlebt haben. Ihre 3-minütige Demo ist beendet. Auf Wiedersehen.",
+          portuguese: "Obrigado por experimentar a Bavio. Sua demonstração de 3 minutos terminou. Adeus.",
+          arabic: "شكراً لتجربتك Bavio. انتهى العرض التوضيحي الذي تبلغ مدته 3 دقائق. مع السلامة."
+        };
+        const currentLang = (publicDemoSession ? publicDemoSession.language : 'english').toLowerCase();
+        const finalMsg = endMsg[currentLang] || endMsg.english;
+        const mulawAudio = await openAIService.textToSpeech(finalMsg, voiceId, language, 'ulaw_8000', clientKeys.openai);
+        streamAudioToTwilio(mulawAudio);
+      } catch (endErr) {
+        console.error('[Twilio Stream] Graceful demo end TTS failed:', endErr.message);
       }
+
+      setTimeout(async () => {
+        try {
+          const twilioProvider = require('../providers/twilio');
+          await twilioProvider.client.calls(callSid).update({ status: 'completed' });
+        } catch (termErr) {
+          console.error('[Twilio Stream] Failed to terminate demo call at Twilio:', termErr.message);
+        }
+      }, 4000); // Hang up 4 seconds after final greeting
     }, 180000); // 3 minutes
   }
   let audioChunks = [];
@@ -472,9 +564,17 @@ Speak naturally, keep your answers concise and conversational, and let the calle
         }
       }
 
-      // Charge seconds (monthly first, then top-up)
-      const { deductCallSeconds } = require('../middleware/planEnforcement');
-      await deductCallSeconds(businessId, durationSec, callSid);
+      if (isPublicDemo && publicDemoSessionId) {
+        await db.query(
+          "UPDATE public_demo_sessions SET status = 'completed', expires_at = NOW() WHERE id = $1",
+          [publicDemoSessionId]
+        );
+        console.log(`[Twilio Stream] Public demo session ${publicDemoSessionId} completed successfully.`);
+      } else {
+        // Charge seconds (monthly first, then top-up) for normal calls
+        const { deductCallSeconds } = require('../middleware/planEnforcement');
+        await deductCallSeconds(businessId, durationSec, callSid);
+      }
 
     } catch (err) {
       console.error('[Twilio Stream] Failed to save call summary:', err.message);
@@ -534,6 +634,7 @@ Speak naturally, keep your answers concise and conversational, and let the calle
     console.log('[Twilio Stream] WebSocket connection closed.');
     if (playbackInterval) clearInterval(playbackInterval);
     if (demoTimer) clearTimeout(demoTimer);
+    if (demoWarningTimer) clearTimeout(demoWarningTimer);
   });
 });
 

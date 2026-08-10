@@ -774,6 +774,23 @@ async function handleWebhook(req, res) {
                 const payment = event.data;
                 const customerId = payment.customer_id;
 
+                const demoSessionId = payment.metadata?.demo_session_id;
+                if (demoSessionId) {
+                    await db.query(
+                        "UPDATE public_demo_sessions SET status = 'paid', payment_id = $1 WHERE id = $2",
+                        [payment.id, demoSessionId]
+                    );
+                    console.log(`[DODO WEBHOOK] Public demo session ${demoSessionId} marked as paid.`);
+                    
+                    await db.query(
+                        `INSERT INTO payment_logs
+                         (dodo_payment_id, dodo_customer_id, amount, currency, status, plan_name, payment_type, metadata)
+                         VALUES ($1, $2, $3, $4, 'succeeded', 'public_demo', 'topup', $5)`,
+                        [payment.id, customerId, payment.amount, payment.currency || 'USD', JSON.stringify(payment)]
+                    );
+                    break;
+                }
+
                 // ── Check if this is a top-up payment ────────────────────
                 const topupType = payment.metadata?.topup_type || payment.metadata?.topup_id;
                 const topupConfig = topupType ? require('../config/topups').TOPUPS_CONFIG[topupType] : null;

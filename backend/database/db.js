@@ -52,6 +52,27 @@ pool.query('SELECT NOW()')
       `);
       console.log('✅ demo_sessions table initialized/verified.');
 
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS public_demo_sessions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            payment_id VARCHAR(100) UNIQUE,
+            product_id VARCHAR(100),
+            industry VARCHAR(50),
+            language VARCHAR(50),
+            twilio_number VARCHAR(30),
+            agent_profile VARCHAR(50),
+            status VARCHAR(30) DEFAULT 'pending_payment',
+            started_at TIMESTAMPTZ,
+            expires_at TIMESTAMPTZ,
+            duration_limit INTEGER DEFAULT 180,
+            call_sid VARCHAR(100),
+            phone_number VARCHAR(30),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            user_id UUID
+        );
+      `);
+      console.log('✅ public_demo_sessions table initialized/verified.');
+
       // Drop country and currency check constraints from the users table to support all countries worldwide
       try {
         await pool.query(`
