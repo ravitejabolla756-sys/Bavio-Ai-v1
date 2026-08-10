@@ -528,34 +528,28 @@ export const demoApi = {
     apiFetch<{ success: boolean; sessionId: string; checkoutUrl: string }>('/demo/create-session', {
       method: 'POST',
       body: JSON.stringify({ industry, language }),
-      skipAuth: true,
     }),
   verifyPayment: (sessionId: string, mockPaid?: boolean) =>
     apiFetch<{ success: boolean; session: any }>(`/demo/verify-payment?session_id=${sessionId}${mockPaid ? '&mock_paid=true' : ''}`, {
       method: 'GET',
-      skipAuth: true,
     }),
   getSessionStatus: (sessionId: string) =>
     apiFetch<{ success: boolean; session: any; transcript?: any[] }>(`/demo/session-status/${sessionId}`, {
       method: 'GET',
-      skipAuth: true,
     }),
   startSessionCall: (sessionId: string, phoneNumber: string, countryCode: string) =>
     apiFetch<{ success: boolean; callSid: string }>(`/demo/start-session-call/${sessionId}`, {
       method: 'POST',
       body: JSON.stringify({ phoneNumber, countryCode }),
-      skipAuth: true,
     }),
   hangupSessionCall: (sessionId: string) =>
     apiFetch<{ success: boolean }>(`/demo/hangup-session-call/${sessionId}`, {
       method: 'POST',
-      skipAuth: true,
     }),
   configureSession: (sessionId: string, industry: string, language: string) =>
     apiFetch<{ success: boolean; session: any }>(`/demo/configure-session/${sessionId}`, {
       method: 'POST',
       body: JSON.stringify({ industry, language }),
-      skipAuth: true,
     }),
 };
 
