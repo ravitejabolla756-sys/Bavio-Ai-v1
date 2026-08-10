@@ -12,6 +12,8 @@ function AuthCallback() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const isPopup = searchParams.get('oauth_popup') === 'true';
+
     async function fetchProfileAndLogin(tokenVal: string) {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -43,7 +45,20 @@ function AuthCallback() {
           const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
           
           setCookie("bavio_onboarding_completed", "true");
-          setStatus('Authentication successful! Redirecting...');
+          setStatus('Authentication successful!');
+
+          if (isPopup) {
+            const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://bavio.in' : window.location.origin;
+            if (window.opener) {
+              window.opener.postMessage({ type: "BAVIO_AUTH_SUCCESS" }, targetOrigin);
+            }
+            setStatus('Authentication successful! Closing window...');
+            setTimeout(() => {
+              window.close();
+            }, 1000);
+            return;
+          }
+
           const redirectUrl = localStorage.getItem("bavio_auth_redirect");
           if (redirectUrl) {
             localStorage.removeItem("bavio_auth_redirect");
@@ -58,6 +73,18 @@ function AuthCallback() {
         console.error('[OAuth Callback] Profile fetch error:', err.message);
         setError(err.message || 'Error occurred while establishing session.');
         setStatus('');
+
+        if (isPopup) {
+          const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://bavio.in' : window.location.origin;
+          if (window.opener) {
+            window.opener.postMessage({ type: "BAVIO_AUTH_ERROR" }, targetOrigin);
+          }
+          setTimeout(() => {
+            window.close();
+          }, 1500);
+          return;
+        }
+
         setTimeout(() => router.push('/login?error=oauth_failed'), 2000);
       }
     }
@@ -87,6 +114,18 @@ function AuthCallback() {
         console.error('[OAuth Callback] Session error:', err.message);
         setError(err.message || 'Error occurred while establishing session.');
         setStatus('');
+
+        if (isPopup) {
+          const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://bavio.in' : window.location.origin;
+          if (window.opener) {
+            window.opener.postMessage({ type: "BAVIO_AUTH_ERROR" }, targetOrigin);
+          }
+          setTimeout(() => {
+            window.close();
+          }, 1500);
+          return;
+        }
+
         setTimeout(() => router.push('/login?error=oauth_failed'), 2000);
       }
     }

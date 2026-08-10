@@ -530,15 +530,15 @@ export default function HowItWorksPage() {
                 Try One Live Bavio Conversation
               </h2>
               <p className="text-[#6B5A4C] text-base md:text-lg leading-relaxed max-w-lg mx-auto font-sans">
-                Create an account and speak with Bavio’s shared AI assistant for up to three minutes.
+                Experience a live Bavio voice call with our AI employee for up to three minutes.
               </p>
               
               <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                 <Link
-                  href="/signup"
+                  href="/demo"
                   className="inline-flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF7C32] text-white font-bold px-8 py-4 rounded-full text-sm transition-all duration-200 shadow-sm active:scale-[0.98]"
                 >
-                  Try the 3-Minute Demo
+                  Experience Bavio — $0.99
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link

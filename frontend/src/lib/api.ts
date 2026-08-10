@@ -523,5 +523,33 @@ export const demoApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  // Public Demo endpoints
+  createSession: (industry: string, language: string) =>
+    apiFetch<{ success: boolean; sessionId: string; checkoutUrl: string }>('/demo/create-session', {
+      method: 'POST',
+      body: JSON.stringify({ industry, language }),
+    }),
+  verifyPayment: (sessionId: string, mockPaid?: boolean) =>
+    apiFetch<{ success: boolean; session: any }>(`/demo/verify-payment?session_id=${sessionId}${mockPaid ? '&mock_paid=true' : ''}`, {
+      method: 'GET',
+    }),
+  getSessionStatus: (sessionId: string) =>
+    apiFetch<{ success: boolean; session: any; transcript?: any[] }>(`/demo/session-status/${sessionId}`, {
+      method: 'GET',
+    }),
+  startSessionCall: (sessionId: string, phoneNumber: string, countryCode: string) =>
+    apiFetch<{ success: boolean; callSid: string }>(`/demo/start-session-call/${sessionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber, countryCode }),
+    }),
+  hangupSessionCall: (sessionId: string) =>
+    apiFetch<{ success: boolean }>(`/demo/hangup-session-call/${sessionId}`, {
+      method: 'POST',
+    }),
+  configureSession: (sessionId: string, industry: string, language: string) =>
+    apiFetch<{ success: boolean; session: any }>(`/demo/configure-session/${sessionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ industry, language }),
+    }),
 };
 

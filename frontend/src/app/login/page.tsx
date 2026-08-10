@@ -28,6 +28,21 @@ export default function LoginPage() {
 
 
 
+  async function handleGoogleLogin(isPopup = false) {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      alert("Google login failed: " + err.message);
+    }
+  }
+
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -37,6 +52,10 @@ export default function LoginPage() {
       const redirectUrl = params.get("redirect");
       if (redirectUrl) {
         localStorage.setItem("bavio_auth_redirect", redirectUrl);
+      }
+      if (params.get("oauth_popup") === "true") {
+        // Automatically trigger Google sign in for the popup window
+        handleGoogleLogin(true);
       }
     }
   }, []);
@@ -93,20 +112,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      alert("Google login failed: " + err.message);
-    }
-  };
+  // Google login handler is defined above to allow hoisting inside useEffect
 
   const handleSocialAuth = () => {
     setCookie("bavio_auth", "true");
@@ -254,7 +260,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-3 mb-6">
             <button
               type="button"
-              onClick={handleGoogleLogin}
+              onClick={() => handleGoogleLogin(false)}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#FAF7F2] text-[#3A3A42] border border-[#E5E0D8] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
               {/* Google Vector Icon */}

@@ -61,7 +61,7 @@ export default function Hero() {
                   borderRadius="9999px"
                   className="w-full h-full bg-[#FF6B00] hover:bg-[#EA580C] text-white text-[15px] font-semibold px-8 rounded-full shadow-sm hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] inline-flex items-center justify-center gap-2 border-none font-sans"
                 >
-                  <span>Try the 3-Minute Demo</span>
+                  <span>Experience Bavio — $0.99</span>
                   <ArrowRight className="w-4 h-4" />
                 </GlareHover>
               </Link>
@@ -74,7 +74,7 @@ export default function Hero() {
               </Link>
             </div>
             <p className="text-[12px] text-[#FF6B00] font-bold font-sans">
-              3-minute live demo · charges apply
+              3-minute live call · $0.99 one-time · No subscription
             </p>
           </div>
           <p className="text-[13px] text-[#6B5A4C]/80 font-medium font-sans mt-2">
