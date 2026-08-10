@@ -31,6 +31,7 @@ interface UserProfile {
   current_period_end: string | null;
   assistant_name?: string;
   voice?: string;
+  industry?: string;
 }
 
 export default function WorkspaceHome() {
@@ -114,76 +115,66 @@ export default function WorkspaceHome() {
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
       
-      {/* Welcome Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white border border-line rounded-[22px] p-8 shadow-premium relative overflow-hidden text-left">
+      {/* Welcome & Primary Live Demo Action Banner */}
+      <div className="bg-white border border-line rounded-[22px] p-8 md:p-10 shadow-premium relative overflow-hidden text-left flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-saffron/5 rounded-full blur-[80px] pointer-events-none" />
         
-        <div>
-          <span className="text-[10px] font-mono tracking-widest text-saffron font-bold uppercase bg-saffron/5 border border-saffron/10 px-2.5 py-0.5 rounded mb-3 inline-block">
-            Bavio Workspace HUD
+        <div className="max-w-xl relative z-10 space-y-4">
+          <span className="text-[9.5px] font-mono tracking-widest text-saffron font-bold uppercase bg-saffron/5 border border-saffron/10 px-2.5 py-0.5 rounded">
+            Bavio Workspace
           </span>
-          <h1 className="font-display font-black text-2xl md:text-3xl text-ink tracking-tight leading-none mb-3">
-            {profile.name}
+          <h1 className="font-display font-black text-3xl md:text-4xl text-ink tracking-tight leading-tight">
+            Welcome to Bavio
           </h1>
-          <p className="text-body-xs text-ink-tertiary max-w-xl leading-relaxed">
-            Manage your receptionist line, review caller details, and monitor usage limits.
+          <p className="text-body-xs text-ink-secondary leading-relaxed">
+            Your AI voice workspace is ready. <br className="hidden sm:inline" />
+            Experience Bavio with a live 3-minute call before configuring your production AI employee.
           </p>
+          
+          <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-line/40">
+            <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-ink-muted">
+              <span className="w-1.5 h-1.5 rounded-full bg-saffron" />
+              <span>$0.99 one-time</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-ink-muted">
+              <span className="w-1.5 h-1.5 rounded-full bg-saffron" />
+              <span>3-minute call</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-ink-muted">
+              <span className="w-1.5 h-1.5 rounded-full bg-saffron" />
+              <span>No subscription required</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 relative z-10">
+        <div className="shrink-0 w-full md:w-auto relative z-10">
           <Link
-            href="/dashboard"
-            className="flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            href="/workspace/demo"
+            className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-4 px-8 rounded-xl transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Open Dashboard</span>
+            <span>Try Live Demo</span>
             <ArrowRight className="w-4 h-4" weight="bold" />
           </Link>
         </div>
       </div>
 
-      {/* Goal 1: Experience Bavio Live */}
-      <div className="bg-gradient-to-r from-saffron/10 via-saffron/5 to-transparent border border-saffron/30 rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-saffron/10 rounded-full blur-[50px] pointer-events-none" />
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-saffron text-white rounded-full flex items-center justify-center shrink-0 shadow-md">
-            <Sparkle className="w-6 h-6 animate-pulse" weight="fill" />
-          </div>
-          <div>
-            <span className="text-[9px] font-mono tracking-wider text-saffron font-bold uppercase bg-saffron/10 border border-saffron/20 px-2 py-0.5 rounded inline-block mb-1.5">
-              Goal 1 — Active Setup
-            </span>
-            <div className="font-sans font-extrabold text-[15px] tracking-wide text-ink">Try Bavio Live Voice Demo</div>
-            <p className="text-[11.5px] text-ink-secondary leading-relaxed mt-1 max-w-xl">
-              Experience your AI employee's conversational capability first-hand. Place a real 3-minute voice call to your mobile device for just $0.99 one-time.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/workspace/demo"
-          className="flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-saffron/20"
-        >
-          <span>Try Live Demo</span>
-          <ArrowRight className="w-4 h-4" weight="bold" />
-        </Link>
-      </div>
-
-      {/* Warning/Action Banner if no number is assigned */}
+      {/* Warning/Action Banner if no number is assigned - Production Setup */}
       {!profile.twilio_number && (
-        <div className="bg-amber-500/10 border border-amber-500/25 text-[#140A02] rounded-[18px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
+        <div className="bg-[#FAF7F2] border border-[#E5E0D8] text-ink rounded-[18px] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left shadow-sm">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-saffron/10 text-saffron rounded-full flex items-center justify-center shrink-0">
               <Phone className="w-5.5 h-5.5" weight="bold" />
             </div>
             <div>
-              <div className="font-sans font-extrabold text-[13px] tracking-wide text-amber-950">No Dedicated Phone Number Assigned</div>
-              <p className="text-[11px] text-amber-800/80 leading-relaxed mt-1">
-                {"You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Buy a plan to claim your virtual number and start receiving calls."}
+              <div className="font-sans font-extrabold text-[13px] tracking-wide text-ink">No Dedicated Phone Number Assigned</div>
+              <p className="text-[11px] text-ink-secondary leading-relaxed mt-1">
+                You haven't selected a subscription plan or allocated a dedicated virtual phone number yet. Choose a plan to deploy Bavio for production and start receiving calls.
               </p>
             </div>
           </div>
           <Link
             href="/workspace/subscription"
-            className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-body-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center justify-center gap-1.5 bg-[#14141A] hover:bg-[#3A3A42] text-white text-body-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-xl transition-all whitespace-nowrap shrink-0 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Choose a Plan</span>
             <ArrowRight className="w-3.5 h-3.5" weight="bold" />
@@ -202,26 +193,34 @@ export default function WorkspaceHome() {
                 <Building className="w-4.5 h-4.5 text-saffron" />
                 <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink-secondary">Business Setup</div>
               </div>
-              <span className="text-[9px] font-mono text-ink-muted">V1 Status</span>
+              <span className="text-[9px] font-mono text-ink-muted">Configuration</span>
             </div>
 
             <div className="flex flex-col gap-3.5 text-body-xs font-semibold text-ink-secondary">
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted font-bold">Assistant Name</span>
-                <span className="text-ink font-bold">{profile.assistant_name || "Receptionist"}</span>
+                <span className="text-ink-muted font-bold">Assistant</span>
+                <span className="text-ink font-bold">
+                  {profile.twilio_number ? (profile.assistant_name || "Receptionist") : "Not configured"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted font-bold">Dedicated Number</span>
-                <span className="font-mono text-ink font-bold">{profile.twilio_number || "None Assigned"}</span>
+                <span className="font-mono text-ink font-bold">
+                  {profile.twilio_number || "None assigned"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted font-bold">Owner Mobile</span>
-                <span className="font-mono text-ink">{profile.owner_mobile || profile.phone || "N/A"}</span>
+                <span className="text-ink-muted font-bold">Industry</span>
+                <span className="text-ink font-bold">
+                  {profile.industry ? (
+                    profile.industry.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+                  ) : "Not selected"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted font-bold">Active Voice</span>
-                <span className="text-ink bg-saffron/5 border border-saffron/10 px-2 py-0.5 rounded text-[10px] uppercase font-bold">
-                  {profile.voice || "Meera"}
+                <span className="text-ink-muted font-bold">Status</span>
+                <span className={`font-bold ${profile.twilio_number ? "text-state-success" : "text-saffron bg-saffron/5 border border-saffron/10 px-2 py-0.5 rounded text-[10px] uppercase font-sans tracking-wide"}`}>
+                  {profile.twilio_number ? "Active" : "Ready for demo"}
                 </span>
               </div>
             </div>
