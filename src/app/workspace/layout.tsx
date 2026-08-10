@@ -27,7 +27,6 @@ import {
 
 const workspaceNavigationItems = [
   { name: "Overview", href: "/workspace", icon: Layout },
-  { name: "Try Bavio Live", href: "/workspace/demo", icon: Sparkle },
   { name: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
   { name: "Settings & Profile", href: "/workspace/settings", icon: Gear },
 ];
@@ -42,7 +41,7 @@ export default function WorkspaceLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState("");
-  const [planName, setPlanName] = useState("Free Trial");
+  const [commercialState, setCommercialState] = useState("FREE PLAN");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -58,23 +57,16 @@ export default function WorkspaceLayout({
         });
         if (res.ok) {
           const result = await res.json();
-          if (result.success && result.data?.user) {
-            const user = result.data.user;
-            if (user.name) {
-              setWorkspace(user.name);
+          if (result.success && result.id) {
+            if (result.name) {
+              setWorkspace(result.name);
             }
-            if (user.plan_name === "free_trial") {
-              setPlanName("Free Trial");
-            } else if (user.plan_name === "starter") {
-              setPlanName("Starter Plan");
-            } else if (user.plan_name === "growth") {
-              setPlanName("Growth Plan");
-            } else if (user.plan_name === "scale") {
-              setPlanName("Scale Plan");
-            } else if (user.plan === "free") {
-              setPlanName("Free Plan");
+            if (result.subscription_status === "active") {
+              setCommercialState("ACTIVE PLAN");
+            } else if (result.demo_status === "eligible" || result.demo_status === "failed") {
+              setCommercialState("DEMO AVAILABLE");
             } else {
-              setPlanName(user.plan_name || "Free Trial");
+              setCommercialState("FREE PLAN");
             }
           }
         }
@@ -194,7 +186,7 @@ export default function WorkspaceLayout({
                     {/* Only show the user's own real workspace — no mock workspaces */}
                     <div className="px-3 py-2 rounded-lg bg-saffron/10">
                       <span className="text-xs font-bold text-saffron block">{workspace || "My Workspace"}</span>
-                      <span className="text-[9px] text-ink-muted mt-0.5 block">{planName} · Active</span>
+                      <span className="text-[9px] text-ink-muted mt-0.5 block">{commercialState} · Active</span>
                     </div>
                     <div className="border-t border-line my-1.5" />
                     <button
@@ -254,13 +246,38 @@ export default function WorkspaceLayout({
             <Link
               href="/dashboard"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-saffron/5 border border-saffron/10 hover:bg-saffron/10 hover:border-saffron/20 text-saffron transition-all relative"
+              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
+                pathname === "/dashboard" 
+                  ? "text-saffron bg-saffron/5 border border-saffron/10" 
+                  : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Sparkle className="w-4 h-4 text-saffron" weight={pathname === "/dashboard" ? "fill" : "regular"} />
+                <span>AI Voice Dashboard</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-ink-tertiary" />
+            </Link>
+
+            <Link
+              href="/workspace/demo"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
+                pathname === "/workspace/demo"
+                  ? "bg-saffron/10 border border-saffron/20 text-saffron shadow-sm"
+                  : "bg-saffron/5 border border-saffron/10 hover:bg-saffron/10 text-saffron"
+              }`}
             >
               <div className="flex items-center gap-3">
                 <Sparkle className="w-4 h-4 text-saffron" weight="fill" />
-                <span>AI Voice Dashboard</span>
+                <span>Live Demo</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2">
+                <span className="text-[8px] font-mono font-black tracking-wider bg-saffron text-white px-1.5 py-0.5 rounded leading-none">
+                  3 MIN
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-saffron" />
+              </div>
             </Link>
           </nav>
         </div>
@@ -332,9 +349,9 @@ export default function WorkspaceLayout({
             {/* Upgrade banner mini */}
             <Link 
               href="/workspace/subscription"
-              className="bg-saffron/10 border border-saffron-border hover:bg-saffron text-saffron hover:text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-full transition-all"
+              className="bg-saffron/10 border border-saffron/20 hover:bg-saffron text-saffron hover:text-white text-[10px] font-mono font-bold uppercase tracking-widest px-4 py-2 rounded-full transition-all"
             >
-              {planName} Active
+              {commercialState}
             </Link>
           </div>
         </header>
