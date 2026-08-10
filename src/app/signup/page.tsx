@@ -86,6 +86,175 @@ const industryOptions = [
   },
 ];
 
+function GlobalNetworkVisual({ className }: { className?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    let width = (canvas.width = canvas.offsetWidth);
+    let height = (canvas.height = canvas.offsetHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    const points: any[] = [];
+    const numPoints = 50;
+    const radius = Math.min(width, height) * 0.38;
+
+    for (let i = 0; i < numPoints; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      points.push({
+        x: Math.sin(phi) * Math.cos(theta),
+        y: Math.sin(phi) * Math.sin(theta),
+        z: Math.cos(phi),
+        pulse: Math.random(),
+        pulseSpeed: 0.003 + Math.random() * 0.007,
+        isOrange: Math.random() > 0.8
+      });
+    }
+
+    let angleX = 0.0008;
+    let angleY = 0.0012;
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+      const r = Math.min(width, height) * 0.38;
+
+      // Glow effect background
+      const gradient = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+      gradient.addColorStop(0, "rgba(15, 15, 15, 0.95)");
+      gradient.addColorStop(0.6, "rgba(8, 8, 8, 0.98)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 1)");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Subtle globe grid silhouette
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.035)";
+      ctx.lineWidth = 0.75;
+      for (let i = 1; i < 6; i++) {
+        const latR = r * Math.sin((i * Math.PI) / 6);
+        const latY = cy + r * Math.cos((i * Math.PI) / 6);
+        ctx.beginPath();
+        ctx.ellipse(cx, latY, latR, latR * 0.22, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, r * Math.sin((i * Math.PI) / 6), r, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const projected: any[] = [];
+      const cosX = Math.cos(angleX);
+      const sinX = Math.sin(angleX);
+      const cosY = Math.cos(angleY);
+      const sinY = Math.sin(angleY);
+
+      for (const p of points) {
+        let x1 = p.x * cosY - p.z * sinY;
+        let z1 = p.z * cosY + p.x * sinY;
+
+        let y2 = p.y * cosX - z1 * sinX;
+        let z2 = z1 * cosX + p.y * sinX;
+
+        p.x = x1;
+        p.y = y2;
+        p.z = z2;
+
+        const px = cx + x1 * r;
+        const py = cy + y2 * r;
+
+        p.pulse = (p.pulse + p.pulseSpeed) % 1.0;
+
+        projected.push({
+          x: px,
+          y: py,
+          z: z2,
+          pulse: p.pulse,
+          isOrange: p.isOrange
+        });
+      }
+
+      projected.sort((a, b) => a.z - b.z);
+
+      // Connections
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < projected.length; i++) {
+        const p1 = projected[i];
+        if (p1.z < -0.3) continue;
+
+        let connections = 0;
+        for (let j = i + 1; j < projected.length; j++) {
+          if (connections >= 3) break;
+          const p2 = projected[j];
+          if (p2.z < -0.3) continue;
+
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < r * 0.55) {
+            const alpha = (1 - dist / (r * 0.55)) * 0.12 * (p1.z + 1) * (p2.z + 1) / 4;
+            ctx.strokeStyle = p1.isOrange || p2.isOrange
+              ? `rgba(255, 107, 0, ${alpha * 2.5})`
+              : `rgba(255, 255, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            connections++;
+          }
+        }
+      }
+
+      // Nodes
+      for (const p of projected) {
+        if (p.z < -0.5) continue;
+
+        const baseSize = p.isOrange ? 2.5 : 1.5;
+        const size = baseSize + Math.sin(p.pulse * Math.PI) * 1.2;
+        const alpha = (p.z + 1) / 2;
+
+        if (p.isOrange) {
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = "rgba(255, 107, 0, 0.5)";
+          ctx.fillStyle = `rgba(255, 107, 0, ${alpha * 0.9})`;
+        } else {
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.35})`;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className={className} />;
+}
+
 export default function SignUpPage() {
   const router = useRouter();
   const { country } = useCountry();
@@ -210,66 +379,30 @@ export default function SignUpPage() {
           transform: "translate3d(0, 0, 0)" 
         }}
       >
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover overflow-hidden z-0 pointer-events-none"
-        >
-          <source src="/bavio-brand-video.mp4" type="video/mp4" />
-        </video>
-
-        <div 
-          className="absolute inset-0 z-10 pointer-events-none"
-          style={{ background: "rgba(0, 0, 0, 0.35)" }}
-        />
+        <GlobalNetworkVisual className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
 
         <div className="relative z-20">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
             <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
-            <span className="font-display text-xl font-black tracking-tight text-white">
+            <span className="font-display text-xl font-black tracking-tight text-white font-sans">
               Bavio AI
             </span>
           </Link>
         </div>
 
         <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full pb-8 md:pb-12 lg:pb-16 translate-y-[-40px]">
-          <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-xs block mb-[18px]">
-            AI employee for your business
+          <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-[10px] block mb-[18px] font-sans">
+            Built for business, everywhere
           </span>
           
           <h2 className="font-display text-4xl lg:text-[3rem] leading-[1.1] font-bold text-white mb-[22px]">
-            Your AI employee, <br />
-            <span className="text-[#FF6B00]">always ready.</span>
+            AI conversations, <br />
+            <span className="text-[#FF6B00]">without borders.</span>
           </h2>
           
-          <p className="text-body-md text-white/85 max-w-[520px] leading-relaxed mb-[48px]">
-            Answers calls, qualifies leads, books appointments, and works 24/7.
+          <p className="text-body-md text-white/85 max-w-[500px] leading-relaxed font-sans">
+            Bavio connects businesses with customers through intelligent voice conversations, wherever they are.
           </p>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Phone, label1: "24/7 Call", label2: "Answering" },
-              { icon: User, label1: "Lead", label2: "Qualification" },
-              { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Appointment", label2: "Booking" },
-            ].map((feat, i) => {
-              const Icon = feat.icon;
-              return (
-                <div key={i} className="flex flex-col items-center text-center p-2 transition-transform duration-300 hover:scale-105">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-[#FF6B00] mb-3 shadow-sm">
-                    <Icon className="w-6 h-6" weight="bold" />
-                  </div>
-                  <span className="text-body-xs font-bold text-white/90 leading-tight block">
-                    {feat.label1}
-                    <span className="block font-bold">{feat.label2}</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </section>
 
@@ -281,11 +414,28 @@ export default function SignUpPage() {
         <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center gap-2 mb-8 relative z-10 self-start">
+        <div className="md:hidden flex items-center gap-2 mb-4 relative z-10 self-start">
           <Logo className="w-8 h-8" />
           <span className="font-display text-lg font-black tracking-tight">
             Bavio AI
           </span>
+        </div>
+
+        {/* Mobile Global Visual Banner */}
+        <div className="md:hidden w-full bg-black border border-[#E5E0D8] rounded-[20px] p-5 mb-6 relative overflow-hidden h-[110px] flex items-center justify-between text-left shadow-sm">
+          <GlobalNetworkVisual className="absolute inset-0 w-full h-full opacity-60 z-0 pointer-events-none" />
+          <div className="absolute inset-0 bg-black/40 z-10 pointer-events-none" />
+          <div className="relative z-20 space-y-1">
+            <span className="text-[#FF6B00] uppercase tracking-widest font-black text-[8px] block font-sans">
+              Global Infrastructure
+            </span>
+            <h3 className="font-display text-sm font-extrabold text-white leading-tight">
+              AI conversations, without borders.
+            </h3>
+            <p className="text-[10px] text-white/80 leading-normal font-sans">
+              Voice connections everywhere.
+            </p>
+          </div>
         </div>
 
         <motion.div
