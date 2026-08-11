@@ -15,7 +15,8 @@ import {
   EyeSlash,
   ShieldCheck,
   ArrowRight,
-  Check
+  Check,
+  CaretDown
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
@@ -84,6 +85,39 @@ const industryOptions = [
     label: "Other",
     description: "Custom voice workflows and routing tasks.",
   },
+];
+
+const countries = [
+  { code: "IN", name: "India", dialCode: "+91", flag: "🇮🇳" },
+  { code: "US", name: "United States", dialCode: "+1", flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom", dialCode: "+44", flag: "🇬🇧" },
+  { code: "CA", name: "Canada", dialCode: "+1", flag: "🇨🇦" },
+  { code: "AU", name: "Australia", dialCode: "+61", flag: "🇦🇺" },
+  { code: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "🇦🇪" },
+  { code: "GR", name: "Greece", dialCode: "+30", flag: "🇬🇷" },
+  { code: "SG", name: "Singapore", dialCode: "+65", flag: "🇸🇬" },
+  { code: "DE", name: "Germany", dialCode: "+49", flag: "🇩🇪" },
+  { code: "FR", name: "France", dialCode: "+33", flag: "🇫🇷" },
+  { code: "JP", name: "Japan", dialCode: "+81", flag: "🇯🇵" },
+  { code: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷" },
+  { code: "ZA", name: "South Africa", dialCode: "+27", flag: "🇿🇦" },
+  { code: "NZ", name: "New Zealand", dialCode: "+64", flag: "🇳🇿" },
+  { code: "CH", name: "Switzerland", dialCode: "+41", flag: "🇨🇭" },
+  { code: "NL", name: "Netherlands", dialCode: "+31", flag: "🇳🇱" },
+  { code: "IE", name: "Ireland", dialCode: "+353", flag: "🇮🇪" },
+  { code: "ES", name: "Spain", dialCode: "+34", flag: "🇪🇸" },
+  { code: "IT", name: "Italy", dialCode: "+39", flag: "🇮🇹" },
+  { code: "SA", name: "Saudi Arabia", dialCode: "+966", flag: "🇸🇦" },
+  { code: "TR", name: "Turkey", dialCode: "+90", flag: "🇹🇷" },
+  { code: "MY", name: "Malaysia", dialCode: "+60", flag: "🇲🇾" },
+  { code: "ID", name: "Indonesia", dialCode: "+62", flag: "🇮🇩" },
+  { code: "PH", name: "Philippines", dialCode: "+63", flag: "🇵🇭" },
+  { code: "TH", name: "Thailand", dialCode: "+66", flag: "🇹🇭" },
+  { code: "VN", name: "Vietnam", dialCode: "+84", flag: "🇻🇳" },
+  { code: "PK", name: "Pakistan", dialCode: "+92", flag: "🇵🇰" },
+  { code: "BD", name: "Bangladesh", dialCode: "+880", flag: "🇧🇩" },
+  { code: "LK", name: "Sri Lanka", dialCode: "+94", flag: "🇱🇰" },
+  { code: "NP", name: "Nepal", dialCode: "+977", flag: "🇳🇵" },
 ];
 
 function GlobalNetworkVisual({ className }: { className?: string }) {
@@ -285,6 +319,78 @@ export default function SignUpPage() {
   const [businessPhone, setBusinessPhone] = useState("");
   const [industry, setIndustry] = useState("real_estate");
 
+  // Country code selector states
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]); // defaults to India (IN)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    
+    // Auto-detect country flag if user types "+code" or "code"
+    if (val.startsWith("+")) {
+      const digits = val.substring(1).replace(/\D/g, "");
+      const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length);
+      const matched = sortedCountries.find(c => {
+        const codeDigits = c.dialCode.replace(/\D/g, "");
+        return digits.startsWith(codeDigits);
+      });
+      if (matched) {
+        setSelectedCountry(matched);
+      }
+    } else if (/^\d{2,}/.test(val)) {
+      const digits = val.replace(/\D/g, "");
+      const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length);
+      const matched = sortedCountries.find(c => {
+        const codeDigits = c.dialCode.replace(/\D/g, "");
+        return digits.startsWith(codeDigits);
+      });
+      if (matched) {
+        setSelectedCountry(matched);
+        val = "+" + val; // Auto prepend '+' if they typed country code directly
+      }
+    }
+    
+    setBusinessPhone(val);
+  };
+
+  const selectCountry = (c: typeof countries[0]) => {
+    setSelectedCountry(c);
+    setIsDropdownOpen(false);
+    
+    let currentVal = businessPhone.trim();
+    if (currentVal.startsWith("+")) {
+      const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length);
+      const oldMatched = sortedCountries.find(oc => {
+        const codeDigits = oc.dialCode.replace(/\D/g, "");
+        return currentVal.substring(1).replace(/\D/g, "").startsWith(codeDigits);
+      });
+      if (oldMatched) {
+        const oldCodeDigits = oldMatched.dialCode.replace(/\D/g, "");
+        let remaining = currentVal.substring(1).replace(/\D/g, "").substring(oldCodeDigits.length);
+        currentVal = c.dialCode + " " + remaining;
+      } else {
+        currentVal = c.dialCode + " " + currentVal.replace(/^\+\d+/, "").trim();
+      }
+    } else {
+      currentVal = c.dialCode + " " + currentVal;
+    }
+    setBusinessPhone(currentVal);
+  };
+
   // Validation & Loading states
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -333,7 +439,7 @@ export default function SignUpPage() {
         industry,
         name: businessName, // Fallback for name
         phone: businessPhone, // Fallback for phone
-        country_code: country.code,
+        country_code: selectedCountry.code,
       });
 
       if (result.success) {
@@ -535,14 +641,56 @@ export default function SignUpPage() {
                     <label htmlFor="business-phone-input" className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
                       Business Phone Number
                     </label>
-                    <input
-                      id="business-phone-input"
-                      type="text"
-                      placeholder="Business Phone Number"
-                      value={businessPhone}
-                      onChange={(e) => setBusinessPhone(e.target.value)}
-                      className={`w-full bg-[#FAF7F2] border ${errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus:border-[#FF6B00]"} focus:ring-4 focus:ring-[#FF6B00]/10 rounded-xl py-3 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all duration-200`}
-                    />
+                    <div 
+                      ref={dropdownRef}
+                      className={`relative flex items-stretch bg-[#FAF7F2] border ${errors.businessPhone ? "border-state-error" : "border-[#E5E0D8] focus-within:border-[#FF6B00]"} focus-within:ring-4 focus-within:ring-[#FF6B00]/10 rounded-xl transition-all duration-200`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="flex items-center gap-1.5 px-3 py-3 border-r border-[#E5E0D8] hover:bg-[#FAF7F2]/80 rounded-l-xl transition-colors select-none text-body-xs text-[#14141A] font-semibold whitespace-nowrap"
+                      >
+                        <span>{selectedCountry.flag}</span>
+                        <span>{selectedCountry.dialCode}</span>
+                        <CaretDown className="w-3 h-3 text-[#8A8A96] mt-0.5" />
+                      </button>
+
+                      <input
+                        id="business-phone-input"
+                        type="text"
+                        placeholder="Business Phone Number"
+                        value={businessPhone}
+                        onChange={handlePhoneChange}
+                        className="flex-1 bg-transparent border-0 outline-none py-3 px-3.5 text-body-xs text-[#14141A] placeholder-[#8A8A96] w-full"
+                      />
+
+                      <AnimatePresence>
+                        {isDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-1.5 w-[280px] bg-white border border-[#E5E0D8] rounded-xl shadow-premium z-50 max-h-[220px] overflow-y-auto py-1.5"
+                          >
+                            {countries.map((c) => (
+                              <button
+                                key={c.code}
+                                type="button"
+                                onClick={() => selectCountry(c)}
+                                className={`w-full flex items-center justify-between px-4 py-2 text-left cursor-pointer hover:bg-[#FAF7F2] transition-colors text-body-xs text-[#14141A] ${selectedCountry.code === c.code ? "font-bold bg-[#FAF7F2]/60" : ""}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span>{c.flag}</span>
+                                  <span>{c.name}</span>
+                                </div>
+                                <span className="text-[#8A8A96] font-mono">{c.dialCode}</span>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                   </div>
 
