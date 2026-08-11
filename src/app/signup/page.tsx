@@ -129,293 +129,267 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animationId: number;
-    let width = (canvas.width = canvas.offsetWidth);
-    let height = (canvas.height = canvas.offsetHeight);
+    let animId: number;
+    let W = (canvas.width = canvas.offsetWidth);
+    let H = (canvas.height = canvas.offsetHeight);
 
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
+    const onResize = () => {
+      W = canvas.width = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
     };
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", onResize);
 
-    // Defined Infrastructure Nodes (Normalized 0-1 coordinate space)
-    const rawNodes = [
-      // Central Core Hub & Immediate Satellites (Lower-Middle region)
-      { id: 'core', baseX: 0.48, baseY: 0.62, type: 'core', size: 4.0 },
-      { id: 'core_sat1', baseX: 0.44, baseY: 0.58, type: 'active', size: 2.2 },
-      { id: 'core_sat2', baseX: 0.52, baseY: 0.66, type: 'active', size: 2.2 },
-      
-      // Upper-Left & Mid-Left (Under Typography, subtle dark gray)
-      { id: 'ul_1', baseX: 0.12, baseY: 0.18, type: 'bg', size: 1.2 },
-      { id: 'ul_2', baseX: 0.28, baseY: 0.14, type: 'bg', size: 1.4 },
-      { id: 'ml_1', baseX: 0.14, baseY: 0.45, type: 'secondary', size: 1.8 },
-      { id: 'ml_2', baseX: 0.25, baseY: 0.52, type: 'secondary', size: 1.8 },
-      
-      // Upper-Right & Far Edge (sweeping towards top right curve)
-      { id: 'ur_1', baseX: 0.62, baseY: 0.18, type: 'secondary', size: 1.8 },
-      { id: 'ur_2', baseX: 0.82, baseY: 0.12, type: 'active', size: 2.5 },
-      { id: 'ur_3', baseX: 0.90, baseY: 0.22, type: 'bg', size: 1.2 },
-      
-      // Middle-Right (Edge near curved split)
-      { id: 'mr_1', baseX: 0.72, baseY: 0.42, type: 'secondary', size: 2.0 },
-      { id: 'mr_2', baseX: 0.86, baseY: 0.48, type: 'active', size: 2.5 },
-      
-      // Lower-Left Infrastructure Node
-      { id: 'll_1', baseX: 0.16, baseY: 0.78, type: 'active', size: 2.5 },
-      { id: 'll_2', baseX: 0.28, baseY: 0.85, type: 'secondary', size: 1.8 },
-      { id: 'll_3', baseX: 0.10, baseY: 0.90, type: 'bg', size: 1.2 },
-      
-      // Lower-Middle & Bottom Nodes
-      { id: 'lm_1', baseX: 0.42, baseY: 0.84, type: 'secondary', size: 2.0 },
-      { id: 'lm_2', baseX: 0.56, baseY: 0.92, type: 'secondary', size: 1.8 },
-      
-      // Lower-Right Nodes (along bottom curve)
-      { id: 'lr_1', baseX: 0.76, baseY: 0.72, type: 'secondary', size: 2.0 },
-      { id: 'lr_2', baseX: 0.84, baseY: 0.86, type: 'active', size: 2.5 },
-      { id: 'lr_3', baseX: 0.92, baseY: 0.78, type: 'bg', size: 1.4 },
+    // ─── Node Definitions (normalized 0→1) ───────────────────────────────────
+    type NodeType = "core" | "major" | "minor" | "faint";
+    interface NodeDef { id: string; nx: number; ny: number; type: NodeType }
+
+    const defs: NodeDef[] = [
+      { id: "core", nx: 0.45, ny: 0.60, type: "core" },
+      { id: "A",    nx: 0.15, ny: 0.20, type: "major" },
+      { id: "B",    nx: 0.72, ny: 0.14, type: "major" },
+      { id: "C",    nx: 0.84, ny: 0.50, type: "major" },
+      { id: "D",    nx: 0.80, ny: 0.84, type: "major" },
+      { id: "E",    nx: 0.12, ny: 0.84, type: "major" },
+      { id: "m1",   nx: 0.30, ny: 0.36, type: "minor" },
+      { id: "m2",   nx: 0.60, ny: 0.28, type: "minor" },
+      { id: "m3",   nx: 0.72, ny: 0.66, type: "minor" },
+      { id: "m4",   nx: 0.30, ny: 0.74, type: "minor" },
+      { id: "m5",   nx: 0.88, ny: 0.32, type: "minor" },
+      { id: "f1",   nx: 0.08, ny: 0.50, type: "faint" },
+      { id: "f2",   nx: 0.54, ny: 0.90, type: "faint" },
+      { id: "f3",   nx: 0.06, ny: 0.08, type: "faint" },
+      { id: "f4",   nx: 0.90, ny: 0.08, type: "faint" },
     ];
 
-    const nodes = rawNodes.map((n, i) => ({
-      ...n,
-      x: n.baseX,
-      y: n.baseY,
-      phase: i * 0.4,
-      vx: (Math.random() - 0.5) * 0.00015,
-      vy: (Math.random() - 0.5) * 0.00015,
+    // ─── Edges ───────────────────────────────────────────────────────────────
+    type Edge = [string, string, number, number]; // fromId, toId, cpx, cpy (normalized)
+    const edges: Edge[] = [
+      ["core", "A",  0.26, 0.40],
+      ["core", "B",  0.60, 0.32],
+      ["core", "C",  0.68, 0.54],
+      ["core", "D",  0.68, 0.74],
+      ["core", "E",  0.24, 0.72],
+      ["A",    "m1", 0.22, 0.28],
+      ["m1",   "m2", 0.46, 0.28],
+      ["m2",   "B",  0.66, 0.18],
+      ["C",    "m5", 0.88, 0.40],
+      ["C",    "m3", 0.80, 0.60],
+      ["m3",   "D",  0.80, 0.76],
+      ["E",    "m4", 0.20, 0.80],
+      ["m4",   "m3", 0.52, 0.74],
+    ];
+
+    // ─── Live node state ──────────────────────────────────────────────────────
+    const nodes: Record<string, {
+      id: string; nx: number; ny: number; type: NodeType;
+      x: number; y: number; vx: number; vy: number; phase: number;
+    }> = {};
+    defs.forEach((d, i) => {
+      nodes[d.id] = {
+        ...d,
+        x: d.nx, y: d.ny,
+        vx: (Math.random() - 0.5) * 0.00008,
+        vy: (Math.random() - 0.5) * 0.00008,
+        phase: i * 0.47,
+      };
+    });
+
+    // ─── Signal pulses (one per edge, staggered start) ────────────────────────
+    const pulses = edges.map((e, i) => ({
+      fromId: e[0], toId: e[1],
+      cpxN: e[2], cpyN: e[3],
+      t: i / edges.length,
+      speed: 0.002 + Math.random() * 0.001,
     }));
 
-    let time = 0;
+    let tick = 0;
 
-    const render = () => {
-      time += 0.003;
-      ctx.clearRect(0, 0, width, height);
+    const draw = () => {
+      tick++;
+      ctx.clearRect(0, 0, W, H);
 
-      // Deep dark background
-      ctx.fillStyle = "#040406";
-      ctx.fillRect(0, 0, width, height);
+      // ── Background ─────────────────────────────────────────────────────────
+      ctx.fillStyle = "#060608";
+      ctx.fillRect(0, 0, W, H);
 
-      const coreX = width * 0.48;
-      const coreY = height * 0.62;
+      const cN = nodes["core"];
+      const cx = cN.x * W, cy = cN.y * H;
 
-      // ── LAYER 0: Ambient Central Core Glow ──
-      const coreGradient = ctx.createRadialGradient(coreX, coreY, 10, coreX, coreY, Math.min(width, height) * 0.45);
-      coreGradient.addColorStop(0, "rgba(255, 107, 0, 0.07)");
-      coreGradient.addColorStop(0.4, "rgba(255, 107, 0, 0.025)");
-      coreGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = coreGradient;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, Math.min(width, height) * 0.45, 0, Math.PI * 2);
-      ctx.fill();
+      // Core warm ambient glow
+      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.65);
+      bg.addColorStop(0,   "rgba(255,100,0,0.11)");
+      bg.addColorStop(0.4, "rgba(255,100,0,0.04)");
+      bg.addColorStop(1,   "rgba(0,0,0,0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
 
-      // Update slow node positions
-      for (const node of nodes) {
-        node.x += node.vx;
-        node.y += node.vy;
-        const dx = node.x - node.baseX;
-        const dy = node.y - node.baseY;
-        if (Math.abs(dx) > 0.025) node.vx *= -1;
-        if (Math.abs(dy) > 0.025) node.vy *= -1;
+      // ── Float nodes ────────────────────────────────────────────────────────
+      for (const n of Object.values(nodes)) {
+        n.x += n.vx; n.y += n.vy;
+        if (Math.abs(n.x - n.nx) > 0.018) n.vx *= -1;
+        if (Math.abs(n.y - n.ny) > 0.018) n.vy *= -1;
       }
 
-      const pxMap: Record<string, { x: number; y: number; type: string; size: number; phase: number }> = {};
-      for (const n of nodes) {
-        pxMap[n.id] = {
-          x: n.x * width,
-          y: n.y * height,
-          type: n.type,
-          size: n.size,
-          phase: n.phase,
-        };
-      }
-
-      // ── LAYER 1: Large Orbital Curves (Infrastructure Geometry) ──
-      ctx.lineWidth = 0.6;
-      
-      // Orbital Ring 1 around Central Core
-      ctx.strokeStyle = "rgba(255, 107, 0, 0.12)";
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, 55, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Orbital Ring 2 around Central Core
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, 110, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Large Sweeping Orbital Arc (Following Curved Panel Geometry)
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-      ctx.beginPath();
-      ctx.ellipse(width * 0.5, height * 0.55, width * 0.45, height * 0.38, Math.PI * 0.08, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // ── LAYER 2: 7 Structured Communication Paths ──
-      const paths = [
-        // Path 1: Core -> Upper-Left
-        { from: 'core', to: 'ml_1', control: { x: width * 0.30, y: height * 0.58 } },
-        { from: 'ml_1', to: 'ul_2', control: { x: width * 0.18, y: height * 0.30 } },
-
-        // Path 2: Core -> Upper-Right
-        { from: 'core', to: 'ur_1', control: { x: width * 0.58, y: height * 0.38 } },
-        { from: 'ur_1', to: 'ur_2', control: { x: width * 0.74, y: height * 0.12 } },
-
-        // Path 3: Core -> Middle-Right
-        { from: 'core', to: 'mr_1', control: { x: width * 0.62, y: height * 0.52 } },
-        { from: 'mr_1', to: 'mr_2', control: { x: width * 0.80, y: height * 0.44 } },
-
-        // Path 4: Core -> Lower-Right
-        { from: 'core', to: 'lr_1', control: { x: width * 0.65, y: height * 0.68 } },
-        { from: 'lr_1', to: 'lr_2', control: { x: width * 0.80, y: height * 0.80 } },
-
-        // Path 5: Core -> Lower-Middle
-        { from: 'core', to: 'lm_1', control: { x: width * 0.44, y: height * 0.75 } },
-
-        // Path 6: Core -> Lower-Left
-        { from: 'core', to: 'll_1', control: { x: width * 0.30, y: height * 0.70 } },
-        { from: 'll_1', to: 'll_2', control: { x: width * 0.22, y: height * 0.84 } },
-
-        // Path 7: Outer Edge Connections
-        { from: 'll_1', to: 'lm_1', control: { x: width * 0.28, y: height * 0.86 } },
-        { from: 'mr_2', to: 'lr_2', control: { x: width * 0.88, y: height * 0.68 } },
-      ];
-
-      ctx.lineWidth = 0.8;
-      for (const p of paths) {
-        const n1 = pxMap[p.from];
-        const n2 = pxMap[p.to];
-        if (!n1 || !n2) continue;
-
-        ctx.strokeStyle = (n1.type === 'active' || n2.type === 'active')
-          ? "rgba(255, 107, 0, 0.09)"
-          : "rgba(255, 255, 255, 0.04)";
-
+      // ── Orbital rings around core ──────────────────────────────────────────
+      const drawRing = (r: number, alpha: number, isOrange: boolean) => {
         ctx.beginPath();
-        ctx.moveTo(n1.x, n1.y);
-        ctx.quadraticCurveTo(p.control.x, p.control.y, n2.x, n2.y);
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = isOrange
+          ? `rgba(255,107,0,${alpha})`
+          : `rgba(180,180,200,${alpha})`;
+        ctx.lineWidth = isOrange ? 1.0 : 0.7;
+        ctx.stroke();
+      };
+      drawRing(W * 0.07, 0.50, true);   // inner bright ring
+      drawRing(W * 0.16, 0.18, true);   // mid orange ring
+      drawRing(W * 0.30, 0.07, false);  // outer grey ring
+      drawRing(W * 0.46, 0.03, false);  // far grey ring
+
+      // ── Edges ──────────────────────────────────────────────────────────────
+      for (const [fid, tid, cpxN, cpyN] of edges) {
+        const nf = nodes[fid], nt = nodes[tid];
+        if (!nf || !nt) continue;
+        const isActive = (fid === "core" || tid === "core" ||
+                          nf.type === "major" || nt.type === "major");
+        ctx.beginPath();
+        ctx.moveTo(nf.x * W, nf.y * H);
+        ctx.quadraticCurveTo(cpxN * W, cpyN * H, nt.x * W, nt.y * H);
+        ctx.strokeStyle = isActive
+          ? "rgba(255,107,0,0.35)"
+          : "rgba(200,200,220,0.10)";
+        ctx.lineWidth = isActive ? 1.2 : 0.6;
         ctx.stroke();
       }
 
-      // ── LAYER 3: Animated Signal Light Pulses ──
-      const pulsePaths = [
-        paths[0], // Core -> Upper-Left
-        paths[2], // Core -> Upper-Right
-        paths[4], // Core -> Middle-Right
-        paths[6], // Core -> Lower-Left
-      ];
-
-      for (let idx = 0; idx < pulsePaths.length; idx++) {
-        const p = pulsePaths[idx];
-        const n1 = pxMap[p.from];
-        const n2 = pxMap[p.to];
-        if (!n1 || !n2) continue;
-
-        const progress = (time * 0.3 + idx * 0.25) % 1.0;
-        const t = progress;
-        const mt = 1 - t;
-        const px = mt * mt * n1.x + 2 * mt * t * p.control.x + t * t * n2.x;
-        const py = mt * mt * n1.y + 2 * mt * t * p.control.y + t * t * n2.y;
-
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = "rgba(255, 107, 0, 0.8)";
-        ctx.fillStyle = "rgba(255, 160, 60, 0.9)";
+      // ── Signal pulses ──────────────────────────────────────────────────────
+      for (const p of pulses) {
+        p.t += p.speed;
+        if (p.t > 1) p.t = 0;
+        const nf = nodes[p.fromId], nt = nodes[p.toId];
+        if (!nf || !nt) continue;
+        const t = p.t, mt = 1 - t;
+        const px = mt*mt*(nf.x*W) + 2*mt*t*(p.cpxN*W) + t*t*(nt.x*W);
+        const py = mt*mt*(nf.y*H) + 2*mt*t*(p.cpyN*H) + t*t*(nt.y*H);
+        ctx.save();
+        ctx.shadowBlur  = 14;
+        ctx.shadowColor = "rgba(255,150,40,1)";
+        ctx.fillStyle   = "rgba(255,200,100,1)";
         ctx.beginPath();
-        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
-      // ── LAYER 4: Nodes with Visual Hierarchy ──
-      for (const key of Object.keys(pxMap)) {
-        const p = pxMap[key];
-        const pulse = Math.sin(time * 2.5 + p.phase) * 0.5 + 0.5;
+      // ── Nodes ──────────────────────────────────────────────────────────────
+      for (const n of Object.values(nodes)) {
+        const nx = n.x * W, ny = n.y * H;
+        const pulse = Math.sin(tick * 0.035 + n.phase) * 0.5 + 0.5;
 
-        if (p.type === 'core') {
-          // Central Bavio Core Hub
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = "rgba(255, 107, 0, 0.7)";
-          
-          // Core Outer Ring
-          ctx.strokeStyle = "rgba(255, 107, 0, 0.5)";
-          ctx.lineWidth = 1.2;
+        if (n.type === "core") {
+          // Central hub — most prominent element
+          ctx.save();
+          ctx.shadowBlur  = 40 + pulse * 20;
+          ctx.shadowColor = "rgba(255,107,0,0.95)";
+
+          // Pulsing outer halo
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 8 + pulse * 1.5, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 18 + pulse * 5, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,107,0,${0.30 + pulse * 0.20})`;
+          ctx.lineWidth   = 1.5;
           ctx.stroke();
 
-          // Core Center Solid Dot
+          // Middle ring
+          ctx.beginPath();
+          ctx.arc(nx, ny, 10, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,150,50,0.80)";
+          ctx.lineWidth   = 1.5;
+          ctx.stroke();
+
+          // Solid core dot
+          ctx.beginPath();
+          ctx.arc(nx, ny, 5.5, 0, Math.PI * 2);
           ctx.fillStyle = "#FF6B00";
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 3.8, 0, Math.PI * 2);
           ctx.fill();
+          ctx.restore();
 
-          // Orbiting Satellite on Ring 1
-          const satAngle = time * 1.2;
-          const satX = p.x + Math.cos(satAngle) * 55;
-          const satY = p.y + Math.sin(satAngle) * 55;
-          ctx.shadowBlur = 4;
-          ctx.fillStyle = "rgba(255, 160, 60, 0.85)";
+          // Orbiting dot — ring 1
+          const a1 = tick * 0.018;
+          ctx.save();
+          ctx.shadowBlur  = 12;
+          ctx.shadowColor = "rgba(255,150,40,1)";
+          ctx.fillStyle   = "rgba(255,200,100,0.95)";
           ctx.beginPath();
-          ctx.arc(satX, satY, 2.0, 0, Math.PI * 2);
+          ctx.arc(nx + Math.cos(a1)*(W*0.07), ny + Math.sin(a1)*(W*0.07), 3.5, 0, Math.PI * 2);
           ctx.fill();
+          ctx.restore();
 
-        } else if (p.type === 'active') {
-          // Active Orange Communication Nodes
-          ctx.shadowBlur = 6;
-          ctx.shadowColor = "rgba(255, 107, 0, 0.4)";
-
-          // Subtle Outer Ring
-          ctx.strokeStyle = `rgba(255, 107, 0, ${0.25 + pulse * 0.2})`;
-          ctx.lineWidth = 0.75;
+          // Orbiting dot — ring 2 (reverse)
+          const a2 = -tick * 0.011 + Math.PI * 0.6;
+          ctx.save();
+          ctx.shadowBlur  = 8;
+          ctx.shadowColor = "rgba(255,140,30,0.8)";
+          ctx.fillStyle   = "rgba(255,160,60,0.80)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2);
+          ctx.arc(nx + Math.cos(a2)*(W*0.16), ny + Math.sin(a2)*(W*0.16), 2.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+        } else if (n.type === "major") {
+          ctx.save();
+          ctx.shadowBlur  = 22 + pulse * 10;
+          ctx.shadowColor = "rgba(255,107,0,0.80)";
+
+          ctx.beginPath();
+          ctx.arc(nx, ny, 9 + pulse * 2, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,107,0,${0.40 + pulse * 0.25})`;
+          ctx.lineWidth   = 1.2;
           ctx.stroke();
 
-          // Inner Dot
-          ctx.fillStyle = "rgba(255, 107, 0, 0.9)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,107,0,${0.90 + pulse * 0.10})`;
           ctx.fill();
+          ctx.restore();
 
-        } else if (p.type === 'secondary') {
-          // Secondary Dark Gray Infrastructure Nodes
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+        } else if (n.type === "minor") {
+          ctx.save();
+          ctx.shadowBlur  = 8;
+          ctx.shadowColor = "rgba(255,255,255,0.35)";
+
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 5.5, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,255,255,${0.22 + pulse * 0.12})`;
+          ctx.lineWidth   = 0.9;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(nx, ny, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${0.55 + pulse * 0.15})`;
           ctx.fill();
+          ctx.restore();
 
         } else {
-          // Background Distant Nodes
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+          ctx.fillStyle = "rgba(255,255,255,0.11)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.arc(nx, ny, 1.8, 0, Math.PI * 2);
           ctx.fill();
         }
       }
-      ctx.shadowBlur = 0;
 
-      animationId = requestAnimationFrame(render);
+      animId = requestAnimationFrame(draw);
     };
 
-    render();
+    draw();
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationId);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className={className} />;
-}urn () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(animId);
     };
   }, []);
 
   return <canvas ref={canvasRef} className={className} />;
 }
+
 
 export default function SignUpPage() {
   const router = useRouter();
