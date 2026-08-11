@@ -4,7 +4,7 @@ const axios = require('axios');
 async function test() {
   const DODO_API_KEY = process.env.DODO_API_KEY;
   const DEMO_PRODUCT_ID = process.env.DODO_DEMO_PRODUCT_ID || 'pdt_0Nl1J57f2MHnLBxSbFHNO';
-  const isLive = DODO_API_KEY && (DODO_API_KEY.includes('live') || process.env.DODO_ENV === 'live');
+  const isLive = process.env.DODO_ENV === 'live' || (process.env.NODE_ENV === 'production' && process.env.DODO_ENV !== 'test');
   const DODO_BASE_URL = isLive ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
   
   console.log('Testing Dodo Payments Connection...');
