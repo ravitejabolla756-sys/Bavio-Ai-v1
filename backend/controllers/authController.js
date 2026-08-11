@@ -88,9 +88,15 @@ async function signup(req, res) {
             const phoneValidationResult = validateAndNormalizePhone(finalPhone, finalCountryCode);
             
             if (!phoneValidationResult.valid) {
-                return res.status(400).json({ success: false, error: phoneValidationResult.error });
+                // If it is just a number provisioning limitation, allow signup to complete without blocking
+                if (phoneValidationResult.error.includes('provisioning virtual numbers')) {
+                    finalNormalizedPhone = finalPhone;
+                } else {
+                    return res.status(400).json({ success: false, error: phoneValidationResult.error });
+                }
+            } else {
+                finalNormalizedPhone = phoneValidationResult.normalized;
             }
-            finalNormalizedPhone = phoneValidationResult.normalized;
         }
 
         const isDev = process.env.NODE_ENV === 'development';
