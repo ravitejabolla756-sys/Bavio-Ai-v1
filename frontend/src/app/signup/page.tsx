@@ -140,269 +140,261 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     };
     window.addEventListener("resize", handleResize);
 
-    // Node Definition
-    // baseX: 0 to 1, baseY: 0 to 1 (coordinates normalized to canvas size)
-    // intensity: 0 (faint background), 1 (medium secondary), 2 (active orange), 3 (primary bright orange)
+    // Defined Infrastructure Nodes (Normalized 0-1 coordinate space)
     const rawNodes = [
-      // --- Upper-Left (Calm, Typography Area) ---
-      { baseX: 0.08, baseY: 0.12, intensity: 0, phase: Math.random() },
-      { baseX: 0.18, baseY: 0.15, intensity: 0, phase: Math.random() },
-      { baseX: 0.28, baseY: 0.10, intensity: 0, phase: Math.random() },
+      // Central Core Hub & Immediate Satellites (Lower-Middle region)
+      { id: 'core', baseX: 0.48, baseY: 0.62, type: 'core', size: 4.0 },
+      { id: 'core_sat1', baseX: 0.44, baseY: 0.58, type: 'active', size: 2.2 },
+      { id: 'core_sat2', baseX: 0.52, baseY: 0.66, type: 'active', size: 2.2 },
       
-      // --- Upper-Middle (Calm, logo/header area) ---
-      { baseX: 0.45, baseY: 0.12, intensity: 0, phase: Math.random() },
-      { baseX: 0.55, baseY: 0.18, intensity: 1, phase: Math.random() },
+      // Upper-Left & Mid-Left (Under Typography, subtle dark gray)
+      { id: 'ul_1', baseX: 0.12, baseY: 0.18, type: 'bg', size: 1.2 },
+      { id: 'ul_2', baseX: 0.28, baseY: 0.14, type: 'bg', size: 1.4 },
+      { id: 'ml_1', baseX: 0.14, baseY: 0.45, type: 'secondary', size: 1.8 },
+      { id: 'ml_2', baseX: 0.25, baseY: 0.52, type: 'secondary', size: 1.8 },
       
-      // --- Upper-Right (Active Connection in corner) ---
-      { baseX: 0.72, baseY: 0.10, intensity: 1, phase: Math.random() },
-      { baseX: 0.85, baseY: 0.15, intensity: 2, phase: Math.random() }, // Active Orange Node
-      { baseX: 0.92, baseY: 0.08, intensity: 0, phase: Math.random() },
+      // Upper-Right & Far Edge (sweeping towards top right curve)
+      { id: 'ur_1', baseX: 0.62, baseY: 0.18, type: 'secondary', size: 1.8 },
+      { id: 'ur_2', baseX: 0.82, baseY: 0.12, type: 'active', size: 2.5 },
+      { id: 'ur_3', baseX: 0.90, baseY: 0.22, type: 'bg', size: 1.2 },
       
-      // --- Middle-Left (Under Typography) ---
-      { baseX: 0.06, baseY: 0.42, intensity: 0, phase: Math.random() },
-      { baseX: 0.14, baseY: 0.52, intensity: 1, phase: Math.random() },
-      { baseX: 0.26, baseY: 0.48, intensity: 0, phase: Math.random() },
+      // Middle-Right (Edge near curved split)
+      { id: 'mr_1', baseX: 0.72, baseY: 0.42, type: 'secondary', size: 2.0 },
+      { id: 'mr_2', baseX: 0.86, baseY: 0.48, type: 'active', size: 2.5 },
       
-      // --- Middle-Right (接近右边弯曲弧线) ---
-      { baseX: 0.68, baseY: 0.40, intensity: 1, phase: Math.random() },
-      { baseX: 0.78, baseY: 0.50, intensity: 2, phase: Math.random() }, // Active Orange Node
-      { baseX: 0.88, baseY: 0.38, intensity: 1, phase: Math.random() },
-      { baseX: 0.94, baseY: 0.58, intensity: 0, phase: Math.random() },
+      // Lower-Left Infrastructure Node
+      { id: 'll_1', baseX: 0.16, baseY: 0.78, type: 'active', size: 2.5 },
+      { id: 'll_2', baseX: 0.28, baseY: 0.85, type: 'secondary', size: 1.8 },
+      { id: 'll_3', baseX: 0.10, baseY: 0.90, type: 'bg', size: 1.2 },
       
-      // --- Lower-Left (Active Infrastructure point) ---
-      { baseX: 0.08, baseY: 0.78, intensity: 1, phase: Math.random() },
-      { baseX: 0.18, baseY: 0.72, intensity: 2, phase: Math.random() }, // Active Orange Node
-      { baseX: 0.28, baseY: 0.84, intensity: 1, phase: Math.random() },
-      { baseX: 0.12, baseY: 0.92, intensity: 0, phase: Math.random() },
+      // Lower-Middle & Bottom Nodes
+      { id: 'lm_1', baseX: 0.42, baseY: 0.84, type: 'secondary', size: 2.0 },
+      { id: 'lm_2', baseX: 0.56, baseY: 0.92, type: 'secondary', size: 1.8 },
       
-      // --- Lower-Middle ---
-      { baseX: 0.42, baseY: 0.74, intensity: 1, phase: Math.random() },
-      { baseX: 0.52, baseY: 0.86, intensity: 2, phase: Math.random() }, // Active Orange Node
-      { baseX: 0.62, baseY: 0.80, intensity: 1, phase: Math.random() },
-      { baseX: 0.48, baseY: 0.92, intensity: 0, phase: Math.random() },
-      
-      // --- Lower-Right (Bavio Core & Primary Orange Nodes) ---
-      { baseX: 0.74, baseY: 0.72, intensity: 1, phase: Math.random() },
-      { baseX: 0.80, baseY: 0.84, intensity: 3, phase: Math.random() }, // Primary Bright Orange Node (Core area)
-      { baseX: 0.86, baseY: 0.76, intensity: 3, phase: Math.random() }, // Primary Bright Orange Node (Core area)
-      { baseX: 0.90, baseY: 0.88, intensity: 1, phase: Math.random() },
-      { baseX: 0.82, baseY: 0.92, intensity: 0, phase: Math.random() },
+      // Lower-Right Nodes (along bottom curve)
+      { id: 'lr_1', baseX: 0.76, baseY: 0.72, type: 'secondary', size: 2.0 },
+      { id: 'lr_2', baseX: 0.84, baseY: 0.86, type: 'active', size: 2.5 },
+      { id: 'lr_3', baseX: 0.92, baseY: 0.78, type: 'bg', size: 1.4 },
     ];
 
-    // Add tiny float velocities
-    const nodes = rawNodes.map(n => ({
+    const nodes = rawNodes.map((n, i) => ({
       ...n,
       x: n.baseX,
       y: n.baseY,
-      vx: (Math.random() - 0.5) * 0.0003,
-      vy: (Math.random() - 0.5) * 0.0003,
+      phase: i * 0.4,
+      vx: (Math.random() - 0.5) * 0.00015,
+      vy: (Math.random() - 0.5) * 0.00015,
     }));
 
     let time = 0;
 
     const render = () => {
-      time += 0.002;
+      time += 0.003;
       ctx.clearRect(0, 0, width, height);
 
-      // Dark background
-      ctx.fillStyle = "#000000";
+      // Deep dark background
+      ctx.fillStyle = "#040406";
       ctx.fillRect(0, 0, width, height);
 
-      // Faint background glow in the lower-right area
-      const bgGlowX = width * 0.8;
-      const bgGlowY = height * 0.85;
-      const bgGradient = ctx.createRadialGradient(bgGlowX, bgGlowY, 50, bgGlowX, bgGlowY, 300);
-      bgGradient.addColorStop(0, "rgba(255, 107, 0, 0.03)");
-      bgGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = bgGradient;
+      const coreX = width * 0.48;
+      const coreY = height * 0.62;
+
+      // ── LAYER 0: Ambient Central Core Glow ──
+      const coreGradient = ctx.createRadialGradient(coreX, coreY, 10, coreX, coreY, Math.min(width, height) * 0.45);
+      coreGradient.addColorStop(0, "rgba(255, 107, 0, 0.07)");
+      coreGradient.addColorStop(0.4, "rgba(255, 107, 0, 0.025)");
+      coreGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = coreGradient;
       ctx.beginPath();
-      ctx.arc(bgGlowX, bgGlowY, 350, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, Math.min(width, height) * 0.45, 0, Math.PI * 2);
       ctx.fill();
 
-      // Update node positions with constraints to stay in their general bounds
+      // Update slow node positions
       for (const node of nodes) {
         node.x += node.vx;
         node.y += node.vy;
-
-        // Bounce back if drifting too far from base position (> 0.04 normalized coordinate distance)
         const dx = node.x - node.baseX;
         const dy = node.y - node.baseY;
-        if (Math.abs(dx) > 0.04) node.vx *= -1;
-        if (Math.abs(dy) > 0.04) node.vy *= -1;
+        if (Math.abs(dx) > 0.025) node.vx *= -1;
+        if (Math.abs(dy) > 0.025) node.vy *= -1;
       }
 
-      // Convert normalized coords to pixels
-      const pxNodes = nodes.map(n => ({
-        x: n.x * width,
-        y: n.y * height,
-        intensity: n.intensity,
-        phase: n.phase,
-      }));
+      const pxMap: Record<string, { x: number; y: number; type: string; size: number; phase: number }> = {};
+      for (const n of nodes) {
+        pxMap[n.id] = {
+          x: n.x * width,
+          y: n.y * height,
+          type: n.type,
+          size: n.size,
+          phase: n.phase,
+        };
+      }
 
-      // --- Draw Orbiting Arcs ---
-      ctx.lineWidth = 0.5;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.015)";
+      // ── LAYER 1: Large Orbital Curves (Infrastructure Geometry) ──
+      ctx.lineWidth = 0.6;
       
-      // Large orbital arc 1 (passing through right side and middle)
+      // Orbital Ring 1 around Central Core
+      ctx.strokeStyle = "rgba(255, 107, 0, 0.12)";
       ctx.beginPath();
-      ctx.ellipse(width * 0.6, height * 0.7, width * 0.5, height * 0.35, Math.PI * 0.15, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, 55, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Large orbital arc 2
+      // Orbital Ring 2 around Central Core
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
       ctx.beginPath();
-      ctx.ellipse(width * 0.7, height * 0.8, width * 0.3, height * 0.2, -Math.PI * 0.08, 0, Math.PI * 2);
+      ctx.arc(coreX, coreY, 110, 0, Math.PI * 2);
       ctx.stroke();
 
-      // --- Draw Central Bavio Core Rings (Bypassed by some paths) ---
-      const coreX = nodes[nodes.length - 3].x * width; // base on one of the lower-right primary nodes
-      const coreY = nodes[nodes.length - 3].y * height;
-      ctx.strokeStyle = "rgba(255, 107, 0, 0.04)";
+      // Large Sweeping Orbital Arc (Following Curved Panel Geometry)
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
       ctx.beginPath();
-      ctx.arc(coreX, coreY, 30, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, 60, 0, Math.PI * 2);
+      ctx.ellipse(width * 0.5, height * 0.55, width * 0.45, height * 0.38, Math.PI * 0.08, 0, Math.PI * 2);
       ctx.stroke();
 
-      // --- Draw Curved Infrastructure Paths ---
-      ctx.lineWidth = 0.75;
-      
-      // Path 1: Upper-Right -> Middle-Right -> Lower-Right
-      const urNode = pxNodes[6]; // Upper-Right Active
-      const mrNode = pxNodes[12]; // Middle-Right Active
-      const lrNode = pxNodes[23]; // Lower-Right Primary
-      if (urNode && mrNode && lrNode) {
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      // ── LAYER 2: 7 Structured Communication Paths ──
+      const paths = [
+        // Path 1: Core -> Upper-Left
+        { from: 'core', to: 'ml_1', control: { x: width * 0.30, y: height * 0.58 } },
+        { from: 'ml_1', to: 'ul_2', control: { x: width * 0.18, y: height * 0.30 } },
+
+        // Path 2: Core -> Upper-Right
+        { from: 'core', to: 'ur_1', control: { x: width * 0.58, y: height * 0.38 } },
+        { from: 'ur_1', to: 'ur_2', control: { x: width * 0.74, y: height * 0.12 } },
+
+        // Path 3: Core -> Middle-Right
+        { from: 'core', to: 'mr_1', control: { x: width * 0.62, y: height * 0.52 } },
+        { from: 'mr_1', to: 'mr_2', control: { x: width * 0.80, y: height * 0.44 } },
+
+        // Path 4: Core -> Lower-Right
+        { from: 'core', to: 'lr_1', control: { x: width * 0.65, y: height * 0.68 } },
+        { from: 'lr_1', to: 'lr_2', control: { x: width * 0.80, y: height * 0.80 } },
+
+        // Path 5: Core -> Lower-Middle
+        { from: 'core', to: 'lm_1', control: { x: width * 0.44, y: height * 0.75 } },
+
+        // Path 6: Core -> Lower-Left
+        { from: 'core', to: 'll_1', control: { x: width * 0.30, y: height * 0.70 } },
+        { from: 'll_1', to: 'll_2', control: { x: width * 0.22, y: height * 0.84 } },
+
+        // Path 7: Outer Edge Connections
+        { from: 'll_1', to: 'lm_1', control: { x: width * 0.28, y: height * 0.86 } },
+        { from: 'mr_2', to: 'lr_2', control: { x: width * 0.88, y: height * 0.68 } },
+      ];
+
+      ctx.lineWidth = 0.8;
+      for (const p of paths) {
+        const n1 = pxMap[p.from];
+        const n2 = pxMap[p.to];
+        if (!n1 || !n2) continue;
+
+        ctx.strokeStyle = (n1.type === 'active' || n2.type === 'active')
+          ? "rgba(255, 107, 0, 0.09)"
+          : "rgba(255, 255, 255, 0.04)";
+
         ctx.beginPath();
-        ctx.moveTo(urNode.x, urNode.y);
-        ctx.bezierCurveTo(width * 0.85, height * 0.3, mrNode.x - 20, mrNode.y - 10, mrNode.x, mrNode.y);
-        ctx.stroke();
-        
-        ctx.strokeStyle = "rgba(255, 107, 0, 0.06)";
-        ctx.beginPath();
-        ctx.moveTo(mrNode.x, mrNode.y);
-        ctx.bezierCurveTo(mrNode.x + 30, mrNode.y + 100, width * 0.9, height * 0.68, lrNode.x, lrNode.y);
+        ctx.moveTo(n1.x, n1.y);
+        ctx.quadraticCurveTo(p.control.x, p.control.y, n2.x, n2.y);
         ctx.stroke();
       }
 
-      // Path 2: Middle-Left -> Lower-Left -> Lower-Middle (bypassing center)
-      const mlNode = pxNodes[9];  // Middle-Left
-      const llNode = pxNodes[16]; // Lower-Left Active
-      const lmNode = pxNodes[21]; // Lower-Middle Active
-      if (mlNode && llNode && lmNode) {
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      // ── LAYER 3: Animated Signal Light Pulses ──
+      const pulsePaths = [
+        paths[0], // Core -> Upper-Left
+        paths[2], // Core -> Upper-Right
+        paths[4], // Core -> Middle-Right
+        paths[6], // Core -> Lower-Left
+      ];
+
+      for (let idx = 0; idx < pulsePaths.length; idx++) {
+        const p = pulsePaths[idx];
+        const n1 = pxMap[p.from];
+        const n2 = pxMap[p.to];
+        if (!n1 || !n2) continue;
+
+        const progress = (time * 0.3 + idx * 0.25) % 1.0;
+        const t = progress;
+        const mt = 1 - t;
+        const px = mt * mt * n1.x + 2 * mt * t * p.control.x + t * t * n2.x;
+        const py = mt * mt * n1.y + 2 * mt * t * p.control.y + t * t * n2.y;
+
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "rgba(255, 107, 0, 0.8)";
+        ctx.fillStyle = "rgba(255, 160, 60, 0.9)";
         ctx.beginPath();
-        ctx.moveTo(mlNode.x, mlNode.y);
-        ctx.quadraticCurveTo(width * 0.1, height * 0.65, llNode.x, llNode.y);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(llNode.x, llNode.y);
-        ctx.quadraticCurveTo(width * 0.3, height * 0.8, lmNode.x, lmNode.y);
-        ctx.stroke();
+        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
-      // --- Draw Straight Connections ---
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i < pxNodes.length; i++) {
-        const p1 = pxNodes[i];
-        
-        // Connect to a few nearby nodes to form natural clusters
-        let connections = 0;
-        for (let j = i + 1; j < pxNodes.length; j++) {
-          if (connections >= 2) break;
-          const p2 = pxNodes[j];
+      // ── LAYER 4: Nodes with Visual Hierarchy ──
+      for (const key of Object.keys(pxMap)) {
+        const p = pxMap[key];
+        const pulse = Math.sin(time * 2.5 + p.phase) * 0.5 + 0.5;
 
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          // Set distance limit (longer connections in lower area)
-          const maxDist = (p1.y > height * 0.6) ? width * 0.22 : width * 0.15;
+        if (p.type === 'core') {
+          // Central Bavio Core Hub
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = "rgba(255, 107, 0, 0.7)";
           
-          if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.09;
-            
-            // Highlight connections in lower area with orange hints
-            if ((p1.intensity >= 2 && p2.intensity >= 2) || (p1.y > height * 0.6 && p2.y > height * 0.6 && Math.random() > 0.6)) {
-              ctx.strokeStyle = `rgba(255, 107, 0, ${alpha * 2.2})`;
-            } else {
-              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            }
-            
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-            connections++;
-          }
-        }
-      }
+          // Core Outer Ring
+          ctx.strokeStyle = "rgba(255, 107, 0, 0.5)";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 8 + pulse * 1.5, 0, Math.PI * 2);
+          ctx.stroke();
 
-      // --- Draw Nodes ---
-      for (const p of pxNodes) {
-        const pulse = Math.sin(time * 2 + p.phase * Math.PI * 2) * 0.5 + 0.5;
+          // Core Center Solid Dot
+          ctx.fillStyle = "#FF6B00";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3.8, 0, Math.PI * 2);
+          ctx.fill();
 
-        if (p.intensity === 3) {
-          // Primary Bright Orange Node (Stronger glow, but restrained)
-          const baseSize = 2.0;
-          const size = baseSize + pulse * 0.5;
-          const glowAlpha = 0.4 + pulse * 0.25;
+          // Orbiting Satellite on Ring 1
+          const satAngle = time * 1.2;
+          const satX = p.x + Math.cos(satAngle) * 55;
+          const satY = p.y + Math.sin(satAngle) * 55;
+          ctx.shadowBlur = 4;
+          ctx.fillStyle = "rgba(255, 160, 60, 0.85)";
+          ctx.beginPath();
+          ctx.arc(satX, satY, 2.0, 0, Math.PI * 2);
+          ctx.fill();
 
+        } else if (p.type === 'active') {
+          // Active Orange Communication Nodes
           ctx.shadowBlur = 6;
-          ctx.shadowColor = "rgba(255, 107, 0, 0.5)";
-          
-          // Outer thin ring
-          ctx.strokeStyle = `rgba(255, 107, 0, ${glowAlpha})`;
+          ctx.shadowColor = "rgba(255, 107, 0, 0.4)";
+
+          // Subtle Outer Ring
+          ctx.strokeStyle = `rgba(255, 107, 0, ${0.25 + pulse * 0.2})`;
           ctx.lineWidth = 0.75;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 6.5, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2);
           ctx.stroke();
 
-          // Inner solid dot
-          ctx.fillStyle = "rgba(255, 107, 0, 0.95)";
+          // Inner Dot
+          ctx.fillStyle = "rgba(255, 107, 0, 0.9)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
 
-        } else if (p.intensity === 2) {
-          // Active Orange Node (Distributed active connection points)
-          const baseSize = 1.6;
-          const size = baseSize + pulse * 0.4;
-          const glowAlpha = 0.25 + pulse * 0.15;
-
-          ctx.shadowBlur = 4;
-          ctx.shadowColor = "rgba(255, 107, 0, 0.3)";
-          
-          // Outer thin ring
-          ctx.strokeStyle = `rgba(255, 107, 0, ${glowAlpha})`;
-          ctx.lineWidth = 0.5;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Inner solid dot
-          ctx.fillStyle = "rgba(255, 107, 0, 0.85)";
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-          ctx.fill();
-
-        } else if (p.intensity === 1) {
-          // Medium-opacity grey node (Secondary layer)
+        } else if (p.type === 'secondary') {
+          // Secondary Dark Gray Infrastructure Nodes
           ctx.shadowBlur = 0;
-          ctx.fillStyle = `rgba(255, 255, 255, 0.22)`;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
 
         } else {
-          // Faint grey node (Background layer)
+          // Background Distant Nodes
           ctx.shadowBlur = 0;
-          ctx.fillStyle = `rgba(255, 255, 255, 0.085)`;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 1.0, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
         }
       }
-      ctx.shadowBlur = 0; // reset shadow config
+      ctx.shadowBlur = 0;
 
       animationId = requestAnimationFrame(render);
     };
@@ -410,6 +402,13 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     render();
 
     return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className={className} />;
+}urn () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationId);
     };
@@ -669,7 +668,7 @@ export default function SignUpPage() {
           </Link>
         </div>
 
-        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full pb-8 md:pb-12 lg:pb-16 translate-y-[-40px]">
+        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full py-6 md:py-10">
           <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-[10px] block mb-[18px] font-sans">
             Built for business, everywhere
           </span>
