@@ -9,7 +9,9 @@ const { PLANS_CONFIG, getPlanProductId, productIdToPlan } = require('../config/p
 const { TOPUPS_CONFIG, getTopupProductId, productIdToTopup } = require('../config/topups');
 
 const DODO_API_KEY  = process.env.DODO_API_KEY;
-const DODO_BASE_URL = 'https://api.dodopayments.com';
+const DODO_BASE_URL = DODO_API_KEY && DODO_API_KEY.startsWith('live_')
+    ? 'https://live.dodopayments.com'
+    : 'https://test.dodopayments.com';
 
 // ── Plan display names ─────────────────────────────────────────────────
 const PLAN_DISPLAY_NAMES = { free: 'Free Trial' };
