@@ -98,9 +98,14 @@ router.post('/create-session', requireAuth, async (req, res) => {
     let checkoutUrl = '';
     try {
       const response = await axios.post(
-        `${DODO_BASE_URL}/v1/payments`,
+        `${DODO_BASE_URL}/checkouts`,
         {
-          product_id: DEMO_PRODUCT_ID,
+          product_cart: [
+            {
+              product_id: DEMO_PRODUCT_ID,
+              quantity: 1
+            }
+          ],
           customer: {
             email: req.user.email || 'public-demo@bavio.in'
           },
@@ -108,7 +113,7 @@ router.post('/create-session', requireAuth, async (req, res) => {
             country: 'US'
           },
           metadata: {
-            demo_session_id: session.id,
+            demo_session_id: session.id.toString(),
             is_public_demo: 'true',
             industry,
             language
@@ -123,7 +128,7 @@ router.post('/create-session', requireAuth, async (req, res) => {
         }
       );
       checkoutUrl = response.data.checkout_url;
-      const paymentId = response.data.payment_id || response.data.id;
+      const paymentId = response.data.id || response.data.payment_id;
       
       await db.query(
         "UPDATE public_demo_sessions SET payment_id = $1 WHERE id = $2 AND user_id = $3",
@@ -195,13 +200,13 @@ router.get('/verify-payment', requireAuth, async (req, res) => {
         : 'https://test.dodopayments.com';
       try {
         const response = await axios.get(
-          `${DODO_BASE_URL}/v1/payments/${session.payment_id}`,
+          `${DODO_BASE_URL}/checkouts/${session.payment_id}`,
           {
             headers: { Authorization: `Bearer ${DODO_API_KEY}` }
           }
         );
-        const dodoStatus = response.data.status;
-        if (dodoStatus === 'succeeded' || dodoStatus === 'SUCCESS') {
+        const paymentStatus = response.data.payment_status;
+        if (paymentStatus === 'succeeded' || paymentStatus === 'SUCCESS') {
           const updated = await db.query(
             "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 AND user_id = $2 RETURNING *",
             [session_id, userId]
