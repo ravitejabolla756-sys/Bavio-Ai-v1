@@ -9,7 +9,7 @@ const { PLANS_CONFIG, getPlanProductId, productIdToPlan } = require('../config/p
 const { TOPUPS_CONFIG, getTopupProductId, productIdToTopup } = require('../config/topups');
 
 const DODO_API_KEY  = process.env.DODO_API_KEY;
-const isLive = DODO_API_KEY && (DODO_API_KEY.includes('live') || process.env.DODO_ENV === 'live');
+const isLive = process.env.DODO_ENV === 'live' || (process.env.NODE_ENV === 'production' && process.env.DODO_ENV !== 'test');
 const DODO_BASE_URL = isLive ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
 
 // ── Plan display names ─────────────────────────────────────────────────

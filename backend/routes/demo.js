@@ -89,7 +89,7 @@ router.post('/create-session', requireAuth, async (req, res) => {
     // 2. Generate Dodo checkout link
     const DODO_API_KEY = process.env.DODO_API_KEY;
     const DEMO_PRODUCT_ID = process.env.DODO_DEMO_PRODUCT_ID || 'pdt_0Nl1J57f2MHnLBxSbFHNO';
-    const isLive = DODO_API_KEY && (DODO_API_KEY.includes('live') || process.env.DODO_ENV === 'live');
+    const isLive = process.env.DODO_ENV === 'live' || (process.env.NODE_ENV === 'production' && process.env.DODO_ENV !== 'test');
     const DODO_BASE_URL = isLive ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
     const frontendUrl = process.env.FRONTEND_URL || 'https://bavio.in';
     const redirectUrl = `${frontendUrl}/workspace/demo?session_id=${session.id}`;
@@ -194,7 +194,7 @@ router.get('/verify-payment', requireAuth, async (req, res) => {
     // Secure server-side check with Dodo API
     if (session.payment_id) {
       const DODO_API_KEY = process.env.DODO_API_KEY;
-      const isLive = DODO_API_KEY && (DODO_API_KEY.includes('live') || process.env.DODO_ENV === 'live');
+      const isLive = process.env.DODO_ENV === 'live' || (process.env.NODE_ENV === 'production' && process.env.DODO_ENV !== 'test');
       const DODO_BASE_URL = isLive ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
       try {
         const response = await axios.get(
