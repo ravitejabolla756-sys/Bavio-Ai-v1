@@ -139,92 +139,11 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     };
     window.addEventListener("resize", onResize);
 
-    // 3D Sphere Parameters
-    const sphereRadius = 170;
-    const tiltX = 0.35; // tilt angle of the globe
-    let rotY = 0; // rotation angle around vertical Y axis
-
-    let tick = 0;
-
     const draw = () => {
-      tick++;
-      rotY += 0.0006; // extremely slow rotation matching linear/openai style
-
       ctx.clearRect(0, 0, W, H);
-
-      // Solid near-black background matching the mockup reference
+      // Premium solid near-black background matching linear/openai style
       ctx.fillStyle = "#060608";
       ctx.fillRect(0, 0, W, H);
-
-      // Center coords for the globe (positioned toward the lower/right portion of the panel)
-      const cx = W * 0.44;
-      const cy = H * 0.72;
-
-      // Project 3D points to 2D
-      const project = (lat: number, lon: number) => {
-        // Spherical to 3D Cartesian coordinates
-        const x = sphereRadius * Math.cos(lat) * Math.sin(lon);
-        const y = sphereRadius * Math.sin(lat);
-        const z = sphereRadius * Math.cos(lat) * Math.cos(lon);
-
-        // Rotate X (tilt)
-        const y1 = y * Math.cos(tiltX) - z * Math.sin(tiltX);
-        const z1 = y * Math.sin(tiltX) + z * Math.cos(tiltX);
-
-        // Rotate Y (spin rotation)
-        const x2 = x * Math.cos(rotY) + z1 * Math.sin(rotY);
-        const z2 = -x * Math.sin(rotY) + z1 * Math.cos(rotY);
-
-        return {
-          x: cx + x2,
-          y: cy + y1,
-          z: z2,
-        };
-      };
-
-      // Draw latitude lines (horizontal rings)
-      const latRings = 6;
-      const latSteps = 60;
-      for (let i = 1; i < latRings; i++) {
-        const lat = -Math.PI / 2 + (Math.PI * i) / latRings;
-        ctx.beginPath();
-        for (let j = 0; j <= latSteps; j++) {
-          const lon = (Math.PI * 2 * j) / latSteps;
-          const pt = project(lat, lon);
-          if (j === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        }
-        // Front portion is slightly brighter, back portion is dimmer
-        ctx.strokeStyle = `rgba(255, 255, 255, 0.05)`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-
-      // Draw longitude lines (vertical ribs)
-      const lonRings = 8;
-      const latSteps2 = 40;
-      for (let i = 0; i < lonRings; i++) {
-        const lon = (Math.PI * 2 * i) / lonRings;
-        ctx.beginPath();
-        for (let j = 0; j <= latSteps2; j++) {
-          const lat = -Math.PI / 2 + (Math.PI * j) / latSteps2;
-          const pt = project(lat, lon);
-          const alpha = pt.z > 0 ? 0.065 : 0.015;
-          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-          if (j === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        }
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-
-      // Draw globe silhouette outer circle
-      ctx.beginPath();
-      ctx.arc(cx, cy, sphereRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
-
       animId = requestAnimationFrame(draw);
     };
 
@@ -688,30 +607,6 @@ export default function SignUpPage() {
                     </div>
                     {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                   </div>
-
-                  {/* Country Availability Banner */}
-                  {!["US", "GB", "AU"].includes(selectedCountry.code) && (
-                    <div className="bg-[#FFFaf0] border border-[#FF6B00]/20 rounded-xl p-3.5 text-left flex gap-3 items-start transition-all duration-200">
-                      <div className="text-[#FF6B00] mt-0.5 flex-shrink-0">
-                        {/* Globe Icon */}
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.945M12 2a10 10 0 100 20 10 10 0 000-20z" />
-                        </svg>
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-[11px] text-[#FF6B00] leading-tight">
-                          {selectedCountry.code === "IN" 
-                            ? "Bavio is launching in India soon." 
-                            : `Bavio is coming to ${selectedCountry.name} soon.`}
-                        </h4>
-                        <p className="text-[10px] text-[#5A5A66] leading-relaxed">
-                          {selectedCountry.code === "IN"
-                            ? "We're preparing Bavio's voice infrastructure for India. You can still create your workspace and explore Bavio. We'll notify you when calling is available."
-                            : `Workspace creation is available. Voice calling for ${selectedCountry.name} will be available soon.`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Industry Sector */}
                   <div>
