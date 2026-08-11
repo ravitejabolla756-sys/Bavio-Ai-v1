@@ -140,109 +140,194 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     };
     window.addEventListener("resize", handleResize);
 
-    const points: any[] = [];
-    const numPoints = 50;
-    const radius = Math.min(width, height) * 0.38;
+    // Node Definition
+    // baseX: 0 to 1, baseY: 0 to 1 (coordinates normalized to canvas size)
+    // intensity: 0 (faint background), 1 (medium secondary), 2 (active orange), 3 (primary bright orange)
+    const rawNodes = [
+      // --- Upper-Left (Calm, Typography Area) ---
+      { baseX: 0.08, baseY: 0.12, intensity: 0, phase: Math.random() },
+      { baseX: 0.18, baseY: 0.15, intensity: 0, phase: Math.random() },
+      { baseX: 0.28, baseY: 0.10, intensity: 0, phase: Math.random() },
+      
+      // --- Upper-Middle (Calm, logo/header area) ---
+      { baseX: 0.45, baseY: 0.12, intensity: 0, phase: Math.random() },
+      { baseX: 0.55, baseY: 0.18, intensity: 1, phase: Math.random() },
+      
+      // --- Upper-Right (Active Connection in corner) ---
+      { baseX: 0.72, baseY: 0.10, intensity: 1, phase: Math.random() },
+      { baseX: 0.85, baseY: 0.15, intensity: 2, phase: Math.random() }, // Active Orange Node
+      { baseX: 0.92, baseY: 0.08, intensity: 0, phase: Math.random() },
+      
+      // --- Middle-Left (Under Typography) ---
+      { baseX: 0.06, baseY: 0.42, intensity: 0, phase: Math.random() },
+      { baseX: 0.14, baseY: 0.52, intensity: 1, phase: Math.random() },
+      { baseX: 0.26, baseY: 0.48, intensity: 0, phase: Math.random() },
+      
+      // --- Middle-Right (接近右边弯曲弧线) ---
+      { baseX: 0.68, baseY: 0.40, intensity: 1, phase: Math.random() },
+      { baseX: 0.78, baseY: 0.50, intensity: 2, phase: Math.random() }, // Active Orange Node
+      { baseX: 0.88, baseY: 0.38, intensity: 1, phase: Math.random() },
+      { baseX: 0.94, baseY: 0.58, intensity: 0, phase: Math.random() },
+      
+      // --- Lower-Left (Active Infrastructure point) ---
+      { baseX: 0.08, baseY: 0.78, intensity: 1, phase: Math.random() },
+      { baseX: 0.18, baseY: 0.72, intensity: 2, phase: Math.random() }, // Active Orange Node
+      { baseX: 0.28, baseY: 0.84, intensity: 1, phase: Math.random() },
+      { baseX: 0.12, baseY: 0.92, intensity: 0, phase: Math.random() },
+      
+      // --- Lower-Middle ---
+      { baseX: 0.42, baseY: 0.74, intensity: 1, phase: Math.random() },
+      { baseX: 0.52, baseY: 0.86, intensity: 2, phase: Math.random() }, // Active Orange Node
+      { baseX: 0.62, baseY: 0.80, intensity: 1, phase: Math.random() },
+      { baseX: 0.48, baseY: 0.92, intensity: 0, phase: Math.random() },
+      
+      // --- Lower-Right (Bavio Core & Primary Orange Nodes) ---
+      { baseX: 0.74, baseY: 0.72, intensity: 1, phase: Math.random() },
+      { baseX: 0.80, baseY: 0.84, intensity: 3, phase: Math.random() }, // Primary Bright Orange Node (Core area)
+      { baseX: 0.86, baseY: 0.76, intensity: 3, phase: Math.random() }, // Primary Bright Orange Node (Core area)
+      { baseX: 0.90, baseY: 0.88, intensity: 1, phase: Math.random() },
+      { baseX: 0.82, baseY: 0.92, intensity: 0, phase: Math.random() },
+    ];
 
-    for (let i = 0; i < numPoints; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos((Math.random() * 2) - 1);
-      points.push({
-        x: Math.sin(phi) * Math.cos(theta),
-        y: Math.sin(phi) * Math.sin(theta),
-        z: Math.cos(phi),
-        pulse: Math.random(),
-        pulseSpeed: 0.003 + Math.random() * 0.007,
-        isOrange: Math.random() > 0.8
-      });
-    }
+    // Add tiny float velocities
+    const nodes = rawNodes.map(n => ({
+      ...n,
+      x: n.baseX,
+      y: n.baseY,
+      vx: (Math.random() - 0.5) * 0.0003,
+      vy: (Math.random() - 0.5) * 0.0003,
+    }));
 
-    let angleX = 0.0008;
-    let angleY = 0.0012;
+    let time = 0;
 
     const render = () => {
+      time += 0.002;
       ctx.clearRect(0, 0, width, height);
 
-      const cx = width / 2;
-      const cy = height / 2;
-      const r = Math.min(width, height) * 0.38;
+      // Dark background
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, width, height);
 
-      // Glow effect background
-      const gradient = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
-      gradient.addColorStop(0, "rgba(15, 15, 15, 0.95)");
-      gradient.addColorStop(0.6, "rgba(8, 8, 8, 0.98)");
-      gradient.addColorStop(1, "rgba(0, 0, 0, 1)");
-      ctx.fillStyle = gradient;
+      // Faint background glow in the lower-right area
+      const bgGlowX = width * 0.8;
+      const bgGlowY = height * 0.85;
+      const bgGradient = ctx.createRadialGradient(bgGlowX, bgGlowY, 50, bgGlowX, bgGlowY, 300);
+      bgGradient.addColorStop(0, "rgba(255, 107, 0, 0.03)");
+      bgGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = bgGradient;
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.arc(bgGlowX, bgGlowY, 350, 0, Math.PI * 2);
       ctx.fill();
 
-      // Subtle globe grid silhouette
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.035)";
-      ctx.lineWidth = 0.75;
-      for (let i = 1; i < 6; i++) {
-        const latR = r * Math.sin((i * Math.PI) / 6);
-        const latY = cy + r * Math.cos((i * Math.PI) / 6);
-        ctx.beginPath();
-        ctx.ellipse(cx, latY, latR, latR * 0.22, 0, 0, Math.PI * 2);
-        ctx.stroke();
+      // Update node positions with constraints to stay in their general bounds
+      for (const node of nodes) {
+        node.x += node.vx;
+        node.y += node.vy;
 
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, r * Math.sin((i * Math.PI) / 6), r, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        // Bounce back if drifting too far from base position (> 0.04 normalized coordinate distance)
+        const dx = node.x - node.baseX;
+        const dy = node.y - node.baseY;
+        if (Math.abs(dx) > 0.04) node.vx *= -1;
+        if (Math.abs(dy) > 0.04) node.vy *= -1;
       }
 
-      const projected: any[] = [];
-      const cosX = Math.cos(angleX);
-      const sinX = Math.sin(angleX);
-      const cosY = Math.cos(angleY);
-      const sinY = Math.sin(angleY);
+      // Convert normalized coords to pixels
+      const pxNodes = nodes.map(n => ({
+        x: n.x * width,
+        y: n.y * height,
+        intensity: n.intensity,
+        phase: n.phase,
+      }));
 
-      for (const p of points) {
-        let x1 = p.x * cosY - p.z * sinY;
-        let z1 = p.z * cosY + p.x * sinY;
-
-        let y2 = p.y * cosX - z1 * sinX;
-        let z2 = z1 * cosX + p.y * sinX;
-
-        p.x = x1;
-        p.y = y2;
-        p.z = z2;
-
-        const px = cx + x1 * r;
-        const py = cy + y2 * r;
-
-        p.pulse = (p.pulse + p.pulseSpeed) % 1.0;
-
-        projected.push({
-          x: px,
-          y: py,
-          z: z2,
-          pulse: p.pulse,
-          isOrange: p.isOrange
-        });
-      }
-
-      projected.sort((a, b) => a.z - b.z);
-
-      // Connections
+      // --- Draw Orbiting Arcs ---
       ctx.lineWidth = 0.5;
-      for (let i = 0; i < projected.length; i++) {
-        const p1 = projected[i];
-        if (p1.z < -0.3) continue;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.015)";
+      
+      // Large orbital arc 1 (passing through right side and middle)
+      ctx.beginPath();
+      ctx.ellipse(width * 0.6, height * 0.7, width * 0.5, height * 0.35, Math.PI * 0.15, 0, Math.PI * 2);
+      ctx.stroke();
 
+      // Large orbital arc 2
+      ctx.beginPath();
+      ctx.ellipse(width * 0.7, height * 0.8, width * 0.3, height * 0.2, -Math.PI * 0.08, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // --- Draw Central Bavio Core Rings (Bypassed by some paths) ---
+      const coreX = nodes[nodes.length - 3].x * width; // base on one of the lower-right primary nodes
+      const coreY = nodes[nodes.length - 3].y * height;
+      ctx.strokeStyle = "rgba(255, 107, 0, 0.04)";
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, 30, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, 60, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // --- Draw Curved Infrastructure Paths ---
+      ctx.lineWidth = 0.75;
+      
+      // Path 1: Upper-Right -> Middle-Right -> Lower-Right
+      const urNode = pxNodes[6]; // Upper-Right Active
+      const mrNode = pxNodes[12]; // Middle-Right Active
+      const lrNode = pxNodes[23]; // Lower-Right Primary
+      if (urNode && mrNode && lrNode) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+        ctx.beginPath();
+        ctx.moveTo(urNode.x, urNode.y);
+        ctx.bezierCurveTo(width * 0.85, height * 0.3, mrNode.x - 20, mrNode.y - 10, mrNode.x, mrNode.y);
+        ctx.stroke();
+        
+        ctx.strokeStyle = "rgba(255, 107, 0, 0.06)";
+        ctx.beginPath();
+        ctx.moveTo(mrNode.x, mrNode.y);
+        ctx.bezierCurveTo(mrNode.x + 30, mrNode.y + 100, width * 0.9, height * 0.68, lrNode.x, lrNode.y);
+        ctx.stroke();
+      }
+
+      // Path 2: Middle-Left -> Lower-Left -> Lower-Middle (bypassing center)
+      const mlNode = pxNodes[9];  // Middle-Left
+      const llNode = pxNodes[16]; // Lower-Left Active
+      const lmNode = pxNodes[21]; // Lower-Middle Active
+      if (mlNode && llNode && lmNode) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+        ctx.beginPath();
+        ctx.moveTo(mlNode.x, mlNode.y);
+        ctx.quadraticCurveTo(width * 0.1, height * 0.65, llNode.x, llNode.y);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(llNode.x, llNode.y);
+        ctx.quadraticCurveTo(width * 0.3, height * 0.8, lmNode.x, lmNode.y);
+        ctx.stroke();
+      }
+
+      // --- Draw Straight Connections ---
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < pxNodes.length; i++) {
+        const p1 = pxNodes[i];
+        
+        // Connect to a few nearby nodes to form natural clusters
         let connections = 0;
-        for (let j = i + 1; j < projected.length; j++) {
-          if (connections >= 3) break;
-          const p2 = projected[j];
-          if (p2.z < -0.3) continue;
+        for (let j = i + 1; j < pxNodes.length; j++) {
+          if (connections >= 2) break;
+          const p2 = pxNodes[j];
 
           const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (dist < r * 0.55) {
-            const alpha = (1 - dist / (r * 0.55)) * 0.12 * (p1.z + 1) * (p2.z + 1) / 4;
-            ctx.strokeStyle = p1.isOrange || p2.isOrange
-              ? `rgba(255, 107, 0, ${alpha * 2.5})`
-              : `rgba(255, 255, 255, ${alpha})`;
+          // Set distance limit (longer connections in lower area)
+          const maxDist = (p1.y > height * 0.6) ? width * 0.22 : width * 0.15;
+          
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.09;
+            
+            // Highlight connections in lower area with orange hints
+            if ((p1.intensity >= 2 && p2.intensity >= 2) || (p1.y > height * 0.6 && p2.y > height * 0.6 && Math.random() > 0.6)) {
+              ctx.strokeStyle = `rgba(255, 107, 0, ${alpha * 2.2})`;
+            } else {
+              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            }
+            
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -252,28 +337,72 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
         }
       }
 
-      // Nodes
-      for (const p of projected) {
-        if (p.z < -0.5) continue;
+      // --- Draw Nodes ---
+      for (const p of pxNodes) {
+        const pulse = Math.sin(time * 2 + p.phase * Math.PI * 2) * 0.5 + 0.5;
 
-        const baseSize = p.isOrange ? 2.5 : 1.5;
-        const size = baseSize + Math.sin(p.pulse * Math.PI) * 1.2;
-        const alpha = (p.z + 1) / 2;
+        if (p.intensity === 3) {
+          // Primary Bright Orange Node (Stronger glow, but restrained)
+          const baseSize = 2.0;
+          const size = baseSize + pulse * 0.5;
+          const glowAlpha = 0.4 + pulse * 0.25;
 
-        if (p.isOrange) {
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 6;
           ctx.shadowColor = "rgba(255, 107, 0, 0.5)";
-          ctx.fillStyle = `rgba(255, 107, 0, ${alpha * 0.9})`;
-        } else {
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.35})`;
-        }
+          
+          // Outer thin ring
+          ctx.strokeStyle = `rgba(255, 107, 0, ${glowAlpha})`;
+          ctx.lineWidth = 0.75;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 6.5, 0, Math.PI * 2);
+          ctx.stroke();
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-        ctx.fill();
+          // Inner solid dot
+          ctx.fillStyle = "rgba(255, 107, 0, 0.95)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else if (p.intensity === 2) {
+          // Active Orange Node (Distributed active connection points)
+          const baseSize = 1.6;
+          const size = baseSize + pulse * 0.4;
+          const glowAlpha = 0.25 + pulse * 0.15;
+
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = "rgba(255, 107, 0, 0.3)";
+          
+          // Outer thin ring
+          ctx.strokeStyle = `rgba(255, 107, 0, ${glowAlpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner solid dot
+          ctx.fillStyle = "rgba(255, 107, 0, 0.85)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else if (p.intensity === 1) {
+          // Medium-opacity grey node (Secondary layer)
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(255, 255, 255, 0.22)`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else {
+          // Faint grey node (Background layer)
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(255, 255, 255, 0.085)`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 0; // reset shadow config
 
       animationId = requestAnimationFrame(render);
     };
