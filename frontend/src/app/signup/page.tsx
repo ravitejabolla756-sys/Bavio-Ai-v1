@@ -121,41 +121,16 @@ const countries = [
 ];
 
 function GlobalNetworkVisual({ className }: { className?: string }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    let W = (canvas.width = canvas.offsetWidth);
-    let H = (canvas.height = canvas.offsetHeight);
-
-    const onResize = () => {
-      W = canvas.width = canvas.offsetWidth;
-      H = canvas.height = canvas.offsetHeight;
-    };
-    window.addEventListener("resize", onResize);
-
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      // Premium solid near-black background matching linear/openai style
-      ctx.fillStyle = "#060608";
-      ctx.fillRect(0, 0, W, H);
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className={className} />;
+  return (
+    <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
+      {/* Premium static Globe asset positioned in the lower-right area matching the mockup reference */}
+      <img
+        src="/GLOBE.png"
+        alt="Network Globe"
+        className="absolute bottom-[-10%] right-[-15%] w-[85%] max-w-[620px] aspect-square object-contain opacity-35 select-none pointer-events-none"
+      />
+    </div>
+  );
 }
 
 
