@@ -68,7 +68,7 @@ router.post('/subscribe-email', async (req, res) => {
 // POST /demo/create-session
 router.post('/create-session', requireAuth, async (req, res) => {
   try {
-    const { industry, language } = req.body;
+    const { industry, language, country } = req.body;
     const userId = req.user.id;
     if (!industry || !language) {
       return res.status(400).json({ error: 'missing_fields', message: 'Industry and language are required.' });
@@ -109,7 +109,7 @@ router.post('/create-session', requireAuth, async (req, res) => {
             email: req.user.email || 'public-demo@bavio.in'
           },
           billing_address: {
-            country: 'US'
+            country: country || req.user?.country || req.user?.country_code || 'IN'
           },
           metadata: {
             demo_session_id: session.id.toString(),
