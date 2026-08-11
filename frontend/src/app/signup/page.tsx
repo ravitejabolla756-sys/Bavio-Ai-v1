@@ -823,6 +823,30 @@ export default function SignUpPage() {
                     {errors.businessPhone && <p className="text-state-error text-[10px] mt-1 pl-1">{errors.businessPhone}</p>}
                   </div>
 
+                  {/* Country Availability Banner */}
+                  {!["US", "GB", "AU"].includes(selectedCountry.code) && (
+                    <div className="bg-[#FFFaf0] border border-[#FF6B00]/20 rounded-xl p-3.5 text-left flex gap-3 items-start transition-all duration-200">
+                      <div className="text-[#FF6B00] mt-0.5 flex-shrink-0">
+                        {/* Globe Icon */}
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.945M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                        </svg>
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-[11px] text-[#FF6B00] leading-tight">
+                          {selectedCountry.code === "IN" 
+                            ? "Bavio is launching in India soon." 
+                            : `Bavio is coming to ${selectedCountry.name} soon.`}
+                        </h4>
+                        <p className="text-[10px] text-[#5A5A66] leading-relaxed">
+                          {selectedCountry.code === "IN"
+                            ? "We're preparing Bavio's voice infrastructure for India. You can still create your workspace and explore Bavio. We'll notify you when calling is available."
+                            : `Workspace creation is available. Voice calling for ${selectedCountry.name} will be available soon.`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Industry Sector */}
                   <div>
                     <label className="block font-semibold text-body-xs text-[#14141A] mb-1.5 pl-1">
