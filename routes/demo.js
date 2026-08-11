@@ -108,9 +108,6 @@ router.post('/create-session', requireAuth, async (req, res) => {
           customer: {
             email: req.user.email || 'public-demo@bavio.in'
           },
-          billing_address: {
-            country: country || req.user?.country || req.user?.country_code || 'IN'
-          },
           metadata: {
             demo_session_id: session.id.toString(),
             is_public_demo: 'true',
