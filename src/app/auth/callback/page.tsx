@@ -8,8 +8,48 @@ import { setCookie, navigateAfterAuth } from '@/lib/auth-utils';
 function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState('Verifying your login...');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [resendStatus, setResendStatus] = useState('');
+  const [resendError, setResendError] = useState('');
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('bavio_signup_email');
+      if (stored) setEmail(stored);
+    }
+  }, []);
+
+  const handleResend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setResendError('Please enter your email address.');
+      return;
+    }
+    setIsResending(true);
+    setResendStatus('');
+    setResendError('');
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setResendStatus('Verification email sent.');
+      } else {
+        throw new Error(result.error || 'Failed to resend verification email.');
+      }
+    } catch (err: any) {
+      setResendError(err.message || 'Failed to resend verification email.');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   useEffect(() => {
     const isPopup = searchParams.get('oauth_popup') === 'true';
@@ -41,7 +81,6 @@ function AuthCallback() {
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
-          // Check if onboarding is completed by looking at phone number fallback or status
           const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
           
           setCookie("bavio_onboarding_completed", "true");
@@ -84,8 +123,6 @@ function AuthCallback() {
           }, 1500);
           return;
         }
-
-        setTimeout(() => router.push('/login?error=oauth_failed'), 2000);
       }
     }
 
@@ -93,9 +130,20 @@ function AuthCallback() {
       try {
         const { supabase } = await import('@/lib/supabase');
         
-        // Try getting session from hash (handled automatically by Supabase SDK)
+        // 1. Explicitly check for code query parameter first and exchange it
+        const code = searchParams.get('code');
+        if (code) {
+          setStatus('Exchanging verification code...');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          if (data && data.session) {
+            await fetchProfileAndLogin(data.session.access_token);
+            return;
+          }
+        }
+
+        // 2. Check if a session already exists (implicit flow / hash)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
         if (sessionError) throw sessionError;
         
         if (session) {
@@ -103,7 +151,7 @@ function AuthCallback() {
           return;
         }
 
-        // Fallback to query param
+        // 3. Fallback to token query param
         const token = searchParams.get('token');
         if (token) {
           await fetchProfileAndLogin(token);
@@ -112,7 +160,11 @@ function AuthCallback() {
         }
       } catch (err: any) {
         console.error('[OAuth Callback] Session error:', err.message);
-        setError(err.message || 'Error occurred while establishing session.');
+        let errorMsg = err.message || 'Error occurred while establishing session.';
+        if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('invalid') || errorMsg.toLowerCase().includes('code')) {
+          errorMsg = 'This verification link is no longer valid or has expired. Please request a new verification email.';
+        }
+        setError(errorMsg);
         setStatus('');
 
         if (isPopup) {
@@ -125,8 +177,6 @@ function AuthCallback() {
           }, 1500);
           return;
         }
-
-        setTimeout(() => router.push('/login?error=oauth_failed'), 2000);
       }
     }
 
@@ -154,10 +204,44 @@ function AuthCallback() {
         )}
 
         {error && (
-          <div>
-            <h2 className="text-xl font-bold mb-2 tracking-tight text-red-500">Authentication Failed</h2>
-            <p className="text-[#5A5A66] text-sm mb-4">{error}</p>
-            <p className="text-[#8A8A96] text-xs">Redirecting back to login...</p>
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold tracking-tight text-red-500">Verification Link Issue</h2>
+            <p className="text-[#5A5A66] text-sm leading-relaxed">{error}</p>
+            
+            <form onSubmit={handleResend} className="mt-6 border-t border-[#E5E0D8] pt-6 flex flex-col gap-3 text-left">
+              <div>
+                <label className="block text-[11px] font-bold text-[#14141A] mb-1.5 pl-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isResending}
+                  className="w-full bg-[#FAF7F2] border border-[#E5E0D8] focus:border-[#FF6B00] rounded-xl py-2.5 px-4 text-body-xs text-[#14141A] placeholder-[#8A8A96] outline-none transition-all"
+                />
+              </div>
+
+              {resendStatus && (
+                <p className="text-[#10B981] text-[11px] font-semibold pl-1">
+                  {resendStatus}
+                </p>
+              )}
+              {resendError && (
+                <p className="text-state-error text-[11px] font-semibold pl-1">
+                  {resendError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isResending}
+                className="w-full bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-400 text-white text-body-xs font-bold uppercase tracking-wider py-3 rounded-xl transition-all duration-200"
+              >
+                {isResending ? 'Resending...' : 'Resend Verification Email'}
+              </button>
+            </form>
           </div>
         )}
       </div>
