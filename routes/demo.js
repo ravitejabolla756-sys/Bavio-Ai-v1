@@ -129,7 +129,7 @@ router.post('/create-session', requireAuth, async (req, res) => {
       );
     } catch (dodoErr) {
       console.warn('[DEMO CHECKOUT] Dodo payment creation failed, using mock fallback:', dodoErr.response?.data || dodoErr.message);
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== 'production' || process.env.ALLOW_MOCK_PAYMENTS === 'true') {
         const mockPaymentId = 'pay_mock_' + Math.random().toString(36).substring(2, 15);
         checkoutUrl = `${frontendUrl}/workspace/demo?session_id=${session.id}&mock_paid=true`;
         await db.query(
@@ -137,7 +137,10 @@ router.post('/create-session', requireAuth, async (req, res) => {
           [mockPaymentId, session.id, userId]
         );
       } else {
-        throw dodoErr;
+        return res.status(502).json({
+          error: 'payment_gateway_error',
+          message: 'Failed to contact payment gateway (Dodo Payments). Please check internet connectivity or check if Dodo is down.'
+        });
       }
     }
 
@@ -174,7 +177,7 @@ router.get('/verify-payment', requireAuth, async (req, res) => {
     }
 
     // Check if mock_paid parameter is passed in dev mode
-    if (mock_paid === 'true' && process.env.NODE_ENV !== 'production') {
+    if (mock_paid === 'true' && (process.env.NODE_ENV !== 'production' || process.env.ALLOW_MOCK_PAYMENTS === 'true')) {
       const updated = await db.query(
         "UPDATE public_demo_sessions SET status = 'paid' WHERE id = $1 AND user_id = $2 RETURNING *",
         [session_id, userId]
