@@ -7,17 +7,13 @@ if (process.env.NODE_ENV === 'production') {
         'SUPABASE_URL',
         'SUPABASE_SERVICE_ROLE_KEY',
         'JWT_SECRET',
-        'OPENAI_API_KEY',
         'TWILIO_ACCOUNT_SID',
         'TWILIO_AUTH_TOKEN',
         'DODO_API_KEY',
         'DODO_WEBHOOK_SECRET',
         'DODO_STARTER_PRODUCT_ID',
         'DODO_GROWTH_PRODUCT_ID',
-        'DODO_SCALE_PRODUCT_ID',
-        'REDIS_URL',
-        'PUBLIC_API_BASE_URL',
-        'VOICE_WEBSOCKET_URL'
+        'DODO_SCALE_PRODUCT_ID'
     ];
     const missing = [];
     for (const key of requiredEnv) {
