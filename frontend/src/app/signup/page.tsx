@@ -140,95 +140,27 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
     window.addEventListener("resize", onResize);
 
     // 3D Sphere Parameters
-    const sphereRadius = 140;
+    const sphereRadius = 170;
     const tiltX = 0.35; // tilt angle of the globe
     let rotY = 0; // rotation angle around vertical Y axis
-
-    // Elliptical orbital paths wrapping around the sphere (matching reference image)
-    const orbits = [
-      { rx: sphereRadius * 1.8, ry: sphereRadius * 0.7, tilt: -Math.PI / 12, speed: 0.003, color: "rgba(255, 107, 0, 0.22)" },
-      { rx: sphereRadius * 2.2, ry: sphereRadius * 0.5, tilt: Math.PI / 6, speed: -0.002, color: "rgba(255, 107, 0, 0.16)" },
-      { rx: sphereRadius * 1.5, ry: sphereRadius * 0.9, tilt: Math.PI / 3, speed: 0.004, color: "rgba(255, 255, 255, 0.08)" },
-    ];
-
-    // Nodes traveling along the orbits
-    const orbitNodes = orbits.map((orbit, index) => ({
-      orbitIndex: index,
-      progress: Math.random(),
-      size: 3.5,
-    }));
-
-    // Outer connection nodes with double outer rings (outline styling)
-    const outerNodes = [
-      { nx: 0.12, ny: 0.56, size: 3.0, outline: true },
-      { nx: 0.20, ny: 0.86, size: 3.5, outline: true },
-      { nx: 0.48, ny: 0.80, size: 3.0, outline: true },
-      { nx: 0.85, ny: 0.44, size: 3.0, outline: true },
-      { nx: 0.78, ny: 0.34, size: 3.5, outline: true },
-      { nx: 0.18, ny: 0.74, size: 2.5, outline: false },
-      { nx: 0.88, ny: 0.78, size: 3.0, outline: true },
-    ];
 
     let tick = 0;
 
     const draw = () => {
       tick++;
-      rotY += 0.0035; // rotate the Y axis
+      rotY += 0.0006; // extremely slow rotation matching linear/openai style
 
       ctx.clearRect(0, 0, W, H);
 
-      // Deep dark rich background
-      ctx.fillStyle = "#06080d";
+      // Solid near-black background matching the mockup reference
+      ctx.fillStyle = "#060608";
       ctx.fillRect(0, 0, W, H);
 
-      // Center coords for the globe
-      const cx = W * 0.38;
-      const cy = H * 0.68;
+      // Center coords for the globe (positioned toward the lower/right portion of the panel)
+      const cx = W * 0.44;
+      const cy = H * 0.72;
 
-      // Soft ambient orange gradient radial glow behind the globe
-      const bgGlow = ctx.createRadialGradient(cx, cy, 10, cx, cy, sphereRadius * 2.5);
-      bgGlow.addColorStop(0, "rgba(255, 107, 0, 0.07)");
-      bgGlow.addColorStop(0.5, "rgba(255, 107, 0, 0.018)");
-      bgGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = bgGlow;
-      ctx.beginPath();
-      ctx.arc(cx, cy, sphereRadius * 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ─── 1. Background Dot Matrices ───
-      const drawDotGrid = (gx: number, gy: number, cols = 4, rows = 3, spacing = 12) => {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
-        const startX = gx - ((cols - 1) * spacing) / 2;
-        const startY = gy - ((rows - 1) * spacing) / 2;
-        for (let c = 0; c < cols; c++) {
-          for (let r = 0; r < rows; r++) {
-            ctx.beginPath();
-            ctx.arc(startX + c * spacing, startY + r * spacing, 1.2, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      };
-      // Upper-right background dot grid
-      drawDotGrid(W * 0.75, H * 0.28, 5, 4, 10);
-      // Lower-left background dot grid
-      drawDotGrid(W * 0.12, H * 0.84, 5, 4, 10);
-
-      // ─── 2. Draw Elliptical Orbits ───
-      orbits.forEach((orbit) => {
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(orbit.tilt);
-
-        ctx.beginPath();
-        ctx.ellipse(0, 0, orbit.rx, orbit.ry, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = orbit.color;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-
-        ctx.restore();
-      });
-
-      // ─── 3. Render 3D Wireframe Globe (Sphere) ───
+      // Project 3D points to 2D
       const project = (lat: number, lon: number) => {
         // Spherical to 3D Cartesian coordinates
         const x = sphereRadius * Math.cos(lat) * Math.sin(lon);
@@ -250,9 +182,9 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
         };
       };
 
-      // Draw latitude lines
-      const latRings = 7;
-      const latSteps = 40;
+      // Draw latitude lines (horizontal rings)
+      const latRings = 6;
+      const latSteps = 60;
       for (let i = 1; i < latRings; i++) {
         const lat = -Math.PI / 2 + (Math.PI * i) / latRings;
         ctx.beginPath();
@@ -262,21 +194,22 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
           if (j === 0) ctx.moveTo(pt.x, pt.y);
           else ctx.lineTo(pt.x, pt.y);
         }
-        ctx.strokeStyle = `rgba(255, 255, 255, 0.07)`;
+        // Front portion is slightly brighter, back portion is dimmer
+        ctx.strokeStyle = `rgba(255, 255, 255, 0.05)`;
         ctx.lineWidth = 0.5;
         ctx.stroke();
       }
 
-      // Draw longitude lines
-      const lonRings = 10;
-      const latSteps2 = 30;
+      // Draw longitude lines (vertical ribs)
+      const lonRings = 8;
+      const latSteps2 = 40;
       for (let i = 0; i < lonRings; i++) {
         const lon = (Math.PI * 2 * i) / lonRings;
         ctx.beginPath();
         for (let j = 0; j <= latSteps2; j++) {
           const lat = -Math.PI / 2 + (Math.PI * j) / latSteps2;
           const pt = project(lat, lon);
-          const alpha = pt.z > 0 ? 0.12 : 0.03;
+          const alpha = pt.z > 0 ? 0.065 : 0.015;
           ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
           if (j === 0) ctx.moveTo(pt.x, pt.y);
           else ctx.lineTo(pt.x, pt.y);
@@ -285,98 +218,12 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
         ctx.stroke();
       }
 
-      // Draw globe silhouette ring
+      // Draw globe silhouette outer circle
       ctx.beginPath();
       ctx.arc(cx, cy, sphereRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-      ctx.lineWidth = 1.0;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+      ctx.lineWidth = 0.6;
       ctx.stroke();
-
-      // ─── 4. Render Nodes Traveling Along Orbits & Center Connectors ───
-      orbitNodes.forEach((node) => {
-        const orbit = orbits[node.orbitIndex];
-        node.progress += orbit.speed;
-        if (node.progress > 1) node.progress = 0;
-        if (node.progress < 0) node.progress = 1;
-
-        const angle = node.progress * Math.PI * 2;
-        const ex = orbit.rx * Math.cos(angle);
-        const ey = orbit.ry * Math.sin(angle);
-
-        const px = cx + ex * Math.cos(orbit.tilt) - ey * Math.sin(orbit.tilt);
-        const py = cy + ex * Math.sin(orbit.tilt) + ey * Math.cos(orbit.tilt);
-
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(px, py);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-
-        ctx.save();
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#FF6B00";
-        ctx.fillStyle = "#FFA83A";
-        ctx.beginPath();
-        ctx.arc(px, py, node.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-
-      // ─── 5. Render Outer Network Nodes & Connection Lines ───
-      outerNodes.forEach((node) => {
-        const px = node.nx * W;
-        const py = node.ny * H;
-
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(px, py);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-
-        const pulse = Math.sin(tick * 0.03 + px) * 0.5 + 0.5;
-
-        if (node.outline) {
-          ctx.beginPath();
-          ctx.arc(px, py, 6 + pulse * 1.5, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.arc(px, py, node.size, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-          ctx.fill();
-        } else {
-          ctx.beginPath();
-          ctx.arc(px, py, node.size, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-          ctx.fill();
-        }
-      });
-
-      const activeLineNodes = [
-        { ratio: 0.4, to: outerNodes[0] },
-        { ratio: 0.7, to: outerNodes[3] },
-        { ratio: 0.55, to: outerNodes[6] },
-      ];
-
-      activeLineNodes.forEach((node) => {
-        const targetX = node.to.nx * W;
-        const targetY = node.to.ny * H;
-        const px = cx + (targetX - cx) * node.ratio;
-        const py = cy + (targetY - cy) * node.ratio;
-
-        ctx.save();
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#FF6B00";
-        ctx.fillStyle = "#FF6B00";
-        ctx.beginPath();
-        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
 
       animId = requestAnimationFrame(draw);
     };
@@ -639,14 +486,14 @@ export default function SignUpPage() {
           <Link href="/" className="flex items-center gap-3 group inline-flex">
             <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
             <span className="font-display text-xl font-black tracking-tight text-white font-sans">
-              Bavio
+              Bavio AI
             </span>
           </Link>
         </div>
 
         <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full py-6 md:py-10">
           <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-[10px] block mb-[18px] font-sans">
-            INTELLIGENT VOICE INFRASTRUCTURE
+            BUILT FOR BUSINESS, EVERYWHERE
           </span>
           
           <h2 className="font-display text-4xl lg:text-[3rem] leading-[1.1] font-bold text-white mb-[22px]">
