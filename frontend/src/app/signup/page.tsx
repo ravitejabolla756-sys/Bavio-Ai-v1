@@ -525,6 +525,47 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
+  
+  // Resend verification states
+  const [resendStatus, setResendStatus] = useState("");
+  const [isResending, setIsResending] = useState(false);
+
+  // Poll for token in local storage to auto-redirect once verified in another tab
+  useEffect(() => {
+    if (!needsEmailVerification) return;
+    const interval = setInterval(() => {
+      const token = localStorage.getItem("bavio_token");
+      if (token) {
+        clearInterval(interval);
+        window.location.href = "/workspace";
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [needsEmailVerification]);
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setResendStatus("");
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setResendStatus("Verification email sent.");
+      } else {
+        throw new Error(result.error || "Failed to resend.");
+      }
+    } catch (err: any) {
+      setResendStatus(err.message || "Failed to resend.");
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const validateForm = () => {
     const tempErrors: Record<string, string> = {};
@@ -580,6 +621,9 @@ export default function SignUpPage() {
           navigateAfterAuth("/workspace");
         } else if ((result as any).emailVerificationRequired) {
           // Production: email verification email was sent
+          if (typeof window !== "undefined") {
+            localStorage.setItem("bavio_signup_email", email);
+          }
           setNeedsEmailVerification(true);
           setIsSubmitted(true);
         } else {
@@ -898,12 +942,12 @@ export default function SignUpPage() {
                 
                 {needsEmailVerification ? (
                   /* PRODUCTION: email verification required */
-                  <div>
+                  <div className="text-center">
                     <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
-                      Check Your Inbox!
+                      Check Your Inbox
                     </h2>
                     <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm">
-                      We sent a verification link to <span className="font-semibold text-[#14141A]">{email}</span>. Click it to activate your account, then come back to log in.
+                      We sent a verification link to <span className="font-semibold text-[#14141A]">{email}</span>. Click the link to verify your email and continue to your Bavio workspace.
                     </p>
                   </div>
                 ) : (
@@ -937,13 +981,21 @@ export default function SignUpPage() {
                 </div>
 
                 {needsEmailVerification ? (
-                  <a
-                    href="/login"
-                    className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98]"
-                  >
-                    <span>Go to Login</span>
-                    <ArrowRight className="w-4 h-4" weight="bold" />
-                  </a>
+                  <div className="w-full space-y-3">
+                    {resendStatus && (
+                      <p className="text-[#10B981] text-[11px] font-semibold text-center">
+                        {resendStatus}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                      className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:bg-gray-400"
+                    >
+                      <span>{isResending ? "Resending Email..." : "Resend verification email"}</span>
+                    </button>
+                  </div>
                 ) : (
                   <button
                     type="button"
