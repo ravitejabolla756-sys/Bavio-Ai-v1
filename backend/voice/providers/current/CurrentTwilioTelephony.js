@@ -1,15 +1,5 @@
 'use strict';
 
-/**
- * CurrentTwilioTelephony — Telephony adapter for the current_openai stack
- *
- * Wraps the Twilio Media Streams WebSocket in the TelephonyProvider interface.
- * Replicates the streaming logic from routes/callStream.js as a class so
- * it can be shared or replaced without touching callStream.js.
- *
- * Audio format: G.711 mu-law 8 kHz mono, delivered in 160-byte / 20 ms packets.
- */
-
 const WebSocket            = require('ws');
 const TelephonyProvider    = require('../interfaces/TelephonyProvider');
 
@@ -27,46 +17,57 @@ class CurrentTwilioTelephony extends TelephonyProvider {
     this._isSpeaking     = false;
   }
 
-  // ── TelephonyProvider implementation ──────────────────────────────────────
-
   async startMediaSession({ ws, callSid, streamSid }) {
     this._ws        = ws;
     this._callSid   = callSid;
     this._streamSid = streamSid;
+
+    // Handle inbound events from WebSocket (forwarded by server.js upgrade)
+    this._ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message);
+        if (data.event === 'media') {
+          const payload = Buffer.from(data.media.payload, 'base64');
+          this._emitAudioChunk(payload);
+        } else if (data.event === 'stop') {
+          this._emitCallEnd();
+        }
+      } catch (err) {
+        // Safe to ignore non-JSON or malformed events
+      }
+    });
+
+    this._ws.on('close', () => {
+      this._emitCallEnd();
+    });
   }
 
   sendAudio(audioBuffer) {
-    // Clear any existing playback and re-queue
-    if (this._playInterval) {
-      clearInterval(this._playInterval);
-      this._playInterval = null;
-    }
-    this._playQueue = [];
-
     for (let offset = 0; offset < audioBuffer.length; offset += PACKET_SIZE_BYTES) {
       this._playQueue.push(audioBuffer.slice(offset, offset + PACKET_SIZE_BYTES));
     }
 
     this._isSpeaking = true;
-    let idx = 0;
 
-    this._playInterval = setInterval(() => {
-      if (idx >= this._playQueue.length) {
-        clearInterval(this._playInterval);
-        this._playInterval = null;
-        this._isSpeaking   = false;
-        return;
-      }
+    if (!this._playInterval) {
+      this._playInterval = setInterval(() => {
+        if (this._playQueue.length === 0) {
+          clearInterval(this._playInterval);
+          this._playInterval = null;
+          this._isSpeaking   = false;
+          return;
+        }
 
-      if (this._ws && this._ws.readyState === WebSocket.OPEN) {
-        this._ws.send(JSON.stringify({
-          event    : 'media',
-          streamSid: this._streamSid,
-          media    : { payload: this._playQueue[idx].toString('base64') },
-        }));
-      }
-      idx++;
-    }, PACKET_INTERVAL_MS);
+        const packet = this._playQueue.shift();
+        if (this._ws && this._ws.readyState === WebSocket.OPEN) {
+          this._ws.send(JSON.stringify({
+            event    : 'media',
+            streamSid: this._streamSid,
+            media    : { payload: packet.toString('base64') },
+          }));
+        }
+      }, PACKET_INTERVAL_MS);
+    }
   }
 
   clearAudio() {
@@ -86,11 +87,19 @@ class CurrentTwilioTelephony extends TelephonyProvider {
 
   async terminateCall(reason = 'requested') {
     try {
-      const twilioProvider = require('../../../providers/twilio');
-      await twilioProvider.client.calls(this._callSid).update({ status: 'completed' });
-      console.log(`[CurrentTwilioTelephony] Call ${this._callSid} terminated. Reason: ${reason}`);
+      if (!this._callSid) return;
+      const twilio = require('twilio');
+      const sid = process.env.TWILIO_ACCOUNT_SID;
+      const token = process.env.TWILIO_AUTH_TOKEN;
+      if (sid && token) {
+        const client = twilio(sid, token);
+        await client.calls(this._callSid).update({ status: 'completed' });
+        console.log(`[TwilioTelephony] Call ${this._callSid} terminated programmatically: ${reason}`);
+      } else {
+        console.warn(`[TwilioTelephony] Cannot terminate call ${this._callSid}: missing Twilio env vars`);
+      }
     } catch (err) {
-      console.error(`[CurrentTwilioTelephony] terminateCall error: ${err.message}`);
+      console.error(`[TwilioTelephony] terminateCall error: ${err.message}`);
     }
   }
 
@@ -99,14 +108,8 @@ class CurrentTwilioTelephony extends TelephonyProvider {
     this._ws = null;
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
   get isSpeaking() { return this._isSpeaking; }
-
-  /** Allow callStream.js to update streamSid after the 'start' event */
-  setStreamSid(streamSid) {
-    this._streamSid = streamSid;
-  }
+  setStreamSid(streamSid) { this._streamSid = streamSid; }
 }
 
 module.exports = CurrentTwilioTelephony;

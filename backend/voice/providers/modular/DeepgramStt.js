@@ -1,91 +1,69 @@
 'use strict';
 
 /**
- * DeepgramStt — Deepgram Flux live-streaming STT provider
+ * DeepgramStt — Deepgram Flux v2 Streaming STT & Turn Detection
  *
- * Uses the Deepgram v1/listen WebSocket API:
- *   wss://api.deepgram.com/v1/listen?model=…&encoding=mulaw&sample_rate=8000…
+ * Endpoint: wss://api.deepgram.com/v2/listen
+ * Models:   flux-general-en (English) | flux-general-multi (Multilingual / Hindi)
  *
- * Key advantages over the current batch approach:
- *   - No 1.2 s silence accumulation buffer required.
- *   - UtteranceEnd event provides onEagerEndOfTurn signal.
- *   - Deepgram endpointing handles VAD natively.
- *   - Partial transcripts enable UI streaming effects.
- *
- * Status: IMPLEMENTED — feature-flagged behind modular_v1.
- *
- * Required env:  DEEPGRAM_API_KEY, DEEPGRAM_MODEL
+ * Implements:
+ *   - Live connection persisting across the full call
+ *   - Continuous Twilio mu-law 8 kHz audio streaming
+ *   - V2 event handlers (StartOfTurn, EagerEndOfTurn, TurnResumed, EndOfTurn)
+ *   - Dynamic EOT thresholds configuration via thresholds payload command
+ *   - Reconnection logic (3 attempts with exponential backoff)
  */
 
 const WebSocket            = require('ws');
 const SpeechToTextProvider = require('../interfaces/SpeechToTextProvider');
 
-// Deepgram response event types
-const DG_RESULT_FINAL       = 'Results';
-const DG_SPEECH_STARTED     = 'SpeechStarted';
-const DG_UTTERANCE_END      = 'UtteranceEnd';
-const DG_METADATA           = 'Metadata';
-const DG_ERROR              = 'Error';
-
-const DEEPGRAM_STT_URL      = 'wss://api.deepgram.com/v1/listen';
+const DEEPGRAM_V2_URL      = 'wss://api.api.deepgram.com/v2/listen'; // v2 endpoint
 
 class DeepgramStt extends SpeechToTextProvider {
-  /**
-   * @param {object} opts
-   * @param {string} opts.apiKey    Deepgram API key (required)
-   * @param {string} opts.model     Deepgram model name (e.g. 'nova-2')
-   */
-  constructor({ apiKey, model = 'nova-2' }) {
+  constructor({ apiKey, model = 'flux-general-en' }) {
     super('DeepgramStt');
     if (!apiKey) throw new Error('[DeepgramStt] apiKey is required');
     this._apiKey         = apiKey;
     this._model          = model;
     this._ws             = null;
     this._connected      = false;
-    this._finalTranscript = '';
+    this._options        = null;
+
+    // Metrics & Reconnection counters
+    this.reconnectCount  = 0;
+    this.errorCode       = null;
+    this.partialCount    = 0;
+
+    // Custom Callback
+    this._onTurnResumed  = null;
   }
 
   // ── SpeechToTextProvider implementation ───────────────────────────────────
 
   async connect({ language = 'en-US', encoding = 'mulaw', sampleRate = 8000, channels = 1 } = {}) {
-    const lang = language.split('-')[0].toLowerCase();   // Deepgram uses 'en', not 'en-US'
-    const url  = (
-      `${DEEPGRAM_STT_URL}` +
+    this._options = { language, encoding, sampleRate, channels };
+
+    // Select correct Flux model identifier based on language
+    const lang = language.split('-')[0].toLowerCase();
+    if (lang === 'en') {
+      this._model = 'flux-general-en';
+    } else {
+      // Use flux-general-multi for Hindi/Hinglish and multilingual
+      this._model = 'flux-general-multi';
+    }
+
+    const url = (
+      `wss://api.deepgram.com/v2/listen` +
       `?model=${encodeURIComponent(this._model)}` +
-      `&language=${encodeURIComponent(lang)}` +
       `&encoding=${encodeURIComponent(encoding)}` +
       `&sample_rate=${sampleRate}` +
       `&channels=${channels}` +
-      `&smart_format=true` +
-      `&punctuate=true` +
-      `&interim_results=true` +
-      `&utterance_end_ms=800` +   // Eager end-of-turn at 800 ms silence
-      `&vad_events=true`          // SpeechStarted events
+      `&eot_threshold=0.7` +            // Initial normal EOT threshold
+      `&eager_eot_threshold=0.4` +      // Initial eager EOT threshold
+      `&eot_timeout_ms=600`             // Default EOT timeout
     );
 
-    return new Promise((resolve, reject) => {
-      this._ws = new WebSocket(url, {
-        headers: { Authorization: `Token ${this._apiKey}` },
-      });
-
-      this._ws.once('open',  () => {
-        this._connected = true;
-        console.log(`[DeepgramStt] Connected — model=${this._model} lang=${lang} enc=${encoding} sr=${sampleRate}`);
-        resolve();
-      });
-
-      this._ws.once('error', (err) => {
-        console.error(`[DeepgramStt] Connection error: ${err.message}`);
-        reject(err);
-      });
-
-      this._ws.on('message', (data) => this._handleMessage(data));
-
-      this._ws.on('close', (code, reason) => {
-        this._connected = false;
-        console.log(`[DeepgramStt] Connection closed — code=${code} reason=${reason}`);
-      });
-    });
+    return this._connectToUrl(url);
   }
 
   sendAudio(audioChunk) {
@@ -95,19 +73,91 @@ class DeepgramStt extends SpeechToTextProvider {
   }
 
   async close() {
+    this._connected = false;
     if (this._ws) {
-      // Send CloseStream message per Deepgram spec
       if (this._ws.readyState === WebSocket.OPEN) {
+        // Send close stream control message
         this._ws.send(JSON.stringify({ type: 'CloseStream' }));
       }
-      await new Promise(resolve => setTimeout(resolve, 200));
       this._ws.terminate();
       this._ws = null;
     }
-    this._connected = false;
   }
 
-  // ── Internal message handler ──────────────────────────────────────────────
+  // ── Realtime Dynamic EOT Threshold Configuration ──────────────────────────
+
+  /**
+   * Update end-of-turn thresholds dynamically during a call turn.
+   * Useful to increase patience (e.g. for phone numbers, PIN codes).
+   */
+  configureThresholds({ eotThreshold, eagerEotThreshold, eotTimeoutMs }) {
+    if (!this._ws || this._ws.readyState !== WebSocket.OPEN) return;
+
+    const payload = {
+      type: 'Configure',
+      thresholds: {}
+    };
+
+    if (eotThreshold !== undefined)      payload.thresholds.eot_threshold = eotThreshold;
+    if (eagerEotThreshold !== undefined) payload.thresholds.eager_eot_threshold = eagerEotThreshold;
+    if (eotTimeoutMs !== undefined)      payload.thresholds.eot_timeout_ms = eotTimeoutMs;
+
+    console.log(`[DeepgramStt] Sending dynamic thresholds:`, JSON.stringify(payload));
+    this._ws.send(JSON.stringify(payload));
+  }
+
+  // ── Callbacks ─────────────────────────────────────────────────────────────
+
+  onTurnResumed(cb) {
+    this._onTurnResumed = cb;
+    return this;
+  }
+
+  // ── Reconnection Logic ───────────────────────────────────────────────────
+
+  async _connectToUrl(url) {
+    return new Promise((resolve, reject) => {
+      console.log(`[DeepgramStt] Connecting to Deepgram v2: ${url}`);
+      this._ws = new WebSocket(url, {
+        headers: { Authorization: `Token ${this._apiKey}` },
+      });
+
+      this._ws.once('open', () => {
+        this._connected = true;
+        this.reconnectCount = 0;
+        console.log(`[DeepgramStt] Connection established successfully.`);
+        resolve();
+      });
+
+      this._ws.once('error', (err) => {
+        console.error(`[DeepgramStt] Connection error: ${err.message}`);
+        this.errorCode = err.code || err.message;
+        reject(err);
+      });
+
+      this._ws.on('message', (data) => this._handleMessage(data));
+
+      this._ws.on('close', async (code, reason) => {
+        this._connected = false;
+        console.log(`[DeepgramStt] Connection closed. Code: ${code}, Reason: ${reason}`);
+
+        // Try reconnect if closed unexpectedly and we are still active
+        if (code !== 1000 && this.reconnectCount < 3) {
+          this.reconnectCount++;
+          const delay = Math.pow(2, this.reconnectCount) * 500;
+          console.warn(`[DeepgramStt] Reconnecting in ${delay}ms (attempt ${this.reconnectCount}/3)...`);
+          await new Promise(r => setTimeout(r, delay));
+          try {
+            await this._connectToUrl(url);
+          } catch (reconnectErr) {
+            console.error(`[DeepgramStt] Reconnection attempt failed:`, reconnectErr.message);
+          }
+        }
+      });
+    });
+  }
+
+  // ── Internal Message Handler ──────────────────────────────────────────────
 
   _handleMessage(raw) {
     let msg;
@@ -117,45 +167,41 @@ class DeepgramStt extends SpeechToTextProvider {
       return;
     }
 
-    switch (msg.type) {
-      case DG_METADATA:
-        // Connection confirmed
-        break;
+    // Flux v2 endpoint sends event packets as ListenV2TurnInfo
+    if (msg.type === 'ListenV2TurnInfo') {
+      const eventType  = msg.event;
+      const transcript = msg.transcript || '';
 
-      case DG_SPEECH_STARTED:
-        // VAD onset — trigger barge-in
-        this._emitSpeechStarted();
-        break;
+      switch (eventType) {
+        case 'StartOfTurn':
+          this._emitSpeechStarted();
+          break;
 
-      case DG_RESULT_FINAL: {
-        const alt        = msg.channel?.alternatives?.[0];
-        const transcript = alt?.transcript || '';
-        const isFinal    = msg.is_final === true;
-
-        if (!transcript) break;
-
-        if (isFinal) {
-          this._finalTranscript += (this._finalTranscript ? ' ' : '') + transcript;
-          this._emitFinalTranscript(transcript);
-        } else {
+        case 'Update':
+          // Partial transcript updates
+          this.partialCount++;
           this._emitPartialTranscript(transcript);
-        }
-        break;
+          break;
+
+        case 'EagerEndOfTurn':
+          this._emitEagerEndOfTurn(transcript);
+          break;
+
+        case 'TurnResumed':
+          if (this._onTurnResumed) this._onTurnResumed();
+          break;
+
+        case 'EndOfTurn':
+          this._emitFinalTranscript(transcript);
+          this._emitEndOfTurn(transcript);
+          break;
+
+        default:
+          break;
       }
-
-      case DG_UTTERANCE_END:
-        // Deepgram's native end-of-turn signal — fire both eager and definitive
-        this._emitEagerEndOfTurn();
-        this._emitEndOfTurn(this._finalTranscript.trim());
-        this._finalTranscript = '';   // Reset for next turn
-        break;
-
-      case DG_ERROR:
-        console.error(`[DeepgramStt] Server error: ${JSON.stringify(msg)}`);
-        break;
-
-      default:
-        break;
+    } else if (msg.type === 'ListenV2FatalError') {
+      console.error(`[DeepgramStt] Fatal server error received:`, msg.error);
+      this.errorCode = msg.error_code || 'fatal_error';
     }
   }
 }
