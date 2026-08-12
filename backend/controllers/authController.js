@@ -101,22 +101,21 @@ async function signup(req, res) {
 
         const isDev = process.env.NODE_ENV === 'development';
 
-        // 2. Create user in Supabase Auth via Admin client
-        const createParams = {
+        // 2. Create user in Supabase Auth via standard signUp Client (sends OTP automatically)
+        const authClient = db.createAuthClient();
+        const signUpOptions = {
             email: finalEmail,
             password: finalPassword,
-            email_confirm: isDev,
-            user_metadata: {
-                full_name: finalName,
-                country: finalCountry
+            options: {
+                data: {
+                    full_name: finalName,
+                    country: finalCountry
+                },
+                emailRedirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
             }
         };
-        if (finalNormalizedPhone) {
-            createParams.phone = finalNormalizedPhone;
-            createParams.phone_confirm = true;
-        }
 
-        const { data: authData, error: authError } = await db.supabase.auth.admin.createUser(createParams);
+        const { data: authData, error: authError } = await authClient.auth.signUp(signUpOptions);
 
         if (authError) {
             if (authError.message && (authError.message.includes('already registered') || authError.status === 422)) {
@@ -195,53 +194,12 @@ Questions? Chat with us →
 Bavio Team`
         ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
 
-        // Generate verification link from Supabase
-        let verificationLink = '';
-        try {
-            const { data: linkData, error: linkError } = await db.supabase.auth.admin.generateLink({
-                type: 'signup',
-                email: finalEmail,
-                password: finalPassword,
-                options: {
-                    redirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
-                }
-            });
-            if (linkError) {
-                console.error('[signup] Failed to generate verification link:', linkError.message);
-            } else if (linkData && linkData.properties) {
-                verificationLink = linkData.properties.action_link;
-            }
-        } catch (linkErr) {
-            console.error('[signup] Exception generating verification link:', linkErr.message);
-        }
-
-        if (verificationLink) {
-            console.log('\n=========================================');
-            console.log('[DEVELOPMENT] Email Verification Link Generated:');
-            console.log(verificationLink);
-            console.log('=========================================\n');
-
-            emailService.sendMail(
-                finalEmail,
-                'Verify your Bavio account',
-                `Hi ${finalName},
-
-Thank you for signing up for Bavio AI. Please click the link below to verify your email address:
-
-${verificationLink}
-
-If the link above does not work, copy and paste it into your browser.
-
-Bavio Team`
-            ).catch(e => console.error('[EMAIL] Failed to send verification email:', e.message));
-        }
-
-        // Programmatic sign-in in development to get JWT token
+        // Programmatic sign-in in development to get JWT token directly
         let devToken = null;
         if (isDev) {
             try {
-                const authClient = db.createAuthClient();
-                const { data: signInData, error: signInError } = await authClient.auth.signInWithPassword({
+                const signInClient = db.createAuthClient();
+                const { data: signInData, error: signInError } = await signInClient.auth.signInWithPassword({
                     email: finalEmail,
                     password: finalPassword
                 });
@@ -670,8 +628,66 @@ Bavio Team`
     }
 }
 
+async function verifyOtp(req, res) {
+    try {
+        const { email, token } = req.body;
+        if (!email || !token) {
+            return res.status(400).json({ success: false, error: 'Email and verification code are required' });
+        }
+
+        const authClient = db.createAuthClient();
+        const { data, error } = await authClient.auth.verifyOtp({
+            email: email.trim().toLowerCase(),
+            token: token.trim(),
+            type: 'signup'
+        });
+
+        if (error) {
+            console.error('[AUTH CONTROLLER] verifyOtp error:', error.message);
+            return res.status(400).json({ success: false, error: error.message });
+        }
+
+        const supabaseUser = data.user;
+        const sessionToken = data.session.access_token;
+
+        // Update status to active and return final profile data
+        const updateResult = await db.query(
+            `UPDATE businesses 
+             SET status = 'active', updated_at = NOW() 
+             WHERE id = $1 
+             RETURNING *`,
+            [supabaseUser.id]
+        );
+
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Business profile not found' });
+        }
+
+        const user = updateResult.rows[0];
+
+        res.status(200).json({
+            success: true,
+            token: sessionToken,
+            client_id: user.id,
+            name: user.name,
+            email: user.email,
+            plan: user.plan || 'free',
+            plan_name: user.plan_name || 'Free Trial',
+            onboarding_status: user.onboarding_status || 'pending',
+            onboarding_step: user.onboarding_step || 0,
+            minutes_limit: user.minutes_limit,
+            minutes_used: user.minutes_used,
+            country_code: user.country_code,
+        });
+    } catch (err) {
+        console.error('[AUTH CONTROLLER] verifyOtp exception:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
 module.exports = {
     signup,
+    verifyOtp,
     login,
     getProfile,
     updateProfile,

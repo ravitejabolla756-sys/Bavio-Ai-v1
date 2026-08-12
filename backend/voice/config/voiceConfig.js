@@ -71,9 +71,9 @@ function buildConfig() {
 
   const uniqueMissing = [...new Set(missing)];
   if (uniqueMissing.length > 0) {
-    throw new Error(
-      `[VoiceConfig] Voice worker is running modular stack but the following environment variables ` +
-      `are missing: ${uniqueMissing.join(', ')}`
+    console.warn(
+      `[VoiceConfig] WARNING: Voice worker configuration is missing the following environment variables: ` +
+      `${uniqueMissing.join(', ')}. Calls requesting these services will fail at runtime.`
     );
   }
 

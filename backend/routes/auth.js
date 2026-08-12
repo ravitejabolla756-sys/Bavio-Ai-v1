@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 
 router.post('/check-email', authController.checkEmail);
 router.post('/signup', authController.signup);
+router.post('/verify-otp', authController.verifyOtp);
 router.post('/login', authController.login);
 router.post('/change-email', authController.changeEmail);
 router.post('/resend-verification', authController.resendVerification);
