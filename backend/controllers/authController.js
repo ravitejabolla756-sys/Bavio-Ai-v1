@@ -130,6 +130,9 @@ async function signup(req, res) {
         }
 
         const supabaseUser = authData.user;
+        if (!supabaseUser) {
+            return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+        }
         
         // 3. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
