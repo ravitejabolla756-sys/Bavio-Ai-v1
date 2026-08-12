@@ -246,6 +246,76 @@ export default function SignUpPage() {
   const [resendStatus, setResendStatus] = useState("");
   const [isResending, setIsResending] = useState(false);
 
+  // OTP code verification states
+  const [otp, setOtp] = useState<string[]>(Array(8).fill(""));
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+    const value = element.value;
+    if (/[^\d]/.test(value)) return; // restrict to digits only
+
+    const newOtp = [...otp];
+    newOtp[index] = value.substring(value.length - 1); // take only the last character
+    setOtp(newOtp);
+
+    // Auto focus next input
+    if (value && index < 7) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace") {
+      if (!otp[index] && index > 0) {
+        // focus previous input and clear it
+        const newOtp = [...otp];
+        newOtp[index - 1] = "";
+        setOtp(newOtp);
+        inputRefs.current[index - 1]?.focus();
+      }
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    if (pastedData.length === 8 && /^\d+$/.test(pastedData)) {
+      const newOtp = pastedData.split("");
+      setOtp(newOtp);
+      inputRefs.current[7]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setVerificationError(null);
+    const code = otp.join("");
+    if (code.length < 8) {
+      setVerificationError("Please enter the complete 8-digit code");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const result = await authApi.verifyOtp(email, code);
+      if (result.success && result.token) {
+        setAuthData(result.token, result.client_id, result.name);
+        setCookie("bavio_auth", "true");
+        setCookie("bavio_onboarding_completed", "true");
+        
+        // Redirect to workspace
+        window.location.href = "/workspace";
+      } else {
+        throw new Error((result as any).error || "Verification failed");
+      }
+    } catch (err: any) {
+      setVerificationError(err.message || "Failed to verify code. Please try again.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   // Poll for token in local storage to auto-redirect once verified in another tab
   useEffect(() => {
     if (!needsEmailVerification) return;
@@ -633,70 +703,112 @@ export default function SignUpPage() {
                 </div>
                 
                 {needsEmailVerification ? (
-                  /* PRODUCTION: email verification required */
-                  <div className="text-center">
-                    <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
-                      Check Your Inbox
-                    </h2>
-                    <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm">
-                      We sent a verification link to <span className="font-semibold text-[#14141A]">{email}</span>. Click the link to verify your email and continue to your Bavio workspace.
-                    </p>
+                  /* PRODUCTION: email verification OTP required */
+                  <div className="w-full text-center flex flex-col gap-4">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
+                        Enter Verification Code
+                      </h2>
+                      <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm mx-auto">
+                        We sent an 8-digit verification code to <span className="font-semibold text-[#14141A]">{email}</span>. Enter the code below to activate your account.
+                      </p>
+                    </div>
+
+                    {/* OTP Inputs */}
+                    <div className="flex gap-2 justify-center my-3">
+                      {otp.map((data, index) => (
+                        <input
+                          key={index}
+                          type="text"
+                          name="otp"
+                          maxLength={1}
+                          value={data}
+                          ref={(el) => { inputRefs.current[index] = el; }}
+                          onChange={(e) => handleOtpChange(e.target, index)}
+                          onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                          onPaste={handleOtpPaste}
+                          className="w-9 h-12 text-center text-lg font-bold border border-[#E5E0D8] rounded-xl bg-white text-[#14141A] focus:border-[#FF6B00] focus:ring-4 focus:ring-[#FF6B00]/10 outline-none transition-all"
+                        />
+                      ))}
+                    </div>
+
+                    {verificationError && (
+                      <p className="text-[#FF4D4D] text-body-xs font-semibold text-center mt-1">
+                        {verificationError}
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={isVerifying}
+                      className="w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Verifying...</span>
+                        </>
+                      ) : (
+                        <span>Verify Code</span>
+                      )}
+                    </button>
+
+                    <div className="mt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={isResending}
+                        className="text-body-xs font-bold uppercase tracking-wider text-[#8A8A96] hover:text-[#FF6B00] transition-colors disabled:opacity-50"
+                      >
+                        {isResending ? "Resending Code..." : "Resend Verification Code"}
+                      </button>
+                      {resendStatus && (
+                        <p className="text-[#10B981] text-[11px] font-semibold mt-2">
+                          {resendStatus}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   /* DEV / direct login */
-                  <div>
-                    <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
-                      Thank You for Registering!
-                    </h2>
-                    <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm">
-                      Your account has been successfully created. Let&apos;s proceed to build your first AI receptionist.
-                    </p>
-                  </div>
-                )}
-
-                <div className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl p-4 text-left flex flex-col gap-2.5 font-mono text-[10px] text-[#5A5A66]">
-                  <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
-                    <span>Account:</span>
-                    <span className="font-semibold text-[#14141A]">{email}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
-                    <span>Trial Limit:</span>
-                    <span className="font-semibold text-[#10B981]">30 Free Minutes</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Status:</span>
-                    <span className="font-semibold text-[#10B981] flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                      {needsEmailVerification ? "Pending Verification" : "Active"}
-                    </span>
-                  </div>
-                </div>
-
-                {needsEmailVerification ? (
-                  <div className="w-full space-y-3">
-                    {resendStatus && (
-                      <p className="text-[#10B981] text-[11px] font-semibold text-center">
-                        {resendStatus}
+                  <div className="w-full text-center flex flex-col gap-4">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
+                        Thank You for Registering!
+                      </h2>
+                      <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm mx-auto">
+                        Your account has been successfully created. Let&apos;s proceed to build your first AI receptionist.
                       </p>
-                    )}
+                    </div>
+
+                    <div className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl p-4 text-left flex flex-col gap-2.5 font-mono text-[10px] text-[#5A5A66]">
+                      <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
+                        <span>Account:</span>
+                        <span className="font-semibold text-[#14141A]">{email}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-[#E5E0D8]/50 pb-1.5">
+                        <span>Trial Limit:</span>
+                        <span className="font-semibold text-[#10B981]">30 Free Minutes</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status:</span>
+                        <span className="font-semibold text-[#10B981] flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                          Active
+                        </span>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={handleResendVerification}
-                      disabled={isResending}
-                      className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:bg-gray-400"
+                      onClick={handleGoToOnboarding}
+                      className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <span>{isResending ? "Resending Email..." : "Resend verification email"}</span>
+                      <span>Start Onboarding</span>
+                      <ArrowRight className="w-4 h-4" weight="bold" />
                     </button>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleGoToOnboarding}
-                    className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <span>Start Onboarding</span>
-                    <ArrowRight className="w-4 h-4" weight="bold" />
-                  </button>
                 )}
               </motion.div>
             )}

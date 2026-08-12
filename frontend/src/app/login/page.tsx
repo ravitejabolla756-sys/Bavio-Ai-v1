@@ -20,6 +20,19 @@ import Logo from "@/components/Logo";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 
+function GlobalNetworkVisual({ className }: { className?: string }) {
+  return (
+    <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
+      {/* Premium static Globe asset covering the panel, aligned right so the globe matches the signup position */}
+      <img
+        src="/GLOBE.png"
+        alt="Network Globe"
+        className="absolute inset-0 w-full h-full object-cover object-right select-none pointer-events-none"
+      />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
@@ -142,23 +155,7 @@ export default function LoginPage() {
         }}
       >
         
-        {/* Full-height background video */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover overflow-hidden z-0 pointer-events-none"
-        >
-          <source src="/bavio-brand-video.mp4" type="video/mp4" />
-        </video>
-
-        {/* Dark overlay above the video to improve text readability */}
-        <div 
-          className="absolute inset-0 z-10 pointer-events-none"
-          style={{ background: "rgba(0, 0, 0, 0.35)" }}
-        />
+        <GlobalNetworkVisual className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
 
         {/* Brand Header */}
         <div className="relative z-20">
