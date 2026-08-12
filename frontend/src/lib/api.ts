@@ -141,6 +141,13 @@ export const authApi = {
       skipAuth: true,
     }),
 
+  verifyOtp: (email: string, token: string) =>
+    apiFetch<AuthResponse>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, token }),
+      skipAuth: true,
+    }),
+
   login: (data: LoginPayload) =>
     apiFetch<AuthResponse>('/auth/login', {
       method: 'POST',
