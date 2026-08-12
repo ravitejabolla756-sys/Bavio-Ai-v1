@@ -132,11 +132,16 @@ function AuthCallback() {
         
         // 1. Explicitly check for code query parameter first and exchange it
         const code = searchParams.get('code');
+        const type = searchParams.get('type');
         if (code) {
           setStatus('Exchanging verification code...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) throw exchangeError;
           if (data && data.session) {
+            if (type === 'recovery') {
+              router.push('/reset-password');
+              return;
+            }
             await fetchProfileAndLogin(data.session.access_token);
             return;
           }
