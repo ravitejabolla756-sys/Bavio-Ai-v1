@@ -123,11 +123,11 @@ const countries = [
 function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
     <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
-      {/* Premium static Globe asset positioned in the lower-right area matching the mockup reference */}
+      {/* Premium static Globe asset covering the panel, aligned right so the globe matches the mockup position */}
       <img
         src="/GLOBE.png"
         alt="Network Globe"
-        className="absolute bottom-[-10%] right-[-15%] w-[85%] max-w-[620px] aspect-square object-contain opacity-35 select-none pointer-events-none"
+        className="absolute inset-0 w-full h-full object-cover object-right select-none pointer-events-none"
       />
     </div>
   );
@@ -366,7 +366,7 @@ export default function SignUpPage() {
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
       ──────────────────────────────────────── */}
       <section 
-        className="hidden md:flex md:w-[60%] lg:w-[60%] md:h-screen md:sticky md:top-0 relative flex-col justify-between p-10 lg:p-14 overflow-hidden bg-black"
+        className="hidden md:flex md:w-[60%] lg:w-[60%] md:h-screen md:sticky md:top-0 relative flex-col justify-start p-0 overflow-hidden bg-black"
         style={{ 
           borderTopRightRadius: "300px 50%", 
           borderBottomRightRadius: "300px 50%", 
@@ -376,16 +376,16 @@ export default function SignUpPage() {
       >
         <GlobalNetworkVisual className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
 
-        <div className="relative z-20">
+        <div className="relative z-20 pl-[76px] pt-[76px]">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
             <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
-            <span className="font-display text-xl font-black tracking-tight text-white font-sans">
+            <span className="font-display text-2xl font-normal tracking-wide text-white">
               Bavio AI
             </span>
           </Link>
         </div>
 
-        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl mx-auto w-full py-6 md:py-10">
+        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl pl-[76px] pr-8 pb-[8%] w-full">
           <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-[10px] block mb-[18px] font-sans">
             BUILT FOR BUSINESS, EVERYWHERE
           </span>
@@ -395,7 +395,7 @@ export default function SignUpPage() {
             <span className="text-[#FF6B00]">without borders.</span>
           </h2>
           
-          <p className="text-body-md text-white/85 max-w-[500px] leading-relaxed font-sans">
+          <p className="text-body-md text-white/85 max-w-[480px] leading-relaxed font-sans">
             Bavio connects businesses with customers through intelligent voice conversations, wherever they are.
           </p>
         </div>
@@ -411,7 +411,7 @@ export default function SignUpPage() {
         {/* Mobile Header */}
         <div className="md:hidden flex items-center gap-2 mb-4 relative z-10 self-start">
           <Logo className="w-8 h-8" />
-          <span className="font-display text-lg font-black tracking-tight">
+          <span className="font-display text-2xl font-normal tracking-wide">
             Bavio AI
           </span>
         </div>
