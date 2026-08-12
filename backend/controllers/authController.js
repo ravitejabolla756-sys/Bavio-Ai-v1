@@ -578,49 +578,21 @@ async function resendVerification(req, res) {
             return res.status(400).json({ success: false, error: 'Email is required' });
         }
 
-        const trimmedEmail = email.trim();
-
-        // 1. Generate verification link using Supabase Admin API
-        const { data: linkData, error: linkError } = await db.supabase.auth.admin.generateLink({
+        const trimmedEmail = email.trim().toLowerCase();
+        const authClient = db.createAuthClient();
+        const { data, error } = await authClient.auth.resend({
             type: 'signup',
-            email: trimmedEmail,
-            options: {
-                redirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
-            }
+            email: trimmedEmail
         });
 
-        if (linkError) {
-            console.error('[resendVerification] Supabase generateLink error:', linkError.message);
-            return res.status(400).json({ success: false, error: linkError.message });
+        if (error) {
+            console.error('[resendVerification] Supabase resend error:', error.message);
+            return res.status(400).json({ success: false, error: error.message });
         }
-
-        const verificationLink = linkData.properties.action_link;
-
-        // Print to console log
-        console.log('\n=========================================');
-        console.log('[DEVELOPMENT] Email Verification Link Resent:');
-        console.log(verificationLink);
-        console.log('=========================================\n');
-
-        // 2. Send the link via email service
-        const emailService = require('../services/emailService');
-        await emailService.sendMail(
-            trimmedEmail,
-            'Verify your Bavio account',
-            `Hi,
-
-Please click the link below to verify your email address:
-
-${verificationLink}
-
-If the link above does not work, copy and paste it into your browser.
-
-Bavio Team`
-        );
 
         res.status(200).json({
             success: true,
-            message: 'Verification email resent successfully.'
+            message: 'Verification code resent successfully.'
         });
     } catch (err) {
         console.error('resendVerification error:', err);
