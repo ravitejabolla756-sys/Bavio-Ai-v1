@@ -12,6 +12,8 @@ function AuthCallback() {
   const [resendStatus, setResendStatus] = useState('');
   const [resendError, setResendError] = useState('');
   const [isResending, setIsResending] = useState(false);
+  const [status, setStatus] = useState('Verifying your session...');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -103,7 +105,9 @@ function AuthCallback() {
             localStorage.removeItem("bavio_auth_redirect");
             navigateAfterAuth(redirectUrl);
           } else {
-            navigateAfterAuth('/workspace');
+            // Use nextRoute from profile API — Google OAuth new users go to /demo, existing go to /workspace
+            const destination = user.nextRoute || '/workspace';
+            navigateAfterAuth(destination);
           }
         } else {
           throw new Error(result.error || 'Invalid response from profile server.');

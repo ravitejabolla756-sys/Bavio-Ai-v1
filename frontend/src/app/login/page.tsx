@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,11 +24,14 @@ import { authApi, setAuthData } from "@/lib/api";
 function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
     <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
-      {/* Premium static Globe asset covering the panel, aligned right so the globe matches the signup position */}
-      <img
+      {/* Premium static Globe asset — priority preloaded for instant render */}
+      <Image
         src="/GLOBE.png"
         alt="Network Globe"
-        className="absolute inset-0 w-full h-full object-cover object-right select-none pointer-events-none"
+        fill
+        priority
+        sizes="50vw"
+        className="object-cover object-right select-none pointer-events-none"
       />
     </div>
   );
