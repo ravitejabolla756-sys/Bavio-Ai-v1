@@ -1,24 +1,23 @@
 'use strict';
 
 /**
- * CerebraLlm — Cerebras primary streaming LLM provider
+ * OpenAiLlm — OpenAI streaming LLM provider
  *
  * Enforces:
- *   - model: gpt-oss-120b (configured centrally)
- *   - reasoning_effort: "low"
- *   - reasoning_format: "hidden" (prevents raw reasoning blocks in output)
+ *   - model: gpt-4o-mini (configured centrally)
  *   - Bounded history with system recap summaries
  *   - Prompt injection safeguards
  *   - Strict structured tool definitions
  *   - Final token usage extraction
+ *   - Warm HTTP keep-alive connection reuse
  */
 
-const https                 = require('https');
 const axios                 = require('axios');
 const LanguageModelProvider = require('../interfaces/LanguageModelProvider');
 
-const CEREBRAS_BASE_URL = 'https://api.cerebras.ai/v1';
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
+const https = require('https');
 const keepAliveAgent = new https.Agent({
   keepAlive: true,
   maxSockets: 100,
@@ -150,17 +149,17 @@ const TOOLS = [
   }
 ];
 
-class CerebraLlm extends LanguageModelProvider {
-  constructor({ apiKey, model = 'gpt-oss-120b' } = {}) {
-    super('CerebraLlm');
-    if (!apiKey) throw new Error('[CerebraLlm] apiKey is required');
+class OpenAiLlm extends LanguageModelProvider {
+  constructor({ apiKey, model = 'gpt-4o-mini' } = {}) {
+    super('OpenAiLlm');
+    if (!apiKey) throw new Error('[OpenAiLlm] apiKey is required');
     this._apiKey    = apiKey;
     this._model     = model;
     this._sessions  = new Map();
   }
 
   async createSession({ systemPrompt, callSid = '', tools = TOOLS }) {
-    const sessionId = `cbl_${callSid || Date.now()}`;
+    const sessionId = `oai_${callSid || Date.now()}`;
     
     // Prompt Protection: encapsulate context and warn against override attempts
     const protectedPrompt = (
@@ -178,13 +177,13 @@ class CerebraLlm extends LanguageModelProvider {
       history: [], 
       tools 
     });
-    console.log(`[CerebraLlm] Protected Session created — ${sessionId} model=${this._model}`);
+    console.log(`[OpenAiLlm] Protected Session created — ${sessionId} model=${this._model}`);
     return sessionId;
   }
 
   async streamResponse({ sessionId, userTranscript, onChunk, onComplete, abortSignal = null }) {
     const session = this._sessions.get(sessionId);
-    if (!session) throw new Error(`[CerebraLlm] Unknown session: ${sessionId}`);
+    if (!session) throw new Error(`[OpenAiLlm] Unknown session: ${sessionId}`);
 
     // Bounded memory context: summarize when history gets too long
     this._boundHistory(session);
@@ -212,7 +211,7 @@ class CerebraLlm extends LanguageModelProvider {
 
     try {
       const response = await axios.post(
-        `${CEREBRAS_BASE_URL}/chat/completions`,
+        `${OPENAI_BASE_URL}/chat/completions`,
         {
           model            : this._model,
           max_tokens       : 256,
@@ -220,9 +219,7 @@ class CerebraLlm extends LanguageModelProvider {
           stream           : true,
           messages,
           tools            : session.tools,
-          reasoning_effort : 'low',     // low reasoning effort parameter
-          reasoning_format : 'hidden',  // hide thinking tokens from TTS
-          stream_options   : { include_usage: true } // ask Cerebras to include final usage chunk
+          stream_options   : { include_usage: true } // ask OpenAI to include final usage chunk
         },
         {
           headers     : {
@@ -313,7 +310,7 @@ class CerebraLlm extends LanguageModelProvider {
       if (err.name === 'AbortError' || err.message === 'AbortError') {
         throw err;
       }
-      console.error(`[CerebraLlm] streamResponse error: ${err.message}`);
+      console.error(`[OpenAiLlm] streamResponse error: ${err.message}`);
       throw err;
     }
 
@@ -337,12 +334,12 @@ class CerebraLlm extends LanguageModelProvider {
   }
 
   async cancelResponse(sessionId) {
-    console.log(`[CerebraLlm] cancelResponse(${sessionId})`);
+    console.log(`[OpenAiLlm] cancelResponse(${sessionId})`);
   }
 
   async callTool({ sessionId, toolName, toolArgs }) {
     const session = this._sessions.get(sessionId);
-    if (!session) throw new Error(`[CerebraLlm] Unknown session: ${sessionId}`);
+    if (!session) throw new Error(`[OpenAiLlm] Unknown session: ${sessionId}`);
 
     session.history.push({
       role   : 'tool',
@@ -377,8 +374,8 @@ class CerebraLlm extends LanguageModelProvider {
     };
 
     session.history = [recapMessage, ...kept];
-    console.log(`[CerebraLlm] Bounded history recap triggered. Summarized: ${toSummarize.length} messages.`);
+    console.log(`[OpenAiLlm] Bounded history recap triggered. Summarized: ${toSummarize.length} messages.`);
   }
 }
 
-module.exports = CerebraLlm;
+module.exports = OpenAiLlm;
