@@ -310,6 +310,12 @@ export default function LoginPage() {
             <div className="flex-grow border-t border-[#E5E0D8]"></div>
           </div>
 
+          {errorMsg && (
+            <div className="mb-4 bg-state-error/10 border border-state-error/20 rounded-xl p-3 text-state-error text-body-xs font-semibold">
+              {errorMsg}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <AnimatePresence mode="popLayout" initial={false}>

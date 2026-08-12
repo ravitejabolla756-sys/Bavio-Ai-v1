@@ -66,7 +66,7 @@ export async function apiFetch<T = unknown>(
   const res = await fetch(url, { ...rest, headers: finalHeaders });
 
   // Auto-redirect on unauthorized
-  if (res.status === 401 && typeof window !== 'undefined') {
+  if (res.status === 401 && !skipAuth && typeof window !== 'undefined') {
     clearAuthData();
     window.location.href = '/login';
     throw new Error('Session expired. Redirecting to login.');
