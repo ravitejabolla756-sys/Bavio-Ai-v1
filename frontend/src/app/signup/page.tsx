@@ -125,14 +125,19 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
     <div
       className={`absolute inset-0 z-0 overflow-hidden ${className || ""}`}
-      style={{
-        backgroundColor: '#060608',
-        backgroundImage: 'url(/GLOBE.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: '80% center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    />
+      style={{ backgroundColor: '#060608' }}
+    >
+      {/* Flip image so globe appears on the RIGHT side of the panel */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'url(/GLOBE.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'left center',
+          transform: 'scaleX(-1)',
+        }}
+      />
+    </div>
   );
 }
 
