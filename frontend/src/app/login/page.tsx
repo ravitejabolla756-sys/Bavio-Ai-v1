@@ -23,18 +23,16 @@ import { authApi, setAuthData } from "@/lib/api";
 
 function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
-    <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
-      {/* Premium static Globe asset — priority preloaded for instant render */}
-      <Image
-        src="/GLOBE.png"
-        alt="Network Globe"
-        fill
-        priority
-        sizes="50vw"
-        className="object-cover select-none pointer-events-none"
-        style={{ objectPosition: '70% center' }}
-      />
-    </div>
+    <div
+      className={`absolute inset-0 z-0 overflow-hidden ${className || ""}`}
+      style={{
+        backgroundColor: '#060608',
+        backgroundImage: 'url(/GLOBE.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: '80% center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    />
   );
 }
 
