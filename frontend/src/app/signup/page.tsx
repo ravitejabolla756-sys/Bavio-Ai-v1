@@ -255,7 +255,7 @@ export default function SignUpPage() {
   const [isResending, setIsResending] = useState(false);
 
   // OTP code verification states
-  const [otp, setOtp] = useState<string[]>(Array(8).fill(""));
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -269,7 +269,7 @@ export default function SignUpPage() {
     setOtp(newOtp);
 
     // Auto focus next input
-    if (value && index < 7) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -289,18 +289,18 @@ export default function SignUpPage() {
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text").trim();
-    if (pastedData.length === 8 && /^\d+$/.test(pastedData)) {
+    if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
       const newOtp = pastedData.split("");
       setOtp(newOtp);
-      inputRefs.current[7]?.focus();
+      inputRefs.current[5]?.focus();
     }
   };
 
   const handleVerifyOtp = async () => {
     setVerificationError(null);
     const code = otp.join("");
-    if (code.length < 8) {
-      setVerificationError("Please enter the complete 8-digit code");
+    if (code.length < 6) {
+      setVerificationError("Please enter the complete 6-digit code");
       return;
     }
 
@@ -718,7 +718,7 @@ export default function SignUpPage() {
                         Enter Verification Code
                       </h2>
                       <p className="text-body-xs text-[#5A5A66] leading-relaxed max-w-sm mx-auto">
-                        We sent an 8-digit verification code to <span className="font-semibold text-[#14141A]">{email}</span>. Enter the code below to activate your account.
+                        We sent a 6-digit verification code to <span className="font-semibold text-[#14141A]">{email}</span>. Enter the code below to activate your account.
                       </p>
                     </div>
 
