@@ -31,7 +31,7 @@ function GlobalNetworkVisual({ className }: { className?: string }) {
         fill
         priority
         sizes="50vw"
-        className="object-cover object-right select-none pointer-events-none"
+        className="object-cover object-center select-none pointer-events-none"
       />
     </div>
   );

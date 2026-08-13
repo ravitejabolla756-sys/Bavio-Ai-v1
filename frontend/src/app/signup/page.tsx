@@ -124,14 +124,14 @@ const countries = [
 function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
     <div className={`absolute inset-0 bg-[#060608] z-0 overflow-hidden ${className || ""}`}>
-      {/* Premium static Globe asset — priority preloaded for instant render */}
+      {/* Globe asset — centered and scaled to fill the left panel */}
       <Image
         src="/GLOBE.png"
         alt="Network Globe"
         fill
         priority
         sizes="50vw"
-        className="object-cover object-right select-none pointer-events-none"
+        className="object-cover object-center select-none pointer-events-none"
       />
     </div>
   );
