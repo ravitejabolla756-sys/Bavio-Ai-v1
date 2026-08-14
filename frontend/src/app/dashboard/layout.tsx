@@ -15,6 +15,7 @@ import {
   CreditCard, 
   Gear,
   CaretDown,
+  CaretUp,
   MagnifyingGlass,
   Command,
   Pulse,
@@ -24,8 +25,21 @@ import {
   X,
   Bell,
   ArrowLeft,
-  IdentificationCard
+  IdentificationCard,
+  Circle,
+  CheckCircle,
+  Sun,
+  Moon,
 } from "@phosphor-icons/react";
+import { 
+  authApi, 
+  assistantsApi, 
+  knowledgeBaseApi, 
+  numbersApi, 
+  callsApi, 
+  demoApi, 
+  getClientId 
+} from "@/lib/api";
 
 const consoleNavigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
@@ -55,6 +69,178 @@ export default function DashboardLayout({
   const [workspace, setWorkspace] = useState("Medcare Hospitals");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Theme Switcher State
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("bavio_theme") as "light" | "dark";
+      if (saved) {
+        setTheme(saved);
+        if (saved === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    }
+  }, []);
+
+  const toggleTheme = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const isDark = theme === "dark";
+    const nextTheme = isDark ? "light" : "dark";
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTheme(nextTheme);
+      localStorage.setItem("bavio_theme", nextTheme);
+      document.documentElement.classList.toggle("dark");
+      return;
+    }
+
+    const btn = event.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const maxRadius = Math.hypot(
+      Math.max(x, w - x),
+      Math.max(y, h - y)
+    );
+
+    // Fallback if View Transitions API is not supported
+    if (!document.startViewTransition) {
+      setTheme(nextTheme);
+      localStorage.setItem("bavio_theme", nextTheme);
+      document.documentElement.classList.toggle("dark");
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "theme-clip-style";
+    style.innerHTML = `
+      ::view-transition-new(root) {
+        clip-path: circle(0px at ${x}px ${y}px);
+      }
+      ::view-transition-old(root) {
+        clip-path: none;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const transition = document.startViewTransition(() => {
+      setTheme(nextTheme);
+      localStorage.setItem("bavio_theme", nextTheme);
+      if (nextTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    });
+
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${maxRadius}px at ${x}px ${y}px)`
+          ]
+        },
+        {
+          duration: 650,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+          pseudoElement: "::view-transition-new(root)"
+        }
+      ).onfinish = () => {
+        const appended = document.getElementById("theme-clip-style");
+        if (appended) appended.remove();
+      };
+    });
+  };
+
+  // Checklist State
+  const [checklist, setChecklist] = useState({
+    demoCompleted: false,
+    profileCompleted: false,
+    assistantCompleted: false,
+    knowledgeCompleted: false,
+    phoneCompleted: false,
+    firstCallCompleted: false,
+  });
+  const [checklistLoading, setChecklistLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  const clientId = getClientId();
+
+  const checkChecklistState = React.useCallback(async () => {
+    if (!clientId) return;
+    try {
+      const [profileData, assistantsData, knowledgeData, phoneData, callsData, demoData] = await Promise.all([
+        authApi.getProfile().catch(() => null),
+        assistantsApi.list(clientId).catch(() => []),
+        knowledgeBaseApi.list().catch(() => []),
+        numbersApi.list(clientId).catch(() => []),
+        callsApi.list(clientId).catch(() => []),
+        demoApi.getStatus().catch(() => null),
+      ]);
+
+      const demoCompleted = !!(
+        demoData?.session?.call_status === "completed" || 
+        (demoData?.session?.call_duration && demoData.session.call_duration > 0) || 
+        (demoData?.transcript && demoData.transcript.length > 0) ||
+        localStorage.getItem("bavio_demo_call_done") === "true"
+      );
+
+      const profileCompleted = !!(profileData?.name && profileData?.industry);
+      const assistantCompleted = assistantsData && assistantsData.length > 0;
+      const knowledgeCompleted = knowledgeData && knowledgeData.length > 0;
+      const phoneCompleted = phoneData && phoneData.some((p: any) => p.assistant_id !== null);
+      const firstCallCompleted = callsData && callsData.length > 0;
+
+      setChecklist({
+        demoCompleted,
+        profileCompleted,
+        assistantCompleted,
+        knowledgeCompleted,
+        phoneCompleted,
+        firstCallCompleted,
+      });
+    } catch (err) {
+      console.error("Failed to calculate onboarding checklist state:", err);
+    } finally {
+      setChecklistLoading(false);
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const collapsed = localStorage.getItem("bavio_checklist_collapsed") === "true";
+      const dismissed = localStorage.getItem("bavio_checklist_dismissed") === "true";
+      setIsCollapsed(collapsed);
+      setIsDismissed(dismissed);
+    }
+    
+    checkChecklistState();
+    const interval = setInterval(checkChecklistState, 10000);
+    return () => clearInterval(interval);
+  }, [checkChecklistState]);
+
+  const toggleCollapsed = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    localStorage.setItem("bavio_checklist_collapsed", String(next));
+  };
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    localStorage.setItem("bavio_checklist_dismissed", "true");
+  };
+
+  const completedCount = Object.values(checklist).filter(Boolean).length;
+  const isAllCompleted = completedCount === 6;
 
   // Handle hotkeys (Cmd/Ctrl + K) and workspace name sync
   useEffect(() => {
@@ -121,6 +307,13 @@ export default function DashboardLayout({
           </span>
         </Link>
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 text-ink-tertiary hover:text-ink border border-line rounded-lg hover:bg-line-subtle/50 relative transition-all"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4 text-saffron" /> : <Moon className="w-4 h-4" />}
+          </button>
           <button 
             onClick={() => setCommandKOpen(true)}
             className="p-1.5 text-ink-tertiary hover:text-ink transition-colors"
@@ -313,6 +506,15 @@ export default function DashboardLayout({
               <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted">Ctrl K</kbd>
             </button>
 
+            {/* Theme switcher toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4 text-saffron" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             {/* Notification alert */}
             <button className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all">
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-saffron animate-pulse" />
@@ -410,6 +612,279 @@ export default function DashboardLayout({
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ONBOARDING CHECKLIST FLOATING CARD / BOTTOM DRAWER */}
+      <AnimatePresence>
+        {!isDismissed ? (
+          <>
+            {/* Desktop Onboarding Checklist: hidden on mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="hidden md:block fixed bottom-6 right-6 w-[340px] bg-white border border-line rounded-2xl shadow-xl z-50 overflow-hidden font-sans text-left"
+            >
+              {/* Header */}
+              <div className="bg-canvas/15 border-b border-line/45 p-4 flex justify-between items-center">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider">
+                    {isAllCompleted ? "Setup Complete" : "Get started with Bavio"}
+                  </span>
+                  <h4 className="font-bold text-xs text-ink font-sans">
+                    {completedCount} of 6 completed
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={toggleCollapsed}
+                    className="p-1 hover:bg-canvas rounded-lg text-ink-tertiary hover:text-ink transition-colors"
+                  >
+                    {isCollapsed ? <CaretUp className="w-3.5 h-3.5" /> : <CaretDown className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    onClick={handleDismiss}
+                    className="p-1 hover:bg-canvas rounded-lg text-ink-tertiary hover:text-ink transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1 bg-canvas/30">
+                <div
+                  className="bg-saffron h-full transition-all duration-300"
+                  style={{ width: `${(completedCount / 6) * 100}%` }}
+                />
+              </div>
+
+              {/* Tasks List */}
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    className="overflow-hidden bg-white"
+                  >
+                    <div className="p-4 space-y-3.5">
+                      {isAllCompleted ? (
+                        <div className="text-center py-4 space-y-2">
+                          <CheckCircle className="w-8 h-8 text-state-success mx-auto" />
+                          <h5 className="font-bold text-xs text-ink font-sans">Bavio setup complete</h5>
+                          <p className="text-[10px] text-ink-tertiary font-sans">
+                            You have successfully completed all onboarding setups.
+                          </p>
+                          <button
+                            onClick={handleDismiss}
+                            className="px-4 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-saffron mt-2"
+                          >
+                            Dismiss Checklist
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {[
+                            {
+                              id: "demo",
+                              label: "Try a live demo",
+                              completed: checklist.demoCompleted,
+                              href: "/workspace/demo",
+                            },
+                            {
+                              id: "profile",
+                              label: "Add your business information",
+                              completed: checklist.profileCompleted,
+                              href: "/dashboard/settings",
+                            },
+                            {
+                              id: "assistant",
+                              label: "Create your first AI Employee",
+                              completed: checklist.assistantCompleted,
+                              href: "/dashboard/assistant",
+                            },
+                            {
+                              id: "knowledge",
+                              label: "Add business knowledge",
+                              completed: checklist.knowledgeCompleted,
+                              href: "/dashboard/knowledge",
+                            },
+                            {
+                              id: "phone",
+                              label: "Connect a phone number",
+                              completed: checklist.phoneCompleted,
+                              href: "/dashboard/phone-numbers",
+                            },
+                            {
+                              id: "first_call",
+                              label: "Make your first real call",
+                              completed: checklist.firstCallCompleted,
+                              href: "/dashboard/calls",
+                            },
+                          ].map(task => (
+                            <Link
+                              key={task.id}
+                              href={task.href}
+                              className={`flex items-center justify-between group p-1.5 rounded-lg hover:bg-canvas/20 transition-all ${
+                                task.completed ? "pointer-events-none" : ""
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 overflow-hidden">
+                                {task.completed ? (
+                                  <CheckCircle className="w-4 h-4 text-state-success shrink-0" />
+                                ) : (
+                                  <Circle className="w-4 h-4 text-ink-tertiary group-hover:text-saffron shrink-0" />
+                                )}
+                                <span className={`text-[11px] font-sans truncate ${
+                                  task.completed 
+                                    ? "line-through text-ink-muted opacity-60" 
+                                    : "font-semibold text-ink-secondary group-hover:text-saffron transition-colors"
+                                }`}>
+                                  {task.label}
+                                </span>
+                              </div>
+                              {!task.completed && (
+                                <ArrowLeft className="w-3.5 h-3.5 rotate-180 opacity-0 group-hover:opacity-100 text-saffron transition-all" />
+                              )}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Mobile Onboarding Sheet/Drawer: shown only on mobile screen */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="md:hidden fixed inset-x-0 bottom-0 bg-white border-t border-line rounded-t-3xl shadow-[0_-8px_30px_rgba(20,10,2,0.12)] z-50 p-5 text-left font-sans flex flex-col gap-4"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider">
+                    {isAllCompleted ? "Setup Complete" : "Get started with Bavio"}
+                  </span>
+                  <h4 className="font-bold text-sm text-ink">
+                    {completedCount} of 6 completed
+                  </h4>
+                </div>
+                <button
+                  onClick={handleDismiss}
+                  className="p-1.5 hover:bg-canvas rounded-full text-ink-tertiary hover:text-ink border border-line"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Progress Line */}
+              <div className="w-full h-1 bg-canvas/30 rounded-full overflow-hidden">
+                <div
+                  className="bg-saffron h-full"
+                  style={{ width: `${(completedCount / 6) * 100}%` }}
+                />
+              </div>
+
+              {/* Tasks List */}
+              <div className="space-y-2 mt-2 max-h-[220px] overflow-y-auto pr-1">
+                {isAllCompleted ? (
+                  <div className="text-center py-4 space-y-2">
+                    <CheckCircle className="w-8 h-8 text-state-success mx-auto" />
+                    <h5 className="font-bold text-xs text-ink font-sans">Bavio setup complete</h5>
+                    <p className="text-[10px] text-ink-tertiary font-sans">
+                      You have successfully completed all onboarding setups.
+                    </p>
+                    <button
+                      onClick={handleDismiss}
+                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-saffron w-full mt-2"
+                    >
+                      Dismiss Checklist
+                    </button>
+                  </div>
+                ) : (
+                  [
+                    {
+                      id: "demo",
+                      label: "Try a live demo",
+                      completed: checklist.demoCompleted,
+                      href: "/workspace/demo",
+                    },
+                    {
+                      id: "profile",
+                      label: "Add your business information",
+                      completed: checklist.profileCompleted,
+                      href: "/dashboard/settings",
+                    },
+                    {
+                      id: "assistant",
+                      label: "Create your first AI Employee",
+                      completed: checklist.assistantCompleted,
+                      href: "/dashboard/assistant",
+                    },
+                    {
+                      id: "knowledge",
+                      label: "Add business knowledge",
+                      completed: checklist.knowledgeCompleted,
+                      href: "/dashboard/knowledge",
+                    },
+                    {
+                      id: "phone",
+                      label: "Connect a phone number",
+                      completed: checklist.phoneCompleted,
+                      href: "/dashboard/phone-numbers",
+                    },
+                    {
+                      id: "first_call",
+                      label: "Make your first real call",
+                      completed: checklist.firstCallCompleted,
+                      href: "/dashboard/calls",
+                    },
+                  ].map(task => (
+                    <Link
+                      key={task.id}
+                      href={task.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center justify-between p-2 rounded-xl bg-canvas/10 border border-line/45 ${
+                        task.completed ? "pointer-events-none opacity-60" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 overflow-hidden">
+                        {task.completed ? (
+                          <CheckCircle className="w-4 h-4 text-state-success shrink-0" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-ink-tertiary shrink-0" />
+                        )}
+                        <span className={`text-[11px] truncate ${
+                          task.completed ? "line-through text-ink-muted" : "font-semibold text-ink"
+                        }`}>
+                          {task.label}
+                        </span>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        ) : (
+          /* Launcher Button when collapsed/dismissed */
+          <button
+            onClick={() => {
+              setIsDismissed(false);
+              setIsCollapsed(false);
+            }}
+            className="fixed bottom-6 right-6 z-50 bg-saffron hover:bg-saffron-dark text-white border border-saffron/20 shadow-lg p-3 rounded-full hover:scale-105 transition-all flex items-center justify-center gap-1.5"
+            title="Setup Checklist"
+          >
+            <Sparkle className="w-5 h-5 text-white" />
+            <span className="text-[10px] font-bold uppercase tracking-wider pr-1 hidden md:inline">Setup</span>
+          </button>
         )}
       </AnimatePresence>
     </div>
