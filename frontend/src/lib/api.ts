@@ -282,6 +282,8 @@ export interface CallRecord {
   cost_total?: number;
   language?: string;
   virtual_number?: string;
+  direction?: string;
+  recording_url?: string;
 }
 
 export const callsApi = {
