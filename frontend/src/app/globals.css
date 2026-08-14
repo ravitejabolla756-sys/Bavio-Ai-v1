@@ -14,6 +14,59 @@
   --radius-pill: 999px;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Semantic tokens for theme mapping */
+  --color-canvas: #FCF8F3;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F8F4EF;
+  --color-surface-overlay: #F3EDE4;
+  --color-ink: #140B06;
+  --color-ink-secondary: #3D2B1A;
+  --color-ink-tertiary: #6E6256;
+  --color-ink-muted: #9C8E82;
+  --color-ink-faint: #C4B8AD;
+  --color-line: #E5E0D8;
+  --color-line-subtle: #F0EBE3;
+  --color-line-faint: rgba(20, 10, 2, 0.04);
+}
+
+/* Dark theme tokens */
+.dark {
+  --background: #080600;
+  --foreground: #F5F0E8;
+  --border-subtle: #2a2010;
+
+  --color-canvas: #080600;
+  --color-surface: #100e08;
+  --color-surface-raised: #15130d;
+  --color-surface-overlay: #1c1912;
+  --color-ink: #F5F0E8;
+  --color-ink-secondary: #EADFD3;
+  --color-ink-tertiary: #C4B8AD;
+  --color-ink-muted: #9C8E82;
+  --color-ink-faint: #3D2B1A;
+  --color-line: #2a2010;
+  --color-line-subtle: #1c1912;
+  --color-line-faint: rgba(245, 240, 232, 0.04);
+}
+
+/* View Transitions API Custom Animations config */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
+.dark::view-transition-old(root) {
+  z-index: 9999;
+}
+.dark::view-transition-new(root) {
+  z-index: 1;
 }
 
 /* ── Base resets ── */
@@ -56,6 +109,15 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background-image: 
+    radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.12) 0%, transparent 50%),
+    linear-gradient(rgba(245, 240, 232, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 240, 232, 0.015) 1px, transparent 1px);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
 }
 
 /* Color overrides for hardcoded Tailwind arbitrary values */
@@ -107,14 +169,14 @@ button:not(.no-press):active,
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FFFDF8;
+  background: var(--color-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: #E5E0D8;
+  background: var(--color-line);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF6B00;
+  background: var(--saffron);
 }
 
 /* ── Glassmorphism utilities ── */
@@ -132,6 +194,16 @@ button:not(.no-press):active,
   border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
+.dark .bg-glass {
+  background: rgba(16, 14, 8, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dark .bg-glass-subtle {
+  background: rgba(16, 14, 8, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
 /* ── Premium shadow utilities ── */
 .shadow-premium {
   box-shadow:
@@ -139,10 +211,22 @@ button:not(.no-press):active,
     0 8px 24px rgba(20, 10, 2, 0.04);
 }
 
+.dark .shadow-premium {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 .shadow-premium-hover {
   box-shadow:
     0 4px 12px rgba(20, 10, 2, 0.06),
     0 24px 64px rgba(20, 10, 2, 0.08);
+}
+
+.dark .shadow-premium-hover {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.45),
+    0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 .shadow-saffron-glow {
@@ -160,13 +244,18 @@ button:not(.no-press):active,
   will-change: transform;
 }
 
+.dark .card-bezel {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
 .card-bezel:hover {
   transform: translateY(-4px);
 }
 
 .card-bezel-inner {
-  background: #ffffff;
-  border: 1px solid #E5E0D8;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: calc(12px - 5px);
   overflow: hidden;
   transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);

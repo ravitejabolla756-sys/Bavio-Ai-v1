@@ -39,24 +39,24 @@ const config: Config = {
         darkBorder: "#2a2010",
         darkText: "#F5F0E8",
         darkTextMuted: "#7a6e5f",
-        /* ── Light theme semantic tokens ── */
-        canvas: "#FCF8F3",
+        /* ── Light theme semantic tokens mapped to CSS variables ── */
+        canvas: "var(--color-canvas)",
         surface: {
-          DEFAULT: "#FFFFFF",
-          raised: "#F8F4EF",
-          overlay: "#F3EDE4",
+          DEFAULT: "var(--color-surface)",
+          raised: "var(--color-surface-raised)",
+          overlay: "var(--color-surface-overlay)",
         },
         ink: {
-          DEFAULT: "#140B06",
-          secondary: "#3D2B1A",
-          tertiary: "#6E6256",
-          muted: "#9C8E82",
-          faint: "#C4B8AD",
+          DEFAULT: "var(--color-ink)",
+          secondary: "var(--color-ink-secondary)",
+          tertiary: "var(--color-ink-tertiary)",
+          muted: "var(--color-ink-muted)",
+          faint: "var(--color-ink-faint)",
         },
         line: {
-          DEFAULT: "#E5E0D8",
-          subtle: "#F0EBE3",
-          faint: "rgba(20, 10, 2, 0.04)",
+          DEFAULT: "var(--color-line)",
+          subtle: "var(--color-line-subtle)",
+          faint: "var(--color-line-faint)",
         },
         state: {
           success: "#10B981",
