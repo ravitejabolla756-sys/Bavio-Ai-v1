@@ -83,9 +83,9 @@ function AuthCallback() {
           // Set auth cookies
           setCookie("bavio_auth", "true");
 
-          const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready';
+          const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready' || user.onboarding_step >= 6;
           
-          setCookie("bavio_onboarding_completed", "true");
+          setCookie("bavio_onboarding_completed", isOnboardingComplete ? "true" : "false");
           setStatus('Authentication successful!');
 
           if (isPopup) {
@@ -105,8 +105,7 @@ function AuthCallback() {
             localStorage.removeItem("bavio_auth_redirect");
             navigateAfterAuth(redirectUrl);
           } else {
-            // Use nextRoute from profile API — Google OAuth new users go to /demo, existing go to /workspace
-            const destination = user.nextRoute || '/workspace';
+            const destination = isOnboardingComplete ? '/workspace' : '/onboarding';
             navigateAfterAuth(destination);
           }
         } else {
@@ -251,6 +250,14 @@ function AuthCallback() {
                 {isResending ? 'Resending...' : 'Resend Verification Email'}
               </button>
             </form>
+            <div className="mt-4 text-center">
+              <Link
+                href="/login"
+                className="inline-block text-xs font-semibold text-[#FF6B00] hover:underline"
+              >
+                Back to Sign In
+              </Link>
+            </div>
           </div>
         )}
       </div>
