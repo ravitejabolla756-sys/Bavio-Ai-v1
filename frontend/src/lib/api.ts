@@ -281,6 +281,7 @@ export interface CallRecord {
   transcript?: { role: string; content: string }[];
   cost_total?: number;
   language?: string;
+  virtual_number?: string;
 }
 
 export const callsApi = {
@@ -396,6 +397,7 @@ export interface PhoneNumber {
   label?: string;
   status: string;
   created_at: string;
+  assistant_name?: string;
 }
 
 export const numbersApi = {

@@ -27,16 +27,21 @@ import {
   IdentificationCard
 } from "@phosphor-icons/react";
 
-const navigationItems = [
+const consoleNavigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
   { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
   { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
-  { name: "Assistant", href: "/dashboard/assistant", icon: Users },
+  { name: "AI Employees", href: "/dashboard/assistant", icon: Users },
   { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
   { name: "Phone Numbers", href: "/dashboard/phone-numbers", icon: GitFork },
+];
+
+const accountNavigationItems = [
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Gear },
 ];
+
+const allNavigationItems = [...consoleNavigationItems, ...accountNavigationItems];
 
 export default function DashboardLayout({
   children,
@@ -96,7 +101,7 @@ export default function DashboardLayout({
     setSearchQuery("");
   };
 
-  const filteredNavItems = navigationItems.filter(item => 
+  const filteredNavItems = allNavigationItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -171,7 +176,37 @@ export default function DashboardLayout({
             <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mb-1">
               Voice Console
             </span>
-            {navigationItems.map((item) => {
+            {consoleNavigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
+                    isActive 
+                      ? "text-saffron" 
+                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
+                  <span>{item.name}</span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="activeSidebarIndicator" 
+                      className="absolute right-3 w-1.5 h-1.5 bg-saffron rounded-full"
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+
+            <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mt-4 mb-1">
+              Account
+            </span>
+            {accountNavigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
@@ -209,9 +244,8 @@ export default function DashboardLayout({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-state-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-state-success"></span>
               </span>
-              <span className="text-[10px] font-mono text-ink-secondary truncate">Gateway Active</span>
+              <span className="text-[10px] font-mono text-ink-secondary truncate">System Operational</span>
             </div>
-            <span className="text-[8px] font-mono text-ink-muted bg-white/5 px-1.5 py-0.5 rounded">IN-MUM</span>
           </div>
 
           {/* Quick command reminder */}
@@ -263,11 +297,7 @@ export default function DashboardLayout({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-state-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-state-success"></span>
                 </span>
-                <span className="text-ink-secondary">Agents: <span className="font-bold text-ink">2 Online</span></span>
-              </div>
-              <div className="flex items-center gap-1.5 border-l border-line pl-4">
-                <Pulse className="w-3.5 h-3.5 text-saffron animate-pulse" />
-                <span className="text-ink-secondary">Live latency: <span className="font-bold text-ink">650ms</span></span>
+                <span className="text-ink-secondary">System Operational</span>
               </div>
             </div>
           </div>
