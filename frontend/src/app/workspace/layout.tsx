@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Layout, 
@@ -131,7 +132,8 @@ export default function WorkspaceLayout({
             Bavio AI<span className="text-saffron">.workspace</span>
           </span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <ThemeToggle variant="mobile" />
           <button 
             onClick={() => setCommandKOpen(true)}
             className="p-1.5 text-ink-tertiary hover:text-ink transition-colors"
@@ -270,7 +272,7 @@ export default function WorkspaceLayout({
             >
               <div className="flex items-center gap-3">
                 <Sparkle className="w-4 h-4 text-saffron" weight="fill" />
-                <span>Live Demo</span>
+                <span>Web Call</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[8px] font-mono font-black tracking-wider bg-saffron text-white px-1.5 py-0.5 rounded leading-none">
@@ -339,6 +341,9 @@ export default function WorkspaceLayout({
               <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Workspace...</span>
               <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted whitespace-nowrap shrink-0">Ctrl K</kbd>
             </button>
+
+            {/* Theme switcher toggle */}
+            <ThemeToggle variant="header" />
 
             {/* Notification alert */}
             <button className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all">

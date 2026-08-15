@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Root tokens ── */
+/* ── Root tokens (Light Theme) ── */
 :root {
   --background: #FCF8F3;
   --foreground: #140B06;
@@ -30,43 +30,40 @@
   --color-line-faint: rgba(20, 10, 2, 0.04);
 }
 
-/* Dark theme tokens */
+/* ── Dark Theme Tokens (Deep near-black + warm charcoal + vivid saffron) ── */
 .dark {
-  --background: #080600;
+  --background: #0C0A09;
   --foreground: #F5F0E8;
-  --border-subtle: #2a2010;
+  --border-subtle: #292524;
 
-  --color-canvas: #080600;
-  --color-surface: #100e08;
-  --color-surface-raised: #15130d;
-  --color-surface-overlay: #1c1912;
+  --color-canvas: #0C0A09;
+  --color-surface: #141210;
+  --color-surface-raised: #1C1917;
+  --color-surface-overlay: #262320;
   --color-ink: #F5F0E8;
-  --color-ink-secondary: #EADFD3;
-  --color-ink-tertiary: #C4B8AD;
-  --color-ink-muted: #9C8E82;
-  --color-ink-faint: #3D2B1A;
-  --color-line: #2a2010;
-  --color-line-subtle: #1c1912;
+  --color-ink-secondary: #D4CBC0;
+  --color-ink-tertiary: #A89F94;
+  --color-ink-muted: #787066;
+  --color-ink-faint: #3E3832;
+  --color-line: #292524;
+  --color-line-subtle: #1E1B18;
   --color-line-faint: rgba(245, 240, 232, 0.04);
 }
 
-/* View Transitions API Custom Animations config */
+/* ── View Transitions API: Radial Origin Reveal Config ── */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+  display: block;
+  position: fixed;
+  inset: 0;
 }
 ::view-transition-old(root) {
   z-index: 1;
 }
 ::view-transition-new(root) {
   z-index: 9999;
-}
-.dark::view-transition-old(root) {
-  z-index: 9999;
-}
-.dark::view-transition-new(root) {
-  z-index: 1;
 }
 
 /* ── Base resets ── */
@@ -120,7 +117,7 @@ body {
   color: var(--color-ink);
 }
 
-/* Color overrides for hardcoded Tailwind arbitrary values */
+/* ── Color overrides & Dark Mode Surface Mappings ── */
 .bg-\[\#FFFDF8\] {
   background-color: #FCF8F3 !important;
 }
@@ -141,6 +138,116 @@ body {
 }
 .bg-\[\#FFF7ED\] {
   background-color: #FAF4EE !important;
+}
+
+/* ── Dark Mode Global Surface Adaptation ── */
+.dark .bg-white {
+  background-color: var(--color-surface) !important;
+}
+.dark .bg-surface-raised {
+  background-color: var(--color-surface-raised) !important;
+}
+.dark .bg-surface-overlay {
+  background-color: var(--color-surface-overlay) !important;
+}
+.dark .bg-canvas {
+  background-color: var(--color-canvas) !important;
+}
+.dark .bg-\[\#FCF8F3\],
+.dark .bg-\[\#FAF7F2\],
+.dark .bg-\[\#F7F4EF\],
+.dark .bg-\[\#FAF4EE\] {
+  background-color: var(--color-surface-raised) !important;
+}
+.dark .bg-\[\#FFFDF8\] {
+  background-color: var(--color-canvas) !important;
+}
+.dark .text-\[\#140B06\],
+.dark .text-\[\#140A02\],
+.dark .text-\[\#14141A\] {
+  color: var(--color-ink) !important;
+}
+.dark .text-\[\#3D2B1A\],
+.dark .text-\[\#3A3A42\],
+.dark .text-\[\#5A5A66\] {
+  color: var(--color-ink-secondary) !important;
+}
+.dark .text-\[\#6E6256\],
+.dark .text-\[\#7a6e5f\] {
+  color: var(--color-ink-tertiary) !important;
+}
+.dark .text-\[\#8A8A96\],
+.dark .text-\[\#9C8E82\] {
+  color: var(--color-ink-muted) !important;
+}
+.dark .border-\[\#E5E0D8\],
+.dark .border-\[\#E8E0D5\],
+.dark .border-\[\#EADFD3\] {
+  border-color: var(--color-line) !important;
+}
+
+/* Dark mode inputs, selects, and textareas */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+.dark select,
+.dark textarea {
+  background-color: var(--color-surface-raised) !important;
+  color: var(--color-ink) !important;
+  border-color: var(--color-line) !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-ink-muted) !important;
+}
+
+/* Dark mode tables & card shadows */
+.dark table thead th {
+  background-color: var(--color-surface-raised) !important;
+  color: var(--color-ink-secondary) !important;
+  border-color: var(--color-line) !important;
+}
+.dark table tbody td {
+  border-color: var(--color-line) !important;
+}
+.dark table tbody tr:hover {
+  background-color: var(--color-surface-raised) !important;
+}
+.dark .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+.dark .shadow-md {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+}
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Dark mode alerts & status banners */
+.dark .bg-red-50,
+.dark .bg-red-100,
+.dark .bg-rose-50 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+.dark .bg-amber-50,
+.dark .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  color: #FCD34D !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+.dark .bg-emerald-50,
+.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+.dark .bg-blue-50,
+.dark .bg-sky-50 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: #93C5FD !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
 }
 
 
