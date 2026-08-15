@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Layout, 
@@ -70,95 +71,7 @@ export default function DashboardLayout({
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Theme Switcher State
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("bavio_theme") as "light" | "dark";
-      if (saved) {
-        setTheme(saved);
-        if (saved === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-    }
-  }, []);
-
-  const toggleTheme = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const isDark = theme === "dark";
-    const nextTheme = isDark ? "light" : "dark";
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setTheme(nextTheme);
-      localStorage.setItem("bavio_theme", nextTheme);
-      document.documentElement.classList.toggle("dark");
-      return;
-    }
-
-    const btn = event.currentTarget;
-    const rect = btn.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const maxRadius = Math.hypot(
-      Math.max(x, w - x),
-      Math.max(y, h - y)
-    );
-
-    // Fallback if View Transitions API is not supported
-    if (!document.startViewTransition) {
-      setTheme(nextTheme);
-      localStorage.setItem("bavio_theme", nextTheme);
-      document.documentElement.classList.toggle("dark");
-      return;
-    }
-
-    const style = document.createElement("style");
-    style.id = "theme-clip-style";
-    style.innerHTML = `
-      ::view-transition-new(root) {
-        clip-path: circle(0px at ${x}px ${y}px);
-      }
-      ::view-transition-old(root) {
-        clip-path: none;
-      }
-    `;
-    document.head.appendChild(style);
-
-    const transition = document.startViewTransition(() => {
-      setTheme(nextTheme);
-      localStorage.setItem("bavio_theme", nextTheme);
-      if (nextTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    });
-
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${maxRadius}px at ${x}px ${y}px)`
-          ]
-        },
-        {
-          duration: 650,
-          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-          pseudoElement: "::view-transition-new(root)"
-        }
-      ).onfinish = () => {
-        const appended = document.getElementById("theme-clip-style");
-        if (appended) appended.remove();
-      };
-    });
-  };
+  // Theme is managed globally via ThemeContext & ThemeToggle
 
   // Checklist State
   const [checklist, setChecklist] = useState({
@@ -306,14 +219,8 @@ export default function DashboardLayout({
             Bavio AI<span className="text-saffron">.dashboard</span>
           </span>
         </Link>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 text-ink-tertiary hover:text-ink border border-line rounded-lg hover:bg-line-subtle/50 relative transition-all"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="w-4 h-4 text-saffron" /> : <Moon className="w-4 h-4" />}
-          </button>
+        <div className="flex items-center gap-2.5">
+          <ThemeToggle variant="mobile" />
           <button 
             onClick={() => setCommandKOpen(true)}
             className="p-1.5 text-ink-tertiary hover:text-ink transition-colors"
@@ -507,13 +414,7 @@ export default function DashboardLayout({
             </button>
 
             {/* Theme switcher toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun className="w-4 h-4 text-saffron" /> : <Moon className="w-4 h-4" />}
-            </button>
+            <ThemeToggle variant="header" />
 
             {/* Notification alert */}
             <button className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all">
