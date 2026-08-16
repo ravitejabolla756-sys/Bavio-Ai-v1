@@ -130,7 +130,7 @@ export default function LoginPage() {
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
       ──────────────────────────────────────── */}
       <section 
-        className="hidden md:flex md:w-[60%] lg:w-[60%] h-full relative flex-col justify-between p-10 lg:p-14 overflow-hidden bg-black"
+        className="hidden md:flex md:w-[60%] lg:w-[60%] h-full relative flex-col justify-between pt-10 pb-10 lg:pt-12 lg:pb-12 pl-[9%] lg:pl-[10%] xl:pl-[11%] pr-8 lg:pr-12 overflow-hidden bg-black select-none"
         style={{ 
           borderTopRightRadius: "300px 50%", 
           borderBottomRightRadius: "300px 50%", 
@@ -143,29 +143,32 @@ export default function LoginPage() {
         {/* Brand Header */}
         <div className="relative z-20">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
-            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
-            <span className="font-display text-xl font-black tracking-tight text-white">
+            <Logo className="w-9 h-9 lg:w-10 lg:h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
+            <span className="font-display text-xl lg:text-2xl font-black tracking-tight text-white">
               Bavio AI
             </span>
           </Link>
         </div>
 
-        <div className="flex-1" />
-
-        {/* Copy & Feature bullets */}
-        <div className="relative z-20 max-w-xl mx-auto w-full mb-8 mt-12">
-          <span className="text-label uppercase tracking-widest text-[#FF6B00] font-bold mb-3 block">
-            AI employee for your business
+        {/* Marketing Content Text Block (Left-Center, max-w-[580px]) */}
+        <div className="relative z-20 max-w-[580px] w-full my-auto py-4 text-left">
+          <span className="text-[#FF6B00] uppercase tracking-[0.12em] font-bold text-[11px] lg:text-[12px] block mb-3.5 font-sans">
+            AI VOICE WORKFORCE
           </span>
-          <h2 className="font-display text-4xl lg:text-[2.75rem] leading-[1.15] font-bold text-white mb-4">
-            Your AI employee, <br />
-            <span className="text-[#FF6B00]">always ready.</span>
+          
+          <h2 className="font-serif text-[40px] md:text-[46px] lg:text-[54px] xl:text-[60px] leading-[1.0] lg:leading-[1.02] tracking-tight font-normal text-white mb-4 lg:mb-5">
+            Your business, <br />
+            <span className="text-[#FF6B00]">always in conversation.</span>
           </h2>
-          <p className="text-body-md text-white/85 mb-8 max-w-lg leading-relaxed">
-            Answers calls, qualifies leads, books appointments, and works 24/7.
+          
+          <p className="text-[16px] lg:text-[18px] text-white/80 font-sans leading-[1.5] max-w-[520px]">
+            AI employees that answer calls, qualify leads, book appointments, and support your customers — 24/7.
           </p>
+        </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+        {/* Bottom Features */}
+        <div className="relative z-20 w-full max-w-[580px]">
+          <div className="grid grid-cols-4 gap-3 lg:gap-4">
             {[
               { icon: Phone, label1: "24/7 Call", label2: "Answering" },
               { icon: User, label1: "Lead", label2: "Qualification" },
@@ -174,13 +177,13 @@ export default function LoginPage() {
             ].map((feat, i) => {
               const Icon = feat.icon;
               return (
-                <div key={i} className="flex flex-col items-center text-center p-2 transition-transform duration-300 hover:scale-105">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-[#FF6B00] mb-3 shadow-sm">
-                    <Icon className="w-6 h-6" weight="bold" />
+                <div key={i} className="flex flex-col items-start text-left group">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center text-[#FF6B00] mb-2.5 transition-colors duration-200 group-hover:bg-white/[0.12]">
+                    <Icon className="w-5 h-5" weight="bold" />
                   </div>
-                  <span className="text-body-xs font-bold text-white/90 leading-tight block">
+                  <span className="text-[11px] lg:text-xs font-semibold text-white/90 leading-tight block">
                     {feat.label1}
-                    <span className="block font-bold">{feat.label2}</span>
+                    <span className="block font-normal text-white/70">{feat.label2}</span>
                   </span>
                 </div>
               );
