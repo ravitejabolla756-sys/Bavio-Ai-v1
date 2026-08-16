@@ -74,8 +74,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // 2. DOMRect instance
     if (eventOrOrigin && "left" in eventOrOrigin && "top" in eventOrOrigin && "width" in eventOrOrigin) {
       return {
-        x: eventOrOrigin.left + eventOrOrigin.width / 2,
-        y: eventOrOrigin.top + eventOrOrigin.height / 2,
+        x: (eventOrOrigin as any).left + (eventOrOrigin as any).width / 2,
+        y: (eventOrOrigin as any).top + (eventOrOrigin as any).height / 2,
       };
     }
 
@@ -104,10 +104,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 5. Query visible theme toggle button in the active DOM
+    // 5. Query the active visible theme toggle button rendered in DOM
     if (typeof document !== "undefined") {
       const candidates = document.querySelectorAll(
-        '#bavio-theme-toggle-desktop, #bavio-theme-toggle, [data-theme-toggle="true"], button[aria-label*="Switch to"]'
+        '[data-theme-toggle="true"], #bavio-theme-toggle-desktop, #bavio-theme-toggle-mobile, #bavio-theme-toggle, button[aria-label*="Switch to"]'
       );
       for (let i = 0; i < candidates.length; i++) {
         const rect = candidates[i].getBoundingClientRect();
@@ -123,19 +123,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // 6. Coordinate object { clientX, clientY }
     if (eventOrOrigin && "clientX" in eventOrOrigin && "clientY" in eventOrOrigin) {
       return {
-        x: eventOrOrigin.clientX,
-        y: eventOrOrigin.clientY,
+        x: (eventOrOrigin as any).clientX,
+        y: (eventOrOrigin as any).clientY,
       };
     }
 
-    // 7. Fallback to top-right header area where toggle resides
+    // 7. Fallback
     return {
-      x: typeof window !== "undefined" ? window.innerWidth - 60 : 100,
-      y: 40,
+      x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+      y: typeof window !== "undefined" ? window.innerHeight / 2 : 400,
     };
   };
 
-  // Perform the theme transition with radial reveal expanding from the toggle button
+  // Perform the theme transition with radial reveal expanding from the exact toggle button
   const applyThemeWithTransition = useCallback(
     (
       nextTheme: ThemeMode,
@@ -146,6 +146,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const isApp = currentPath.startsWith("/dashboard") || currentPath.startsWith("/workspace");
 
       const { x, y } = extractCoordinates(origin);
+
+      // Set CSS variables on root document
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty("--theme-origin-x", `${x}px`);
+        document.documentElement.style.setProperty("--theme-origin-y", `${y}px`);
+      }
 
       const commitThemeChange = () => {
         setThemeState(nextTheme);
@@ -209,25 +215,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 4. Fallback for browsers without View Transitions API
+      // 4. Physical CSS expanding circle animation centered precisely at (x, y)
       if (typeof document !== "undefined") {
-        const overlay = document.createElement("div");
-        overlay.id = "theme-transition-overlay";
-        overlay.style.position = "fixed";
-        overlay.style.inset = "0";
-        overlay.style.zIndex = "999999";
-        overlay.style.pointerEvents = "none";
-        overlay.style.backgroundColor = nextTheme === "dark" ? "#0C0A09" : "#FCF8F3";
-        overlay.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        overlay.style.willChange = "clip-path";
-        document.body.appendChild(overlay);
+        const circle = document.createElement("div");
+        circle.id = "theme-transition-circle";
+        circle.style.position = "fixed";
+        circle.style.left = `${x}px`;
+        circle.style.top = `${y}px`;
+        circle.style.width = `${maxRadius * 2}px`;
+        circle.style.height = `${maxRadius * 2}px`;
+        circle.style.borderRadius = "9999px";
+        circle.style.transform = "translate(-50%, -50%) scale(0)";
+        circle.style.backgroundColor = nextTheme === "dark" ? "#0C0A09" : "#FCF8F3";
+        circle.style.zIndex = "999999";
+        circle.style.pointerEvents = "none";
+        circle.style.willChange = "transform";
+        document.body.appendChild(circle);
 
-        void overlay.offsetHeight;
+        void circle.offsetHeight;
 
-        const anim = overlay.animate(
+        const anim = circle.animate(
           [
-            { clipPath: `circle(0px at ${x}px ${y}px)` },
-            { clipPath: `circle(${maxRadius}px at ${x}px ${y}px)` },
+            { transform: "translate(-50%, -50%) scale(0)" },
+            { transform: "translate(-50%, -50%) scale(1)" },
           ],
           {
             duration: 650,
@@ -238,12 +248,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
         anim.onfinish = () => {
           commitThemeChange();
-          overlay.animate(
+          circle.animate(
             [{ opacity: 1 }, { opacity: 0 }],
             { duration: 150, easing: "ease-out", fill: "forwards" }
           ).onfinish = () => {
-            if (overlay.parentNode) {
-              overlay.parentNode.removeChild(overlay);
+            if (circle.parentNode) {
+              circle.parentNode.removeChild(circle);
             }
           };
         };
