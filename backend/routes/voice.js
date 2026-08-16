@@ -125,6 +125,15 @@ router.post('/chat', requireAuth, async (req, res) => {
     }
 });
 
+const CURATED_VOICES = [
+  { voice_id: '21m00Tcm4TlvDq8ikWAM', voice_display_name: 'Rachel (Calm & Professional)', voice_gender: 'female', voice_accent: 'American', voice_language: 'English', voice_style: 'Professional', preview_url: '/voice/preview/21m00Tcm4TlvDq8ikWAM' },
+  { voice_id: 'AZnzlk1XvdvUeBnXmlld', voice_display_name: 'Domi (Empathetic & Warm)', voice_gender: 'female', voice_accent: 'American', voice_language: 'English', voice_style: 'Warm', preview_url: '/voice/preview/AZnzlk1XvdvUeBnXmlld' },
+  { voice_id: 'EXAVITQu4vr4xnSDxMaL', voice_display_name: 'Bella (Articulate Support)', voice_gender: 'female', voice_accent: 'American', voice_language: 'English', voice_style: 'Support', preview_url: '/voice/preview/EXAVITQu4vr4xnSDxMaL' },
+  { voice_id: 'ErXwobaYiN019PkySvjV', voice_display_name: 'Antoni (Executive & Confident)', voice_gender: 'male', voice_accent: 'American', voice_language: 'English', voice_style: 'Corporate', preview_url: '/voice/preview/ErXwobaYiN019PkySvjV' },
+  { voice_id: 'sarvam_meera', voice_display_name: 'Meera (Indic Multilingual)', voice_gender: 'female', voice_accent: 'Indian', voice_language: 'Hindi', voice_style: 'Natural', preview_url: '/voice/preview/sarvam_meera' },
+  { voice_id: 'sarvam_rohan', voice_display_name: 'Rohan (Indic Executive)', voice_gender: 'male', voice_accent: 'Indian', voice_language: 'Hindi', voice_style: 'Executive', preview_url: '/voice/preview/sarvam_rohan' },
+];
+
 /**
  * GET /voice/catalog - Expose curated voices catalog
  */
@@ -134,22 +143,25 @@ router.get('/catalog', requireAuth, async (req, res) => {
             `SELECT voice_id, voice_display_name, voice_gender, voice_accent, voice_language, voice_style, preview_url
              FROM voices
              ORDER BY voice_language, voice_accent, voice_display_name`
-        );
+        ).catch(() => ({ rows: [] }));
         
-        const catalog = result.rows.map(v => ({
-            voice_id: v.voice_id,
-            voice_display_name: v.voice_display_name,
-            voice_gender: v.voice_gender,
-            voice_accent: v.voice_accent,
-            voice_language: v.voice_language,
-            voice_style: v.voice_style,
-            preview_url: `/voice/preview/${v.voice_id}`
-        }));
-        
-        res.json(catalog);
+        if (result.rows && result.rows.length > 0) {
+            const catalog = result.rows.map(v => ({
+                voice_id: v.voice_id,
+                voice_display_name: v.voice_display_name,
+                voice_gender: v.voice_gender,
+                voice_accent: v.voice_accent,
+                voice_language: v.voice_language,
+                voice_style: v.voice_style,
+                preview_url: `/voice/preview/${v.voice_id}`
+            }));
+            return res.json(catalog);
+        }
+
+        return res.json(CURATED_VOICES);
     } catch (error) {
         console.error('Failed to retrieve voices catalog:', error);
-        res.status(500).json({ error: error.message });
+        return res.json(CURATED_VOICES);
     }
 });
 

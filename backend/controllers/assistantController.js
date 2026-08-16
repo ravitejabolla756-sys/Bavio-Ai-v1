@@ -1,16 +1,51 @@
 const assistantService = require('../services/assistantService');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
+const { modelRouter } = require('../services/modelRouter');
+
+async function getModelTiersCatalog(req, res) {
+    try {
+        const catalog = modelRouter.getCatalog();
+        res.status(200).json({ success: true, ...catalog });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
 
 async function createAssistant(req, res) {
     try {
         const business_id = req.user.id;
-        const { name, system_prompt } = req.body;
+        const {
+            name,
+            system_prompt,
+            language,
+            voice_id,
+            intelligence_tier,
+            intelligence_mode,
+            intelligence_provider,
+            intelligence_model,
+            stt_provider,
+            stt_model,
+            tts_provider,
+            tts_model,
+            model_routing_config,
+        } = req.body;
         if (!name) return res.status(400).json({ error: 'name is required' });
         
         const assistant = await assistantService.createAssistant({ 
             business_id, 
             name, 
-            system_prompt: system_prompt || voiceOrchestrator.DEFAULT_SYSTEM_PROMPT 
+            system_prompt: system_prompt || voiceOrchestrator.DEFAULT_SYSTEM_PROMPT,
+            language,
+            voice_id,
+            intelligence_tier: intelligence_tier || 'core',
+            intelligence_mode: intelligence_mode || 'automatic',
+            intelligence_provider: intelligence_provider || 'automatic',
+            intelligence_model: intelligence_model || 'automatic',
+            stt_provider: stt_provider || 'automatic',
+            stt_model: stt_model || 'automatic',
+            tts_provider: tts_provider || 'automatic',
+            tts_model: tts_model || 'automatic',
+            model_routing_config: model_routing_config || {},
         });
         res.status(201).json(assistant);
     } catch (err) {
@@ -87,9 +122,20 @@ async function getAssistantById(req, res) {
       id: assistant.id,
       businessId: assistant.business_id,
       name: assistant.name || 'Default Assistant',
-      language: assistant.language === 'hi-IN' ? 'HINDI' : assistant.language === 'en-US' ? 'ENGLISH' : 'HINGLISH',
+      language: assistant.language === 'hi-IN' ? 'HINDI' : assistant.language === 'en-US' ? 'ENGLISH' : (assistant.language || 'ENGLISH'),
       firstMessage: assistant.first_message || assistant.greeting || '',
       systemPrompt: assistant.system_prompt || '',
+      voiceId: assistant.voice_id || '',
+      voice: assistant.voice || '',
+      intelligence_tier: assistant.intelligence_tier || 'core',
+      intelligence_mode: assistant.intelligence_mode || 'automatic',
+      intelligence_provider: assistant.intelligence_provider || 'automatic',
+      intelligence_model: assistant.intelligence_model || 'automatic',
+      stt_provider: assistant.stt_provider || 'automatic',
+      stt_model: assistant.stt_model || 'automatic',
+      tts_provider: assistant.tts_provider || 'automatic',
+      tts_model: assistant.tts_model || 'automatic',
+      model_routing_config: assistant.model_routing_config || {},
       followUpQuestions,
       createdAt: assistant.created_at,
       updatedAt: assistant.updated_at
@@ -215,6 +261,7 @@ async function updateAssistantVoice(req, res) {
 }
 
 module.exports = { 
+  getModelTiersCatalog,
   createAssistant, 
   updateAssistant, 
   getAssistants, 
