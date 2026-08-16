@@ -689,6 +689,7 @@ export default function SignUpPage() {
                 <div className="mt-6 text-center text-body-xs text-[#5A5A66]">
                   <span>Already have an account? </span>
                   <Link
+                    id="signup-signin-link"
                     href="/login"
                     className="font-bold text-[#FF6B00] hover:text-[#FF8C3A] transition-colors ml-1"
                   >

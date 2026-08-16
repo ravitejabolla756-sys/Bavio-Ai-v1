@@ -37,7 +37,12 @@ export default function WorkspaceLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+    if (typeof window !== "undefined") {
+      return Boolean(localStorage.getItem("bavio_token"));
+    }
+    return null;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState("My Workspace");
@@ -47,32 +52,16 @@ export default function WorkspaceLayout({
 
   // 1. Strict Authentication Guard
   useEffect(() => {
-    const checkAuth = async () => {
-      if (typeof window === "undefined") return;
-      const token = localStorage.getItem("bavio_token");
-      
-      if (!token) {
-        // Also check if there's a Supabase session
-        try {
-          const { data } = await supabase.auth.getSession();
-          if (data && data.session) {
-            localStorage.setItem("bavio_token", data.session.access_token);
-            setIsAuthenticated(true);
-            fetchProfile(data.session.access_token);
-            return;
-          }
-        } catch (e) {}
+    const token = localStorage.getItem("bavio_token");
+    if (!token) {
+      setIsAuthenticated(false);
+      clearAuthData();
+      router.replace("/login");
+      return;
+    }
 
-        setIsAuthenticated(false);
-        router.replace("/login");
-        return;
-      }
-
-      setIsAuthenticated(true);
-      fetchProfile(token);
-    };
-
-    checkAuth();
+    setIsAuthenticated(true);
+    fetchProfile(token);
   }, [router]);
 
   const fetchProfile = async (tokenOverride?: string) => {
