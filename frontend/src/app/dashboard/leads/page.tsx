@@ -563,7 +563,7 @@ export default function LeadsConsole() {
                   <button
                     onClick={handleSaveDetails}
                     disabled={isSavingDetails}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-saffron disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm disabled:opacity-40"
                   >
                     <FloppyDisk className="w-3.5 h-3.5" />
                     {isSavingDetails ? "Saving..." : "Save Details"}

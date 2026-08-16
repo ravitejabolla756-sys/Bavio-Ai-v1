@@ -101,12 +101,11 @@ export default function NavigationProgress() {
       style={{ background: "transparent" }}
     >
       <div
-        className="h-full bg-gradient-to-r from-[#FF6B00] to-[#FF9A3C] transition-all"
+        className="h-full bg-[#FF6B00] transition-all"
         style={{
           width: `${progress}%`,
           transitionDuration: progress === 100 ? "200ms" : "100ms",
           transitionTimingFunction: "ease-out",
-          boxShadow: "0 0 8px rgba(255,107,0,0.7)",
         }}
       />
     </div>

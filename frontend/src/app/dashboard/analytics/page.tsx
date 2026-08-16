@@ -156,7 +156,7 @@ export default function AnalyticsDashboard() {
                   <button
                     onClick={() => setActiveTab("volumes")}
                     className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
-                      activeTab === "volumes" ? "bg-saffron text-white shadow-saffron" : "text-ink-tertiary hover:text-ink"
+                      activeTab === "volumes" ? "bg-saffron text-white shadow-sm" : "text-ink-tertiary hover:text-ink"
                     }`}
                   >
                     Call Volume (Min)

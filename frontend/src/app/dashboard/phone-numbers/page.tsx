@@ -240,7 +240,7 @@ export default function PhoneNumbersDashboardPage() {
             setBuyStep(1);
             setIsBuyOpen(true);
           }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron self-start md:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           Get a Phone Number
@@ -283,7 +283,7 @@ export default function PhoneNumbersDashboardPage() {
                 setBuyStep(1);
                 setIsBuyOpen(true);
               }}
-              className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-saffron"
+              className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-sm"
             >
               Get a Phone Number
             </button>
@@ -420,7 +420,7 @@ export default function PhoneNumbersDashboardPage() {
                   <button
                     onClick={() => handleFetchAvailable(buyCountry)}
                     disabled={loadingAvailable}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron transition-all disabled:opacity-40"
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-40"
                   >
                     {loadingAvailable && <Spinner className="w-4 h-4 animate-spin" />}
                     Search Available Lines
@@ -462,7 +462,7 @@ export default function PhoneNumbersDashboardPage() {
                     <button
                       onClick={() => setBuyStep(3)}
                       disabled={!selectedNumberToBuy}
-                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron"
+                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm"
                     >
                       Confirm Selection
                     </button>
@@ -499,7 +499,7 @@ export default function PhoneNumbersDashboardPage() {
                     <button
                       onClick={handleBuyNumber}
                       disabled={saving}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron transition-all disabled:opacity-40"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-40"
                     >
                       {saving && <Spinner className="w-4 h-4 animate-spin" />}
                       Buy & Provision Line
@@ -538,7 +538,7 @@ export default function PhoneNumbersDashboardPage() {
                       }
                     }}
                     disabled={saving}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron transition-all"
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
                   >
                     {saving && <Spinner className="w-4 h-4 animate-spin" />}
                     Save Assignment & Complete
@@ -637,7 +637,7 @@ export default function PhoneNumbersDashboardPage() {
                   <button
                     onClick={() => handleLinkNumber(selectedPhone.id, linkAssistantId)}
                     disabled={saving}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-saffron disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm disabled:opacity-40"
                   >
                     Save Routing Assignment
                   </button>
@@ -699,7 +699,7 @@ export default function PhoneNumbersDashboardPage() {
                 <button
                   onClick={() => handleLinkNumber(selectedPhone.id, linkAssistantId)}
                   disabled={saving}
-                  className="flex items-center gap-1 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-saffron transition-all disabled:opacity-40 font-sans"
+                  className="flex items-center gap-1 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-sm transition-all disabled:opacity-40 font-sans"
                 >
                   {saving && <Spinner className="w-3.5 h-3.5 animate-spin" />}
                   Save Changes

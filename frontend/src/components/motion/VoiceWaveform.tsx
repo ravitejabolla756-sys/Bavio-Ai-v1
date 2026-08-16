@@ -28,7 +28,7 @@ export default function VoiceWaveform({
       {dots.map((_, i) => (
         <motion.div
           key={i}
-          className={`w-2.5 h-2.5 rounded-full ${color} shadow-[0_0_4px_rgba(255,107,0,0.2)]`}
+          className={`w-2.5 h-2.5 rounded-full ${color}`}
           animate={
             isPlaying && !reduce
               ? {

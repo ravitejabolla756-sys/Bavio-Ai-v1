@@ -311,11 +311,25 @@ button:not(.no-press):active,
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* ── Premium shadow utilities ── */
+/* Base resets & Layout utilities */
+.bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+.dark .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* ── Dashboard Shell Shadows (Restrained B2B SaaS) ── */
 .shadow-premium {
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    0 8px 24px rgba(20, 10, 2, 0.04);
+    0 1px 2px rgba(20, 10, 2, 0.03),
+    0 4px 12px rgba(20, 10, 2, 0.04);
 }
 
 .dark .shadow-premium {
@@ -326,28 +340,28 @@ button:not(.no-press):active,
 
 .shadow-premium-hover {
   box-shadow:
-    0 4px 12px rgba(20, 10, 2, 0.06),
-    0 24px 64px rgba(20, 10, 2, 0.08);
+    0 2px 6px rgba(20, 10, 2, 0.04),
+    0 12px 28px rgba(20, 10, 2, 0.06);
 }
 
 .dark .shadow-premium-hover {
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.45),
-    0 24px 64px rgba(0, 0, 0, 0.6);
+    0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
 .shadow-saffron-glow {
-  box-shadow: 0 8px 32px rgba(255, 107, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* ── Double-bezel card architecture (redesigned for light theme) ── */
+/* ── Double-bezel card architecture (Clean, non-glowing) ── */
 .card-bezel {
   position: relative;
   background: rgba(0, 0, 0, 0.01);
   border: 1px solid rgba(0, 0, 0, 0.03);
   padding: 5px;
   border-radius: 12px;
-  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
@@ -357,7 +371,7 @@ button:not(.no-press):active,
 }
 
 .card-bezel:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .card-bezel-inner {
@@ -365,22 +379,21 @@ button:not(.no-press):active,
   border: 1px solid var(--color-line);
   border-radius: calc(12px - 5px);
   overflow: hidden;
-  transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .card-bezel:hover .card-bezel-inner {
   border-color: var(--saffron);
-  box-shadow: 0 0 20px rgba(255, 107, 0, 0.06);
 }
 
-/* ── Interactive button utility classes ── */
+/* ── Interactive button utility classes (Solid, Restrained, No Outer Glow) ── */
 .btn-interactive,
 button[type="submit"],
 .card-bezel-inner button,
 a.bg-saffron,
 button.bg-saffron {
-  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1), background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: transform;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  will-change: background-color, border-color;
 }
 
 .btn-interactive:hover,
@@ -388,8 +401,7 @@ button[type="submit"]:hover,
 .card-bezel-inner button:hover,
 a.bg-saffron:hover,
 button.bg-saffron:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(255, 107, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .btn-interactive:active,
@@ -397,7 +409,7 @@ button[type="submit"]:active,
 .card-bezel-inner button:active,
 a.bg-saffron:active,
 button.bg-saffron:active {
-  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 /* ── Noise texture overlay ── */
@@ -415,11 +427,7 @@ button.bg-saffron:active {
 
 /* ── Ambient mesh gradient blobs ── */
 .mesh-blob-saffron {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 107, 0, 0.04) 0%, transparent 70%);
-  pointer-events: none;
-  filter: blur(80px);
+  display: none;
 }
 
 /* ── Reduced motion safety ── */
@@ -449,18 +457,6 @@ button.bg-saffron:active {
   .animation-delay-500 { animation-delay: 500ms; }
 }
 
-@keyframes widgetGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
-    border-color: rgba(255, 107, 0, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
-    border-color: rgba(255, 107, 0, 0.5);
-  }
-}
-
 .widget-glow-active {
-  animation: widgetGlow 2.5s infinite ease-in-out;
-  border-color: rgba(255, 107, 0, 0.3) !important;
+  border-color: var(--saffron) !important;
 }
