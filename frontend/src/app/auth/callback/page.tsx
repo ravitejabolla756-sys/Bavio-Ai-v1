@@ -66,13 +66,30 @@ function AuthCallback() {
           }
         });
 
-        if (!res.ok) {
-          throw new Error('Failed to retrieve business profile information.');
+        let user: any = null;
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success && result.id) {
+            user = result;
+          }
         }
 
-        const result = await res.json();
-        if (result.success && result.id) {
-          const user = result;
+        // Fallback to Supabase User if profile endpoint was slow or pending row creation
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser(tokenVal);
+          if (userData && userData.user) {
+            const sbUser = userData.user;
+            user = {
+              id: sbUser.id,
+              name: sbUser.user_metadata?.full_name || sbUser.email?.split('@')[0] || 'My Workspace',
+              email: sbUser.email,
+              plan: 'free',
+              plan_name: 'free_trial'
+            };
+          }
+        }
+
+        if (user) {
           localStorage.setItem('bavio_token', tokenVal);
           localStorage.setItem('bavio_client_id', user.id);
           if (user.name) {
@@ -82,10 +99,7 @@ function AuthCallback() {
           
           // Set auth cookies
           setCookie("bavio_auth", "true");
-
-          const isOnboardingComplete = (user.phone && !user.phone.startsWith('google_oauth_fallback')) || user.onboarding_status === 'ready' || user.onboarding_step >= 6;
-          
-          setCookie("bavio_onboarding_completed", isOnboardingComplete ? "true" : "false");
+          setCookie("bavio_onboarding_completed", "true");
           setStatus('Authentication successful!');
 
           if (isPopup) {
@@ -105,11 +119,10 @@ function AuthCallback() {
             localStorage.removeItem("bavio_auth_redirect");
             navigateAfterAuth(redirectUrl);
           } else {
-            const destination = isOnboardingComplete ? '/workspace' : '/onboarding';
-            navigateAfterAuth(destination);
+            navigateAfterAuth('/workspace');
           }
         } else {
-          throw new Error(result.error || 'Invalid response from profile server.');
+          throw new Error('Unable to resolve user session.');
         }
       } catch (err: any) {
         console.error('[OAuth Callback] Profile fetch error:', err.message);

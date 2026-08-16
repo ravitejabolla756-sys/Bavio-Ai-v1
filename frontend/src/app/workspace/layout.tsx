@@ -3,30 +3,28 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ui/ThemeToggle";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Layout, 
-  Users, 
-  CreditCard, 
+import {
+  Layout,
+  CreditCard,
   Gear,
-  CaretDown,
-  MagnifyingGlass,
-  Command,
-  Pulse,
-  SignOut,
   Sparkle,
+  SignOut,
+  Command,
+  CaretDown,
+  Bell,
   List,
   X,
-  Bell,
-  Cpu,
-  Coins,
-  Building,
-  ArrowRight
+  MagnifyingGlass,
+  ArrowRight,
+  ShieldCheck,
+  Spinner
 } from "@phosphor-icons/react";
+import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import { clearAuthData, authApi } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
-const workspaceNavigationItems = [
+const navigation = [
   { name: "Overview", href: "/workspace", icon: Layout },
   { name: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
   { name: "Settings & Profile", href: "/workspace/settings", icon: Gear },
@@ -39,55 +37,90 @@ export default function WorkspaceLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("");
+  const [workspace, setWorkspace] = useState("My Workspace");
   const [commercialState, setCommercialState] = useState("FREE PLAN");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // 1. Strict Authentication Guard
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("bavio_token");
-        if (!token) return;
-        const res = await fetch("/api/auth/profile", {
-          headers: {
-            "Authorization": `Bearer ${token}`
+    const checkAuth = async () => {
+      if (typeof window === "undefined") return;
+      const token = localStorage.getItem("bavio_token");
+      
+      if (!token) {
+        // Also check if there's a Supabase session
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (data && data.session) {
+            localStorage.setItem("bavio_token", data.session.access_token);
+            setIsAuthenticated(true);
+            fetchProfile(data.session.access_token);
+            return;
           }
-        });
-        if (res.ok) {
-          const result = await res.json();
-          if (result.success && result.id) {
-            if (result.name) {
-              setWorkspace(result.name);
-            }
-            if (result.subscription_status === "active") {
-              setCommercialState("ACTIVE PLAN");
-            } else if (result.demo_status === "eligible" || result.demo_status === "failed") {
-              setCommercialState("DEMO AVAILABLE");
-            } else {
-              setCommercialState("FREE PLAN");
-            }
+        } catch (e) {}
+
+        setIsAuthenticated(false);
+        router.replace("/login");
+        return;
+      }
+
+      setIsAuthenticated(true);
+      fetchProfile(token);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const fetchProfile = async (tokenOverride?: string) => {
+    try {
+      const token = tokenOverride || localStorage.getItem("bavio_token");
+      if (!token) return;
+
+      const res = await fetch("/api/auth/profile", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result && result.id) {
+          if (result.name) {
+            setWorkspace(result.name);
+          }
+          if (result.subscription_status === "active") {
+            setCommercialState("ACTIVE PLAN");
+          } else if (result.demo_status === "eligible" || result.demo_status === "failed") {
+            setCommercialState("DEMO AVAILABLE");
+          } else {
+            setCommercialState("FREE PLAN");
           }
         }
-      } catch (err) {
-        console.error("Failed to fetch profile in layout:", err);
+      } else if (res.status === 401) {
+        handleSignOut();
+      } else {
+        // Self-healing fallback from localStorage
+        const storedName = localStorage.getItem("bavio_name");
+        if (storedName) setWorkspace(storedName);
       }
-    };
-    fetchProfile();
+    } catch (err) {
+      console.error("Failed to fetch profile in workspace layout:", err);
+      const storedName = localStorage.getItem("bavio_name");
+      if (storedName) setWorkspace(storedName);
+    }
+  };
 
-    // Also listen to storage changes for custom updates
-    const handleStorageChange = () => {
-      fetchProfile();
-    };
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("bavio_payment_success", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("bavio_payment_success", handleStorageChange);
-    };
-  }, []);
+  const handleSignOut = async () => {
+    clearAuthData();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+    router.replace("/login");
+  };
 
   // Handle hotkeys (Cmd/Ctrl + K)
   useEffect(() => {
@@ -110,110 +143,84 @@ export default function WorkspaceLayout({
     setSearchQuery("");
   };
 
-  const filteredNavItems = [
-    ...workspaceNavigationItems,
-    { name: "Voice Dashboard", href: "/dashboard", icon: Sparkle }
-  ].filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // If unauthenticated or checking, show loading HUD and do not render protected workspace
+  if (isAuthenticated === null || isAuthenticated === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-canvas text-ink">
+        <Spinner className="w-10 h-10 text-saffron animate-spin mb-4" />
+        <span className="text-body-xs font-mono font-bold uppercase tracking-wider text-ink-muted">
+          Verifying Session...
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
+    <div className="flex h-screen bg-canvas text-ink font-sans overflow-hidden">
       
-      {/* Background Subtle mesh orbs (removed to use body background) */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-saffron/3 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-saffron/2 blur-[100px] pointer-events-none z-0" />
-
-      {/* MOBILE HEADER BAR */}
-      <div className="md:hidden w-full bg-surface border-b border-line px-4 py-3 flex items-center justify-between z-40 relative">
-        <Link href="/workspace" className="flex items-center gap-2">
-          <Logo className="w-7 h-7" color="text-saffron" />
-          <span className="font-display font-extrabold text-base tracking-tight text-ink">
-            Bavio AI<span className="text-saffron">.workspace</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-2.5">
-          <ThemeToggle variant="mobile" />
-          <button 
-            onClick={() => setCommandKOpen(true)}
-            className="p-1.5 text-ink-tertiary hover:text-ink transition-colors"
-            aria-label="Command search"
-          >
-            <MagnifyingGlass className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 text-ink-tertiary hover:text-ink transition-colors"
-            aria-label="Toggle Navigation"
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <List className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* LEFT SIDEBAR */}
-      <aside className={`
-        fixed inset-y-0 left-0 w-64 bg-surface border-r border-line z-50 flex flex-col justify-between transition-transform duration-300 md:translate-x-0 md:static md:h-screen
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
-        <div className="flex flex-col gap-6 p-4 overflow-y-auto flex-grow">
-          {/* Brand header / Workspace switcher */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-              className="w-full flex items-center justify-between bg-surface-raised border border-line hover:border-saffron/40 px-3.5 py-2.5 rounded-xl text-left transition-all duration-200"
-            >
-              <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-5 h-5 bg-saffron rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                  {workspace.charAt(0)}
+      {/* ── 1. FIXED LEFT SIDEBAR (Desktop) ── */}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-surface border-r border-line flex flex-col justify-between transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        {/* Workspace Brand / Selector */}
+        <div className="flex flex-col">
+          <div className="p-4 border-b border-line">
+            <div className="relative">
+              <button
+                onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+                className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-surface-raised transition-colors text-left group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#FF6B00] text-white flex items-center justify-center font-display font-black text-sm shrink-0 shadow-sm">
+                    {workspace.charAt(0).toUpperCase() || "B"}
+                  </div>
+                  <div className="truncate">
+                    <span className="text-xs font-bold text-ink block truncate leading-tight">
+                      {workspace || "Bavio Workspace"}
+                    </span>
+                    <span className="text-[10px] text-ink-muted flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-state-success" />
+                      Online
+                    </span>
+                  </div>
                 </div>
-                <span className="text-xs font-semibold tracking-wide text-ink truncate">
-                  {workspace}
-                </span>
-              </div>
-              <CaretDown className="w-3.5 h-3.5 text-ink-tertiary shrink-0" />
-            </button>
+                <CaretDown className="w-3.5 h-3.5 text-ink-tertiary group-hover:text-ink shrink-0 transition-transform" />
+              </button>
 
-            {/* Dropdown list */}
-            <AnimatePresence>
+              {/* Workspace drop-down menu */}
               {showWorkspaceDropdown && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowWorkspaceDropdown(false)} />
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border border-line rounded-xl p-1.5 shadow-premium z-20"
+                <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-line rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-2 border-b border-line text-[10px] font-mono uppercase tracking-wider text-ink-muted">
+                    Switch Workspace
+                  </div>
+                  <button
+                    onClick={() => setShowWorkspaceDropdown(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-ink bg-saffron/10 text-saffron rounded-lg mt-1 text-left"
                   >
-                    {/* Only show the user's own real workspace — no mock workspaces */}
-                    <div className="px-3 py-2 rounded-lg bg-saffron/10">
-                      <span className="text-xs font-bold text-saffron block">{workspace || "My Workspace"}</span>
-                      <span className="text-[9px] text-ink-muted mt-0.5 block">{commercialState} · Active</span>
-                    </div>
-                    <div className="border-t border-line my-1.5" />
-                    <button
-                      onClick={() => {
-                        setShowWorkspaceDropdown(false);
-                        localStorage.removeItem("bavio_token");
-                        window.location.href = "/login";
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-ink-secondary hover:bg-line-subtle/50 hover:text-state-error transition-all flex items-center gap-2"
-                    >
-                      <SignOut className="w-3.5 h-3.5" />
-                      Sign out
-                    </button>
-                  </motion.div>
-                </>
+                    <span className="w-2 h-2 rounded-full bg-saffron" />
+                    <span>{workspace || "Bavio Workspace"}</span>
+                  </button>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowWorkspaceDropdown(false)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ink-secondary hover:text-ink hover:bg-surface-raised rounded-lg text-left transition-colors"
+                  >
+                    <span>Switch to Voice Console</span>
+                    <ArrowRight className="w-3 h-3 text-ink-tertiary" />
+                  </Link>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mb-1">
+          <nav className="p-3 space-y-1">
+            <span className="px-3 text-[10px] font-mono uppercase tracking-widest text-ink-muted block py-2">
               Workspace OS
             </span>
-            {workspaceNavigationItems.map((item) => {
+            {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
@@ -221,46 +228,38 @@ export default function WorkspaceLayout({
                   key={item.name}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
-                    isActive 
-                      ? "text-saffron" 
-                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? "bg-surface-raised border border-line font-bold text-ink shadow-sm"
+                      : "text-ink-secondary hover:text-ink hover:bg-surface-raised"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
                   <span>{item.name}</span>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeWorkspaceSidebarIndicator" 
-                      className="absolute right-3 w-1.5 h-1.5 bg-saffron rounded-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    />
-                  )}
                 </Link>
               );
             })}
 
-            <div className="h-px bg-line/60 my-2" />
+            <div className="pt-4 pb-2">
+              <span className="px-3 text-[10px] font-mono uppercase tracking-widest text-ink-muted block py-1">
+                Voice Operations
+              </span>
+            </div>
 
-            <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mb-1">
-              Voice Operations
-            </span>
+            {/* AI Voice Dashboard Link */}
             <Link
               href="/dashboard"
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
-                pathname === "/dashboard" 
-                  ? "text-saffron bg-saffron/5 border border-saffron/10" 
-                  : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
-              }`}
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-secondary hover:text-ink hover:bg-surface-raised transition-all group"
             >
               <div className="flex items-center gap-3">
-                <Sparkle className="w-4 h-4 text-saffron" weight={pathname === "/dashboard" ? "fill" : "regular"} />
+                <Sparkle className="w-4 h-4 text-saffron" />
                 <span>AI Voice Dashboard</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-ink-tertiary" />
+              <ArrowRight className="w-3.5 h-3.5 text-ink-tertiary group-hover:translate-x-0.5 transition-transform" />
             </Link>
 
+            {/* Web Call link */}
             <Link
               href="/workspace/demo"
               onClick={() => setSidebarOpen(false)}
@@ -299,16 +298,14 @@ export default function WorkspaceLayout({
           </button>
 
           {/* Logout button */}
-          <Link 
-            href="/"
-            onClick={() => {
-              // Clear cookies for testing purposes if desired
-            }}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-ink-tertiary hover:text-state-error transition-colors"
+          <button 
+            id="workspace-signout-btn"
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-ink-tertiary hover:text-state-error transition-colors w-full text-left"
           >
             <SignOut className="w-4 h-4" />
             <span>Sign Out</span>
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -320,22 +317,30 @@ export default function WorkspaceLayout({
         />
       )}
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-grow flex flex-col overflow-y-auto h-screen z-10 relative">
+      {/* ── 2. MAIN CONTENT WRAPPER ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-canvas">
         
-        {/* TOP BAR SEARCH HEADER */}
-        <header className="hidden md:flex items-center justify-between border-b border-line px-8 py-4 bg-surface/65 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-ink-tertiary">Workspaces</span>
-            <span className="text-ink-muted text-xs">/</span>
-            <span className="text-xs font-bold text-ink tracking-wide">{workspace}</span>
+        {/* TOP HUD BAR */}
+        <header className="h-16 border-b border-line bg-surface/80 backdrop-blur-md px-6 flex items-center justify-between z-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 -ml-2 text-ink-secondary hover:text-ink md:hidden"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <List className="w-5 h-5" />}
+            </button>
+            <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <span>Workspaces</span>
+              <span>/</span>
+              <span className="text-ink font-bold truncate max-w-[160px] md:max-w-xs">{workspace}</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Search Box Trigger */}
             <button 
               onClick={() => setCommandKOpen(true)}
-              className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-60"
+              className="hidden sm:flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-48"
             >
               <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
               <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Workspace...</span>
@@ -361,88 +366,69 @@ export default function WorkspaceLayout({
           </div>
         </header>
 
-        {/* PAGE BODY INJECT */}
-        <main className="flex-grow p-6 md:p-8 overflow-y-auto">
-          {children}
+        {/* PAGE CONTENT CONTAINER */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+          <div className="max-w-6xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
 
-      {/* COMMAND-K DIALOG PORTAL */}
-      <AnimatePresence>
-        {commandKOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Overlay background */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-canvas/85 backdrop-blur-md"
-              onClick={() => setCommandKOpen(false)}
-            />
+      {/* ── 3. CMD + K COMMAND PALETTE MODAL ── */}
+      {commandKOpen && (
+        <div className="fixed inset-0 bg-canvas/80 backdrop-blur-md z-50 flex items-start justify-center pt-24 p-4">
+          <div className="bg-surface border border-line rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="p-4 border-b border-line flex items-center gap-3">
+              <MagnifyingGlass className="w-5 h-5 text-saffron shrink-0" />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Type a command or jump to page..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted font-medium"
+              />
+              <button 
+                onClick={() => setCommandKOpen(false)}
+                className="text-ink-muted hover:text-ink text-xs font-mono px-2 py-1 bg-surface-raised rounded border border-line"
+              >
+                ESC
+              </button>
+            </div>
 
-            {/* Search Panel box */}
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 350, damping: 26 }}
-              className="w-full max-w-xl bg-surface border border-line rounded-2xl shadow-premium overflow-hidden z-10 relative max-h-[460px] flex flex-col"
-            >
-              <div className="p-4 border-b border-line flex items-center gap-3">
-                <MagnifyingGlass className="w-5 h-5 text-saffron" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Search workspace sections..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-grow bg-transparent text-sm text-ink focus:outline-none placeholder:text-ink-muted font-sans"
-                />
-                <button 
-                  onClick={() => setCommandKOpen(false)}
-                  className="text-xs text-ink-muted hover:text-ink font-mono bg-white/5 border border-line px-2 py-0.5 rounded hover:bg-line-subtle/50"
-                >
-                  ESC
-                </button>
+            <div className="p-2 max-h-80 overflow-y-auto space-y-1">
+              <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-ink-muted">
+                Navigation
               </div>
-
-              <div className="flex-grow overflow-y-auto p-2.5 flex flex-col gap-1.5">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-2.5 py-1">
-                  Navigate Workspace
-                </span>
-
-                {filteredNavItems.length > 0 ? (
-                  filteredNavItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.name}
-                        onClick={() => handleCommandKSelect(item.href)}
-                        className="w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl hover:bg-saffron/10 text-xs font-semibold tracking-wide text-ink-secondary hover:text-ink transition-all group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-4 h-4 text-ink-tertiary group-hover:text-saffron transition-colors" />
-                          <span>Go to {item.name}</span>
-                        </div>
-                        <kbd className="font-mono text-[9px] text-ink-muted group-hover:text-saffron-light">Jump ↵</kbd>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-8 text-xs text-ink-muted font-mono">
-                    No results found for &ldquo;{searchQuery}&rdquo;
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3 bg-surface-raised border-t border-line flex justify-between items-center text-[10px] text-ink-muted font-mono">
-                <span>Select with arrows &bull; Execute with Enter</span>
-                <span>Bavio Workspace OS v1.0.0</span>
-              </div>
-            </motion.div>
+              {[
+                { title: "Overview Dashboard", href: "/workspace", icon: Layout },
+                { title: "Live Web Call & Demo", href: "/workspace/demo", icon: Sparkle },
+                { title: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
+                { title: "Settings & Profile", href: "/workspace/settings", icon: Gear },
+                { title: "AI Voice Console", href: "/dashboard", icon: ArrowRight },
+              ]
+                .filter(cmd => cmd.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((cmd, idx) => {
+                  const Icon = cmd.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleCommandKSelect(cmd.href)}
+                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-raised text-xs font-semibold text-ink group transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4 text-ink-tertiary group-hover:text-saffron transition-colors" />
+                        <span>{cmd.title}</span>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-ink-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+                    </button>
+                  );
+                })}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
     </div>
   );
 }

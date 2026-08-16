@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   IdentificationCard,
   Circle,
+  Spinner,
   CheckCircle,
   Sun,
   Moon,
@@ -65,11 +66,23 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState("Medcare Hospitals");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // 1. Strict Authentication Guard
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("bavio_token") : null;
+    if (!token) {
+      setIsAuthenticated(false);
+      router.replace("/login");
+      return;
+    }
+    setIsAuthenticated(true);
+  }, [router]);
 
   // Theme is managed globally via ThemeContext & ThemeToggle
 
@@ -203,6 +216,17 @@ export default function DashboardLayout({
   const filteredNavItems = allNavigationItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isAuthenticated === null || isAuthenticated === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-canvas text-ink">
+        <Spinner className="w-10 h-10 text-saffron animate-spin mb-4" />
+        <span className="text-body-xs font-mono font-bold uppercase tracking-wider text-ink-muted">
+          Verifying Session...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
