@@ -395,21 +395,157 @@ export const knowledgeBaseApi = {
 export interface PhoneNumber {
   id: string;
   number: string;
+  phone_number?: string;
   provider: string;
   label?: string;
   status: string;
+  country_code?: string;
+  phone_number_type?: string;
+  capabilities?: {
+    voice?: boolean;
+    sms?: boolean;
+    mms?: boolean;
+    inbound?: boolean;
+    outbound?: boolean;
+  };
+  regulatory_status?: string;
+  assistant_id?: string | null;
+  assistant_name?: string | null;
   created_at: string;
-  assistant_name?: string;
+}
+
+export interface PhoneCountry {
+  code: string;
+  name: string;
+  flag: string;
+  dialCode: string;
+  hasDirectInventory: boolean;
+  availableTypes: string[];
+  notice?: string | null;
+}
+
+export interface NumberTypeOption {
+  type: string;
+  label: string;
+  supported: boolean;
+}
+
+export interface AvailableNumber {
+  phoneNumber: string;
+  friendlyName: string;
+  isoCountry: string;
+  numberType: string;
+  capabilities: {
+    voice: boolean;
+    sms: boolean;
+    mms: boolean;
+    inbound: boolean;
+    outbound: boolean;
+  };
+  locality?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  monthlyRate: string;
+}
+
+export interface RegulatoryRequirement {
+  required: boolean;
+  friendlyName: string;
+  requirements: string[];
+  message: string;
 }
 
 export const numbersApi = {
   list: (clientId: string) =>
-    apiFetch<PhoneNumber[]>(`/numbers/${clientId}`),
+    apiFetch<PhoneNumber[]>(`/phone-numbers/${clientId}`),
 
-  link: (data: { number: string; label?: string; provider?: string }) =>
-    apiFetch('/numbers/link', {
+  getCountries: () =>
+    apiFetch<{ success: boolean; countries: PhoneCountry[] }>('/phone-numbers/countries'),
+
+  getNumberTypes: (countryCode: string) =>
+    apiFetch<{ success: boolean; countryCode: string; types: NumberTypeOption[] }>(
+      `/phone-numbers/types?countryCode=${encodeURIComponent(countryCode)}`
+    ),
+
+  getRegulatoryRequirements: (countryCode: string, numberType = 'local') =>
+    apiFetch<RegulatoryRequirement & { success: boolean }>(
+      `/phone-numbers/regulatory-requirements?countryCode=${encodeURIComponent(countryCode)}&numberType=${encodeURIComponent(numberType)}`
+    ),
+
+  search: (params: {
+    countryCode: string;
+    type?: string;
+    voice?: boolean;
+    sms?: boolean;
+    areaCode?: string;
+    contains?: string;
+    limit?: number;
+  }) => {
+    const q = new URLSearchParams();
+    q.set('countryCode', params.countryCode);
+    if (params.type) q.set('type', params.type);
+    if (params.voice !== undefined) q.set('voice', String(params.voice));
+    if (params.sms !== undefined) q.set('sms', String(params.sms));
+    if (params.areaCode) q.set('areaCode', params.areaCode);
+    if (params.contains) q.set('contains', params.contains);
+    if (params.limit) q.set('limit', String(params.limit));
+    return apiFetch<{
+      success: boolean;
+      countryCode: string;
+      numberType: string;
+      numbers: AvailableNumber[];
+      notice?: string | null;
+    }>(`/phone-numbers/search?${q.toString()}`);
+  },
+
+  provision: (data: {
+    phoneNumber: string;
+    countryCode: string;
+    numberType?: string;
+    assistantId?: string;
+    regulatoryInfo?: any;
+  }) =>
+    apiFetch<{ success: boolean; message: string; data: PhoneNumber }>('/phone-numbers/provision', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  // Backward compatibility alias methods
+  getAvailable: (country: string) =>
+    numbersApi.search({ countryCode: country, type: 'local' }).then((r) => r.numbers),
+
+  buyNumber: (data: { phoneNumber: string; countryCode: string; assistantId?: string }) =>
+    numbersApi.provision(data).then((r) => r.data),
+
+  link: (data: {
+    number?: string;
+    phoneId?: string;
+    phone_number_id?: string;
+    assistantId?: string;
+    assistant_id?: string;
+    assistantName?: string;
+  }) =>
+    apiFetch<{ success: boolean; data: PhoneNumber }>('/phone-numbers/link', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }).then((r) => r.data || (r as any)),
+
+  linkNumber: (data: { phoneId: string; assistantId: string; assistantName?: string }) =>
+    apiFetch<{ success: boolean; data: PhoneNumber }>('/phone-numbers/link', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }).then((r) => r.data || (r as any)),
+
+  unlinkNumber: (phoneId: string) =>
+    apiFetch<{ success: boolean; data: PhoneNumber }>('/phone-numbers/unlink', {
+      method: 'POST',
+      body: JSON.stringify({ phoneId }),
+    }).then((r) => r.data || (r as any)),
+
+  release: (phoneId: string) =>
+    apiFetch<{ success: boolean; message: string }>('/phone-numbers/release', {
+      method: 'POST',
+      body: JSON.stringify({ phoneId }),
     }),
 };
 
