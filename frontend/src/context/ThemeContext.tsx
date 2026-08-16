@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 
 export type ThemeMode = "light" | "dark";
 
@@ -14,39 +15,49 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAppRoute = pathname?.startsWith("/dashboard") || pathname?.startsWith("/workspace");
+
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage or system preference on mount
+  // Initialize theme from localStorage
   useEffect(() => {
     setMounted(true);
     try {
       const savedTheme = localStorage.getItem("bavio_theme") as ThemeMode | null;
       if (savedTheme === "dark" || savedTheme === "light") {
         setThemeState(savedTheme);
-        if (savedTheme === "dark") {
-          document.documentElement.classList.add("dark");
-          document.documentElement.style.colorScheme = "dark";
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.style.colorScheme = "light";
-        }
       } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const initialTheme: ThemeMode = prefersDark ? "dark" : "light";
-        setThemeState(initialTheme);
-        if (prefersDark) {
-          document.documentElement.classList.add("dark");
-          document.documentElement.style.colorScheme = "dark";
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.style.colorScheme = "light";
-        }
+        setThemeState("light");
       }
     } catch {
       // LocalStorage unavailable
     }
   }, []);
+
+  // Sync DOM classes based on active route:
+  // Public website pages ALWAYS stay in original light theme.
+  // Dashboard & Workspace apply the user's selected theme (light/dark).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    if (!isAppRoute) {
+      // Public website pages (Landing page, pricing, how it works, etc.):
+      // Keep strictly in original light cream theme
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    } else {
+      // Inside /dashboard or /workspace: apply selected theme
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = "dark";
+      } else {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.style.colorScheme = "light";
+      }
+    }
+  }, [pathname, isAppRoute, theme]);
 
   // Helper to extract center coordinates exactly from the theme toggle button
   const extractCoordinates = (
@@ -130,6 +141,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       nextTheme: ThemeMode,
       origin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null
     ) => {
+      // Only perform theme changes inside dashboard or workspace
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+      const isApp = currentPath.startsWith("/dashboard") || currentPath.startsWith("/workspace");
+
       const { x, y } = extractCoordinates(origin);
 
       const commitThemeChange = () => {
@@ -138,12 +153,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("bavio_theme", nextTheme);
         } catch {}
 
-        if (nextTheme === "dark") {
-          document.documentElement.classList.add("dark");
-          document.documentElement.style.colorScheme = "dark";
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.style.colorScheme = "light";
+        if (isApp) {
+          if (nextTheme === "dark") {
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.colorScheme = "dark";
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.style.colorScheme = "light";
+          }
         }
       };
 
@@ -192,8 +209,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 4. Fallback for browsers without View Transitions API:
-      // Create a smooth fixed DOM radial ripple expanding outward from the toggle button
+      // 4. Fallback for browsers without View Transitions API
       if (typeof document !== "undefined") {
         const overlay = document.createElement("div");
         overlay.id = "theme-transition-overlay";
@@ -206,7 +222,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         overlay.style.willChange = "clip-path";
         document.body.appendChild(overlay);
 
-        // Force synchronous layout reflow
         void overlay.offsetHeight;
 
         const anim = overlay.animate(
