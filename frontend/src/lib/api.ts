@@ -237,7 +237,35 @@ export const onboardingApi = {
     apiFetch(`/onboarding/status/${clientId}`),
 };
 
-// ─── Assistants (AI Agents) ───────────────────────────────────────────────────
+// ─── Assistants (AI Agents & Model Tiers) ──────────────────────────────────
+
+export interface ModelTierOption {
+  id: 'auto' | 'swift' | 'core' | 'prime';
+  label: string;
+  tagline: string;
+  description: string;
+  priceInrPerMin: number;
+  priceUsdPerMin: number;
+  isDefault?: boolean;
+}
+
+export interface ProviderRegistryItem {
+  provider: string;
+  model: string;
+  displayName: string;
+  tier?: string;
+  latencyClass?: string;
+}
+
+export interface ModelTiersCatalogResponse {
+  success: boolean;
+  tiers: ModelTierOption[];
+  registry: {
+    intelligence: ProviderRegistryItem[];
+    stt: ProviderRegistryItem[];
+    tts: ProviderRegistryItem[];
+  };
+}
 
 export interface Assistant {
   id: string;
@@ -246,15 +274,29 @@ export interface Assistant {
   system_prompt: string;
   language: string;
   voice: string;
+  voice_id?: string;
   model: string;
   first_message: string;
   active: boolean;
   created_at: string;
+  // Model Tier Architecture properties
+  intelligence_tier?: 'auto' | 'swift' | 'core' | 'prime';
+  intelligence_mode?: string;
+  intelligence_provider?: string;
+  intelligence_model?: string;
+  stt_provider?: string;
+  stt_model?: string;
+  tts_provider?: string;
+  tts_model?: string;
+  model_routing_config?: Record<string, any>;
 }
 
 export const assistantsApi = {
   list: (clientId: string) =>
     apiFetch<Assistant[]>(`/assistants/${clientId}`),
+
+  getModelTiers: () =>
+    apiFetch<ModelTiersCatalogResponse>('/assistants/model-tiers'),
 
   create: (data: Partial<Assistant>) =>
     apiFetch<Assistant>('/assistants', {
