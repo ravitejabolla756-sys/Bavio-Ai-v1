@@ -70,8 +70,8 @@ async function runThemeVerification() {
     assert.strictEqual(storedTheme, 'dark', 'localStorage bavio_theme is "dark"');
     console.log(`⏱️ Applied Dark mode in ${Date.now() - t0}ms synchronously.`);
 
-    // Wait for transition duration (280ms)
-    await new Promise(r => setTimeout(r, 350));
+    // Wait for transition duration (550ms)
+    await new Promise(r => setTimeout(r, 600));
     await page.screenshot({ path: `${ARTIFACTS}/smooth_theme_2_dark.png` });
     console.log('✅ [PASS] 2. Dark theme transition completed and captured.');
 
@@ -86,7 +86,7 @@ async function runThemeVerification() {
     assert.strictEqual(storedThemeLight, 'light', 'localStorage bavio_theme is "light"');
     console.log(`⏱️ Restored Light mode in ${Date.now() - t1}ms synchronously.`);
 
-    await new Promise(r => setTimeout(r, 350));
+    await new Promise(r => setTimeout(r, 600));
     await page.screenshot({ path: `${ARTIFACTS}/smooth_theme_3_restored_light.png` });
     console.log('✅ [PASS] 3. Light theme restored and captured.');
 
