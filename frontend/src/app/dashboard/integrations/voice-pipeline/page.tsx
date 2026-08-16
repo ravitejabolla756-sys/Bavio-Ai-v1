@@ -232,10 +232,6 @@ export default function VoicePipelinePage() {
       className="-m-6 md:-m-8 p-6 md:p-8 min-h-screen bg-darkBg text-[#F5F0E8] font-sans flex flex-col justify-between overflow-x-hidden relative"
       style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
     >
-      {/* Background Orbs */}
-      <div className="absolute top-[10%] right-[-10%] w-[400px] h-[400px] bg-saffron/3 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[10%] left-[-10%] w-[350px] h-[350px] bg-saffron/2 rounded-full blur-[90px] pointer-events-none" />
-
       {/* Main Container */}
       <div className="max-w-6xl w-full mx-auto relative z-10 space-y-10">
         

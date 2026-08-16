@@ -94,7 +94,7 @@ export default function WorkspaceHome() {
         <div className="shrink-0 w-full md:w-auto relative z-10">
           <Link
             href="/workspace/demo"
-            className="w-full md:w-auto flex items-center justify-center gap-3 bg-saffron hover:bg-saffron-light text-white text-xs font-bold uppercase tracking-wider py-4 px-8 rounded-xl shadow-glow hover:shadow-glow-lg transition-all active:scale-98"
+            className="w-full md:w-auto flex items-center justify-center gap-3 bg-saffron hover:bg-saffron-dark text-white text-xs font-bold uppercase tracking-wider py-4 px-8 rounded-xl shadow-sm hover:shadow transition-all duration-150 active:scale-98"
           >
             <Sparkle className="w-4 h-4" weight="fill" />
             <span>Try Free Web Call</span>

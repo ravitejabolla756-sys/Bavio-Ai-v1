@@ -329,7 +329,7 @@ export default function WorkspaceBilling() {
             </p>
             <Link
               href="/workspace/topup"
-              className="w-full bg-saffron hover:bg-saffron-hover text-white font-bold text-[10px] uppercase tracking-wider py-3 rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_2px_6px_rgba(255,107,0,0.15)]"
+              className="w-full bg-saffron hover:bg-saffron-dark text-white font-bold text-[10px] uppercase tracking-wider py-3 rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-sm hover:shadow"
             >
               <span>Buy Minute Packages</span>
               <ArrowUpRight className="w-3.5 h-3.5" weight="bold" />

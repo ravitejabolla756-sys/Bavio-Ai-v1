@@ -236,10 +236,6 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
       
-      {/* Background Subtle mesh orbs (removed to use body background) */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-saffron/3 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-saffron/2 blur-[100px] pointer-events-none z-0" />
-
       {/* MOBILE HEADER BAR */}
       <div className="md:hidden w-full bg-surface border-b border-line px-4 py-3 flex items-center justify-between z-40 relative">
         <Link href="/dashboard" className="flex items-center gap-2">
@@ -315,8 +311,8 @@ export default function DashboardLayout({
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
                     isActive 
-                      ? "text-saffron" 
-                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+                      ? "text-saffron bg-saffron/10 font-bold border border-saffron/20" 
+                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink border border-transparent"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
@@ -345,8 +341,8 @@ export default function DashboardLayout({
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
                     isActive 
-                      ? "text-saffron" 
-                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink"
+                      ? "text-saffron bg-saffron/10 font-bold border border-saffron/20" 
+                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink border border-transparent"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
@@ -609,7 +605,7 @@ export default function DashboardLayout({
                           </p>
                           <button
                             onClick={handleDismiss}
-                            className="px-4 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-saffron mt-2"
+                            className="px-4 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm mt-2"
                           >
                             Dismiss Checklist
                           </button>
@@ -732,7 +728,7 @@ export default function DashboardLayout({
                     </p>
                     <button
                       onClick={handleDismiss}
-                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-saffron w-full mt-2"
+                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm w-full mt-2"
                     >
                       Dismiss Checklist
                     </button>
@@ -809,7 +805,7 @@ export default function DashboardLayout({
               setIsDismissed(false);
               setIsCollapsed(false);
             }}
-            className="fixed bottom-6 right-6 z-50 bg-saffron hover:bg-saffron-dark text-white border border-saffron/20 shadow-lg p-3 rounded-full hover:scale-105 transition-all flex items-center justify-center gap-1.5"
+            className="fixed bottom-6 right-6 z-50 bg-saffron hover:bg-saffron-dark text-white border border-saffron-dark/20 shadow-sm hover:shadow px-3.5 py-2.5 rounded-full transition-all duration-150 flex items-center justify-center gap-1.5 font-medium"
             title="Setup Checklist"
           >
             <Sparkle className="w-5 h-5 text-white" />

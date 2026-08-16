@@ -261,7 +261,7 @@ export default function WorkspaceSettings() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron disabled:opacity-40"
+                className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm disabled:opacity-40"
               >
                 {savingProfile && <Spinner className="w-4 h-4 animate-spin" />}
                 Save Changes
