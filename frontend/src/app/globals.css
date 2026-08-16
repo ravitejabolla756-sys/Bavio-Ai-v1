@@ -50,40 +50,43 @@
   --color-line-faint: rgba(245, 240, 232, 0.04);
 }
 
-/* ── Smooth, synchronized theme color transition (180ms ease-out) ── */
-:root,
-.dark,
-body,
-aside,
-header,
-main,
-nav,
-div,
-section,
-article,
-table,
-thead,
-tbody,
-tr,
-th,
-td,
-input,
-select,
-textarea,
-p,
-span,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-a,
-button,
-svg {
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-duration: 180ms;
-  transition-timing-function: ease-out;
+/* ── High-performance GPU-friendly theme transition (active only during theme switch) ── */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 280ms !important;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition-delay: 0s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
+}
+
+/* ── View Transitions API circular reveal rules ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+.dark::view-transition-old(root) {
+  z-index: 1;
+}
+.dark::view-transition-new(root) {
+  z-index: 9999;
+}
+::view-transition-old(root) {
+  z-index: 9999;
+}
+::view-transition-new(root) {
+  z-index: 1;
 }
 
 /* ── Base resets ── */
