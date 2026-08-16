@@ -73,6 +73,20 @@ pool.query('SELECT NOW()')
       `);
       console.log('✅ public_demo_sessions table initialized/verified.');
 
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_verifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email VARCHAR(255) NOT NULL,
+            otp_code VARCHAR(10) NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            attempts INTEGER DEFAULT 0,
+            consumed BOOLEAN DEFAULT false,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);
+      `);
+      console.log('✅ email_verifications table initialized/verified.');
+
       // Drop country and currency check constraints from the users table to support all countries worldwide
       try {
         await pool.query(`
@@ -84,7 +98,7 @@ pool.query('SELECT NOW()')
         console.warn('⚠️ Non-critical: Failed to drop users country constraints:', constErr.message);
       }
     } catch (tblErr) {
-      console.error('❌ Failed to initialize demo_sessions table:', tblErr.message);
+      console.error('❌ Failed to initialize database tables:', tblErr.message);
     }
   })
   .catch(err => {
