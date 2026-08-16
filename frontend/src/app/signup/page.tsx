@@ -252,7 +252,9 @@ export default function SignUpPage() {
   
   // Resend verification states
   const [resendStatus, setResendStatus] = useState("");
+  const [resendError, setResendError] = useState("");
   const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(45);
 
   // OTP code verification states
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
@@ -260,12 +262,30 @@ export default function SignUpPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleOtpChange = (element: HTMLInputElement, index: number) => {
-    const value = element.value;
-    if (/[^\d]/.test(value)) return; // restrict to digits only
+  // Auto-focus first input on verification screen mount
+  useEffect(() => {
+    if (needsEmailVerification && inputRefs.current[0]) {
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
+    }
+  }, [needsEmailVerification]);
 
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0 && needsEmailVerification) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown, needsEmailVerification]);
+
+  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+    const value = element.value.replace(/\D/g, ""); // digits only
+    if (!value && element.value !== "") return;
+
+    setVerificationError(null);
     const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1); // take only the last character
+    newOtp[index] = value.substring(value.length - 1);
     setOtp(newOtp);
 
     // Auto focus next input
@@ -276,21 +296,26 @@ export default function SignUpPage() {
 
   const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
     if (e.key === "Backspace") {
+      setVerificationError(null);
       if (!otp[index] && index > 0) {
-        // focus previous input and clear it
         const newOtp = [...otp];
         newOtp[index - 1] = "";
         setOtp(newOtp);
         inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "Enter") {
+      if (otp.join("").length === 6) {
+        handleVerifyOtp();
       }
     }
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").trim();
-    if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
-      const newOtp = pastedData.split("");
+    setVerificationError(null);
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").trim();
+    if (pastedData.length >= 6) {
+      const newOtp = pastedData.substring(0, 6).split("");
       setOtp(newOtp);
       inputRefs.current[5]?.focus();
     }
@@ -318,28 +343,18 @@ export default function SignUpPage() {
         throw new Error((result as any).error || "Verification failed");
       }
     } catch (err: any) {
-      setVerificationError(err.message || "Failed to verify code. Please try again.");
+      setVerificationError(err.message || "Invalid verification code.");
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // Poll for token in local storage to auto-redirect once verified in another tab
-  useEffect(() => {
-    if (!needsEmailVerification) return;
-    const interval = setInterval(() => {
-      const token = localStorage.getItem("bavio_token");
-      if (token) {
-        clearInterval(interval);
-        window.location.href = "/workspace";
-      }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [needsEmailVerification]);
-
   const handleResendVerification = async () => {
+    if (resendCooldown > 0 || isResending) return;
+
     setIsResending(true);
     setResendStatus("");
+    setResendError("");
     try {
       const res = await fetch("/api/auth/resend-verification", {
         method: "POST",
@@ -351,11 +366,12 @@ export default function SignUpPage() {
       const result = await res.json();
       if (res.ok && result.success) {
         setResendStatus("Verification email sent.");
+        setResendCooldown(45);
       } else {
-        throw new Error(result.error || "Failed to resend.");
+        throw new Error(result.error || "Unable to resend verification email. Please try again.");
       }
     } catch (err: any) {
-      setResendStatus(err.message || "Failed to resend.");
+      setResendError(err.message || "Unable to resend verification email. Please try again.");
     } finally {
       setIsResending(false);
     }
@@ -750,8 +766,8 @@ export default function SignUpPage() {
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
-                      disabled={isVerifying}
-                      className="w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={isVerifying || otp.join("").length < 6}
+                      className="w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isVerifying ? (
                         <>
@@ -767,14 +783,23 @@ export default function SignUpPage() {
                       <button
                         type="button"
                         onClick={handleResendVerification}
-                        disabled={isResending}
-                        className="text-body-xs font-bold uppercase tracking-wider text-[#8A8A96] hover:text-[#FF6B00] transition-colors disabled:opacity-50"
+                        disabled={isResending || resendCooldown > 0}
+                        className="text-body-xs font-bold uppercase tracking-wider text-[#8A8A96] hover:text-[#FF6B00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isResending ? "Resending Code..." : "Resend Verification Code"}
+                        {isResending
+                          ? "Resending Code..."
+                          : resendCooldown > 0
+                          ? `Resend code in ${resendCooldown}s`
+                          : "Resend Verification Code"}
                       </button>
                       {resendStatus && (
                         <p className="text-[#10B981] text-[11px] font-semibold mt-2">
                           {resendStatus}
+                        </p>
+                      )}
+                      {resendError && (
+                        <p className="text-[#FF4D4D] text-[11px] font-semibold mt-2">
+                          {resendError}
                         </p>
                       )}
                     </div>
