@@ -1,38 +1,57 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon } from "@phosphor-icons/react";
 import { useTheme } from "@/context/ThemeContext";
 
 interface ThemeToggleProps {
+  id?: string;
   variant?: "header" | "sidebar" | "mobile" | "pill";
   className?: string;
   showLabel?: boolean;
 }
 
 export default function ThemeToggle({
+  id,
   variant = "header",
   className = "",
   showLabel = false,
 }: ThemeToggleProps) {
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    toggleTheme(e);
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      toggleTheme({ x: centerX, y: centerY });
+    } else {
+      toggleTheme(e);
+    }
   };
 
-  // Base subtle styles tailored to Bavio's design language
+  const defaultId = id || (variant === "mobile" ? "bavio-theme-toggle-mobile" : "bavio-theme-toggle-desktop");
+
+  // Pill variant with label
   if (variant === "pill" || showLabel) {
     return (
       <button
+        ref={buttonRef}
+        id={defaultId}
+        data-theme-toggle="true"
+        data-variant={variant}
         onClick={handleClick}
         type="button"
         aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
         title={`Switch to ${isDark ? "light" : "dark"} mode`}
         className={`group relative flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-line bg-surface-raised/80 hover:bg-canvas hover:border-saffron/40 transition-all duration-200 active:scale-95 text-xs text-ink-secondary hover:text-ink shadow-sm ${className}`}
       >
-        <div className="relative w-4 h-4 flex items-center justify-center">
+        <div className="relative w-4 h-4 flex items-center justify-center pointer-events-none">
           <AnimatePresence mode="wait" initial={false}>
             {isDark ? (
               <motion.div
@@ -59,23 +78,28 @@ export default function ThemeToggle({
             )}
           </AnimatePresence>
         </div>
-        <span className="font-sans text-[11px] font-medium tracking-wide">
+        <span className="font-sans text-[11px] font-medium tracking-wide pointer-events-none">
           {isDark ? "Light theme" : "Dark theme"}
         </span>
       </button>
     );
   }
 
+  // Sidebar item variant
   if (variant === "sidebar") {
     return (
       <button
+        ref={buttonRef}
+        id={defaultId}
+        data-theme-toggle="true"
+        data-variant={variant}
         onClick={handleClick}
         type="button"
         aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
         title={`Switch to ${isDark ? "light" : "dark"} mode`}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-ink-secondary hover:text-ink hover:bg-line-subtle/50 border border-line transition-all active:scale-98 ${className}`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pointer-events-none">
           <div className="w-5 h-5 rounded-lg bg-surface flex items-center justify-center border border-line/60">
             <AnimatePresence mode="wait" initial={false}>
               {isDark ? (
@@ -105,23 +129,27 @@ export default function ThemeToggle({
           </div>
           <span className="text-[11px]">{isDark ? "Light Mode" : "Dark Mode"}</span>
         </div>
-        <span className="text-[9px] font-mono text-ink-muted uppercase tracking-wider">
+        <span className="text-[9px] font-mono text-ink-muted uppercase tracking-wider pointer-events-none">
           {isDark ? "Dark" : "Light"}
         </span>
       </button>
     );
   }
 
-  // Default header / mobile circular icon button
+  // Header / Mobile icon button
   return (
     <button
+      ref={buttonRef}
+      id={defaultId}
+      data-theme-toggle="true"
+      data-variant={variant}
       onClick={handleClick}
       type="button"
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
       title={`Switch to ${isDark ? "light" : "dark"} mode`}
       className={`group relative p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:border-saffron/40 bg-surface/80 hover:bg-line-subtle/50 active:scale-95 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-saffron/20 ${className}`}
     >
-      <div className="relative w-4 h-4 flex items-center justify-center">
+      <div className="relative w-4 h-4 flex items-center justify-center pointer-events-none">
         <AnimatePresence mode="wait" initial={false}>
           {isDark ? (
             <motion.div
