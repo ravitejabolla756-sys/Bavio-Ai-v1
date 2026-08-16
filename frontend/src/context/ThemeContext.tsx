@@ -3,13 +3,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
 
 interface ThemeContextType {
   theme: ThemeMode;
   isDark: boolean;
   toggleTheme: (eventOrOrigin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null) => void;
-  setTheme: (theme: ThemeMode, origin?: { x: number; y: number } | null) => void;
+  setTheme: (theme: ThemeMode, origin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -19,14 +19,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const isAppRoute = pathname?.startsWith("/dashboard") || pathname?.startsWith("/workspace");
 
   const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [isSystemDark, setIsSystemDark] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
+
+  // Detect system color scheme
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsSystemDark(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => {
+      setIsSystemDark(e.matches);
+    };
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
 
   // Initialize theme from localStorage
   useEffect(() => {
     setMounted(true);
     try {
       const savedTheme = localStorage.getItem("bavio_theme") as ThemeMode | null;
-      if (savedTheme === "dark" || savedTheme === "light") {
+      if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
         setThemeState(savedTheme);
       } else {
         setThemeState("light");
@@ -35,6 +49,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // LocalStorage unavailable
     }
   }, []);
+
+  const isDark = theme === "dark" || (theme === "system" && isSystemDark);
 
   // Sync DOM classes based on active route:
   // Public website pages ALWAYS stay in original light theme.
@@ -49,7 +65,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.style.colorScheme = "light";
     } else {
       // Inside /dashboard or /workspace: apply selected theme
-      if (theme === "dark") {
+      if (isDark) {
         document.documentElement.classList.add("dark");
         document.documentElement.style.colorScheme = "dark";
       } else {
@@ -57,7 +73,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.style.colorScheme = "light";
       }
     }
-  }, [pathname, isAppRoute, theme]);
+  }, [pathname, isAppRoute, isDark]);
 
   // Helper to extract center coordinates exactly from the theme toggle button
   const extractCoordinates = (
@@ -160,7 +176,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         } catch {}
 
         if (isApp) {
-          if (nextTheme === "dark") {
+          const nextIsDark = nextTheme === "dark" || (nextTheme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (nextIsDark) {
             document.documentElement.classList.add("dark");
             document.documentElement.style.colorScheme = "dark";
           } else {
@@ -285,7 +302,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <ThemeContext.Provider
       value={{
         theme,
-        isDark: theme === "dark",
+        isDark,
         toggleTheme,
         setTheme,
       }}
