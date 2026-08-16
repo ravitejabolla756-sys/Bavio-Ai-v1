@@ -67,10 +67,12 @@ interface InvoiceDetail {
   };
 }
 
+import { useWorkspace } from "@/context/WorkspaceContext";
+
 export default function WorkspaceBilling() {
-  const [profile, setProfile] = useState<any>(null);
-  const [payments, setPayments] = useState<PaymentLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profile: contextProfile, payments: contextPayments, refreshPayments } = useWorkspace();
+  const [profile, setProfile] = useState<any>(contextProfile);
+  const [payments, setPayments] = useState<any[]>(contextPayments);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   
   // GST settings state
@@ -87,49 +89,25 @@ export default function WorkspaceBilling() {
   const [activeInvoice, setActiveInvoice] = useState<InvoiceDetail | null>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
 
-  const fetchBillingData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("bavio_token");
-      if (!token) return;
-
-      // 1. Fetch Profile
-      const profRes = await fetch("/api/auth/profile", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (!profRes.ok) throw new Error("Failed to load profile");
-      const profData = await profRes.json();
-      const user = profData.data?.user;
-      setProfile(user);
-
-      // Extract GST if present in business_description
-      if (user.business_description && user.business_description.includes("GST:")) {
+  useEffect(() => {
+    if (contextProfile) {
+      setProfile(contextProfile);
+      if (contextProfile.business_description && contextProfile.business_description.includes("GST:")) {
         setGstEnabled(true);
-        const matches = user.business_description.match(/GST:\s*([A-Z0-9]+)\s*\(([^)]+)\)/);
+        const matches = contextProfile.business_description.match(/GST:\s*([A-Z0-9]+)\s*\(([^)]+)\)/);
         if (matches) {
           setGstNumber(matches[1]);
           setGstBusinessName(matches[2]);
         }
       }
-
-      // 2. Fetch Payments History
-      const paymentsRes = await fetch(`/api/billing/payments/${user.id}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json();
-        setPayments(paymentsData.payments || []);
-      }
-    } catch (err) {
-      console.error("[BILLING] Load Error:", err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [contextProfile]);
 
   useEffect(() => {
-    fetchBillingData();
-  }, []);
+    if (contextPayments && contextPayments.length > 0) {
+      setPayments(contextPayments);
+    }
+  }, [contextPayments]);
 
   const handleUpdateGst = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +116,7 @@ export default function WorkspaceBilling() {
       setGstSuccess(false);
       const token = localStorage.getItem("bavio_token");
       
-      const newDesc = `${profile.business_description || ""}\nGST: ${gstNumber} (${gstBusinessName})`;
+      const newDesc = `${profile?.business_description || ""}\nGST: ${gstNumber} (${gstBusinessName})`;
       
       const res = await fetch("/api/auth/profile", {
         method: "PATCH",
@@ -184,15 +162,6 @@ export default function WorkspaceBilling() {
       setDownloadingId(null);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] text-ink-muted">
-        <Spinner className="w-10 h-10 text-[#FF6B00] animate-spin mb-4" />
-        <span className="text-body-xs font-mono font-bold uppercase tracking-wider">Loading Ledger Account...</span>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">

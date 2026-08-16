@@ -17,160 +17,39 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { clearAuthData } from "@/lib/api";
-
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  owner_mobile: string;
-  twilio_number: string;
-  plan: string;
-  plan_name: string;
-  subscription_status: string;
-  minutes_limit: number;
-  minutes_used: number;
-  current_period_end: string | null;
-  assistant_name?: string;
-  voice?: string;
-  industry?: string;
-}
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 export default function WorkspaceHome() {
   const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [errorType, setErrorType] = useState<"auth" | "not_found" | "network" | null>(null);
+  const { profile, isProfileLoading, profileError, refreshProfile } = useWorkspace();
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setErrorType(null);
+  // Fallback defaults for instant rendering
+  const activeProfile = profile || {
+    id: "usr_default",
+    name: "My Workspace",
+    email: "—",
+    phone: "—",
+    owner_mobile: "—",
+    twilio_number: null,
+    plan: "free",
+    plan_name: "free",
+    subscription_status: "active",
+    minutes_limit: 30,
+    minutes_used: 0,
+    current_period_end: null,
+  };
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("bavio_token") : null;
-      if (!token) {
-        // No authenticated session -> redirect directly to /login
-        router.replace("/login");
-        return;
-      }
+  const planDisplay =
+    activeProfile.plan_name === "starter"
+      ? "Starter Plan"
+      : activeProfile.plan_name === "growth"
+      ? "Growth Plan"
+      : activeProfile.plan_name === "scale"
+      ? "Scale Plan"
+      : "Free Plan";
 
-      const res = await fetch("/api/auth/profile", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        clearAuthData();
-        router.replace("/login");
-        return;
-      }
-
-      if (res.ok) {
-        const result = await res.json();
-        if (result && result.id) {
-          setProfile(result as UserProfile);
-          if (result.name) {
-            localStorage.setItem("bavio_name", result.name);
-          }
-          return;
-        }
-      }
-
-      // Self-healing fallback: construct workspace profile from stored local credentials
-      const storedId = localStorage.getItem("bavio_client_id") || "usr_" + Math.random().toString(36).substring(2, 9);
-      const storedName = localStorage.getItem("bavio_name") || "Bavio Workspace";
-      const storedUser = localStorage.getItem("bavio_user");
-      let parsedUser: any = {};
-      try {
-        if (storedUser) parsedUser = JSON.parse(storedUser);
-      } catch {}
-
-      const fallbackProfile: UserProfile = {
-        id: storedId,
-        name: parsedUser.name || storedName,
-        email: parsedUser.email || "",
-        phone: parsedUser.phone || "",
-        owner_mobile: parsedUser.owner_mobile || "",
-        twilio_number: parsedUser.twilio_number || "",
-        plan: parsedUser.plan || "free",
-        plan_name: parsedUser.plan_name || "free_trial",
-        subscription_status: parsedUser.subscription_status || "inactive",
-        minutes_limit: parsedUser.minutes_limit ?? 30,
-        minutes_used: parsedUser.minutes_used ?? 0,
-        current_period_end: parsedUser.current_period_end || null,
-        assistant_name: parsedUser.assistant_name || "Bavio Assistant",
-        voice: parsedUser.voice || "saffron",
-        industry: parsedUser.industry || "General Business",
-      };
-
-      setProfile(fallbackProfile);
-    } catch (err: any) {
-      console.error("[WORKSPACE] Fetch error:", err);
-      // If network failure occurs but we have local session, allow user into workspace
-      const token = localStorage.getItem("bavio_token");
-      if (token) {
-        const storedName = localStorage.getItem("bavio_name") || "Bavio Workspace";
-        setProfile({
-          id: localStorage.getItem("bavio_client_id") || "bavio_user",
-          name: storedName,
-          email: "",
-          phone: "",
-          owner_mobile: "",
-          twilio_number: "",
-          plan: "free",
-          plan_name: "free_trial",
-          subscription_status: "inactive",
-          minutes_limit: 30,
-          minutes_used: 0,
-          current_period_end: null,
-        });
-      } else {
-        setErrorType("network");
-        setError("Network connection issue. Please check your internet connection.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-ink-muted">
-        <Spinner className="w-10 h-10 text-[#FF6B00] animate-spin mb-4" />
-        <span className="text-body-xs font-mono font-bold uppercase tracking-wider">Loading Workspace HUD...</span>
-      </div>
-    );
-  }
-
-  if (error || !profile) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center max-w-md mx-auto">
-        <Warning className="w-12 h-12 text-state-error mb-4" />
-        <h3 className="font-display text-lg font-bold text-ink mb-2">
-          {errorType === "network" ? "Connection Issue" : "Workspace Unavailable"}
-        </h3>
-        <p className="text-body-xs text-ink-tertiary mb-6">{error || "Unable to establish workspace connection."}</p>
-        <button
-          type="button"
-          onClick={fetchProfile}
-          className="bg-[#14141A] hover:bg-[#3A3A42] text-white text-body-xs font-bold uppercase tracking-wider py-3 px-6 rounded-xl transition-all"
-        >
-          Retry Connection
-        </button>
-      </div>
-    );
-  }
-
-  const planDisplay = profile.plan_name === "starter" ? "Starter Plan" : profile.plan_name === "growth" ? "Growth Plan" : profile.plan_name === "scale" ? "Scale Plan" : "Free Plan";
-  const periodEndFormatted = profile.current_period_end
-    ? new Date(profile.current_period_end).toLocaleDateString("en-US", {
+  const periodEndFormatted = activeProfile.current_period_end
+    ? new Date(activeProfile.current_period_end).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -247,19 +126,19 @@ export default function WorkspaceHome() {
             <div className="space-y-4 font-mono text-xs">
               <div className="flex justify-between py-2 border-b border-line/60">
                 <span className="text-ink-muted">Workspace Name</span>
-                <span className="font-bold text-ink font-sans">{profile.name || "Bavio Workspace"}</span>
+                <span className="font-bold text-ink font-sans">{activeProfile.name || "Bavio Workspace"}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-line/60">
                 <span className="text-ink-muted">Email</span>
-                <span className="font-bold text-ink">{profile.email || "Configured"}</span>
+                <span className="font-bold text-ink">{activeProfile.email || "Configured"}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-line/60">
                 <span className="text-ink-muted">Phone Number</span>
-                <span className="font-bold text-ink">{profile.phone || "Not connected"}</span>
+                <span className="font-bold text-ink">{activeProfile.phone || "Not connected"}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-ink-muted">Twilio Routing</span>
-                <span className="font-bold text-saffron">{profile.twilio_number || "Automated Inbound"}</span>
+                <span className="font-bold text-saffron">{activeProfile.twilio_number || "Automated Inbound"}</span>
               </div>
             </div>
           </div>
@@ -284,7 +163,7 @@ export default function WorkspaceHome() {
                 <h2 className="font-display text-lg font-bold text-ink">Plan & Telemetry</h2>
               </div>
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-state-success/10 text-state-success border border-state-success/20">
-                {profile.subscription_status === "active" ? "Active" : "Trial Active"}
+                {activeProfile.subscription_status === "active" ? "Active" : "Trial Active"}
               </span>
             </div>
 
@@ -295,7 +174,7 @@ export default function WorkspaceHome() {
               </div>
               <div className="flex justify-between py-2 border-b border-line/60">
                 <span className="text-ink-muted">Minutes Consumed</span>
-                <span className="font-bold text-ink">{profile.minutes_used || 0} / {profile.minutes_limit || 30} mins</span>
+                <span className="font-bold text-ink">{activeProfile.minutes_used || 0} / {activeProfile.minutes_limit || 30} mins</span>
               </div>
               <div className="flex justify-between py-2 border-b border-line/60">
                 <span className="text-ink-muted">Billing Period End</span>
