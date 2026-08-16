@@ -438,13 +438,13 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-x-hidden">
+    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-hidden">
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
       ──────────────────────────────────────── */}
       <section 
-        className="hidden md:flex md:w-[60%] lg:w-[60%] md:h-screen md:sticky md:top-0 relative flex-col justify-start p-0 overflow-hidden bg-black"
+        className="hidden md:flex md:w-[60%] lg:w-[60%] h-full relative flex-col justify-start p-0 overflow-hidden bg-black"
         style={{ 
           borderTopRightRadius: "300px 50%", 
           borderBottomRightRadius: "300px 50%", 
@@ -482,7 +482,7 @@ export default function SignUpPage() {
       {/* ────────────────────────────────────────
           RIGHT SIDE: SIGNUP CARD PANEL (40%)
       ──────────────────────────────────────── */}
-      <section className="w-full md:w-[40%] lg:w-[40%] flex flex-col justify-center items-center p-6 md:p-10 bg-[#F7F4EF] relative min-h-[100dvh]">
+      <section className="w-full md:w-[40%] lg:w-[40%] h-full flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 lg:p-10 bg-[#F7F4EF] relative overflow-y-auto overflow-x-hidden">
         
         <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
@@ -515,7 +515,7 @@ export default function SignUpPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-8 lg:p-10 shadow-premium relative z-20"
+          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-6 sm:p-7 lg:p-8 shadow-premium relative z-20 my-auto"
         >
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
