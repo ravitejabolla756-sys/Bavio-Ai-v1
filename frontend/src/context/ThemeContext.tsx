@@ -128,54 +128,93 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // 1. If View Transitions API with circular reveal is supported
-      if (
-        typeof document.startViewTransition === "function" &&
-        !prefersReducedMotion
-      ) {
+      // 0. If reduced motion is requested, switch theme immediately
+      if (prefersReducedMotion) {
+        applyThemeToDOM(nextIsDark);
+        return;
+      }
+
+      // Resolve origin coordinates from passed origin or live button center
+      let coords = origin;
+      if (!coords) {
+        const btn = document.querySelector('button[data-theme-toggle="true"]') || document.querySelector('#bavio-theme-toggle-desktop');
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          coords = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
+        } else {
+          coords = { x: window.innerWidth - 40, y: 40 };
+        }
+      }
+
+      const { x, y } = coords;
+      const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      // 1. Native View Transitions API with circular expansion originating from button center
+      if (typeof document.startViewTransition === "function") {
         const transition = document.startViewTransition(() => {
           applyThemeToDOM(nextIsDark);
         });
 
-        if (origin) {
-          const { x, y } = origin;
-          const endRadius = Math.hypot(
-            Math.max(x, window.innerWidth - x),
-            Math.max(y, window.innerHeight - y)
+        transition.ready.then(() => {
+          const clipPath = [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ];
+          document.documentElement.animate(
+            {
+              clipPath: clipPath,
+            },
+            {
+              duration: 550,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              pseudoElement: "::view-transition-new(root)",
+            }
           );
-
-          transition.ready.then(() => {
-            const clipPath = [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${endRadius}px at ${x}px ${y}px)`,
-            ];
-            document.documentElement.animate(
-              {
-                clipPath: nextIsDark ? clipPath : [...clipPath].reverse(),
-              },
-              {
-                duration: 280,
-                easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                pseudoElement: nextIsDark
-                  ? "::view-transition-new(root)"
-                  : "::view-transition-old(root)",
-              }
-            );
-          }).catch(() => {});
-        }
+        }).catch(() => {});
         return;
       }
 
-      // 2. High-performance fallback: add theme-transitioning class
-      if (!prefersReducedMotion) {
-        document.documentElement.classList.add("theme-transitioning");
-        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-        transitionTimerRef.current = setTimeout(() => {
-          document.documentElement.classList.remove("theme-transitioning");
-        }, 320);
-      }
+      // 2. Hardware-accelerated GPU overlay fallback for browsers without View Transitions
+      const existingCircle = document.getElementById("bavio-expanding-theme-circle");
+      if (existingCircle) existingCircle.remove();
 
-      applyThemeToDOM(nextIsDark);
+      const circle = document.createElement("div");
+      circle.id = "bavio-expanding-theme-circle";
+      const size = endRadius * 2.2;
+      circle.style.cssText = `
+        position: fixed;
+        top: ${y - size / 2}px;
+        left: ${x - size / 2}px;
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        background-color: ${nextIsDark ? '#0c0a09' : '#faf8f5'};
+        z-index: 999999;
+        pointer-events: none;
+        transform: scale(0);
+        transition: transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+      `;
+      document.body.appendChild(circle);
+
+      requestAnimationFrame(() => {
+        circle.style.transform = "scale(1)";
+      });
+
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = setTimeout(() => {
+        applyThemeToDOM(nextIsDark);
+      }, 350);
+
+      setTimeout(() => {
+        circle.remove();
+      }, 580);
     },
     [applyThemeToDOM]
   );
