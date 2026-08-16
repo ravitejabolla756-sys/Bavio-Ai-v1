@@ -60,13 +60,26 @@ export default function AssistantDashboardPage() {
   const [currentView, setCurrentView] = useState<"list" | "create" | "configure">("list");
   const [selectedAssistantId, setSelectedAssistantId] = useState<string | null>(null);
 
+  // Model Tier Catalog & State
+  const [modelTiers] = useState<ModelTierOption[]>([
+    { id: "core", label: "Bavio Core", tagline: "Balanced intelligence and speed · Recommended", description: "Balanced intelligence, latency, and cost for customer support & workflows.", priceInrPerMin: 18, priceUsdPerMin: 0.22, isDefault: true },
+    { id: "swift", label: "Bavio Swift", tagline: "Fast responses · Lower usage cost", description: "Optimized for FAQs, rapid responses, and high-volume qualification.", priceInrPerMin: 12, priceUsdPerMin: 0.15 },
+    { id: "prime", label: "Bavio Prime", tagline: "Advanced reasoning · Higher usage cost", description: "Maximum reasoning capability for complex policies and objections.", priceInrPerMin: 32, priceUsdPerMin: 0.38 },
+    { id: "auto", label: "Bavio Auto", tagline: "Automatically selects the best model for each conversation.", description: "Intelligent auto-routing based on language, task complexity, and latency.", priceInrPerMin: 18, priceUsdPerMin: 0.22 },
+  ]);
+
   // --- CREATE FLOW WIZARD STATE ---
   const [createStep, setCreateStep] = useState(1);
   const [createName, setCreateName] = useState("");
   const [createLanguage, setCreateLanguage] = useState("English");
   const [createGreeting, setCreateGreeting] = useState("Hello! Thank you for calling. How can I help you today?");
   const [createPrompt, setCreatePrompt] = useState("You are a helpful, professional customer representative. Be concise and solve customer inquiries.");
-  const [createModel, setCreateModel] = useState("gpt-4o");
+  const [createTier, setCreateTier] = useState<"auto" | "swift" | "core" | "prime">("core");
+  const [createShowAdvanced, setCreateShowAdvanced] = useState(false);
+  const [createIntelProvider, setCreateIntelProvider] = useState("automatic");
+  const [createIntelModel, setCreateIntelModel] = useState("automatic");
+  const [createSttProvider, setCreateSttProvider] = useState("automatic");
+  const [createTtsProvider, setCreateTtsProvider] = useState("automatic");
   const [createVoiceId, setCreateVoiceId] = useState("");
   const [createDocIds, setCreateDocIds] = useState<string[]>([]);
   const [createNumberId, setCreateNumberId] = useState("");
@@ -78,6 +91,12 @@ export default function AssistantDashboardPage() {
   const [confLanguage, setConfLanguage] = useState("");
   const [confGreeting, setConfGreeting] = useState("");
   const [confPrompt, setConfPrompt] = useState("");
+  const [confTier, setConfTier] = useState<"auto" | "swift" | "core" | "prime">("core");
+  const [confShowAdvanced, setConfShowAdvanced] = useState(false);
+  const [confIntelProvider, setConfIntelProvider] = useState("automatic");
+  const [confIntelModel, setConfIntelModel] = useState("automatic");
+  const [confSttProvider, setConfSttProvider] = useState("automatic");
+  const [confTtsProvider, setConfTtsProvider] = useState("automatic");
   const [confVoiceId, setConfVoiceId] = useState("");
   const [confDocIds, setConfDocIds] = useState<string[]>([]);
   const [confNumberId, setConfNumberId] = useState("");
@@ -235,7 +254,12 @@ export default function AssistantDashboardPage() {
         first_message: createGreeting,
         system_prompt: createPrompt,
         voice: createVoiceId,
-        model: createModel,
+        intelligence_tier: createTier,
+        intelligence_provider: createIntelProvider,
+        intelligence_model: createIntelModel,
+        stt_provider: createSttProvider,
+        tts_provider: createTtsProvider,
+        model: `bavio-${createTier}`,
         active: true,
       });
 
@@ -274,6 +298,11 @@ export default function AssistantDashboardPage() {
     setConfGreeting(ast.first_message || "");
     setConfPrompt(ast.system_prompt || "");
     setConfVoiceId(ast.voice || "");
+    setConfTier((ast.intelligence_tier as any) || "core");
+    setConfIntelProvider(ast.intelligence_provider || "automatic");
+    setConfIntelModel(ast.intelligence_model || "automatic");
+    setConfSttProvider(ast.stt_provider || "automatic");
+    setConfTtsProvider(ast.tts_provider || "automatic");
     setConfActive(ast.active);
 
     const numObj = getAssignedNumber(ast.id);
@@ -290,13 +319,19 @@ export default function AssistantDashboardPage() {
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      // 1. Update core assistant settings
+      // 1. Update core assistant settings & model tier
       await assistantsApi.update(selectedAssistantId, {
         name: confName,
         language: confLanguage,
         first_message: confGreeting,
         system_prompt: confPrompt,
         voice: confVoiceId,
+        intelligence_tier: confTier,
+        intelligence_provider: confIntelProvider,
+        intelligence_model: confIntelModel,
+        stt_provider: confSttProvider,
+        tts_provider: confTtsProvider,
+        model: `bavio-${confTier}`,
         active: confActive,
       });
 
@@ -396,6 +431,7 @@ export default function AssistantDashboardPage() {
               <p className="text-sm text-ink-tertiary mt-1">Build, configure, and manage your AI workforce.</p>
             </div>
             <button
+              id="create-assistant-btn-top"
               onClick={() => {
                 setCreateStep(1);
                 setCurrentView("create");
@@ -455,10 +491,15 @@ export default function AssistantDashboardPage() {
                           </div>
                         </div>
 
-                        {/* Status badge */}
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded border capitalize ${status.color}`}>
-                          {status.label}
-                        </span>
+                        {/* Status & Tier badges */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-saffron/10 text-saffron border border-saffron/20">
+                            {ast.intelligence_tier ? `BAVIO ${ast.intelligence_tier.toUpperCase()}` : "BAVIO CORE"}
+                          </span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded border capitalize ${status.color}`}>
+                            {status.label}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Setup progress if incomplete */}
@@ -483,16 +524,18 @@ export default function AssistantDashboardPage() {
                           </span>
                         </div>
                         <div>
+                          <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Voice Persona</span>
+                          <span className="text-ink font-semibold mt-0.5 block truncate">
+                            {voices.find(v => v.voice_id === ast.voice)?.voice_display_name || "Default Voice"}
+                          </span>
+                        </div>
+                        <div>
                           <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Calls Handled</span>
-                          <span className="text-ink font-semibold mt-0.5 block">{stats.callsCount}</span>
+                          <span className="font-mono text-ink font-semibold mt-0.5 block">{stats.callsCount} calls</span>
                         </div>
                         <div>
-                          <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Success Rate</span>
-                          <span className="text-ink font-semibold mt-0.5 block">{stats.successRate}</span>
-                        </div>
-                        <div>
-                          <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Last Active</span>
-                          <span className="text-ink-secondary mt-0.5 block">{stats.lastActive}</span>
+                          <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Model Tier</span>
+                          <span className="text-ink font-semibold mt-0.5 block capitalize">{ast.intelligence_tier || "Core"}</span>
                         </div>
                       </div>
                     </div>
@@ -534,7 +577,7 @@ export default function AssistantDashboardPage() {
               <div>
                 <h2 className="text-lg font-serif text-ink font-normal">Deploy AI Employee</h2>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mt-0.5 block">
-                  Step {createStep} of 6 — {createStep === 1 ? "Identity" : createStep === 2 ? "Behavior & Role" : createStep === 3 ? "Voice Picker" : createStep === 4 ? "Knowledge Base" : createStep === 5 ? "Number Assignment" : "Final Deploy"}
+                  Step {createStep} of 6 — {createStep === 1 ? "Identity" : createStep === 2 ? "Model & Role" : createStep === 3 ? "Voice Picker" : createStep === 4 ? "Knowledge Base" : createStep === 5 ? "Number Assignment" : "Final Deploy"}
                 </span>
               </div>
               <span className="text-xs font-bold text-saffron bg-saffron/5 border border-saffron/15 px-3 py-1 rounded-full">
@@ -556,6 +599,7 @@ export default function AssistantDashboardPage() {
                 <div>
                   <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Employee Name</label>
                   <input
+                    id="create-employee-name-input"
                     type="text"
                     value={createName}
                     onChange={(e) => setCreateName(e.target.value)}
@@ -571,6 +615,10 @@ export default function AssistantDashboardPage() {
                     className="w-full bg-white border border-line rounded-xl px-3 py-2 text-xs text-ink focus:outline-none focus:border-saffron cursor-pointer"
                   >
                     <option value="English">English</option>
+                    <option value="Hindi">Hindi (हिन्दी)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                    <option value="Tamil">Tamil (தமிழ்)</option>
+                    <option value="Hinglish">Hinglish</option>
                     <option value="Spanish">Spanish</option>
                     <option value="French">French</option>
                     <option value="German">German</option>
@@ -589,25 +637,115 @@ export default function AssistantDashboardPage() {
               </div>
             )}
 
-            {/* STEP 2: BEHAVIOR & ROLE */}
+            {/* STEP 2: MODEL TIER & BEHAVIOR */}
             {createStep === 2 && (
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* AI Model Tier Selector */}
                 <div>
-                  <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">AI Model Engine</label>
-                  <select
-                    value={createModel}
-                    onChange={(e) => setCreateModel(e.target.value)}
-                    className="w-full bg-white border border-line rounded-xl px-3 py-2 text-xs text-ink focus:outline-none focus:border-saffron cursor-pointer"
-                  >
-                    <option value="gpt-4o">GPT-4o (Premium reasoning, structured calls)</option>
-                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                    <option value="cerebras">Cerebras AI (Low latency speed, voice optimized)</option>
-                  </select>
+                  <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1.5">AI Model Tier</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {modelTiers.map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => setCreateTier(t.id)}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                          createTier === t.id
+                            ? "border-saffron bg-saffron/5 shadow-sm"
+                            : "border-line bg-white hover:border-saffron/30"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-ink">{t.label}</span>
+                            {t.isDefault && (
+                              <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 bg-saffron text-white rounded">
+                                Recommended
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-mono text-ink-tertiary">₹{t.priceInrPerMin}/min</span>
+                        </div>
+                        <p className="text-[11px] text-ink-secondary mt-1">{t.tagline}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Collapsible Advanced Model Settings */}
+                <div className="border border-line/60 rounded-xl p-3 bg-canvas/10">
+                  <button
+                    type="button"
+                    onClick={() => setCreateShowAdvanced(!createShowAdvanced)}
+                    className="flex items-center justify-between w-full text-[10px] font-bold uppercase tracking-wider text-ink-tertiary hover:text-ink transition-colors"
+                  >
+                    <span>Advanced model settings</span>
+                    <span className="text-xs">{createShowAdvanced ? "▲" : "▼"}</span>
+                  </button>
+
+                  {createShowAdvanced && (
+                    <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-line/40">
+                      <div>
+                        <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Intelligence Provider</label>
+                        <select
+                          value={createIntelProvider}
+                          onChange={(e) => setCreateIntelProvider(e.target.value)}
+                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                        >
+                          <option value="automatic">Automatic</option>
+                          <option value="openai">OpenAI</option>
+                          <option value="anthropic">Anthropic</option>
+                          <option value="sarvam">Sarvam AI</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Model Engine</label>
+                        <select
+                          value={createIntelModel}
+                          onChange={(e) => setCreateIntelModel(e.target.value)}
+                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                        >
+                          <option value="automatic">Automatic</option>
+                          <option value="gpt-5.4-mini">GPT-5.4 mini</option>
+                          <option value="gpt-5.4">GPT-5.4</option>
+                          <option value="gpt-5.5">GPT-5.5</option>
+                          <option value="claude-opus-5">Claude Opus 5</option>
+                          <option value="sarvam-30b">Sarvam-30B</option>
+                          <option value="sarvam-105b">Sarvam-105B</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Speech Recognition (STT)</label>
+                        <select
+                          value={createSttProvider}
+                          onChange={(e) => setCreateSttProvider(e.target.value)}
+                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                        >
+                          <option value="automatic">Automatic</option>
+                          <option value="elevenlabs">ElevenLabs Scribe v2 Realtime</option>
+                          <option value="sarvam">Sarvam Saaras v3</option>
+                          <option value="deepgram">Deepgram Nova-2</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Voice Provider (TTS)</label>
+                        <select
+                          value={createTtsProvider}
+                          onChange={(e) => setCreateTtsProvider(e.target.value)}
+                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                        >
+                          <option value="automatic">Automatic</option>
+                          <option value="elevenlabs">ElevenLabs Flash / Multilingual</option>
+                          <option value="sarvam">Sarvam Bulbul v3</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">System Instructions & Behavior Prompt</label>
                   <textarea
-                    rows={6}
+                    rows={5}
                     value={createPrompt}
                     onChange={(e) => setCreatePrompt(e.target.value)}
                     placeholder="Specify rules, constraints, tone, and conversational objectives..."
@@ -772,6 +910,12 @@ export default function AssistantDashboardPage() {
                       {numbers.find(n => n.id === createNumberId)?.number || "Unassigned"}
                     </p>
                   </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Intelligence Tier</span>
+                    <p className="font-semibold text-ink mt-0.5">
+                      {modelTiers.find(t => t.id === createTier)?.label || "Bavio Core"} (₹{modelTiers.find(t => t.id === createTier)?.priceInrPerMin}/min)
+                    </p>
+                  </div>
                   <div className="col-span-2 border-t border-line/40 pt-3">
                     <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Behavior Prompts</span>
                     <p className="text-ink-secondary mt-1 font-mono italic leading-relaxed text-[11px]">
@@ -795,6 +939,7 @@ export default function AssistantDashboardPage() {
 
               {createStep < 6 ? (
                 <button
+                  id="wizard-continue-btn"
                   type="button"
                   onClick={() => setCreateStep(prev => Math.min(6, prev + 1))}
                   disabled={createStep === 1 && !createName}
@@ -994,10 +1139,113 @@ export default function AssistantDashboardPage() {
                   </div>
                 )}
 
-                {/* CONFIG TABS CONTENT: AGENT BEHAVIOR */}
+                {/* CONFIG TABS CONTENT: AGENT BEHAVIOR & MODEL TIER */}
                 {activeConfigTab === "behavior" && (
-                  <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Behavior & Instructions</h3>
+                  <div className="space-y-5">
+                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Intelligence & Behavior</h3>
+
+                    {/* Model Tier Selector */}
+                    <div>
+                      <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1.5">AI Model Tier</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {modelTiers.map((t) => (
+                          <div
+                            key={t.id}
+                            onClick={() => setConfTier(t.id)}
+                            className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                              confTier === t.id
+                                ? "border-saffron bg-saffron/5 shadow-sm"
+                                : "border-line bg-white hover:border-saffron/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-xs text-ink">{t.label}</span>
+                                {t.isDefault && (
+                                  <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 bg-saffron text-white rounded">
+                                    Recommended
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] font-mono text-ink-tertiary">₹{t.priceInrPerMin}/min</span>
+                            </div>
+                            <p className="text-[11px] text-ink-secondary mt-1">{t.tagline}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Collapsible Advanced Model Settings */}
+                    <div className="border border-line/60 rounded-xl p-3 bg-canvas/10">
+                      <button
+                        type="button"
+                        onClick={() => setConfShowAdvanced(!confShowAdvanced)}
+                        className="flex items-center justify-between w-full text-[10px] font-bold uppercase tracking-wider text-ink-tertiary hover:text-ink transition-colors"
+                      >
+                        <span>Advanced model settings</span>
+                        <span className="text-xs">{confShowAdvanced ? "▲" : "▼"}</span>
+                      </button>
+
+                      {confShowAdvanced && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-line/40">
+                          <div>
+                            <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Intelligence Provider</label>
+                            <select
+                              value={confIntelProvider}
+                              onChange={(e) => setConfIntelProvider(e.target.value)}
+                              className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                            >
+                              <option value="automatic">Automatic</option>
+                              <option value="openai">OpenAI</option>
+                              <option value="anthropic">Anthropic</option>
+                              <option value="sarvam">Sarvam AI</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Model Engine</label>
+                            <select
+                              value={confIntelModel}
+                              onChange={(e) => setConfIntelModel(e.target.value)}
+                              className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                            >
+                              <option value="automatic">Automatic</option>
+                              <option value="gpt-5.4-mini">GPT-5.4 mini</option>
+                              <option value="gpt-5.4">GPT-5.4</option>
+                              <option value="gpt-5.5">GPT-5.5</option>
+                              <option value="claude-opus-5">Claude Opus 5</option>
+                              <option value="sarvam-30b">Sarvam-30B</option>
+                              <option value="sarvam-105b">Sarvam-105B</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Speech Recognition (STT)</label>
+                            <select
+                              value={confSttProvider}
+                              onChange={(e) => setConfSttProvider(e.target.value)}
+                              className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                            >
+                              <option value="automatic">Automatic</option>
+                              <option value="elevenlabs">ElevenLabs Scribe v2 Realtime</option>
+                              <option value="sarvam">Sarvam Saaras v3</option>
+                              <option value="deepgram">Deepgram Nova-2</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-ink-muted uppercase block mb-1">Voice Provider (TTS)</label>
+                            <select
+                              value={confTtsProvider}
+                              onChange={(e) => setConfTtsProvider(e.target.value)}
+                              className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
+                            >
+                              <option value="automatic">Automatic</option>
+                              <option value="elevenlabs">ElevenLabs Flash / Multilingual</option>
+                              <option value="sarvam">Sarvam Bulbul v3</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Welcome First Message Greeting</label>
                       <textarea
