@@ -60,27 +60,36 @@ export default function WorkspaceSettings() {
     try {
       setLoading(true);
       setError(null);
+      
       const [profileData, numbersData] = await Promise.all([
-        authApi.getProfile(),
-        clientId ? numbersApi.list(clientId) : Promise.resolve([]),
+        authApi.getProfile().catch((err) => {
+          console.warn("[Settings] Profile fetch fallback:", err);
+          return null;
+        }),
+        numbersApi.list(clientId || "").catch((err) => {
+          console.warn("[Settings] Numbers list fallback:", err);
+          return [];
+        }),
       ]);
 
-      setProfile(profileData);
-      setNumbers(Array.isArray(numbersData) ? numbersData : []);
-
-      // Seed form values
       if (profileData) {
+        setProfile(profileData);
         setCompanyName(profileData.name || profileData.businessName || "");
         setCompanyIndustry(profileData.industry || "");
         setCompanyDescription(profileData.business_description || "");
         setCompanyLanguage(profileData.language || "en");
       }
+      setNumbers(Array.isArray(numbersData) ? numbersData : []);
     } catch (err: any) {
-      setError(err.message || "Failed to load settings");
+      console.error("[Settings] Load error:", err);
+      // Only set UI error if essential data failed completely
+      if (!profile) {
+        setError(err.message || "Failed to load settings");
+      }
     } finally {
       setLoading(false);
     }
-  }, [clientId]);
+  }, [clientId, profile]);
 
   useEffect(() => {
     fetchData();

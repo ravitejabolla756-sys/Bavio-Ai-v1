@@ -498,8 +498,10 @@ export interface RegulatoryRequirement {
 }
 
 export const numbersApi = {
-  list: (clientId: string) =>
-    apiFetch<PhoneNumber[]>(`/phone-numbers/${clientId}`),
+  list: (clientId?: string) =>
+    apiFetch<PhoneNumber[]>(clientId && clientId !== 'undefined' ? `/phone-numbers/${clientId}` : '/phone-numbers/list')
+      .catch(() => apiFetch<PhoneNumber[]>('/phone-numbers/list'))
+      .catch(() => []),
 
   getCountries: () =>
     apiFetch<{ success: boolean; countries: PhoneCountry[] }>('/phone-numbers/countries'),
