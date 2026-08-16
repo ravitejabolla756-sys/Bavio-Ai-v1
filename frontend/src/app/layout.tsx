@@ -3,6 +3,7 @@ import "./globals.css";
 import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
 import NavigationProgress from "@/components/NavigationProgress";
 import { CountryProvider } from "@/context/CountryContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import AuthHashHandler from "@/components/AuthHashHandler";
 
 export const metadata: Metadata = {
@@ -48,14 +49,38 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmSans.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${inter.variable}`}
     >
-      <body className="antialiased bg-[#FCF8F3] text-[#140B06] min-h-[100dvh] font-sans noise-overlay">
-        <CountryProvider>
-          <AuthHashHandler />
-          <NavigationProgress />
-          {children}
-        </CountryProvider>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('bavio_theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (saved === 'dark' || (!saved && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.style.colorScheme = 'light';
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="antialiased bg-canvas text-ink min-h-[100dvh] font-sans noise-overlay">
+        <ThemeProvider>
+          <CountryProvider>
+            <AuthHashHandler />
+            <NavigationProgress />
+            {children}
+          </CountryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
