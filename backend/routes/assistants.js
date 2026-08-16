@@ -3,6 +3,9 @@ const router = express.Router();
 const assistantController = require('../controllers/assistantController');
 const { requireAuth } = require('../middleware/auth');
 
+router.get('/model-tiers', requireAuth, assistantController.getModelTiersCatalog);
+router.get('/model-tiers/catalog', requireAuth, assistantController.getModelTiersCatalog);
+
 router.post('/', requireAuth, assistantController.createAssistant);
 router.patch('/:id', requireAuth, assistantController.updateAssistant);
 router.get('/:client_id', requireAuth, assistantController.getAssistants);
