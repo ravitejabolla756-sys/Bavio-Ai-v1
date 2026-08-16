@@ -50,20 +50,40 @@
   --color-line-faint: rgba(245, 240, 232, 0.04);
 }
 
-/* ── View Transitions API: Radial Origin Reveal Config ── */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-  display: block;
-  position: fixed;
-  inset: 0;
-}
-::view-transition-old(root) {
-  z-index: 1;
-}
-::view-transition-new(root) {
-  z-index: 9999;
+/* ── Smooth, synchronized theme color transition (180ms ease-out) ── */
+:root,
+.dark,
+body,
+aside,
+header,
+main,
+nav,
+div,
+section,
+article,
+table,
+thead,
+tbody,
+tr,
+th,
+td,
+input,
+select,
+textarea,
+p,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+button,
+svg {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
 }
 
 /* ── Base resets ── */

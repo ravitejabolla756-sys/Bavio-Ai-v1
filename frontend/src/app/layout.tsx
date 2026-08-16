@@ -62,7 +62,8 @@ export default function RootLayout({
                   var isApp = p.indexOf('/dashboard') === 0 || p.indexOf('/workspace') === 0;
                   if (isApp) {
                     var saved = localStorage.getItem('bavio_theme');
-                    if (saved === 'dark') {
+                    var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    if (isDark) {
                       document.documentElement.classList.add('dark');
                       document.documentElement.style.colorScheme = 'dark';
                     } else {

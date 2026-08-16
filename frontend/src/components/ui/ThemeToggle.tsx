@@ -63,15 +63,7 @@ export default function ThemeToggle({
 
   const handleSelectTheme = (mode: ThemeMode) => {
     setIsOpen(false);
-
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      setTheme(mode, { x: centerX, y: centerY });
-    } else {
-      setTheme(mode);
-    }
+    setTheme(mode);
   };
 
   const defaultId = id || (variant === "mobile" ? "bavio-theme-toggle-mobile" : "bavio-theme-toggle-desktop");
