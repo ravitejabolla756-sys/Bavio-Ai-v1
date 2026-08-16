@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -47,8 +47,30 @@ export default function WorkspaceLayout({
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState("My Workspace");
   const [commercialState, setCommercialState] = useState("FREE PLAN");
+  const [mounted, setMounted] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close workspace dropdown on outside click
+  useEffect(() => {
+    if (!showWorkspaceDropdown) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (workspaceDropdownRef.current && !workspaceDropdownRef.current.contains(e.target as Node)) {
+        setShowWorkspaceDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [showWorkspaceDropdown]);
 
   // 1. Strict Authentication Guard
   useEffect(() => {
@@ -133,7 +155,7 @@ export default function WorkspaceLayout({
   };
 
   // If unauthenticated or checking, show loading HUD and do not render protected workspace
-  if (isAuthenticated === null || isAuthenticated === false) {
+  if (!mounted || isAuthenticated === null || isAuthenticated === false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-canvas text-ink">
         <Spinner className="w-10 h-10 text-saffron animate-spin mb-4" />
@@ -156,7 +178,7 @@ export default function WorkspaceLayout({
         {/* Workspace Brand / Selector */}
         <div className="flex flex-col">
           <div className="p-4 border-b border-line">
-            <div className="relative">
+            <div className="relative" ref={workspaceDropdownRef}>
               <button
                 onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
                 className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-surface-raised transition-colors text-left group"
@@ -191,14 +213,6 @@ export default function WorkspaceLayout({
                     <span className="w-2 h-2 rounded-full bg-saffron" />
                     <span>{workspace || "Bavio Workspace"}</span>
                   </button>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setShowWorkspaceDropdown(false)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ink-secondary hover:text-ink hover:bg-surface-raised rounded-lg text-left transition-colors"
-                  >
-                    <span>Switch to Voice Console</span>
-                    <ArrowRight className="w-3 h-3 text-ink-tertiary" />
-                  </Link>
                 </div>
               )}
             </div>
