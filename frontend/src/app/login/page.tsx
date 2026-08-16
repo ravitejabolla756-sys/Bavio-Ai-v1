@@ -17,6 +17,7 @@ import {
   ShieldCheck
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
+import RotatingAuthHeader from "@/components/auth/RotatingAuthHeader";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 
@@ -150,21 +151,8 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Marketing Content Text Block (Left-Center, max-w-[580px]) */}
-        <div className="relative z-20 max-w-[580px] w-full my-auto py-4 text-left">
-          <span className="text-[#FF6B00] uppercase tracking-[0.12em] font-bold text-[11px] lg:text-[12px] block mb-3.5 font-sans">
-            AI VOICE WORKFORCE
-          </span>
-          
-          <h2 className="font-serif text-[40px] md:text-[46px] lg:text-[54px] xl:text-[60px] leading-[1.0] lg:leading-[1.02] tracking-tight font-normal text-white mb-4 lg:mb-5">
-            Your business, <br />
-            <span className="text-[#FF6B00]">always in conversation.</span>
-          </h2>
-          
-          <p className="text-[16px] lg:text-[18px] text-white/80 font-sans leading-[1.5] max-w-[520px]">
-            AI employees that answer calls, qualify leads, book appointments, and support your customers — 24/7.
-          </p>
-        </div>
+        {/* Marketing Content Text Block with 3D Mechanical Rotating Header */}
+        <RotatingAuthHeader />
 
         {/* Bottom Features */}
         <div className="relative z-20 w-full max-w-[580px]">
