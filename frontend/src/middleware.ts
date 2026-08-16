@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
 
   const isAuthenticated = request.cookies.get("bavio_auth")?.value === "true";
 
-  // 1. Protect Workspace & Dashboard: must be authenticated
+  // Protect Workspace & Dashboard: must be authenticated
   if (pathname.startsWith("/workspace") || pathname.startsWith("/dashboard")) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
@@ -15,16 +15,9 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Prevent already logged-in users from seeing /login page
-  if (pathname === "/login") {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/workspace", request.url));
-    }
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/workspace/:path*", "/workspace", "/login"],
+  matcher: ["/dashboard/:path*", "/workspace/:path*", "/workspace"],
 };

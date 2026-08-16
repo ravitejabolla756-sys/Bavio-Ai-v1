@@ -66,7 +66,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+    if (typeof window !== "undefined") {
+      return Boolean(localStorage.getItem("bavio_token"));
+    }
+    return null;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState("Medcare Hospitals");
