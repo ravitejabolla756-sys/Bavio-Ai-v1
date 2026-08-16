@@ -51,6 +51,7 @@ export default function LoginPage() {
 
   async function handleGoogleLogin(isPopup = false) {
     try {
+      setErrorMsg(null);
       const { supabase } = await import("@/lib/supabase");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -60,7 +61,24 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: any) {
-      alert("Google login failed: " + err.message);
+      setErrorMsg("Google login failed: " + (err.message || err));
+    }
+  }
+
+  async function handleMicrosoftLogin() {
+    try {
+      setErrorMsg(null);
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "azure",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: "email profile openid",
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setErrorMsg("Microsoft login failed: " + (err.message || err));
     }
   }
 
@@ -75,7 +93,6 @@ export default function LoginPage() {
         localStorage.setItem("bavio_auth_redirect", redirectUrl);
       }
       if (params.get("oauth_popup") === "true") {
-        // Automatically trigger Google sign in for the popup window
         handleGoogleLogin(true);
       }
     }
@@ -108,42 +125,22 @@ export default function LoginPage() {
         // Store auth data using centralized helper
         setAuthData(result.token, result.client_id, result.name);
         setCookie("bavio_auth", "true");
+        setCookie("bavio_onboarding_completed", "true");
 
-        // Use onboarding_status from login response (no extra fetch needed)
-        const onboardingStatus = result.onboarding_status || "pending";
-
-        if (onboardingStatus === "ready") {
-          setCookie("bavio_onboarding_completed", "true");
-          const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-          if (redirectUrl) {
-            localStorage.removeItem("bavio_auth_redirect");
-            navigateAfterAuth(redirectUrl);
-          } else {
-            navigateAfterAuth("/workspace");
-          }
+        const redirectUrl = localStorage.getItem("bavio_auth_redirect");
+        if (redirectUrl) {
+          localStorage.removeItem("bavio_auth_redirect");
+          navigateAfterAuth(redirectUrl);
         } else {
-          setCookie("bavio_onboarding_completed", "true");
           navigateAfterAuth("/workspace");
         }
+      } else {
+        throw new Error("Authentication failed. Please verify your credentials.");
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Invalid credentials. Please try again.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Google login handler is defined above to allow hoisting inside useEffect
-
-  const handleSocialAuth = () => {
-    setCookie("bavio_auth", "true");
-    setCookie("bavio_onboarding_completed", "true");
-    const redirectUrl = localStorage.getItem("bavio_auth_redirect");
-    if (redirectUrl) {
-      localStorage.removeItem("bavio_auth_redirect");
-      navigateAfterAuth(redirectUrl);
-    } else {
-      navigateAfterAuth("/workspace");
     }
   };
 
@@ -292,7 +289,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={handleSocialAuth}
+              onClick={handleMicrosoftLogin}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#FAF7F2] text-[#3A3A42] border border-[#E5E0D8] text-body-sm font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
               {/* Microsoft Vector Icon */}

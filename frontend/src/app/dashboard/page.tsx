@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   PhoneCall,
@@ -33,6 +34,7 @@ import {
 } from "@/lib/api";
 
 export default function DashboardOverview() {
+  const router = useRouter();
   const [calls, setCalls] = useState<CallRecord[]>([]);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [assistants, setAssistants] = useState<Assistant[]>([]);
@@ -44,9 +46,9 @@ export default function DashboardOverview() {
   const clientId = getClientId();
 
   const fetchData = useCallback(async () => {
-    if (!clientId) {
-      setError("Not authenticated");
-      setLoading(false);
+    const token = typeof window !== "undefined" ? localStorage.getItem("bavio_token") : null;
+    if (!clientId || !token) {
+      router.replace("/login");
       return;
     }
     try {
