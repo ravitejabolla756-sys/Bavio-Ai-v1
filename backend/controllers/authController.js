@@ -100,41 +100,69 @@ async function signup(req, res) {
         }
 
         const isDev = process.env.NODE_ENV === 'development';
+        const crypto = require('crypto');
+        const emailService = require('../services/emailService');
 
-        // 2. Create user in Supabase Auth via standard signUp Client (sends OTP automatically)
-        const authClient = db.createAuthClient();
-        const signUpOptions = {
-            email: finalEmail,
-            password: finalPassword,
-            options: {
-                data: {
+        // Check if user already exists
+        const existingCheck = await db.query(
+            `SELECT id, email FROM businesses WHERE email = $1`,
+            [finalEmail.trim().toLowerCase()]
+        );
+        if (existingCheck.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                error: 'An account already exists with this email. Sign in instead.'
+            });
+        }
+
+        // 2. Generate 6-digit OTP
+        const otpCode = crypto.randomInt(100000, 999999).toString();
+
+        // Invalidate previous unconsumed OTPs for this email
+        await db.query(
+            `UPDATE email_verifications SET consumed = true WHERE email = $1 AND consumed = false`,
+            [finalEmail.trim().toLowerCase()]
+        );
+
+        // Store OTP with 10-minute expiry
+        await db.query(
+            `INSERT INTO email_verifications (email, otp_code, expires_at)
+             VALUES ($1, $2, NOW() + INTERVAL '10 minutes')`,
+            [finalEmail.trim().toLowerCase(), otpCode]
+        );
+
+        // 3. Deliver Verification Email
+        const emailResult = await emailService.sendOtpEmail(finalEmail.trim().toLowerCase(), otpCode);
+        if (!emailResult.success) {
+            console.error('[signup] Failed to dispatch OTP email:', emailResult.error);
+            return res.status(500).json({
+                success: false,
+                error: 'Unable to send verification email. Please check your email and try again.'
+            });
+        }
+
+        // 4. Create user in Supabase Auth via admin client
+        let supabaseUserId = randomUUID();
+        try {
+            const { data: adminData, error: adminError } = await db.supabase.auth.admin.createUser({
+                email: finalEmail,
+                password: finalPassword,
+                email_confirm: false,
+                user_metadata: {
                     full_name: finalName,
                     country: finalCountry
-                },
-                emailRedirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
-            }
-        };
-
-        const { data: authData, error: authError } = await authClient.auth.signUp(signUpOptions);
-
-        if (authError) {
-            if (authError.message && (authError.message.includes('already registered') || authError.status === 422)) {
-                const msg = authError.message.toLowerCase();
-                if (msg.includes('phone')) {
-                    return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
                 }
-                return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+            });
+            if (adminData && adminData.user) {
+                supabaseUserId = adminData.user.id;
+            } else if (adminError) {
+                console.warn('[signup] Supabase admin.createUser notice:', adminError.message);
             }
-            console.error('Supabase Auth signup error:', authError);
-            return res.status(400).json({ success: false, error: authError.message });
-        }
-
-        const supabaseUser = authData.user;
-        if (!supabaseUser) {
-            return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+        } catch (e) {
+            console.warn('[signup] Supabase user creation warning:', e.message);
         }
         
-        // 3. Generate API Key (UUID formatted)
+        // 5. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
 
         const devEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
@@ -142,7 +170,7 @@ async function signup(req, res) {
 
         const finalMinutesLimit = isDeveloper ? 999999 : 0;
         const finalOnboardingStep = isDeveloper ? 6 : 0;
-        const finalOnboardingStatus = isDeveloper ? 'ready' : 'pre_payment';
+        const finalOnboardingStatus = isDeveloper ? 'ready' : 'pending';
         const finalPlan = isDeveloper ? 'enterprise' : 'free';
         const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
@@ -159,7 +187,7 @@ async function signup(req, res) {
             ? planKeyMap[plan.toLowerCase().trim()] 
             : 'free';
 
-        // 4. Insert into businesses table
+        // 6. Insert into businesses table
         const result = await db.query(
             `INSERT INTO businesses (
                 id, name, email, phone, password_hash, api_key, 
@@ -172,7 +200,7 @@ async function signup(req, res) {
             VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
             RETURNING *`,
             [
-                supabaseUser.id, finalName, finalEmail, finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
+                supabaseUserId, finalName, finalEmail.trim().toLowerCase(), finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
                 finalMinutesLimit, finalStatus, finalCountry, finalCountryCode, finalName, null, 
                 null, 'en-US', finalNormalizedPhone, 
                 finalOnboardingStep, finalOnboardingStatus,
@@ -183,45 +211,9 @@ async function signup(req, res) {
         
         const user = result.rows[0];
 
-        // Trigger welcome email in the background
-        const emailService = require('../services/emailService');
-        emailService.sendMail(
-            finalEmail,
-            'Welcome to Bavio!',
-            `Hi ${finalName},
-
-Your Bavio account has been created. Try the 3-Minute Bavio Demo to get started.
-
-Questions? Chat with us →
-
-Bavio Team`
-        ).catch(e => console.error('[EMAIL] Failed to send welcome email:', e.message));
-
-        // Programmatic sign-in in development to get JWT token directly
-        let devToken = null;
-        if (isDev) {
-            try {
-                const signInClient = db.createAuthClient();
-                const { data: signInData, error: signInError } = await signInClient.auth.signInWithPassword({
-                    email: finalEmail,
-                    password: finalPassword
-                });
-                if (!signInError && signInData.session) {
-                    devToken = signInData.session.access_token;
-                }
-            } catch (signInErr) {
-                console.error('[signup] Programmatic sign-in failed:', signInErr.message);
-            }
-        }
-
-        // Since email verification is required in production, we return redirection.
-        // In development, we return token to bypass verification.
-        const verificationRequired = !isDev || !devToken;
-        
         res.status(201).json({
             success: true,
-            emailVerificationRequired: verificationRequired,
-            token: devToken,
+            emailVerificationRequired: true,
             client_id: user.id,
             userId: user.id, 
             businessId: user.id, 
@@ -234,13 +226,13 @@ Bavio Team`
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
             country_code: user.country_code,
-            redirectTo: verificationRequired ? '/verify-email' : '/demo'
+            message: 'Verification email sent.'
         });
     } catch (err) {
         if (err.code === '23505') {
             const detail = String(err.detail || '').toLowerCase();
             if (detail.includes('email')) {
-                return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+                return res.status(409).json({ success: false, error: 'An account already exists with this email. Sign in instead.' });
             }
             if (detail.includes('phone')) {
                 return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
@@ -582,15 +574,56 @@ async function resendVerification(req, res) {
         }
 
         const trimmedEmail = email.trim().toLowerCase();
-        const authClient = db.createAuthClient();
-        const { data, error } = await authClient.auth.resend({
-            type: 'signup',
-            email: trimmedEmail
-        });
+        const crypto = require('crypto');
+        const emailService = require('../services/emailService');
 
-        if (error) {
-            console.error('[resendVerification] Supabase resend error:', error.message);
-            return res.status(400).json({ success: false, error: error.message });
+        // Check if user exists in businesses table
+        const userCheck = await db.query(
+            `SELECT id, name FROM businesses WHERE email = $1`,
+            [trimmedEmail]
+        );
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'No account found with this email. Please sign up first.' });
+        }
+
+        // 1. Enforce 30s resend cooldown
+        const recentOtpCheck = await db.query(
+            `SELECT created_at FROM email_verifications 
+             WHERE email = $1 AND created_at > NOW() - INTERVAL '30 seconds'
+             ORDER BY created_at DESC LIMIT 1`,
+            [trimmedEmail]
+        );
+
+        if (recentOtpCheck.rows.length > 0) {
+            return res.status(429).json({
+                success: false,
+                error: 'Please wait before requesting another verification code.'
+            });
+        }
+
+        // 2. Invalidate previous unconsumed OTPs
+        await db.query(
+            `UPDATE email_verifications SET consumed = true WHERE email = $1 AND consumed = false`,
+            [trimmedEmail]
+        );
+
+        // 3. Generate new 6-digit OTP
+        const otpCode = crypto.randomInt(100000, 999999).toString();
+
+        await db.query(
+            `INSERT INTO email_verifications (email, otp_code, expires_at)
+             VALUES ($1, $2, NOW() + INTERVAL '10 minutes')`,
+            [trimmedEmail, otpCode]
+        );
+
+        // 4. Dispatch Email
+        const sendResult = await emailService.sendOtpEmail(trimmedEmail, otpCode);
+        if (!sendResult.success) {
+            console.error('[resendVerification] Email delivery failed:', sendResult.error);
+            return res.status(500).json({
+                success: false,
+                error: 'Unable to resend verification email. Please try again.'
+            });
         }
 
         res.status(200).json({
@@ -610,35 +643,77 @@ async function verifyOtp(req, res) {
             return res.status(400).json({ success: false, error: 'Email and verification code are required' });
         }
 
-        const authClient = db.createAuthClient();
-        const { data, error } = await authClient.auth.verifyOtp({
-            email: email.trim().toLowerCase(),
-            token: token.trim(),
-            type: 'signup'
-        });
+        const trimmedEmail = email.trim().toLowerCase();
+        const enteredToken = String(token).trim();
 
-        if (error) {
-            console.error('[AUTH CONTROLLER] verifyOtp error:', error.message);
-            return res.status(400).json({ success: false, error: error.message });
+        // 1. Look up active OTP record
+        const otpResult = await db.query(
+            `SELECT * FROM email_verifications 
+             WHERE email = $1 AND consumed = false 
+             ORDER BY created_at DESC LIMIT 1`,
+            [trimmedEmail]
+        );
+
+        if (otpResult.rows.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid verification code.' });
         }
 
-        const supabaseUser = data.user;
-        const sessionToken = data.session.access_token;
+        const otpRecord = otpResult.rows[0];
 
-        // Update status to active and return final profile data
+        // 2. Check maximum attempts (max 5)
+        if (otpRecord.attempts >= 5) {
+            return res.status(400).json({
+                success: false,
+                error: 'Too many failed attempts. Please request a new verification code.'
+            });
+        }
+
+        // 3. Check expiration
+        if (new Date(otpRecord.expires_at) < new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: 'This verification code has expired. Request a new code.'
+            });
+        }
+
+        // 4. Validate OTP match
+        if (otpRecord.otp_code !== enteredToken) {
+            await db.query(
+                `UPDATE email_verifications SET attempts = attempts + 1 WHERE id = $1`,
+                [otpRecord.id]
+            );
+            return res.status(400).json({ success: false, error: 'Invalid verification code.' });
+        }
+
+        // 5. Consume OTP
+        await db.query(
+            `UPDATE email_verifications SET consumed = true WHERE id = $1`,
+            [otpRecord.id]
+        );
+
+        // 6. Activate business in database
         const updateResult = await db.query(
             `UPDATE businesses 
              SET status = 'active', updated_at = NOW() 
-             WHERE id = $1 
+             WHERE email = $1 
              RETURNING *`,
-            [supabaseUser.id]
+            [trimmedEmail]
         );
 
         if (updateResult.rows.length === 0) {
-            return res.status(404).json({ success: false, error: 'Business profile not found' });
+            return res.status(404).json({ success: false, error: 'Business profile not found.' });
         }
 
         const user = updateResult.rows[0];
+
+        // 7. Generate JWT session token
+        const jwt = require('jsonwebtoken');
+        const jwtSecret = process.env.JWT_SECRET || 'bavio_secret_key_default_jwt_fallback';
+        const sessionToken = jwt.sign(
+            { id: user.id, email: user.email, name: user.name },
+            jwtSecret,
+            { expiresIn: '7d' }
+        );
 
         res.status(200).json({
             success: true,
@@ -653,6 +728,7 @@ async function verifyOtp(req, res) {
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
             country_code: user.country_code,
+            redirectTo: '/workspace'
         });
     } catch (err) {
         console.error('[AUTH CONTROLLER] verifyOtp exception:', err.message);
