@@ -24,6 +24,7 @@ import {
   File
 } from "@phosphor-icons/react";
 import { authApi, BusinessProfile, knowledgeBaseApi, KnowledgeDoc } from "@/lib/api";
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 function WorkspaceSettingsContent() {
   const searchParams = useSearchParams();
@@ -39,40 +40,31 @@ function WorkspaceSettingsContent() {
     }
   }, [searchParams]);
 
-  // Profile forms
-  const [profile, setProfile] = useState<BusinessProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Profile forms from shared context
+  const { profile, updateProfileLocally } = useWorkspace();
   const [error, setError] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    website: ""
-  });
+  const [formData, setFormData] = useState(() => ({
+    name: profile?.name || "",
+    phone: profile?.phone || "",
+    email: profile?.email || "",
+    website: profile?.website || ""
+  }));
+
+  // Sync formData if fresh profile arrives
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        name: prev.name || profile.name || "",
+        phone: prev.phone || profile.phone || "",
+        email: prev.email || profile.email || "",
+        website: prev.website || profile.website || ""
+      }));
+    }
+  }, [profile]);
 
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savedGeneralAlert, setSavedGeneralAlert] = useState(false);
-
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const data = await authApi.getProfile();
-        setProfile(data);
-        setFormData({
-          name: data.name || "",
-          phone: data.phone || "",
-          email: data.email || "",
-          website: data.website || ""
-        });
-      } catch (err: any) {
-        setError(err.message || "Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProfile();
-  }, []);
 
   const handleGeneralSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +77,7 @@ function WorkspaceSettingsContent() {
         email: formData.email,
         website: formData.website
       });
-      setProfile(updated);
+      updateProfileLocally(updated);
       setSavedGeneralAlert(true);
       setTimeout(() => setSavedGeneralAlert(false), 3000);
     } catch (err: any) {
@@ -249,18 +241,6 @@ function WorkspaceSettingsContent() {
     reader.readAsText(file);
     // Reset input so same file can be re-selected
     e.target.value = "";
-  }
-
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
-        <div className="text-left">
-          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Workspace Settings</h1>
-          <p className="text-body-xs text-ink-tertiary mt-1">Loading settings...</p>
-        </div>
-        <div className="card-bezel animate-pulse"><div className="card-bezel-inner h-64 bg-surface-raised/20" /></div>
-      </div>
-    );
   }
 
   return (
@@ -814,8 +794,11 @@ function WorkspaceSettingsContent() {
 export default function WorkspaceSettings() {
   return (
     <Suspense fallback={
-      <div className="w-full flex items-center justify-center py-20 text-xs font-mono text-ink-muted">
-        Loading settings...
+      <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
+        <div className="text-left">
+          <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Workspace Settings</h1>
+          <p className="text-body-xs text-ink-tertiary mt-1">Configure workspace parameters, audit security scopes, and sync AI knowledge.</p>
+        </div>
       </div>
     }>
       <WorkspaceSettingsContent />
