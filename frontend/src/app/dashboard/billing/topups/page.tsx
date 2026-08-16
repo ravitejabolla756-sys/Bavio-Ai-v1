@@ -198,7 +198,7 @@ export default function TopupPage() {
                 disabled={loading === topup.id || isNoActivePlan}
                 className={`w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors font-sans mt-6 text-center ${
                   isRecommended
-                    ? "bg-saffron hover:bg-saffron-dark text-white shadow-saffron"
+                    ? "bg-saffron hover:bg-saffron-dark text-white shadow-sm"
                     : "bg-ink hover:bg-ink-dark text-white"
                 } disabled:opacity-40`}
               >

@@ -207,7 +207,7 @@ export default function BillingLedger() {
         
         <button
           onClick={() => setIsPlanOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron self-start md:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm self-start md:self-auto"
         >
           Manage Plan
         </button>
@@ -352,7 +352,7 @@ export default function BillingLedger() {
                   <button
                     onClick={() => handleBuyTopup(item.id)}
                     disabled={topupLoading === item.id || isNoActivePlan}
-                    className="mt-3 py-1.5 w-full bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-saffron disabled:opacity-40"
+                    className="mt-3 py-1.5 w-full bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm disabled:opacity-40"
                   >
                     {topupLoading === item.id ? "Processing..." : `Buy`}
                   </button>

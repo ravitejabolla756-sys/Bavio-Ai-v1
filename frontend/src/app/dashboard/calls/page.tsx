@@ -560,7 +560,7 @@ export default function CallsLogs() {
                     <div className="bg-canvas/30 border border-line rounded-xl p-4 flex items-center justify-between gap-4">
                       <button
                         onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                        className="w-8 h-8 rounded-full bg-saffron text-white flex items-center justify-center hover:bg-saffron-hover hover:scale-105 active:scale-95 transition-all shrink-0 shadow-saffron"
+                        className="w-8 h-8 rounded-full bg-saffron text-white flex items-center justify-center hover:bg-saffron-hover hover:scale-105 active:scale-95 transition-all shrink-0 shadow-sm"
                       >
                         {isPlayingAudio ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
                       </button>

@@ -288,7 +288,7 @@ export default function KnowledgeDashboardPage() {
             setAddTab("website");
             setIsAddOpen(true);
           }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron self-start md:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           Add Knowledge
@@ -394,7 +394,7 @@ export default function KnowledgeDashboardPage() {
                 setAddTab("website");
                 setIsAddOpen(true);
               }}
-              className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-saffron"
+              className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-sm"
             >
               Add Knowledge
             </button>
@@ -694,7 +694,7 @@ export default function KnowledgeDashboardPage() {
                 <button
                   onClick={handleAddKnowledge}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron transition-all disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-40"
                 >
                   {saving && <Spinner className="w-4 h-4 animate-spin" />}
                   Add Node
@@ -812,7 +812,7 @@ export default function KnowledgeDashboardPage() {
                 <button
                   onClick={handleSaveEdit}
                   disabled={isSavingEdit}
-                  className="flex items-center gap-1 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-saffron transition-all disabled:opacity-40 font-sans"
+                  className="flex items-center gap-1 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-sm transition-all disabled:opacity-40 font-sans"
                 >
                   {isSavingEdit && <Spinner className="w-3 h-3 animate-spin" />}
                   Save Changes

@@ -400,7 +400,7 @@ export default function AssistantDashboardPage() {
                 setCreateStep(1);
                 setCurrentView("create");
               }}
-              className="flex items-center gap-1.5 px-4 py-2 border border-saffron bg-saffron text-white hover:bg-saffron-dark text-xs font-semibold rounded-xl transition-all shadow-saffron self-start md:self-auto"
+              className="flex items-center gap-1.5 px-4 py-2 border border-saffron bg-saffron text-white hover:bg-saffron-dark text-xs font-semibold rounded-xl transition-all shadow-sm self-start md:self-auto"
             >
               <Plus className="w-4 h-4" />
               Create AI Employee
@@ -424,7 +424,7 @@ export default function AssistantDashboardPage() {
                   setCreateStep(1);
                   setCurrentView("create");
                 }}
-                className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-saffron"
+                className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-sm"
               >
                 Create AI Employee
               </button>
@@ -798,7 +798,7 @@ export default function AssistantDashboardPage() {
                   type="button"
                   onClick={() => setCreateStep(prev => Math.min(6, prev + 1))}
                   disabled={createStep === 1 && !createName}
-                  className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-saffron transition-all disabled:opacity-50"
+                  className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50"
                 >
                   Continue
                 </button>
@@ -807,7 +807,7 @@ export default function AssistantDashboardPage() {
                   type="button"
                   onClick={handleDeployAssistant}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-saffron transition-all disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm transition-all disabled:opacity-40"
                 >
                   {saving && <Spinner className="w-4 h-4 animate-spin" />}
                   Deploy AI Employee
@@ -838,7 +838,7 @@ export default function AssistantDashboardPage() {
             <button
               onClick={handleSaveConfiguration}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron disabled:opacity-40"
+              className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm disabled:opacity-40"
             >
               {saving && <Spinner className="w-4 h-4 animate-spin" />}
               Save Changes
@@ -1191,7 +1191,7 @@ export default function AssistantDashboardPage() {
                 <button
                   onClick={handleSaveConfiguration}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-saffron disabled:opacity-40 font-sans"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm disabled:opacity-40 font-sans"
                 >
                   {saving && <Spinner className="w-4 h-4 animate-spin" />}
                   Save Changes

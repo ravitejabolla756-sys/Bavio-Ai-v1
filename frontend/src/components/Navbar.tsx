@@ -91,7 +91,6 @@ export default function Navbar() {
             style={{
               height: "42px",
               padding: "0 26px",
-              boxShadow: "0 4px 12px rgba(255,107,0,0.15)",
             }}
           >
             {!isAuthenticated ? "Get Started" : authText}
