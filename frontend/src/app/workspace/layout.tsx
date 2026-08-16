@@ -23,6 +23,7 @@ import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { clearAuthData, authApi } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { WorkspaceProvider } from "@/context/WorkspaceContext";
 
 const navigation = [
   { name: "Overview", href: "/workspace", icon: Layout },
@@ -37,15 +38,20 @@ export default function WorkspaceLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return Boolean(localStorage.getItem("bavio_token"));
     }
-    return null;
+    return true;
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("My Workspace");
+  const [workspace, setWorkspace] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("bavio_name") || "My Workspace";
+    }
+    return "My Workspace";
+  });
   const [commercialState, setCommercialState] = useState("FREE PLAN");
   const [mounted, setMounted] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
@@ -167,7 +173,8 @@ export default function WorkspaceLayout({
   }
 
   return (
-    <div className="flex h-screen bg-canvas text-ink font-sans overflow-hidden">
+    <WorkspaceProvider>
+      <div className="flex h-screen bg-canvas text-ink font-sans overflow-hidden">
       
       {/* ── 1. FIXED LEFT SIDEBAR (Desktop) ── */}
       <aside
@@ -431,7 +438,7 @@ export default function WorkspaceLayout({
           </div>
         </div>
       )}
-
-    </div>
+      </div>
+    </WorkspaceProvider>
   );
 }

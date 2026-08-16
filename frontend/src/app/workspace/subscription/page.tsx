@@ -9,80 +9,31 @@ import {
   CheckCircle,
 } from "@phosphor-icons/react";
 import { billingApi } from "@/lib/api";
-
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  country: string;
-  api_key: string;
-  minutes_limit: number;
-  minutes_used: number;
-  plan: string;
-  plan_name: string;
-  current_period_end: string | null;
-  created_at: string;
-}
-
-interface PaymentRecord {
-  id: string;
-  amount: number;
-  currency: string;
-  plan: string;
-  invoiceNumber?: string;
-  created_at: string;
-  status: string;
-}
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 export default function WorkspaceSubscription() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profile, payments, refreshProfile, refreshPayments } = useWorkspace();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("bavio_token");
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      // Get profile
-      const res = await fetch("/api/auth/profile", {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        if (result.success && result.id) {
-          setProfile(result as UserProfile);
-          
-          // Get payment history
-          try {
-            const payRes = await billingApi.getPayments(result.id);
-            if (Array.isArray(payRes)) {
-              setPayments(payRes);
-            }
-          } catch (payErr) {
-            console.error("Failed to fetch payments:", payErr);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load subscription details:", err);
-    } finally {
-      setLoading(false);
-    }
+  const activeProfile = profile || {
+    id: "usr_default",
+    name: "My Workspace",
+    email: "—",
+    phone: "—",
+    country: "US",
+    api_key: "",
+    minutes_limit: 30,
+    minutes_used: 0,
+    plan: "free",
+    plan_name: "free",
+    current_period_end: null,
+    created_at: new Date().toISOString(),
+    onboarding_status: "completed",
+    onboarding_step: 3,
+    dodo_subscription_id: null,
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const triggerCheckout = async (planName: string) => {
     try {
@@ -110,7 +61,8 @@ export default function WorkspaceSubscription() {
       setErrorMsg(null);
       await billingApi.cancel();
       alert("Subscription cancelled successfully.");
-      fetchData();
+      refreshProfile();
+      refreshPayments();
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to cancel subscription.");
     } finally {
@@ -118,64 +70,57 @@ export default function WorkspaceSubscription() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] text-ink-muted">
-        <Spinner className="w-10 h-10 text-[#FF6B00] animate-spin mb-4" />
-        <span className="text-body-xs font-mono font-bold uppercase tracking-wider">Loading billing details...</span>
-      </div>
-    );
-  }
-
   const planDisplay =
-    profile?.plan_name?.toLowerCase() === "starter"
+    activeProfile.plan_name?.toLowerCase() === "starter"
       ? "Starter Plan"
-      : profile?.plan_name?.toLowerCase() === "growth"
+      : activeProfile.plan_name?.toLowerCase() === "growth"
       ? "Growth Plan"
-      : profile?.plan_name?.toLowerCase() === "scale"
+      : activeProfile.plan_name?.toLowerCase() === "scale"
       ? "Scale Plan"
       : "No Active Plan";
 
-  const expiryFormatted = profile?.current_period_end
-    ? new Date(profile.current_period_end).toLocaleDateString("en-US", {
+  const activePlanLower = activeProfile.plan_name?.toLowerCase() || "free";
+
+  const expiryFormatted = activeProfile.current_period_end
+    ? new Date(activeProfile.current_period_end).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
     : "N/A";
 
-  const activePlanLower = (profile?.plan_name || "free").toLowerCase();
-
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative text-left">
+    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
       
       {/* Header */}
-      <div>
-        <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Subscription &amp; Billing</h1>
-        <p className="text-body-xs text-ink-tertiary mt-1">Review active plan parameters, upgrade/downgrade tiers, and view invoices.</p>
+      <div className="text-left">
+        <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Subscription & Billing</h1>
+        <p className="text-body-xs text-ink-tertiary mt-1">Manage your compute tier, monitor talk-time usage, and inspect invoice histories.</p>
       </div>
 
       {errorMsg && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 font-bold text-body-xs flex items-center gap-2">
-          <WarningCircle className="w-5 h-5 shrink-0" />
+        <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-body-xs">
+          <WarningCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Main Section */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Plan Overview & Upgrade options */}
+        {/* Left: Active Plan Card + Upgrade Choices */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="bg-white border border-line rounded-[22px] p-6 shadow-premium">
-            <div className="flex justify-between items-start border-b border-line pb-4 mb-6">
+          
+          {/* Current Tier Overview Box */}
+          <div className="border border-line bg-white p-6 rounded-[24px] shadow-premium text-left">
+            <div className="flex justify-between items-start mb-6">
               <div>
                 <span className="text-[10px] font-mono tracking-widest text-saffron font-bold uppercase mb-1 block">Active Plan Tier</span>
                 <h2 className="font-display font-black text-2xl text-ink tracking-tight">{planDisplay}</h2>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold font-mono text-saffron">
-                  {profile?.plan_name?.toLowerCase() === "starter" ? "$39" : profile?.plan_name?.toLowerCase() === "growth" ? "$99" : profile?.plan_name?.toLowerCase() === "scale" ? "$249" : "N/A"}
+                  {activePlanLower === "starter" ? "$39" : activePlanLower === "growth" ? "$99" : activePlanLower === "scale" ? "$249" : "N/A"}
                 </span>
                 <span className="text-[10px] text-ink-muted block font-semibold">/month</span>
               </div>
@@ -185,7 +130,7 @@ export default function WorkspaceSubscription() {
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Talk Time Limit</span>
                 <span className="text-body-sm font-bold text-ink-secondary">
-                  {profile?.minutes_used || 0} / {profile?.minutes_limit || 120} mins
+                  {activeProfile.minutes_used || 0} / {activeProfile.minutes_limit || 120} mins
                 </span>
               </div>
               <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
@@ -201,7 +146,7 @@ export default function WorkspaceSubscription() {
               </div>
             </div>
 
-            {profile?.plan_name && profile.plan_name !== "free" && (
+            {activePlanLower !== "free" && (
               <button
                 type="button"
                 onClick={handleCancelSubscription}
