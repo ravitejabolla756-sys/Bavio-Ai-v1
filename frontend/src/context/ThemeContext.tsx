@@ -7,7 +7,7 @@ export type ThemeMode = "light" | "dark";
 interface ThemeContextType {
   theme: ThemeMode;
   isDark: boolean;
-  toggleTheme: (event?: React.MouseEvent<HTMLElement> | { clientX: number; clientY: number } | DOMRect | null) => void;
+  toggleTheme: (eventOrOrigin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null) => void;
   setTheme: (theme: ThemeMode, origin?: { x: number; y: number } | null) => void;
 }
 
@@ -48,54 +48,87 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Helper to extract center coordinates from various input types
+  // Helper to extract center coordinates exactly from the theme toggle button
   const extractCoordinates = (
-    eventOrOrigin?: React.MouseEvent<HTMLElement> | { clientX: number; clientY: number } | DOMRect | null
+    eventOrOrigin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null
   ): { x: number; y: number } => {
-    if (!eventOrOrigin) {
-      // Default origin fallback: top-right area where header toggle is located
+    // 1. Explicit { x, y } coordinates passed directly from button getBoundingClientRect()
+    if (eventOrOrigin && typeof (eventOrOrigin as any).x === "number" && typeof (eventOrOrigin as any).y === "number") {
       return {
-        x: typeof window !== "undefined" ? window.innerWidth - 60 : 100,
-        y: 40,
+        x: (eventOrOrigin as any).x,
+        y: (eventOrOrigin as any).y,
       };
     }
 
-    // 1. DOMRect instance
-    if ("left" in eventOrOrigin && "top" in eventOrOrigin && "width" in eventOrOrigin) {
+    // 2. DOMRect instance
+    if (eventOrOrigin && "left" in eventOrOrigin && "top" in eventOrOrigin && "width" in eventOrOrigin) {
       return {
         x: eventOrOrigin.left + eventOrOrigin.width / 2,
         y: eventOrOrigin.top + eventOrOrigin.height / 2,
       };
     }
 
-    // 2. React MouseEvent on an element
-    if ("currentTarget" in eventOrOrigin && eventOrOrigin.currentTarget) {
-      const rect = eventOrOrigin.currentTarget.getBoundingClientRect();
-      return {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      };
+    // 3. React MouseEvent on an element (use currentTarget bounding rect)
+    if (eventOrOrigin && "currentTarget" in eventOrOrigin && eventOrOrigin.currentTarget) {
+      const rect = (eventOrOrigin.currentTarget as HTMLElement).getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
     }
 
-    // 3. Coordinate object { clientX, clientY }
-    if ("clientX" in eventOrOrigin && "clientY" in eventOrOrigin) {
+    // 4. Click event with target (traverse to closest button)
+    if (eventOrOrigin && "target" in eventOrOrigin && eventOrOrigin.target) {
+      const el = ((eventOrOrigin.target as HTMLElement).closest("button") || eventOrOrigin.target) as HTMLElement;
+      if (el && typeof el.getBoundingClientRect === "function") {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
+        }
+      }
+    }
+
+    // 5. Query visible theme toggle button in the active DOM
+    if (typeof document !== "undefined") {
+      const candidates = document.querySelectorAll(
+        '#bavio-theme-toggle-desktop, #bavio-theme-toggle, [data-theme-toggle="true"], button[aria-label*="Switch to"]'
+      );
+      for (let i = 0; i < candidates.length; i++) {
+        const rect = candidates[i].getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
+        }
+      }
+    }
+
+    // 6. Coordinate object { clientX, clientY }
+    if (eventOrOrigin && "clientX" in eventOrOrigin && "clientY" in eventOrOrigin) {
       return {
         x: eventOrOrigin.clientX,
         y: eventOrOrigin.clientY,
       };
     }
 
+    // 7. Fallback to top-right header area where toggle resides
     return {
       x: typeof window !== "undefined" ? window.innerWidth - 60 : 100,
       y: 40,
     };
   };
 
-  // Perform the theme transition with radial reveal
+  // Perform the theme transition with radial reveal expanding from the toggle button
   const applyThemeWithTransition = useCallback(
     (
       nextTheme: ThemeMode,
-      origin?: React.MouseEvent<HTMLElement> | { clientX: number; clientY: number } | DOMRect | null
+      origin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null
     ) => {
       const { x, y } = extractCoordinates(origin);
 
@@ -114,7 +147,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       };
 
-      // 1. Reduced motion check: instantaneous smooth opacity fallback
+      // 1. Reduced motion check: instantaneous theme switch
       if (
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -123,19 +156,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 2. Check for View Transitions API support
+      // 2. Calculate dynamic radius to cover furthest viewport corner from button (x, y)
+      const w = typeof window !== "undefined" ? window.innerWidth : 1440;
+      const h = typeof window !== "undefined" ? window.innerHeight : 900;
+      const maxRadius = Math.hypot(
+        Math.max(x, w - x),
+        Math.max(y, h - y)
+      );
+
+      // 3. Use View Transitions API if supported
       if (
         typeof document !== "undefined" &&
         "startViewTransition" in document &&
         typeof (document as any).startViewTransition === "function"
       ) {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const maxRadius = Math.hypot(
-          Math.max(x, w - x),
-          Math.max(y, h - y)
-        );
-
         const transition = (document as any).startViewTransition(() => {
           commitThemeChange();
         });
@@ -158,41 +192,46 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 3. Fallback for browsers without View Transitions API:
-      // Create a smooth DOM radial ripple expanding from the toggle position
+      // 4. Fallback for browsers without View Transitions API:
+      // Create a smooth fixed DOM radial ripple expanding outward from the toggle button
       if (typeof document !== "undefined") {
         const overlay = document.createElement("div");
-        overlay.id = "theme-transition-fallback";
+        overlay.id = "theme-transition-overlay";
         overlay.style.position = "fixed";
         overlay.style.inset = "0";
         overlay.style.zIndex = "999999";
         overlay.style.pointerEvents = "none";
         overlay.style.backgroundColor = nextTheme === "dark" ? "#0C0A09" : "#FCF8F3";
         overlay.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-        overlay.style.transition = "clip-path 650ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms ease 600ms";
+        overlay.style.willChange = "clip-path";
         document.body.appendChild(overlay);
 
-        // Force reflow
-        overlay.getBoundingClientRect();
+        // Force synchronous layout reflow
+        void overlay.offsetHeight;
 
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const maxRadius = Math.hypot(Math.max(x, w - x), Math.max(y, h - y));
+        const anim = overlay.animate(
+          [
+            { clipPath: `circle(0px at ${x}px ${y}px)` },
+            { clipPath: `circle(${maxRadius}px at ${x}px ${y}px)` },
+          ],
+          {
+            duration: 650,
+            easing: "cubic-bezier(0.2, 0, 0, 1)",
+            fill: "forwards",
+          }
+        );
 
-        overlay.style.clipPath = `circle(${maxRadius}px at ${x}px ${y}px)`;
-
-        setTimeout(() => {
+        anim.onfinish = () => {
           commitThemeChange();
-        }, 300);
-
-        setTimeout(() => {
-          overlay.style.opacity = "0";
-          setTimeout(() => {
+          overlay.animate(
+            [{ opacity: 1 }, { opacity: 0 }],
+            { duration: 150, easing: "ease-out", fill: "forwards" }
+          ).onfinish = () => {
             if (overlay.parentNode) {
               overlay.parentNode.removeChild(overlay);
             }
-          }, 200);
-        }, 700);
+          };
+        };
         return;
       }
 
@@ -202,9 +241,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toggleTheme = useCallback(
-    (event?: React.MouseEvent<HTMLElement> | { clientX: number; clientY: number } | DOMRect | null) => {
+    (eventOrOrigin?: React.MouseEvent<HTMLElement> | { x: number; y: number } | { clientX: number; clientY: number } | DOMRect | null) => {
       const nextTheme = theme === "dark" ? "light" : "dark";
-      applyThemeWithTransition(nextTheme, event);
+      applyThemeWithTransition(nextTheme, eventOrOrigin);
     },
     [theme, applyThemeWithTransition]
   );
