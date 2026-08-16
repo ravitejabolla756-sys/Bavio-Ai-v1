@@ -125,6 +125,7 @@ const cogsDashboardRoutes = require('./routes/cogsDashboard');
 
 const knowledgeBaseRoutes = require('./routes/knowledgeBase');
 const phoneRoutes = require('./routes/phone');
+const phoneNumbersRoutes = require('./routes/phoneNumbers');
 const demoRoutes = require('./routes/demo');
 const webhookRoutes = require('./routes/webhook');
 const integrationsRoutes = require('./routes/integrations');
@@ -138,6 +139,8 @@ app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
 app.use('/numbers', apiLimiter, numbersRoutes);
+app.use('/phone-numbers', apiLimiter, phoneNumbersRoutes);
+app.use('/api/phone-numbers', apiLimiter, phoneNumbersRoutes);
 app.use('/calls', apiLimiter, callsRoutes);
 app.use('/usage', apiLimiter, usageRoutes);
 app.use('/telephony', telephonyRoutes);

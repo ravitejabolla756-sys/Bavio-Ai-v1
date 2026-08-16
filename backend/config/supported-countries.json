@@ -14,6 +14,13 @@
     "enabled": true
   },
   {
+    "name": "Canada",
+    "iso2": "CA",
+    "dialCode": "+1",
+    "twilioCountryCode": "CA",
+    "enabled": true
+  },
+  {
     "name": "Australia",
     "iso2": "AU",
     "dialCode": "+61",
@@ -25,6 +32,20 @@
     "iso2": "IN",
     "dialCode": "+91",
     "twilioCountryCode": "IN",
-    "enabled": false
+    "enabled": true
+  },
+  {
+    "name": "Germany",
+    "iso2": "DE",
+    "dialCode": "+49",
+    "twilioCountryCode": "DE",
+    "enabled": true
+  },
+  {
+    "name": "Singapore",
+    "iso2": "SG",
+    "dialCode": "+65",
+    "twilioCountryCode": "SG",
+    "enabled": true
   }
 ]
