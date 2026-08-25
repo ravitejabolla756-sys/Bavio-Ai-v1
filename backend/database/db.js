@@ -87,15 +87,18 @@ pool.query('SELECT NOW()')
       `);
       console.log('✅ email_verifications table initialized/verified.');
 
-      // Drop country and currency check constraints from the users table to support all countries worldwide
+      // Run Migration 023: Developer Platform, Multi-Provider & Outbound Campaigns
       try {
-        await pool.query(`
-          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_country_code;
-          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_currency_code;
-        `);
-        console.log('✅ Global country/currency constraints verified/dropped.');
-      } catch (constErr) {
-        console.warn('⚠️ Non-critical: Failed to drop users country constraints:', constErr.message);
+        const fs = require('fs');
+        const path = require('path');
+        const migrationPath = path.join(__dirname, '../sql/023_developer_platform_and_campaigns.sql');
+        if (fs.existsSync(migrationPath)) {
+          const sql = fs.readFileSync(migrationPath, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 023 (Developer Platform & Campaigns) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 023:', migErr.message);
       }
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);

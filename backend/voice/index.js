@@ -34,6 +34,9 @@ const DeepgramStt    = require('./providers/modular/DeepgramStt');
 const CerebraLlm     = require('./providers/modular/CerebraLlm');
 const GroqLlm        = require('./providers/modular/GroqLlm');
 const ElevenLabsTts  = require('./providers/modular/ElevenLabsTts');
+const SarvamStt      = require('./providers/modular/SarvamStt');
+const SarvamLlm      = require('./providers/modular/SarvamLlm');
+const SarvamTts      = require('./providers/modular/SarvamTts');
 
 // ── Routing ───────────────────────────────────────────────────────────────────
 const { selectVoiceStack, isAllowlisted, getStackSummary } = require('./routing/voiceStackRouter');
@@ -70,6 +73,9 @@ module.exports = {
   CerebraLlm,
   GroqLlm,
   ElevenLabsTts,
+  SarvamStt,
+  SarvamLlm,
+  SarvamTts,
 
   // Routing
   selectVoiceStack,

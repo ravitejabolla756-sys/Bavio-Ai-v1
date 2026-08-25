@@ -132,8 +132,12 @@ const integrationsRoutes = require('./routes/integrations');
 const pricingRoutes = require('./routes/pricing');
 const userRoutes = require('./routes/user');
 
+const v1Routes = require('./routes/v1');
+
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
+
+app.use('/v1', apiLimiter, v1Routes);
 
 app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
@@ -200,6 +204,10 @@ app.use((err, req, res, next) => {
 // ------- Start Server -------
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Bavio AI Backend running on port ${PORT}`);
+
+  // ── Campaign Worker Engine Initialization ──────────────────────────────
+  const campaignWorker = require('./services/campaignWorker');
+  campaignWorker.start(10000);
 
   // ── Supabase Storage Cleanup Cron ──────────────────────────────────────
   // Deletes TTS audio files older than 24 hours from the tts-audio bucket.
