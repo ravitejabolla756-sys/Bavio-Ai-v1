@@ -1,6 +1,5 @@
-const db = require('../database/db');
-console.log('db exports in authController on load:', Object.keys(db));
-const { randomUUID } = require('crypto');
+const crypto = require('node:crypto');
+const { randomUUID } = crypto;
 
 function inferCountry(phone, country) {
     if (country) return country.toUpperCase();
@@ -100,7 +99,6 @@ async function signup(req, res) {
         }
 
         const isDev = process.env.NODE_ENV === 'development';
-        const crypto = require('crypto');
         const emailService = require('../services/emailService');
 
         // Check if user already exists
@@ -583,7 +581,6 @@ async function resendVerification(req, res) {
         }
 
         const trimmedEmail = email.trim().toLowerCase();
-        const crypto = require('crypto');
         const emailService = require('../services/emailService');
 
         // Check if user exists in businesses table
