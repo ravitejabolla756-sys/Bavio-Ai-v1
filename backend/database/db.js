@@ -114,6 +114,20 @@ pool.query('SELECT NOW()')
       } catch (migErr) {
         console.error('❌ Failed to run migration 024:', migErr.message);
       }
+
+      // Run Migration 025: Add pending_verification Enum Value to business_status
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration025Path = path.join(__dirname, '../sql/025_add_pending_verification_enum.sql');
+        if (fs.existsSync(migration025Path)) {
+          const sql = fs.readFileSync(migration025Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 025 (pending_verification Enum Value) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 025:', migErr.message);
+      }
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);
     }
