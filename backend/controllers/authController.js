@@ -1,3 +1,4 @@
+const db = require('../database/db');
 const crypto = require('node:crypto');
 const { randomUUID } = crypto;
 
