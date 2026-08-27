@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/context/ThemeContext";
 
 type AnimatedThemeTogglerProps = {
   className?: string;
@@ -15,34 +16,16 @@ export const AnimatedThemeToggler = ({ className, id = "bavio-theme-toggle" }: A
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
+  const { isDark, toggleTheme } = useTheme();
+
   useEffect(() => {
     setMounted(true);
-    const syncTheme = () => {
-      setDarkMode(document.documentElement.classList.contains("dark"));
-    };
-
-    syncTheme();
-
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+    setDarkMode(isDark);
+  }, [isDark]);
 
   const onToggle = useCallback(() => {
-    const toggled = !darkMode;
-    setDarkMode(toggled);
-    document.documentElement.classList.toggle("dark", toggled);
-    document.documentElement.style.colorScheme = toggled ? "dark" : "light";
-    try {
-      localStorage.setItem("theme", toggled ? "dark" : "light");
-      localStorage.setItem("bavio_theme", toggled ? "dark" : "light");
-    } catch (e) {
-      console.error("Theme storage error:", e);
-    }
-  }, [darkMode]);
+    toggleTheme();
+  }, [toggleTheme]);
 
   return (
     <button

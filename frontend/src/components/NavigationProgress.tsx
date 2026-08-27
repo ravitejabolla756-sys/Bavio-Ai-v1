@@ -9,7 +9,10 @@ import { usePathname, useRouter } from "next/navigation";
  */
 export default function NavigationProgress() {
   const pathname = usePathname();
-  const router = useRouter();
+  let router: ReturnType<typeof useRouter> | null = null;
+  try {
+    router = useRouter();
+  } catch {}
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,7 +81,9 @@ export default function NavigationProgress() {
           !href.startsWith("#") &&
           href !== pathname
         ) {
-          router.prefetch(href);
+          if (router && typeof router.prefetch === "function") {
+            router.prefetch(href);
+          }
         }
       }
     };

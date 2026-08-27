@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
@@ -58,19 +59,18 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var saved = localStorage.getItem('theme') || localStorage.getItem('bavio_theme');
-                  if (saved === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.style.colorScheme = 'dark';
-                  } else if (saved === 'light') {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.style.colorScheme = 'light';
-                  } else {
-                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                  var p = window.location.pathname || '';
+                  var isWorkspace = p.startsWith('/workspace') || p.startsWith('/dashboard') || p.startsWith('/app');
+                  if (isWorkspace) {
+                    var saved = localStorage.getItem('theme') || localStorage.getItem('bavio_theme');
+                    if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                       document.documentElement.classList.add('dark');
                       document.documentElement.style.colorScheme = 'dark';
+                      return;
                     }
                   }
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
                 } catch (e) {}
               })();
             `,
@@ -78,13 +78,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-background text-foreground min-h-[100dvh] font-sans noise-overlay">
-        <ThemeProvider>
-          <CountryProvider>
-            <AuthHashHandler />
-            <NavigationProgress />
-            {children}
-          </CountryProvider>
-        </ThemeProvider>
+        <Suspense fallback={null}>
+          <ThemeProvider>
+            <CountryProvider>
+              <AuthHashHandler />
+              <NavigationProgress />
+              {children}
+            </CountryProvider>
+          </ThemeProvider>
+        </Suspense>
       </body>
     </html>
   );

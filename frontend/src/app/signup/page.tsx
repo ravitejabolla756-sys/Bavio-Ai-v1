@@ -24,7 +24,6 @@ import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
 import IndustrySelector from "@/components/signup/IndustrySelector";
-import AnimatedThemeToggler from "@/components/ui/animated-theme-toggler";
 
 const industryOptions = [
   {
@@ -449,7 +448,6 @@ export default function SignUpPage() {
 
   return (
     <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col md:flex-row overflow-hidden">
-      <AnimatedThemeToggler className="absolute top-4 right-4 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md shadow-sm border border-line" />
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)

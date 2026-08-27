@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { Envelope, ArrowLeft, ArrowRight, ShieldCheck, Check, Warning } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
 import { authApi } from "@/lib/api";
-import AnimatedThemeToggler from "@/components/ui/animated-theme-toggler";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -34,8 +33,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col justify-center items-center p-6">
-      <AnimatedThemeToggler className="absolute top-4 right-4 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md shadow-sm border border-line" />
+    <div className="min-h-screen bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
       <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
       <motion.div

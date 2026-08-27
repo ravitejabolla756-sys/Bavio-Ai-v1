@@ -18,7 +18,6 @@ import {
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
 import GlareHover from "@/components/motion/GlareHover";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 // Mega menu industry items
 const industriesList = [
@@ -259,8 +258,7 @@ export default function Navbar() {
           </div>
 
           {/* CTA */}
-          <div className="flex-1 hidden md:flex justify-end items-center gap-4">
-            <AnimatedThemeToggler />
+          <div className="flex-1 hidden md:flex justify-end items-center">
             <Link
               href="/signup"
               className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[44px]"
@@ -280,11 +278,10 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Toggle */}
-          <div className="md:hidden flex justify-end items-center flex-1 gap-2">
-            <AnimatedThemeToggler />
+          <div className="md:hidden flex justify-end items-center flex-1">
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-1.5 text-[#6E6256] hover:text-[#FF6B00] transition-colors bg-[#FFFFFF]/90 dark:bg-black/80 border border-[#EADFD3] dark:border-white/10 rounded-full"
+              className="p-1.5 text-[#6E6256] hover:text-[#FF6B00] transition-colors bg-[#FFFFFF]/90 border border-[#EADFD3] rounded-full"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}

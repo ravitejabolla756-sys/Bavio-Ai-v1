@@ -1,19 +1,35 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 
 export type ThemeMode = "light" | "dark" | "system";
 
 interface ThemeContextType {
   theme: ThemeMode;
   isDark: boolean;
-  toggleTheme: () => void;
   setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  let pathname = "";
+  if (typeof window !== "undefined") {
+    pathname = window.location.pathname || "";
+  }
+  try {
+    const p = usePathname();
+    if (p) pathname = p;
+  } catch {}
+
+  const isWorkspaceRoute =
+    !!pathname &&
+    (pathname.startsWith("/workspace") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/app"));
+
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -49,74 +65,51 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  const isDark = theme === "dark" || (theme === "system" && isSystemDark);
+  const isDark = isWorkspaceRoute && (theme === "dark" || (theme === "system" && isSystemDark));
 
-  // Sync DOM classes globally across all routes
+  // Sync DOM classes according to route context (forced Light on public routes, user preference on workspace)
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    if (isDark) {
+    if (isWorkspaceRoute && isDark) {
       document.documentElement.classList.add("dark");
       document.documentElement.style.colorScheme = "dark";
     } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.style.colorScheme = "light";
     }
-  }, [isDark]);
-
-  // Keep state in sync if document.documentElement class changes via AnimatedThemeToggler or external script
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    const handleDOMMutation = () => {
-      const currentHasDark = document.documentElement.classList.contains("dark");
-      setThemeState(currentHasDark ? "dark" : "light");
-    };
-
-    const observer = new MutationObserver(handleDOMMutation);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+  }, [isWorkspaceRoute, isDark]);
 
   const setTheme = useCallback((newTheme: ThemeMode) => {
     setThemeState(newTheme);
     try {
       localStorage.setItem("theme", newTheme);
       localStorage.setItem("bavio_theme", newTheme);
-    } catch {}
-
-    if (typeof document !== "undefined") {
-      const nextIsDark =
-        newTheme === "dark" ||
-        (newTheme === "system" &&
-          typeof window !== "undefined" &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-      if (nextIsDark) {
-        document.documentElement.classList.add("dark");
-        document.documentElement.style.colorScheme = "dark";
-      } else {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.style.colorScheme = "light";
-      }
+    } catch (e) {
+      console.error("Theme storage error:", e);
     }
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    setThemeState(prev => {
+      const nextTheme = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem("theme", nextTheme);
+        localStorage.setItem("bavio_theme", nextTheme);
+      } catch (e) {
+        console.error("Theme storage error:", e);
+      }
+      return nextTheme;
+    });
+  }, []);
 
   return (
     <ThemeContext.Provider
       value={{
         theme,
         isDark,
-        toggleTheme,
         setTheme,
+        toggleTheme,
       }}
     >
       {children}
