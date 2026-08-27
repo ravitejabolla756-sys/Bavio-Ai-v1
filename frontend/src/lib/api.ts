@@ -155,6 +155,27 @@ export const authApi = {
       skipAuth: true,
     }),
 
+  forgotPassword: (email: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      skipAuth: true,
+    }),
+
+  verifyResetToken: (token: string) =>
+    apiFetch<{ success: boolean; valid: boolean; error?: string }>('/auth/verify-reset-token', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+      skipAuth: true,
+    }),
+
+  resetPassword: (data: { token: string; password: string }) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      skipAuth: true,
+    }),
+
   getProfile: () => apiFetch<BusinessProfile>('/auth/profile'),
 
   updateProfile: (data: Partial<BusinessProfile>) =>

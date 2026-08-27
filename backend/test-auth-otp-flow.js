@@ -200,20 +200,18 @@ async function runTests() {
     // Test Case 8: Business Status Lifecycle (pending_verification -> active)
     // -------------------------------------------------------------
     console.log('--- Test Case 8: Business Status Lifecycle (pending_verification -> active) ---');
-    const bizId = require('node:crypto').randomUUID();
-    const bizEmail = `pending_biz_${Date.now()}@bavio.in`;
-
-    // Insert business with status = 'pending_verification'
-    const apiKeyVal = require('node:crypto').randomUUID();
+    const lifecycleEmail = `lifecycle_${Date.now()}@bavio.in`;
+    const lifecycleUserId = crypto.randomUUID();
+    const lifecyclePhone = `+91${Date.now().toString().slice(-10)}`;
     await db.query(
       `INSERT INTO businesses (id, name, email, phone, password_hash, api_key, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'pending_verification')`,
-      [bizId, 'Pending Business', bizEmail, '+919999999999', 'hash_placeholder', apiKeyVal]
+      [lifecycleUserId, 'Lifecycle Test Business', lifecycleEmail, lifecyclePhone, 'hash', crypto.randomUUID()]
     );
 
     const initialBiz = await db.query(
       `SELECT status FROM businesses WHERE id = $1`,
-      [bizId]
+      [lifecycleUserId]
     );
 
     if (initialBiz.rows[0].status !== 'pending_verification') {
@@ -223,16 +221,16 @@ async function runTests() {
 
     // Verify failed OTP attempt does NOT activate business
     const failedCode = '111111';
-    const failedHash = hashOtp(bizEmail, failedCode);
+    const failedHash = hashOtp(lifecycleEmail, failedCode);
     await db.query(
       `INSERT INTO email_verifications (email, otp_hash, otp_code, expires_at, attempts)
        VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes', 1)`,
-      [bizEmail, failedHash, failedCode]
+      [lifecycleEmail, failedHash, failedCode]
     );
 
     const unactivatedBiz = await db.query(
       `SELECT status FROM businesses WHERE id = $1`,
-      [bizId]
+      [lifecycleUserId]
     );
     if (unactivatedBiz.rows[0].status !== 'pending_verification') {
       throw new Error('Failed OTP attempt should NOT change business status from pending_verification!');
@@ -242,12 +240,12 @@ async function runTests() {
     // Simulate successful OTP verification: update status = 'active'
     await db.query(
       `UPDATE businesses SET status = 'active', updated_at = NOW() WHERE id = $1`,
-      [bizId]
+      [lifecycleUserId]
     );
 
     const activatedBiz = await db.query(
       `SELECT status FROM businesses WHERE id = $1`,
-      [bizId]
+      [lifecycleUserId]
     );
     if (activatedBiz.rows[0].status !== 'active') {
       throw new Error('Successful OTP verification failed to activate business status!');

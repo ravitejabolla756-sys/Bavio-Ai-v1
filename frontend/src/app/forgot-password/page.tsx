@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Envelope, ArrowLeft, ArrowRight, ShieldCheck, Check, Warning } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
+import { authApi } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -21,14 +22,8 @@ export default function ForgotPasswordPage() {
     setSuccessMsg(null);
 
     try {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`
-      });
-
-      if (error) throw error;
-
-      setSuccessMsg("We've sent a password reset link to your email address.");
+      const res = await authApi.forgotPassword(email.trim());
+      setSuccessMsg(res.message || "If an account exists with that email, a password reset link has been sent.");
       setEmail("");
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to send reset link. Please try again.");

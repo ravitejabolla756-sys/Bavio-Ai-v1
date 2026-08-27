@@ -87,6 +87,20 @@ pool.query('SELECT NOW()')
       `);
       console.log('✅ email_verifications table initialized/verified.');
 
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email TEXT NOT NULL,
+            token_hash TEXT NOT NULL,
+            consumed BOOLEAN DEFAULT FALSE,
+            expires_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_token_hash ON password_resets(token_hash);
+      `);
+      console.log('✅ password_resets table initialized/verified.');
+
       // Run Migration 023: Developer Platform, Multi-Provider & Outbound Campaigns
       try {
         const fs = require('fs');
@@ -127,6 +141,20 @@ pool.query('SELECT NOW()')
         }
       } catch (migErr) {
         console.error('❌ Failed to run migration 025:', migErr.message);
+      }
+
+      // Run Migration 026: Create password_resets Table for Secure Password Recovery
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration026Path = path.join(__dirname, '../sql/026_create_password_reset_tokens.sql');
+        if (fs.existsSync(migration026Path)) {
+          const sql = fs.readFileSync(migration026Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 026 (password_resets Table) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 026:', migErr.message);
       }
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);

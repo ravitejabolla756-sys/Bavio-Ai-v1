@@ -56,7 +56,6 @@ async function signup(req, res) {
             name, email, phone, password, country, country_code,
             business_description, industry, language,
             agent_name, greeting, faqs,
-            // New payload fields:
             businessName, countryCode, dialCode, phoneNumber,
             businessPhone, demoCompleted,
             plan, currency
@@ -81,14 +80,12 @@ async function signup(req, res) {
         const finalCountryCode = (countryCode || country_code || inferredCountryFromCurrency || (finalPhone ? inferCountry(finalPhone, country) : 'US')).trim().toUpperCase().substring(0, 2);
         const finalCountry = country || finalCountryCode;
         
-        // 1. Validation
         let finalNormalizedPhone = null;
         if (finalPhone) {
             const { validateAndNormalizePhone } = require('../utils/phoneValidation');
             const phoneValidationResult = validateAndNormalizePhone(finalPhone, finalCountryCode);
             
             if (!phoneValidationResult.valid) {
-                // If it is just a number provisioning limitation, allow signup to complete without blocking
                 if (phoneValidationResult.error.includes('provisioning virtual numbers')) {
                     finalNormalizedPhone = finalPhone;
                 } else {
@@ -100,77 +97,39 @@ async function signup(req, res) {
         }
 
         const isDev = process.env.NODE_ENV === 'development';
-        const emailService = require('../services/emailService');
 
-        // Check if user already exists
-        const existingCheck = await db.query(
-            `SELECT id, email FROM businesses WHERE email = $1`,
-            [finalEmail.trim().toLowerCase()]
-        );
-        if (existingCheck.rows.length > 0) {
-            return res.status(409).json({
-                success: false,
-                error: 'An account already exists with this email. Sign in instead.'
-            });
-        }
-
-        // Helper for hashing OTP with email salt
-        function hashOtp(email, otpCode) {
-            return crypto.createHash('sha256').update(`${email.trim().toLowerCase()}:${otpCode.trim()}`).digest('hex');
-        }
-
-        // 2. Generate cryptographically secure 6-digit OTP
-        const otpCode = crypto.randomInt(100000, 999999).toString();
-        const otpHash = hashOtp(finalEmail, otpCode);
-
-        // Invalidate previous unconsumed OTPs for this email
-        await db.query(
-            `UPDATE email_verifications SET consumed = true WHERE email = $1 AND consumed = false`,
-            [finalEmail.trim().toLowerCase()]
-        );
-
-        // Store hashed OTP with 10-minute expiry
-        await db.query(
-            `INSERT INTO email_verifications (email, otp_hash, otp_code, expires_at)
-             VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
-            [finalEmail.trim().toLowerCase(), otpHash, otpCode]
-        );
-
-        // 3. Deliver Verification Email
-        const emailResult = await emailService.sendOtpEmail(finalEmail.trim().toLowerCase(), otpCode);
-        if (!emailResult.success) {
-            console.error('[signup] Failed to dispatch OTP email:', emailResult.error);
-            return res.status(500).json({
-                success: false,
-                error: {
-                    code: 'email_delivery_failed',
-                    message: emailResult.error || 'Unable to send verification email. Please try again.'
-                }
-            });
-        }
-
-        // 4. Create user in Supabase Auth via admin client
-        let supabaseUserId = randomUUID();
-        try {
-            const { data: adminData, error: adminError } = await db.supabase.auth.admin.createUser({
-                email: finalEmail,
-                password: finalPassword,
-                email_confirm: false,
-                user_metadata: {
+        const authClient = db.createAuthClient();
+        const signUpOptions = {
+            email: finalEmail,
+            password: finalPassword,
+            options: {
+                data: {
                     full_name: finalName,
                     country: finalCountry
-                }
-            });
-            if (adminData && adminData.user) {
-                supabaseUserId = adminData.user.id;
-            } else if (adminError) {
-                console.warn('[signup] Supabase admin.createUser notice:', adminError.message);
+                },
+                emailRedirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
             }
-        } catch (e) {
-            console.warn('[signup] Supabase user creation warning:', e.message);
+        };
+
+        const { data: authData, error: authError } = await authClient.auth.signUp(signUpOptions);
+
+        if (authError) {
+            if (authError.message && (authError.message.includes('already registered') || authError.status === 422)) {
+                const msg = authError.message.toLowerCase();
+                if (msg.includes('phone')) {
+                    return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
+                }
+                return res.status(409).json({ success: false, error: 'A business with that email already exists' });
+            }
+            console.error('Supabase Auth signup error:', authError);
+            return res.status(400).json({ success: false, error: authError.message });
+        }
+
+        const supabaseUser = authData.user;
+        if (!supabaseUser) {
+            return res.status(409).json({ success: false, error: 'A business with that email already exists' });
         }
         
-        // 5. Generate API Key (UUID formatted)
         const apiKey = randomUUID();
 
         const devEmails = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
@@ -178,11 +137,11 @@ async function signup(req, res) {
 
         const finalMinutesLimit = isDeveloper ? 999999 : 0;
         const finalOnboardingStep = isDeveloper ? 6 : 0;
-        const finalOnboardingStatus = isDeveloper ? 'ready' : 'pending';
+        const finalOnboardingStatus = isDeveloper ? 'ready' : 'pre_payment';
         const finalPlan = isDeveloper ? 'enterprise' : 'free';
         const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
-        const finalStatus = isDeveloper ? 'active' : 'pending_verification'; 
+        const finalStatus = 'pending_verification'; 
         const finalSubStatus = isDeveloper ? 'active' : 'inactive';
 
         const validPlans = ['starter', 'growth', 'scale'];
@@ -195,7 +154,6 @@ async function signup(req, res) {
             ? planKeyMap[plan.toLowerCase().trim()] 
             : 'free';
 
-        // 6. Insert into businesses table
         const result = await db.query(
             `INSERT INTO businesses (
                 id, name, email, phone, password_hash, api_key, 
@@ -208,7 +166,7 @@ async function signup(req, res) {
             VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
             RETURNING *`,
             [
-                supabaseUserId, finalName, finalEmail.trim().toLowerCase(), finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
+                supabaseUser.id, finalName, finalEmail, finalNormalizedPhone, 'supabase_auth_placeholder', apiKey, 
                 finalMinutesLimit, finalStatus, finalCountry, finalCountryCode, finalName, null, 
                 null, 'en-US', finalNormalizedPhone, 
                 finalOnboardingStep, finalOnboardingStatus,
@@ -219,9 +177,41 @@ async function signup(req, res) {
         
         const user = result.rows[0];
 
+        // Generate and dispatch OTP email via Resend HTTP API
+        const emailService = require('../services/emailService');
+        const otpCode = crypto.randomInt(100000, 999999).toString();
+        const otpHash = crypto.createHash('sha256').update(`${finalEmail.trim().toLowerCase()}:${otpCode}`).digest('hex');
+
+        await db.query(
+            `INSERT INTO email_verifications (email, otp_hash, otp_code, expires_at)
+             VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+            [finalEmail.trim().toLowerCase(), otpHash, otpCode]
+        );
+
+        emailService.sendOtpEmail(finalEmail, otpCode).catch(e => console.error('[EMAIL] Failed to send OTP email:', e.message));
+
+        let devToken = null;
+        if (isDev) {
+            try {
+                const signInClient = db.createAuthClient();
+                const { data: signInData, error: signInError } = await signInClient.auth.signInWithPassword({
+                    email: finalEmail,
+                    password: finalPassword
+                });
+                if (!signInError && signInData.session) {
+                    devToken = signInData.session.access_token;
+                }
+            } catch (signInErr) {
+                console.error('[signup] Programmatic sign-in failed:', signInErr.message);
+            }
+        }
+
+        const verificationRequired = !isDev || !devToken;
+        
         res.status(201).json({
             success: true,
-            emailVerificationRequired: true,
+            emailVerificationRequired: verificationRequired,
+            token: devToken,
             client_id: user.id,
             userId: user.id, 
             businessId: user.id, 
@@ -234,13 +224,13 @@ async function signup(req, res) {
             minutes_limit: user.minutes_limit,
             minutes_used: user.minutes_used,
             country_code: user.country_code,
-            message: 'Verification email sent.'
+            redirectTo: verificationRequired ? '/verify-email' : '/demo'
         });
     } catch (err) {
         if (err.code === '23505') {
             const detail = String(err.detail || '').toLowerCase();
             if (detail.includes('email')) {
-                return res.status(409).json({ success: false, error: 'An account already exists with this email. Sign in instead.' });
+                return res.status(409).json({ success: false, error: 'A business with that email already exists' });
             }
             if (detail.includes('phone')) {
                 return res.status(409).json({ success: false, error: 'A business with that phone number already exists' });
@@ -255,12 +245,10 @@ async function login(req, res) {
     try {
         const { email, password } = req.body;
         
-        // 1. Validation
         if (!email || !password) {
             return res.status(400).json({ success: false, error: 'Email and password are required' });
         }
 
-        // 2. Authenticate via Supabase Auth (using a fresh client to avoid mutating the shared client)
         const authClient = db.createAuthClient();
         const { data, error } = await authClient.auth.signInWithPassword({
             email,
@@ -274,19 +262,17 @@ async function login(req, res) {
         const supabaseUser = data.user;
         const token = data.session.access_token;
         
-        // 3. Find user
         const result = await db.query(
             'SELECT * FROM businesses WHERE id = $1 AND status = $2',
             [supabaseUser.id, 'active']
         );
         
         if (result.rows.length === 0) {
-            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+            return res.status(401).json({ success: false, error: 'Invalid credentials or account pending verification' });
         }
         
         const user = result.rows[0];
         
-        // 4. Return response (NO password_hash exposed)
         res.status(200).json({
             success: true,
             token,
@@ -305,7 +291,9 @@ async function login(req, res) {
         console.error('Login error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
-}async function getProfile(req, res) {
+}
+
+async function getProfile(req, res) {
     try {
         let result = await db.query(
             'SELECT * FROM businesses WHERE id = $1',
@@ -340,14 +328,12 @@ async function login(req, res) {
         
         const user = result.rows[0];
         
-        // Compute trial metadata
         const limit = user.minutes_limit || 0;
         const used = user.minutes_used || 0;
         const trialMinutesAvailable = Math.max(0, limit - used);
         const trialStatus = used >= limit ? 'EXPIRED' : 'ACTIVE';
         const trialEndsAt = new Date(new Date(user.created_at).getTime() + 14 * 24 * 3600 * 1000).toISOString();
 
-        // 1. Compute demo_status
         let demoStatus = 'eligible';
         const demoRes = await db.query(
             "SELECT demo_status, demo_used FROM demo_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
@@ -364,14 +350,10 @@ async function login(req, res) {
             }
         }
 
-        // 2. Compute assistant_status
         const astCount = await db.query("SELECT id FROM assistants WHERE business_id = $1 LIMIT 1", [user.id]);
         const assistantStatus = astCount.rows.length > 0 ? 'configured' : 'not_configured';
-
-        // 3. Compute phone_number_status
         const phoneNumberStatus = user.twilio_number ? 'assigned' : 'not_assigned';
 
-        // 4. Resolve nextRoute
         const subStatus = user.subscription_status || 'inactive';
         const onboardingStatus = user.onboarding_status || 'pre_payment';
         let nextRoute = '/demo';
@@ -379,7 +361,6 @@ async function login(req, res) {
         if (subStatus === 'cancelled' || subStatus === 'expired') {
             nextRoute = '/billing/reactivate';
         } else if (subStatus === 'inactive' || subStatus === 'trialing') {
-            // Check if there is a pending subscription intent
             const intentCheck = await db.query(
                 "SELECT id FROM subscription_intents WHERE business_id = $1 AND status = 'pending' LIMIT 1",
                 [user.id]
@@ -412,7 +393,6 @@ async function login(req, res) {
             }
         }
 
-        // Return flat profile matching frontend BusinessProfile type
         res.status(200).json({
             success: true,
             id: user.id,
@@ -515,7 +495,6 @@ async function changeEmail(req, res) {
             return res.status(400).json({ success: false, error: 'Invalid email address format' });
         }
 
-        // Check if user exists
         const userRes = await db.query(
             'SELECT email, onboarding_status FROM businesses WHERE id = $1',
             [userId]
@@ -524,7 +503,6 @@ async function changeEmail(req, res) {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        // Check if email already in use by another user
         const duplicateRes = await db.query(
             'SELECT id FROM businesses WHERE email = $1 AND id != $2',
             [newEmail.trim().toLowerCase(), userId]
@@ -533,7 +511,6 @@ async function changeEmail(req, res) {
             return res.status(409).json({ success: false, error: 'A business with that email already exists' });
         }
 
-        // Update email in Supabase Auth via Admin client
         const { data: authData, error: authError } = await db.supabase.auth.admin.updateUserById(
             userId,
             { email: newEmail.trim() }
@@ -544,13 +521,11 @@ async function changeEmail(req, res) {
             return res.status(400).json({ success: false, error: authError.message });
         }
 
-        // Update email in businesses table
         await db.query(
             'UPDATE businesses SET email = $1, updated_at = NOW() WHERE id = $2',
             [newEmail.trim().toLowerCase(), userId]
         );
 
-        // Resend confirmation to the new email address
         try {
             const authClient = db.createAuthClient();
             await authClient.auth.resend({
@@ -584,7 +559,6 @@ async function resendVerification(req, res) {
         const trimmedEmail = email.trim().toLowerCase();
         const emailService = require('../services/emailService');
 
-        // Check if user exists in businesses table
         const userCheck = await db.query(
             `SELECT id, name FROM businesses WHERE email = $1`,
             [trimmedEmail]
@@ -593,7 +567,6 @@ async function resendVerification(req, res) {
             return res.status(404).json({ success: false, error: 'No account found with this email. Please sign up first.' });
         }
 
-        // 1. Enforce 30s resend cooldown
         const recentOtpCheck = await db.query(
             `SELECT created_at FROM email_verifications 
              WHERE email = $1 AND created_at > NOW() - INTERVAL '30 seconds'
@@ -608,13 +581,11 @@ async function resendVerification(req, res) {
             });
         }
 
-        // 2. Invalidate previous unconsumed OTPs
         await db.query(
             `UPDATE email_verifications SET consumed = true WHERE email = $1 AND consumed = false`,
             [trimmedEmail]
         );
 
-        // 3. Generate new 6-digit cryptographic OTP & hash
         const otpCode = crypto.randomInt(100000, 999999).toString();
         const otpHash = crypto.createHash('sha256').update(`${trimmedEmail}:${otpCode}`).digest('hex');
 
@@ -624,7 +595,6 @@ async function resendVerification(req, res) {
             [trimmedEmail, otpHash, otpCode]
         );
 
-        // 4. Dispatch Email
         const sendResult = await emailService.sendOtpEmail(trimmedEmail, otpCode);
         if (!sendResult.success) {
             console.error('[resendVerification] Email delivery failed:', sendResult.error);
@@ -655,7 +625,6 @@ async function verifyOtp(req, res) {
         const enteredToken = String(token).trim();
         const enteredHash = crypto.createHash('sha256').update(`${trimmedEmail}:${enteredToken}`).digest('hex');
 
-        // 1. Look up active OTP record
         const otpResult = await db.query(
             `SELECT * FROM email_verifications 
              WHERE email = $1 AND consumed = false 
@@ -669,7 +638,6 @@ async function verifyOtp(req, res) {
 
         const otpRecord = otpResult.rows[0];
 
-        // 2. Check maximum attempts (max 5)
         if (otpRecord.attempts >= 5) {
             await db.query(`UPDATE email_verifications SET consumed = true WHERE id = $1`, [otpRecord.id]);
             return res.status(400).json({
@@ -678,7 +646,6 @@ async function verifyOtp(req, res) {
             });
         }
 
-        // 3. Check expiration
         if (new Date(otpRecord.expires_at) < new Date()) {
             return res.status(400).json({
                 success: false,
@@ -686,7 +653,6 @@ async function verifyOtp(req, res) {
             });
         }
 
-        // 4. Validate OTP match (check hashed OTP first, with plaintext fallback for legacy records)
         const isMatch = otpRecord.otp_hash ? (otpRecord.otp_hash === enteredHash) : (otpRecord.otp_code === enteredToken);
         if (!isMatch) {
             const updatedAttempts = otpRecord.attempts + 1;
@@ -705,13 +671,11 @@ async function verifyOtp(req, res) {
             return res.status(400).json({ success: false, error: 'Invalid verification code.' });
         }
 
-        // 5. Consume OTP and record verification timestamp
         await db.query(
             `UPDATE email_verifications SET consumed = true, verified_at = NOW() WHERE id = $1`,
             [otpRecord.id]
         );
 
-        // 6. Activate business in database
         const updateResult = await db.query(
             `UPDATE businesses 
              SET status = 'active', updated_at = NOW() 
@@ -726,7 +690,6 @@ async function verifyOtp(req, res) {
 
         const user = updateResult.rows[0];
 
-        // 7. Generate JWT session token
         const jwt = require('jsonwebtoken');
         const jwtSecret = process.env.JWT_SECRET || 'bavio_secret_key_default_jwt_fallback';
         const sessionToken = jwt.sign(
@@ -756,6 +719,176 @@ async function verifyOtp(req, res) {
     }
 }
 
+async function forgotPassword(req, res) {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: 'Email address is required' });
+        }
+
+        const trimmedEmail = email.trim().toLowerCase();
+        const emailService = require('../services/emailService');
+        const genericSuccessMsg = "If an account exists with that email, a password reset link has been sent.";
+
+        const userCheck = await db.query(
+            `SELECT id FROM businesses WHERE email = $1`,
+            [trimmedEmail]
+        );
+
+        if (userCheck.rows.length === 0) {
+            console.log(`[forgotPassword] Request for unregistered email: ${trimmedEmail} (returning generic success)`);
+            return res.status(200).json({ success: true, message: genericSuccessMsg });
+        }
+
+        await db.query(
+            `UPDATE password_resets SET consumed = true WHERE email = $1 AND consumed = false`,
+            [trimmedEmail]
+        );
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+        await db.query(
+            `INSERT INTO password_resets (email, token_hash, expires_at)
+             VALUES ($1, $2, NOW() + INTERVAL '15 minutes')`,
+            [trimmedEmail, tokenHash]
+        );
+
+        const baseUrl = (process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://bavio.in').replace(/\/$/, '');
+        const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
+
+        const sendResult = await emailService.sendPasswordResetEmail(trimmedEmail, resetUrl);
+        if (!sendResult.success) {
+            console.error('[forgotPassword] Resend email delivery failed:', sendResult.error);
+            return res.status(500).json({
+                success: false,
+                error: 'Unable to send password reset email. Please try again later.'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: genericSuccessMsg
+        });
+    } catch (err) {
+        console.error('[AUTH CONTROLLER] forgotPassword exception:', err);
+        return res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+}
+
+async function verifyResetToken(req, res) {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ success: false, valid: false, error: 'Reset token is required' });
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(String(token).trim()).digest('hex');
+
+        const tokenResult = await db.query(
+            `SELECT email, expires_at, consumed FROM password_resets 
+             WHERE token_hash = $1 
+             ORDER BY created_at DESC LIMIT 1`,
+            [tokenHash]
+        );
+
+        if (tokenResult.rows.length === 0) {
+            return res.status(400).json({ success: false, valid: false, error: 'Invalid or expired password reset link.' });
+        }
+
+        const record = tokenResult.rows[0];
+        if (record.consumed) {
+            return res.status(400).json({ success: false, valid: false, error: 'This password reset link has already been used.' });
+        }
+
+        if (new Date(record.expires_at) <= new Date()) {
+            return res.status(400).json({ success: false, valid: false, error: 'This password reset link has expired.' });
+        }
+
+        return res.status(200).json({ success: true, valid: true });
+    } catch (err) {
+        console.error('[AUTH CONTROLLER] verifyResetToken exception:', err);
+        return res.status(500).json({ success: false, valid: false, error: 'Internal Server Error' });
+    }
+}
+
+async function resetPassword(req, res) {
+    try {
+        const { token, password } = req.body;
+        if (!token || !password) {
+            return res.status(400).json({ success: false, error: 'Reset token and new password are required' });
+        }
+
+        const passStr = String(password);
+        if (passStr.length < 8 || !/[A-Z]/.test(passStr) || !/[0-9]/.test(passStr) || !/[!@#$%^&*]/.test(passStr)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password must be at least 8 characters long and contain 1 uppercase letter, 1 number, and 1 special character.'
+            });
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(String(token).trim()).digest('hex');
+
+        const tokenResult = await db.query(
+            `SELECT id, email, expires_at, consumed FROM password_resets 
+             WHERE token_hash = $1 
+             ORDER BY created_at DESC LIMIT 1`,
+            [tokenHash]
+        );
+
+        if (tokenResult.rows.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid or expired password reset link.' });
+        }
+
+        const record = tokenResult.rows[0];
+        if (record.consumed) {
+            return res.status(400).json({ success: false, error: 'This password reset link has already been used. Please request a new link.' });
+        }
+
+        if (new Date(record.expires_at) <= new Date()) {
+            return res.status(400).json({ success: false, error: 'This password reset link has expired. Please request a new link.' });
+        }
+
+        const userResult = await db.query(
+            `SELECT id, email FROM businesses WHERE email = $1`,
+            [record.email]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'No account found for this reset request.' });
+        }
+
+        const user = userResult.rows[0];
+
+        if (db.supabase && db.supabase.auth && db.supabase.auth.admin) {
+            const { error: authErr } = await db.supabase.auth.admin.updateUserById(user.id, {
+                password: passStr
+            });
+            if (authErr) {
+                console.warn('[resetPassword] Supabase Auth update warning:', authErr.message);
+            }
+        }
+
+        await db.query(
+            `UPDATE businesses SET updated_at = NOW() WHERE id = $1`,
+            [user.id]
+        );
+
+        await db.query(
+            `UPDATE password_resets SET consumed = true WHERE id = $1`,
+            [record.id]
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Your password has been reset successfully. You can now sign in.'
+        });
+    } catch (err) {
+        console.error('[AUTH CONTROLLER] resetPassword exception:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
+    }
+}
+
 module.exports = {
     signup,
     verifyOtp,
@@ -764,5 +897,8 @@ module.exports = {
     updateProfile,
     checkEmail,
     changeEmail,
-    resendVerification
+    resendVerification,
+    forgotPassword,
+    verifyResetToken,
+    resetPassword
 };
