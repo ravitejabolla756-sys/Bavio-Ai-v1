@@ -100,6 +100,20 @@ pool.query('SELECT NOW()')
       } catch (migErr) {
         console.error('❌ Failed to run migration 023:', migErr.message);
       }
+
+      // Run Migration 024: Secure Hashed Email Verification Schema
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration024Path = path.join(__dirname, '../sql/024_hash_email_verifications.sql');
+        if (fs.existsSync(migration024Path)) {
+          const sql = fs.readFileSync(migration024Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 024 (Hashed Email Verifications) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 024:', migErr.message);
+      }
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);
     }

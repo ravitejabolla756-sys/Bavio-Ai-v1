@@ -13,7 +13,7 @@ function getProviderConfig(apiKey) {
   if (key && key.startsWith('gsk_')) {
     return {
       baseUrl: 'https://api.groq.com/openai/v1',
-      chatModel: process.env.GROQ_CHAT_MODEL || 'llama-3.3-70b-versatile',
+      chatModel: process.env.GROQ_CHAT_MODEL || 'groq/compound',
       sttModel: 'whisper-large-v3',
       apiKey: key,
       providerName: 'Groq'

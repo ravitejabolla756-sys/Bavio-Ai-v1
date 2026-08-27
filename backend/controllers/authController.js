@@ -115,8 +115,14 @@ async function signup(req, res) {
             });
         }
 
-        // 2. Generate 6-digit OTP
+        // Helper for hashing OTP with email salt
+        function hashOtp(email, otpCode) {
+            return crypto.createHash('sha256').update(`${email.trim().toLowerCase()}:${otpCode.trim()}`).digest('hex');
+        }
+
+        // 2. Generate cryptographically secure 6-digit OTP
         const otpCode = crypto.randomInt(100000, 999999).toString();
+        const otpHash = hashOtp(finalEmail, otpCode);
 
         // Invalidate previous unconsumed OTPs for this email
         await db.query(
@@ -124,11 +130,11 @@ async function signup(req, res) {
             [finalEmail.trim().toLowerCase()]
         );
 
-        // Store OTP with 10-minute expiry
+        // Store hashed OTP with 10-minute expiry
         await db.query(
-            `INSERT INTO email_verifications (email, otp_code, expires_at)
-             VALUES ($1, $2, NOW() + INTERVAL '10 minutes')`,
-            [finalEmail.trim().toLowerCase(), otpCode]
+            `INSERT INTO email_verifications (email, otp_hash, otp_code, expires_at)
+             VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+            [finalEmail.trim().toLowerCase(), otpHash, otpCode]
         );
 
         // 3. Deliver Verification Email
@@ -137,7 +143,10 @@ async function signup(req, res) {
             console.error('[signup] Failed to dispatch OTP email:', emailResult.error);
             return res.status(500).json({
                 success: false,
-                error: 'Unable to send verification email. Please check your email and try again.'
+                error: {
+                    code: 'email_delivery_failed',
+                    message: emailResult.error || 'Unable to send verification email. Please try again.'
+                }
             });
         }
 
@@ -174,7 +183,7 @@ async function signup(req, res) {
         const finalPlan = isDeveloper ? 'enterprise' : 'free';
         const finalPlanName = isDeveloper ? 'developer' : 'free_trial';
         const finalPeriodEnd = isDeveloper ? '2099-12-31 00:00:00+00' : null;
-        const finalStatus = 'active'; 
+        const finalStatus = isDeveloper ? 'active' : 'pending_verification'; 
         const finalSubStatus = isDeveloper ? 'active' : 'inactive';
 
         const validPlans = ['starter', 'growth', 'scale'];
@@ -607,13 +616,14 @@ async function resendVerification(req, res) {
             [trimmedEmail]
         );
 
-        // 3. Generate new 6-digit OTP
+        // 3. Generate new 6-digit cryptographic OTP & hash
         const otpCode = crypto.randomInt(100000, 999999).toString();
+        const otpHash = crypto.createHash('sha256').update(`${trimmedEmail}:${otpCode}`).digest('hex');
 
         await db.query(
-            `INSERT INTO email_verifications (email, otp_code, expires_at)
-             VALUES ($1, $2, NOW() + INTERVAL '10 minutes')`,
-            [trimmedEmail, otpCode]
+            `INSERT INTO email_verifications (email, otp_hash, otp_code, expires_at)
+             VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+            [trimmedEmail, otpHash, otpCode]
         );
 
         // 4. Dispatch Email
@@ -622,7 +632,7 @@ async function resendVerification(req, res) {
             console.error('[resendVerification] Email delivery failed:', sendResult.error);
             return res.status(500).json({
                 success: false,
-                error: 'Unable to resend verification email. Please try again.'
+                error: sendResult.error || 'Unable to resend verification email. Please try again.'
             });
         }
 
@@ -645,7 +655,7 @@ async function verifyOtp(req, res) {
 
         const trimmedEmail = email.trim().toLowerCase();
         const enteredToken = String(token).trim();
-        const isMasterCode = enteredToken === '123456' || enteredToken === '888888' || enteredToken === '000000';
+        const enteredHash = crypto.createHash('sha256').update(`${trimmedEmail}:${enteredToken}`).digest('hex');
 
         // 1. Look up active OTP record
         const otpResult = await db.query(
@@ -655,46 +665,53 @@ async function verifyOtp(req, res) {
             [trimmedEmail]
         );
 
-        if (otpResult.rows.length === 0 && !isMasterCode) {
+        if (otpResult.rows.length === 0) {
             return res.status(400).json({ success: false, error: 'Invalid verification code or code expired.' });
         }
 
         const otpRecord = otpResult.rows[0];
 
-        if (otpRecord && !isMasterCode) {
-            // 2. Check maximum attempts (max 5)
-            if (otpRecord.attempts >= 5) {
+        // 2. Check maximum attempts (max 5)
+        if (otpRecord.attempts >= 5) {
+            await db.query(`UPDATE email_verifications SET consumed = true WHERE id = $1`, [otpRecord.id]);
+            return res.status(400).json({
+                success: false,
+                error: 'Too many failed attempts. Please request a new verification code.'
+            });
+        }
+
+        // 3. Check expiration
+        if (new Date(otpRecord.expires_at) < new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: 'This verification code has expired. Request a new code.'
+            });
+        }
+
+        // 4. Validate OTP match (check hashed OTP first, with plaintext fallback for legacy records)
+        const isMatch = otpRecord.otp_hash ? (otpRecord.otp_hash === enteredHash) : (otpRecord.otp_code === enteredToken);
+        if (!isMatch) {
+            const updatedAttempts = otpRecord.attempts + 1;
+            await db.query(
+                `UPDATE email_verifications SET attempts = attempts + 1${updatedAttempts >= 5 ? ', consumed = true' : ''} WHERE id = $1`,
+                [otpRecord.id]
+            );
+            
+            if (updatedAttempts >= 5) {
                 return res.status(400).json({
                     success: false,
                     error: 'Too many failed attempts. Please request a new verification code.'
                 });
             }
 
-            // 3. Check expiration
-            if (new Date(otpRecord.expires_at) < new Date()) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'This verification code has expired. Request a new code.'
-                });
-            }
-
-            // 4. Validate OTP match
-            if (otpRecord.otp_code !== enteredToken) {
-                await db.query(
-                    `UPDATE email_verifications SET attempts = attempts + 1 WHERE id = $1`,
-                    [otpRecord.id]
-                );
-                return res.status(400).json({ success: false, error: 'Invalid verification code.' });
-            }
+            return res.status(400).json({ success: false, error: 'Invalid verification code.' });
         }
 
-        // 5. Consume OTP if record exists
-        if (otpRecord) {
-            await db.query(
-                `UPDATE email_verifications SET consumed = true WHERE id = $1`,
-                [otpRecord.id]
-            );
-        }
+        // 5. Consume OTP and record verification timestamp
+        await db.query(
+            `UPDATE email_verifications SET consumed = true, verified_at = NOW() WHERE id = $1`,
+            [otpRecord.id]
+        );
 
         // 6. Activate business in database
         const updateResult = await db.query(

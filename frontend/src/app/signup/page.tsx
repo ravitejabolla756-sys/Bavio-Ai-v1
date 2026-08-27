@@ -356,19 +356,12 @@ export default function SignUpPage() {
     setResendStatus("");
     setResendError("");
     try {
-      const res = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        setResendStatus("Verification email sent.");
+      const result = await authApi.resendVerification(email);
+      if (result.success) {
+        setResendStatus(result.message || "Verification email sent.");
         setResendCooldown(45);
       } else {
-        throw new Error(result.error || "Unable to resend verification email. Please try again.");
+        throw new Error((result as any).error || "Unable to resend verification email. Please try again.");
       }
     } catch (err: any) {
       setResendError(err.message || "Unable to resend verification email. Please try again.");

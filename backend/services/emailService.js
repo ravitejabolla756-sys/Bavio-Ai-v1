@@ -1,35 +1,12 @@
 /**
  * Email Service — Bavio AI Backend
- * 
- * Supports SMTP (Resend, SendGrid, Gmail, AWS SES, etc.)
- * Provides branded transactional emails including 6-digit OTP verification codes.
+ * Direct Resend HTTP API Transactional Email Dispatcher
  */
 
-const nodemailer = require('nodemailer');
-
-function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host: host,
-    port: port,
-    secure: port === 465,
-    auth: {
-      user: user,
-      pass: pass,
-    },
-  });
-}
+const axios = require('axios');
 
 /**
- * Send branded Bavio 6-Digit OTP Verification Email
+ * Send branded Bavio 6-Digit OTP Verification Email via Resend HTTP API.
  * @param {string} to - Recipient email
  * @param {string} otpCode - 6-digit OTP string
  * @returns {Promise<{ success: boolean; messageId?: string; error?: string }>}
@@ -39,8 +16,17 @@ async function sendOtpEmail(to, otpCode) {
     return { success: false, error: 'Recipient email and OTP code are required' };
   }
 
-  const from = process.env.SMTP_FROM || 'Bavio AI <hello@bavio.in>';
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || 'Bavio AI <noreply@bavio.in>';
   const subject = 'Verify your Bavio account';
+
+  if (!resendApiKey) {
+    console.error('[EmailService] ❌ CRITICAL: RESEND_API_KEY is not configured in process.env');
+    return {
+      success: false,
+      error: 'Email verification service is currently unavailable. Please contact support.'
+    };
+  }
 
   const html = `
 <!DOCTYPE html>
@@ -114,66 +100,83 @@ async function sendOtpEmail(to, otpCode) {
 
   const text = `Bavio AI\n\nYour verification code is: ${otpCode}\n\nThis code expires in 10 minutes.\nIf you did not request this account, you can ignore this email.`;
 
-  const transporter = getTransporter();
+  try {
+    console.log(`[EmailService] Resend API request attempted to recipient (from: ${from})`);
 
-  // 1. If SMTP is configured, attempt delivery via SMTP transporter
-  if (transporter) {
-    try {
-      console.log(`[EmailService] Dispatching OTP email via SMTP to: ${to}...`);
-      const info = await transporter.sendMail({
+    const resendRes = await axios.post(
+      'https://api.resend.com/emails',
+      {
         from: from,
-        to: to,
+        to: [to],
         subject: subject,
-        text: text,
         html: html,
-      });
-      console.log(`[EmailService] ✅ Email delivered to ${to}. MessageId: ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
-    } catch (err) {
-      console.error(`[EmailService] ⚠️ SMTP delivery failed for ${to}:`, err.message);
-      // Fall through to Resend / console fallback
-    }
-  }
-
-  // 2. If RESEND_API_KEY is configured, attempt delivery via Resend HTTP API
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (resendApiKey) {
-    try {
-      const axios = require('axios');
-      console.log(`[EmailService] Dispatching OTP email via Resend API to: ${to}...`);
-      const resendRes = await axios.post(
-        'https://api.resend.com/emails',
-        {
-          from: from,
-          to: [to],
-          subject: subject,
-          html: html,
-          text: text,
+        text: text,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendApiKey.trim()}`,
+          'Content-Type': 'application/json',
         },
-        {
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-        }
-      );
-      console.log(`[EmailService] ✅ Resend email delivered to ${to}:`, resendRes.data);
-      return { success: true, messageId: resendRes.data?.id || 'resend-sent' };
-    } catch (resendErr) {
-      console.error(`[EmailService] ⚠️ Resend API failed for ${to}:`, resendErr.response?.data || resendErr.message);
-    }
-  }
+        timeout: 15000,
+      }
+    );
 
-  // 3. Fail-safe console log & database fallback when SMTP/Resend is not yet configured or fails
-  console.log('=====================================================');
-  console.log('====== [EmailService Verification OTP Logged] ======');
-  console.log(`To:      ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log(`OTP:     ${otpCode}`);
-  console.log('Hint:    Use master verification code 123456 or the code above');
-  console.log('=====================================================');
-  return { success: true, messageId: 'console-fallback-' + Date.now() };
+    const messageId = resendRes.data?.id || 'resend-ok';
+    console.log(`[EmailService] ✅ Resend success with message ID: ${messageId}`);
+    return { success: true, messageId };
+  } catch (resendErr) {
+    const statusCode = resendErr.response?.status || 500;
+    const providerErrData = resendErr.response?.data;
+    const safeMsg = providerErrData?.message || resendErr.message || 'Email delivery failed';
+
+    console.error(`[EmailService] ❌ Resend failure (HTTP ${statusCode}): ${safeMsg}`);
+    if (providerErrData?.name) {
+      console.error(`[EmailService] Provider error type: ${providerErrData.name}`);
+    }
+
+    return {
+      success: false,
+      error: `Email delivery failed: ${safeMsg}`
+    };
+  }
 }
 
-module.exports = { sendOtpEmail };
+/**
+ * Generic mail sender helper for backwards compatibility.
+ */
+async function sendMail(to, subject, body, isHtml = false) {
+  if (!to) return;
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || 'Bavio AI <noreply@bavio.in>';
+  if (!resendApiKey) {
+    console.error('[EmailService] RESEND_API_KEY is not set');
+    return;
+  }
+  try {
+    console.log(`[EmailService] Generic email dispatch attempted to recipient`);
+    const res = await axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: from,
+        to: [to],
+        subject: subject,
+        [isHtml ? 'html' : 'text']: body,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendApiKey.trim()}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
+    console.log(`[EmailService] ✅ Generic email success. Message ID: ${res.data?.id}`);
+  } catch (err) {
+    console.error(`[EmailService] ❌ Generic email failed (HTTP ${err.response?.status || 500}):`, err.response?.data?.message || err.message);
+  }
+}
+
+module.exports = {
+  sendOtpEmail,
+  sendMail
+};
