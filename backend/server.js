@@ -62,16 +62,31 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:5000',
   'https://bavio.vercel.app',
+  'https://bavio-ai.vercel.app',
+  'https://bavio-frontend.vercel.app',
+  'https://bavio-ai-v1.vercel.app',
   'https://alaya-osteopathic-suppliantly.ngrok-free.dev'
 ];
+
+if (process.env.FRONTEND_URL) {
+  const envOrigin = process.env.FRONTEND_URL.replace(/\/$/, '');
+  if (!allowedOrigins.includes(envOrigin)) {
+    allowedOrigins.push(envOrigin);
+  }
+}
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes(origin)) {
+
+    const isExplicitlyAllowed = allowedOrigins.includes(origin);
+    const isVercelDomain = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+
+    if (isExplicitlyAllowed || isVercelDomain) {
       callback(null, true);
     } else {
+      console.error('[CORS REJECTED] Origin not allowed:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
