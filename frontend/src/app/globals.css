@@ -102,17 +102,64 @@
   --color-line-faint: rgba(245, 240, 232, 0.04);
 }
 
-/* ── View Transitions Circular Reveal Styling ── */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/* ── Coordinated Global Theme Transition (300ms ease-in-out) ── */
+html,
+body,
+header,
+aside,
+main,
+footer,
+nav,
+div,
+section,
+article,
+table,
+thead,
+tbody,
+tr,
+th,
+td,
+input,
+select,
+textarea,
+p,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+button,
+svg {
+  transition: background-color 300ms ease-in-out,
+              color 300ms ease-in-out,
+              border-color 300ms ease-in-out,
+              box-shadow 300ms ease-in-out,
+              fill 300ms ease-in-out,
+              stroke 300ms ease-in-out;
 }
-::view-transition-old(root) {
-  z-index: 1;
-}
-::view-transition-new(root) {
-  z-index: 9999;
+
+/* Reduced motion safety */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  header,
+  aside,
+  main,
+  footer,
+  nav,
+  div,
+  section,
+  article,
+  span,
+  p,
+  a,
+  button,
+  svg {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Base resets ── */
