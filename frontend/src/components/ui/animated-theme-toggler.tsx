@@ -11,7 +11,10 @@ type AnimatedThemeTogglerProps = {
   id?: string;
 };
 
-export const AnimatedThemeToggler = ({ className, id = "bavio-theme-toggle" }: AnimatedThemeTogglerProps) => {
+export const AnimatedThemeToggler = ({
+  className,
+  id = "bavio-theme-toggle",
+}: AnimatedThemeTogglerProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
@@ -24,7 +27,39 @@ export const AnimatedThemeToggler = ({ className, id = "bavio-theme-toggle" }: A
   }, [isDark]);
 
   const onToggle = useCallback(() => {
-    toggleTheme();
+    if (typeof window === "undefined") {
+      toggleTheme();
+      return;
+    }
+
+    const btn = buttonRef.current;
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      document.documentElement.style.setProperty("--theme-x", `${x}px`);
+      document.documentElement.style.setProperty("--theme-y", `${y}px`);
+      document.documentElement.style.setProperty("--theme-radius", `${endRadius}px`);
+    }
+
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof document !== "undefined" && "startViewTransition" in document && !isReducedMotion) {
+      document.documentElement.classList.add("theme-transitioning");
+      const transition = (document as any).startViewTransition(() => {
+        toggleTheme();
+      });
+
+      transition.finished.finally(() => {
+        document.documentElement.classList.remove("theme-transitioning");
+      });
+    } else {
+      toggleTheme();
+    }
   }, [toggleTheme]);
 
   return (

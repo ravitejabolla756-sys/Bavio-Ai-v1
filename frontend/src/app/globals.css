@@ -141,6 +141,39 @@ svg {
               stroke 300ms ease-in-out;
 }
 
+/* Disable global transitions during circular view transition to prevent double-animation */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: none !important;
+}
+
+/* ── Circular View Transition for Workspace Theme Toggle ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: circle-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes circle-reveal {
+  0% {
+    clip-path: circle(0px at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  100% {
+    clip-path: circle(var(--theme-radius, 100vmax) at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}
+
 /* Reduced motion safety */
 @media (prefers-reduced-motion: reduce) {
   html,
