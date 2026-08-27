@@ -6,8 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeSlash, ShieldCheck, Check, Warning, ArrowRight } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
-
 import { authApi } from "@/lib/api";
+import AnimatedThemeToggler from "@/components/ui/animated-theme-toggler";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -120,7 +120,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col justify-center items-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col justify-center items-center p-6">
+      <AnimatedThemeToggler className="absolute top-4 right-4 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md shadow-sm border border-line" />
       <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
       <motion.div

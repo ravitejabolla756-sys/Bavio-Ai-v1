@@ -58,21 +58,18 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var p = window.location.pathname || '';
-                  var isApp = p.indexOf('/dashboard') === 0 || p.indexOf('/workspace') === 0;
-                  if (isApp) {
-                    var saved = localStorage.getItem('bavio_theme');
-                    var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (isDark) {
-                      document.documentElement.classList.add('dark');
-                      document.documentElement.style.colorScheme = 'dark';
-                    } else {
-                      document.documentElement.classList.remove('dark');
-                      document.documentElement.style.colorScheme = 'light';
-                    }
-                  } else {
+                  var saved = localStorage.getItem('theme') || localStorage.getItem('bavio_theme');
+                  if (saved === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
+                  } else if (saved === 'light') {
                     document.documentElement.classList.remove('dark');
                     document.documentElement.style.colorScheme = 'light';
+                  } else {
+                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.style.colorScheme = 'dark';
+                    }
                   }
                 } catch (e) {}
               })();
@@ -80,7 +77,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-canvas text-ink min-h-[100dvh] font-sans noise-overlay">
+      <body className="antialiased bg-background text-foreground min-h-[100dvh] font-sans noise-overlay">
         <ThemeProvider>
           <CountryProvider>
             <AuthHashHandler />
@@ -92,6 +89,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-

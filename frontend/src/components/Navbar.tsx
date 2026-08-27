@@ -7,6 +7,7 @@ import Logo from "@/components/Logo";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { List, X } from "@phosphor-icons/react";
 import { getCookie } from "@/lib/auth-utils";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const navLinks = [
   { label: "How it works", href: "/#how-it-works" },
@@ -84,7 +85,8 @@ export default function Navbar() {
         </nav>
 
         {/* Right Section: CTA Button */}
-        <div className="hidden md:flex items-center shrink-0">
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          <AnimatedThemeToggler />
           <Link
             href={!isAuthenticated ? "/signup" : authHref}
             className="flex items-center justify-center bg-[#FF6B00] hover:bg-[#EA580C] text-white font-sans font-semibold text-[15px] rounded-full transition-all duration-250 ease-out text-center hover:scale-[1.03] active:scale-[0.98]"
@@ -98,14 +100,17 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Hamburger Trigger */}
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? <X className="w-6 h-6" weight="bold" /> : <List className="w-6 h-6" weight="bold" />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <AnimatedThemeToggler />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="w-6 h-6" weight="bold" /> : <List className="w-6 h-6" weight="bold" />}
+          </button>
+        </div>
 
       </motion.header>
 

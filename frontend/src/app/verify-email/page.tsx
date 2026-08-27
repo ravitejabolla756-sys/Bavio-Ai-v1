@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Mail, ArrowRight, RotateCw, AlertTriangle, CheckCircle } from "lucide-react";
 import Logo from "@/components/Logo";
 import { apiFetch } from "@/lib/api";
+import AnimatedThemeToggler from "@/components/ui/animated-theme-toggler";
 
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState<string>("");
@@ -54,7 +55,8 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col items-center justify-center p-6">
+    <div className="relative min-h-screen bg-[#FFFDF8] dark:bg-canvas text-[#140A02] dark:text-ink font-sans flex flex-col items-center justify-center p-6">
+      <AnimatedThemeToggler className="absolute top-4 right-4 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md shadow-sm border border-line" />
       <div className="mb-8">
         <Logo />
       </div>

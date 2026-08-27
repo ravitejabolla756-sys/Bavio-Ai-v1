@@ -19,6 +19,7 @@ import {
 import Logo from "@/components/Logo";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
+import AnimatedThemeToggler from "@/components/ui/animated-theme-toggler";
 
 function GlobalNetworkVisual({ className }: { className?: string }) {
   return (
@@ -59,7 +60,8 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: any) {
-      setErrorMsg("Google login failed: " + (err.message || err));
+      console.error("Google sign in error:", err);
+      setErrorMsg(err.message || "Failed to sign in with Google");
     }
   }
 
@@ -124,7 +126,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-hidden">
+    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col md:flex-row overflow-hidden">
+      <AnimatedThemeToggler className="absolute top-4 right-4 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md shadow-sm border border-line" />
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)

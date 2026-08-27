@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -12,9 +13,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
         saffron: {
           DEFAULT: "#FF6B00",
-          hover: "#FF8C3A",
+          hover: "#EA580C",
           light: "#FF8C3A",
           dark: "#D45900",
           muted: "rgba(255, 107, 0, 0.08)",
@@ -22,9 +56,9 @@ const config: Config = {
         },
         navy: {
           DEFAULT: "#140B06",
-          card: "#FFFFFF",
-          border: "#E5E0D8",
-          tertiary: "#F8F4EF",
+          card: "var(--card)",
+          border: "var(--border)",
+          tertiary: "var(--secondary)",
         },
         bavioGreen: {
           DEFAULT: "#10b981",
@@ -33,13 +67,13 @@ const config: Config = {
         },
         bavioCream: "#FCF8F3",
         bavioLavender: "#6E6256",
-        darkBg: "#080600",
-        darkSurface: "#100e08",
-        darkSurfaceAlt: "#12102B",
-        darkBorder: "#2a2010",
+        darkBg: "#0C0A09",
+        darkSurface: "#141210",
+        darkSurfaceAlt: "#1C1917",
+        darkBorder: "#292524",
         darkText: "#F5F0E8",
-        darkTextMuted: "#7a6e5f",
-        /* ── Light theme semantic tokens mapped to CSS variables ── */
+        darkTextMuted: "#A89F94",
+        /* ── Semantic tokens mapped to CSS variables ── */
         canvas: "var(--color-canvas)",
         surface: {
           DEFAULT: "var(--color-surface)",
