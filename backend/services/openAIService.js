@@ -13,7 +13,7 @@ function getProviderConfig(apiKey) {
   if (key && key.startsWith('gsk_')) {
     return {
       baseUrl: 'https://api.groq.com/openai/v1',
-      chatModel: process.env.GROQ_CHAT_MODEL || 'llama-3.3-70b-versatile',
+      chatModel: process.env.GROQ_CHAT_MODEL || 'groq/compound',
       sttModel: 'whisper-large-v3',
       apiKey: key,
       providerName: 'Groq'
@@ -364,9 +364,36 @@ When you have confirmed the details, got their confirmation, and exchanged final
 ${customPrompt}`;
 }
 
+async function chatCompletion(messages, model = 'gpt-5.4-mini', temperature = 0.7) {
+  const config = getProviderConfig();
+  if (!config.apiKey) {
+    throw new Error(`[${config.providerName} LLM] API key is not configured.`);
+  }
+
+  const response = await axios.post(
+    `${config.baseUrl}/chat/completions`,
+    {
+      model: config.chatModel || model,
+      max_tokens: 500,
+      temperature,
+      messages,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 20000,
+    }
+  );
+
+  return response.data?.choices?.[0]?.message?.content || '';
+}
+
 module.exports = {
   transcribeAudio,
   chat,
+  chatCompletion,
   generateResponse,
   buildSystemPrompt,
   textToSpeech,

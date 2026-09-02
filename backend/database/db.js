@@ -87,15 +87,74 @@ pool.query('SELECT NOW()')
       `);
       console.log('✅ email_verifications table initialized/verified.');
 
-      // Drop country and currency check constraints from the users table to support all countries worldwide
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email TEXT NOT NULL,
+            token_hash TEXT NOT NULL,
+            consumed BOOLEAN DEFAULT FALSE,
+            expires_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_token_hash ON password_resets(token_hash);
+      `);
+      console.log('✅ password_resets table initialized/verified.');
+
+      // Run Migration 023: Developer Platform, Multi-Provider & Outbound Campaigns
       try {
-        await pool.query(`
-          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_country_code;
-          ALTER TABLE users DROP CONSTRAINT IF EXISTS check_currency_code;
-        `);
-        console.log('✅ Global country/currency constraints verified/dropped.');
-      } catch (constErr) {
-        console.warn('⚠️ Non-critical: Failed to drop users country constraints:', constErr.message);
+        const fs = require('fs');
+        const path = require('path');
+        const migrationPath = path.join(__dirname, '../sql/023_developer_platform_and_campaigns.sql');
+        if (fs.existsSync(migrationPath)) {
+          const sql = fs.readFileSync(migrationPath, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 023 (Developer Platform & Campaigns) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 023:', migErr.message);
+      }
+
+      // Run Migration 024: Secure Hashed Email Verification Schema
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration024Path = path.join(__dirname, '../sql/024_hash_email_verifications.sql');
+        if (fs.existsSync(migration024Path)) {
+          const sql = fs.readFileSync(migration024Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 024 (Hashed Email Verifications) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 024:', migErr.message);
+      }
+
+      // Run Migration 025: Add pending_verification Enum Value to business_status
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration025Path = path.join(__dirname, '../sql/025_add_pending_verification_enum.sql');
+        if (fs.existsSync(migration025Path)) {
+          const sql = fs.readFileSync(migration025Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 025 (pending_verification Enum Value) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 025:', migErr.message);
+      }
+
+      // Run Migration 026: Create password_resets Table for Secure Password Recovery
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration026Path = path.join(__dirname, '../sql/026_create_password_reset_tokens.sql');
+        if (fs.existsSync(migration026Path)) {
+          const sql = fs.readFileSync(migration026Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 026 (password_resets Table) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 026:', migErr.message);
       }
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);

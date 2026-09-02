@@ -113,7 +113,7 @@ export default function DashboardOverview() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-left">
-            <h1 className="font-serif text-3xl tracking-tight text-ink">Voice Overview</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Voice Overview</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading dashboard telemetry...</p>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function DashboardOverview() {
       {/* 1. Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
         <div className="text-left">
-          <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal">Voice Overview</h1>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Voice Overview</h1>
           <p className="text-sm text-ink-tertiary mt-1">Monitor calls, AI employee performance, usage, and costs.</p>
         </div>
       </div>

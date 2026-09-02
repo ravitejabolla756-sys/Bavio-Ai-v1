@@ -54,7 +54,7 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] text-[#140A02] font-sans flex flex-col items-center justify-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col justify-center items-center p-6">
       <div className="mb-8">
         <Logo />
       </div>

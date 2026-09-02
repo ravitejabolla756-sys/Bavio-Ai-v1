@@ -59,7 +59,8 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: any) {
-      setErrorMsg("Google login failed: " + (err.message || err));
+      console.error("Google sign in error:", err);
+      setErrorMsg(err.message || "Failed to sign in with Google");
     }
   }
 
@@ -124,7 +125,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col md:flex-row overflow-hidden">
+    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col md:flex-row overflow-hidden">
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)

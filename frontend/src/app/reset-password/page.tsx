@@ -6,10 +6,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeSlash, ShieldCheck, Check, Warning, ArrowRight } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
+import { authApi } from "@/lib/api";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   
+  const [token, setToken] = useState<string>("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
@@ -22,25 +24,33 @@ export default function ResetPasswordPage() {
   const [hasSession, setHasSession] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(true);
 
-  // Check if session exists on mount
+  // Check token on mount
   useEffect(() => {
-    async function checkSession() {
+    async function checkToken() {
       try {
-        const { supabase } = await import("@/lib/supabase");
-        const { data: { session } } = await supabase.auth.getSession();
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenParam = urlParams.get("token") || "";
         
-        if (session) {
+        if (!tokenParam) {
+          setErrorMsg("Reset token is missing. Please request a new password reset link.");
+          setIsVerifying(false);
+          return;
+        }
+
+        setToken(tokenParam);
+        const res = await authApi.verifyResetToken(tokenParam);
+        if (res.valid) {
           setHasSession(true);
         } else {
-          setErrorMsg("Reset session is missing or expired. Please request a new reset link.");
+          setErrorMsg(res.error || "Reset link is invalid or expired. Please request a new link.");
         }
       } catch (err: any) {
-        setErrorMsg("Failed to initialize session. Please try again.");
+        setErrorMsg(err.message || "Invalid or expired reset link. Please request a new link.");
       } finally {
         setIsVerifying(false);
       }
     }
-    checkSession();
+    checkToken();
   }, []);
 
   // Password strength meter calculation
@@ -75,30 +85,21 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (clientError || !password || isLoading) return;
+    if (clientError || !password || isLoading || !token) return;
 
     setIsLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
 
     try {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
-      if (error) throw error;
-
-      // Sign out to clear the temporary reset password session
-      await supabase.auth.signOut();
-
-      setSuccessMsg("Your password has been successfully reset! Redirecting to sign in...");
+      const res = await authApi.resetPassword({ token, password });
+      setSuccessMsg(res.message || "Your password has been successfully reset! Redirecting to sign in...");
       setPassword("");
       setConfirmPassword("");
       
       setTimeout(() => {
         router.push("/login");
-      }, 3000);
+      }, 2500);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to update password. Please try again.");
     } finally {
@@ -118,7 +119,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#F7F4EF] text-[#14141A] font-sans flex flex-col justify-center items-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col justify-center items-center p-6">
       <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
       <motion.div

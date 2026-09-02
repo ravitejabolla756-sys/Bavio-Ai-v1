@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -8,23 +8,37 @@ export type ThemeMode = "light" | "dark" | "system";
 interface ThemeContextType {
   theme: ThemeMode;
   isDark: boolean;
-  toggleTheme: () => void;
   setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isAppRoute = pathname?.startsWith("/dashboard") || pathname?.startsWith("/workspace");
+  let pathname = "";
+  if (typeof window !== "undefined") {
+    pathname = window.location.pathname || "";
+  }
+  try {
+    const p = usePathname();
+    if (p) pathname = p;
+  } catch {}
 
-  // Read initial theme synchronously from localStorage if in browser
+  const isWorkspaceRoute =
+    !!pathname &&
+    (pathname.startsWith("/workspace") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/app"));
+
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("bavio_theme") as ThemeMode | null;
+        const saved = (localStorage.getItem("theme") || localStorage.getItem("bavio_theme")) as ThemeMode | null;
         if (saved === "dark" || saved === "light" || saved === "system") {
           return saved;
+        }
+        if (document.documentElement.classList.contains("dark")) {
+          return "dark";
         }
       } catch {}
     }
@@ -51,68 +65,51 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  const isDark = theme === "dark" || (theme === "system" && isSystemDark);
+  const isDark = isWorkspaceRoute && (theme === "dark" || (theme === "system" && isSystemDark));
 
-  // Sync DOM classes based on active route and theme
+  // Sync DOM classes according to route context (forced Light on public routes, user preference on workspace)
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    if (!isAppRoute) {
-      // Public website pages stay in original light cream theme
+    if (isWorkspaceRoute && isDark) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.style.colorScheme = "light";
-    } else {
-      // Inside dashboard or workspace: apply selected theme immediately
-      if (isDark) {
-        document.documentElement.classList.add("dark");
-        document.documentElement.style.colorScheme = "dark";
-      } else {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.style.colorScheme = "light";
-      }
     }
-  }, [isAppRoute, isDark]);
+  }, [isWorkspaceRoute, isDark]);
 
-  const setTheme = useCallback(
-    (newTheme: ThemeMode) => {
-      setThemeState(newTheme);
-      try {
-        localStorage.setItem("bavio_theme", newTheme);
-      } catch {}
-
-      const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
-      const isApp = currentPath.startsWith("/dashboard") || currentPath.startsWith("/workspace");
-
-      if (isApp && typeof document !== "undefined") {
-        const nextIsDark =
-          newTheme === "dark" ||
-          (newTheme === "system" &&
-            typeof window !== "undefined" &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-        if (nextIsDark) {
-          document.documentElement.classList.add("dark");
-          document.documentElement.style.colorScheme = "dark";
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.style.colorScheme = "light";
-        }
-      }
-    },
-    []
-  );
+  const setTheme = useCallback((newTheme: ThemeMode) => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("theme", newTheme);
+      localStorage.setItem("bavio_theme", newTheme);
+    } catch (e) {
+      console.error("Theme storage error:", e);
+    }
+  }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    setThemeState(prev => {
+      const nextTheme = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem("theme", nextTheme);
+        localStorage.setItem("bavio_theme", nextTheme);
+      } catch (e) {
+        console.error("Theme storage error:", e);
+      }
+      return nextTheme;
+    });
+  }, []);
 
   return (
     <ThemeContext.Provider
       value={{
         theme,
         isDark,
-        toggleTheme,
         setTheme,
+        toggleTheme,
       }}
     >
       {children}

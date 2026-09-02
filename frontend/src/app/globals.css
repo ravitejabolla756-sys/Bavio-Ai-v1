@@ -6,6 +6,32 @@
 :root {
   --background: #FCF8F3;
   --foreground: #140B06;
+
+  --card: #FFFFFF;
+  --card-foreground: #140B06;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #140B06;
+
+  --primary: #FF6B00;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #F8F4EF;
+  --secondary-foreground: #140B06;
+
+  --muted: #F0EBE3;
+  --muted-foreground: #6E6256;
+
+  --accent: #FAF4EE;
+  --accent-foreground: #FF6B00;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E5E0D8;
+  --input: #E5E0D8;
+  --ring: #FF6B00;
+
   --saffron: #FF6B00;
   --saffron-hover: #EA580C;
   --border-subtle: #E5E0D8;
@@ -34,6 +60,32 @@
 .dark {
   --background: #0C0A09;
   --foreground: #F5F0E8;
+
+  --card: #141210;
+  --card-foreground: #F5F0E8;
+
+  --popover: #181614;
+  --popover-foreground: #F5F0E8;
+
+  --primary: #FF6B00;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #1C1917;
+  --secondary-foreground: #F5F0E8;
+
+  --muted: #262320;
+  --muted-foreground: #A89F94;
+
+  --accent: #262320;
+  --accent-foreground: #FF8C3A;
+
+  --destructive: #991B1B;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #292524;
+  --input: #292524;
+  --ring: #FF6B00;
+
   --border-subtle: #292524;
 
   --color-canvas: #0C0A09;
@@ -50,13 +102,13 @@
   --color-line-faint: rgba(245, 240, 232, 0.04);
 }
 
-/* ── Smooth, synchronized theme color transition (180ms ease-out) ── */
-:root,
-.dark,
+/* ── Coordinated Global Theme Transition (300ms ease-in-out) ── */
+html,
 body,
-aside,
 header,
+aside,
 main,
+footer,
 nav,
 div,
 section,
@@ -81,9 +133,66 @@ h6,
 a,
 button,
 svg {
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-duration: 180ms;
-  transition-timing-function: ease-out;
+  transition: background-color 300ms ease-in-out,
+              color 300ms ease-in-out,
+              border-color 300ms ease-in-out,
+              box-shadow 300ms ease-in-out,
+              fill 300ms ease-in-out,
+              stroke 300ms ease-in-out;
+}
+
+/* Disable global transitions during circular view transition to prevent double-animation */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: none !important;
+}
+
+/* ── Circular View Transition for Workspace Theme Toggle ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: circle-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes circle-reveal {
+  0% {
+    clip-path: circle(0px at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  100% {
+    clip-path: circle(var(--theme-radius, 100vmax) at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}
+
+/* Reduced motion safety */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  header,
+  aside,
+  main,
+  footer,
+  nav,
+  div,
+  section,
+  article,
+  span,
+  p,
+  a,
+  button,
+  svg {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Base resets ── */
@@ -91,24 +200,35 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ── Global heading typography — Instrument Serif (Famaura-style) ── */
+/* ── Global heading typography ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
-/* Utility class for explicit serif headings in JSX */
-.font-heading, .font-display, .font-serif {
+/* Hero / Major Brand Moments Display Typography */
+.font-serif, .font-brand-hero {
   font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
   font-weight: 400 !important;
   letter-spacing: -0.02em !important;
   line-height: 1.15 !important;
 }
 
+/* Modern SaaS Product UI Headings & Body */
+.font-heading, .font-display {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+
 .font-sans {
-  font-family: var(--font-inter), "Inter", sans-serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains), var(--font-geist-mono), monospace !important;
 }
 
 body {
@@ -117,7 +237,6 @@ body {
   background-color: var(--background);
   font-size: 18px;
   line-height: 1.7;
-  /* Saffron radial glow on top, combined with a subtle 40px grid overlay adjusted for light theme */
   background-image: 
     radial-gradient(circle at 50% -20%, rgba(255, 107, 0, 0.06) 0%, transparent 50%),
     linear-gradient(rgba(20, 10, 2, 0.008) 1px, transparent 1px),
@@ -137,30 +256,11 @@ body {
   color: var(--color-ink);
 }
 
-/* ── Color overrides & Dark Mode Surface Mappings ── */
-.bg-\[\#FFFDF8\] {
-  background-color: #FCF8F3 !important;
-}
-.text-\[\#140A02\] {
-  color: #140B06 !important;
-}
-.bg-\[\#F97316\] {
-  background-color: #FF6B00 !important;
-}
-.text-\[\#F97316\] {
-  color: #FF6B00 !important;
-}
-.border-\[\#F97316\] {
-  border-color: #FF6B00 !important;
-}
-.border-\[\#F3E4D4\] {
-  border-color: #EADFD3 !important;
-}
-.bg-\[\#FFF7ED\] {
-  background-color: #FAF4EE !important;
-}
-
 /* ── Dark Mode Global Surface Adaptation ── */
+.dark .theme-bavio-light {
+  background-color: var(--color-canvas) !important;
+  color: var(--color-ink) !important;
+}
 .dark .bg-white {
   background-color: var(--color-surface) !important;
 }
@@ -270,8 +370,53 @@ body {
   border-color: rgba(59, 130, 246, 0.25) !important;
 }
 
+/* Additional Tailwind Slate/Gray utility overrides for Dark mode */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-stone-900,
+.dark .text-zinc-900 {
+  color: var(--color-ink) !important;
+}
 
-/* ── Instant tap / click response ── */
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-stone-700,
+.dark .text-zinc-700 {
+  color: var(--color-ink-secondary) !important;
+}
+
+.dark .text-slate-500,
+.dark .text-gray-500,
+.dark .text-stone-500,
+.dark .text-zinc-500 {
+  color: var(--color-ink-tertiary) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-stone-50,
+.dark .bg-stone-100,
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
+  background-color: var(--color-surface-raised) !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-gray-200,
+.dark .border-gray-100,
+.dark .border-stone-200,
+.dark .border-zinc-200 {
+  border-color: var(--color-line) !important;
+}
+
+/* Instant tap / click response */
 a, button, [role="button"], input[type="submit"], input[type="button"] {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -290,7 +435,7 @@ button:not(.no-press):active,
   color: #FF6B00;
 }
 
-/* ── Scrollbar styling (light, thin, premium) ── */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -306,7 +451,7 @@ button:not(.no-press):active,
   background: var(--saffron);
 }
 
-/* ── Glassmorphism utilities ── */
+/* Glassmorphism utilities */
 .bg-glass {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
@@ -345,7 +490,6 @@ button:not(.no-press):active,
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-/* ── Dashboard Shell Shadows (Restrained B2B SaaS) ── */
 .shadow-premium {
   box-shadow:
     0 1px 2px rgba(20, 10, 2, 0.03),
@@ -370,11 +514,6 @@ button:not(.no-press):active,
     0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
-.shadow-saffron-glow {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-/* ── Double-bezel card architecture (Clean, non-glowing) ── */
 .card-bezel {
   position: relative;
   background: rgba(0, 0, 0, 0.01);
@@ -390,10 +529,6 @@ button:not(.no-press):active,
   border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
-.card-bezel:hover {
-  transform: translateY(-2px);
-}
-
 .card-bezel-inner {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
@@ -406,51 +541,7 @@ button:not(.no-press):active,
   border-color: var(--saffron);
 }
 
-/* ── Interactive button utility classes (Solid, Restrained, No Outer Glow) ── */
-.btn-interactive,
-button[type="submit"],
-.card-bezel-inner button,
-a.bg-saffron,
-button.bg-saffron {
-  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
-  will-change: background-color, border-color;
-}
-
-.btn-interactive:hover,
-button[type="submit"]:hover,
-.card-bezel-inner button:hover,
-a.bg-saffron:hover,
-button.bg-saffron:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.btn-interactive:active,
-button[type="submit"]:active,
-.card-bezel-inner button:active,
-a.bg-saffron:active,
-button.bg-saffron:active {
-  opacity: 0.92;
-}
-
-/* ── Noise texture overlay ── */
-.noise-overlay::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  pointer-events: none;
-  opacity: 0.015;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 128px 128px;
-}
-
-/* ── Ambient mesh gradient blobs ── */
-.mesh-blob-saffron {
-  display: none;
-}
-
-/* ── Reduced motion safety ── */
+/* Reduced motion safety */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -461,14 +552,12 @@ button.bg-saffron:active {
   }
 }
 
-/* ── Focus ring ── */
 :focus-visible {
   outline: 2px solid var(--saffron);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ── Animation delay utilities ── */
 @layer utilities {
   .animation-delay-100 { animation-delay: 100ms; }
   .animation-delay-200 { animation-delay: 200ms; }
@@ -479,4 +568,5 @@ button.bg-saffron:active {
 
 .widget-glow-active {
   border-color: var(--saffron) !important;
+  box-shadow: none !important;
 }

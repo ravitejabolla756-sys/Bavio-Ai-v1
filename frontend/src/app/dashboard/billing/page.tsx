@@ -24,8 +24,10 @@ import {
   BillingStatus,
   PaymentRecord,
 } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 
 export default function BillingLedger() {
+  const toast = useToast();
   const [invoices, setInvoices] = useState<PaymentRecord[]>([]);
   const [billingStatus, setBillingStatus] = useState<any | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
@@ -129,11 +131,11 @@ export default function BillingLedger() {
   const handleSaveSettings = async () => {
     setIsSavingSettings(true);
     try {
-      // Simulate profile tax / billing email save
+      // Save profile email / billing update
       await authApi.updateProfile({ email: billingEmail });
-      alert("Billing details updated successfully.");
+      toast.success("Billing details updated successfully.");
     } catch (err: any) {
-      alert("Failed to update details: " + err.message);
+      toast.error("Failed to update details: " + err.message);
     } finally {
       setIsSavingSettings(false);
     }
@@ -181,7 +183,7 @@ export default function BillingLedger() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">Billing</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Billing</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading billing dashboard...</p>
           </div>
         </div>
@@ -199,7 +201,7 @@ export default function BillingLedger() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
         <div className="text-left">
-          <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal font-serif">Billing</h1>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Billing</h1>
           <p className="text-sm text-ink-tertiary mt-1 font-sans">
             Manage your plan, usage, payments, and additional minutes.
           </p>
@@ -334,7 +336,7 @@ export default function BillingLedger() {
           {/* 3. Need more minutes? Top-ups */}
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left space-y-4">
             <div>
-              <h3 className="font-serif text-lg font-normal">Need more minutes?</h3>
+              <h3 className="font-sans font-semibold text-lg text-ink">Need more minutes?</h3>
               <p className="text-[11px] text-ink-tertiary">Prepaid top-up minutes carry over and never expire.</p>
             </div>
             
@@ -363,7 +365,7 @@ export default function BillingLedger() {
 
           {/* 4. Payment History Receipts Table */}
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left space-y-4">
-            <h3 className="font-serif text-lg font-normal">Payment History</h3>
+            <h3 className="font-sans font-semibold text-lg text-ink">Payment History</h3>
             <div className="overflow-x-auto w-full">
               {invoices.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
@@ -396,7 +398,7 @@ export default function BillingLedger() {
                         </td>
                         <td className="py-3 text-right">
                           <button
-                            onClick={() => alert("Downloading PDF invoice reference: " + inv.id)}
+                            onClick={() => toast.info(`Downloading invoice #${inv.id}`)}
                             className="p-1 hover:bg-canvas rounded-lg text-ink-tertiary hover:text-ink transition-all"
                           >
                             <DownloadSimple className="w-3.5 h-3.5" />
@@ -417,7 +419,7 @@ export default function BillingLedger() {
           
           {/* 5. Billing Settings */}
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col gap-5 h-full">
-            <h3 className="font-serif text-lg font-normal border-b border-line/40 pb-2">Billing Settings</h3>
+            <h3 className="font-sans font-semibold text-lg text-ink border-b border-line/40 pb-2">Billing Settings</h3>
             
             {/* Payment Method details */}
             <div className="space-y-2">
@@ -431,7 +433,7 @@ export default function BillingLedger() {
                   </div>
                 </div>
                 <button
-                  onClick={() => alert("Billing portal redirecting to Stripe/Razorpay client details portal...")}
+                  onClick={() => toast.info("Opening secure payment portal...")}
                   className="text-[10px] font-bold text-saffron hover:underline"
                 >
                   Update
@@ -498,7 +500,7 @@ export default function BillingLedger() {
             >
               {/* Header */}
               <div className="flex justify-between items-center border-b border-line/40 pb-4 mb-4">
-                <h3 className="font-serif text-lg font-normal">Choose Subscription Plan</h3>
+                <h3 className="font-sans font-semibold text-lg text-ink">Choose Subscription Plan</h3>
                 <button
                   onClick={() => setIsPlanOpen(false)}
                   className="p-1.5 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"

@@ -55,12 +55,10 @@ export default function WorkspaceSubscription() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!window.confirm("Are you sure you want to cancel your subscription? Your assistant will be paused.")) return;
     try {
       setCancelling(true);
       setErrorMsg(null);
       await billingApi.cancel();
-      alert("Subscription cancelled successfully.");
       refreshProfile();
       refreshPayments();
     } catch (err: any) {

@@ -204,7 +204,6 @@ export function PhoneSetup({ onComplete, userId }: PhoneSetupProps) {
               type="button"
               onClick={() => {
                 navigator.clipboard.writeText(phoneNumber);
-                alert("Virtual number copied to clipboard!");
               }}
               className="px-4 py-2 border border-[#E5E0D8] hover:border-saffron text-[#140A02] hover:text-white hover:bg-saffron rounded-xl text-body-xs font-bold transition-colors inline-flex items-center gap-1.5 self-start sm:self-auto bg-white"
             >

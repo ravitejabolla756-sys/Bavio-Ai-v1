@@ -258,7 +258,7 @@ export default function Navbar() {
           </div>
 
           {/* CTA */}
-          <div className="flex-1 hidden md:flex justify-end items-center gap-4">
+          <div className="flex-1 hidden md:flex justify-end items-center">
             <Link
               href="/signup"
               className="inline-flex items-center justify-center hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 h-[44px]"

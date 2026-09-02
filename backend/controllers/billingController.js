@@ -3,6 +3,7 @@ const dodoService = require('../services/dodoBillingService');
 const onboardingController = require('./onboardingController');
 const emailService = require('../services/emailService');
 const axios = require('axios');
+const crypto = require('node:crypto');
 
 // plan_type enum: free | starter | pro | enterprise
 const DB_PLAN_MAP = {

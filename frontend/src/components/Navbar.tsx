@@ -98,14 +98,16 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Hamburger Trigger */}
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? <X className="w-6 h-6" weight="bold" /> : <List className="w-6 h-6" weight="bold" />}
-        </button>
+        <div className="md:hidden flex items-center">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-[#6E6256] hover:text-[#FF6B00] transition-colors"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="w-6 h-6" weight="bold" /> : <List className="w-6 h-6" weight="bold" />}
+          </button>
+        </div>
 
       </motion.header>
 

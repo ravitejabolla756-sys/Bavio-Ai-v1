@@ -29,8 +29,10 @@ import {
   BusinessProfile,
   PhoneNumber,
 } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 
 export default function WorkspaceSettings() {
+  const toast = useToast();
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [numbers, setNumbers] = useState<PhoneNumber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +111,7 @@ export default function WorkspaceSettings() {
       
       // Update global layout sync values
       localStorage.setItem("bavio_name", companyName);
-      alert("Workspace profile updated successfully.");
+      toast.success("Workspace profile updated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to save profile changes");
     } finally {
@@ -146,7 +148,7 @@ export default function WorkspaceSettings() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">Settings</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Settings</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading settings dashboard...</p>
           </div>
         </div>
@@ -168,7 +170,7 @@ export default function WorkspaceSettings() {
       {/* 1. Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
         <div className="text-left">
-          <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal font-serif">Settings</h1>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Settings</h1>
           <p className="text-sm text-ink-tertiary mt-1 font-sans">
             Configure your workspace profile, API credentials, and verify outbound caller IDs.
           </p>
@@ -204,7 +206,7 @@ export default function WorkspaceSettings() {
             onSubmit={handleSaveProfile}
             className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col gap-5"
           >
-            <h3 className="font-serif text-lg font-normal border-b border-line/40 pb-2">Workspace Profile</h3>
+            <h3 className="font-sans font-semibold text-lg text-ink border-b border-line/40 pb-2">Workspace Profile</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -272,7 +274,7 @@ export default function WorkspaceSettings() {
           {/* API Key Credentials */}
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-line/40 pb-2">
-              <h3 className="font-serif text-lg font-normal">API Keys & Integrations</h3>
+              <h3 className="font-sans font-semibold text-lg text-ink">API Keys & Integrations</h3>
               <Key className="w-4 h-4 text-saffron" />
             </div>
             <p className="text-xs text-ink-secondary leading-relaxed">
@@ -312,7 +314,7 @@ export default function WorkspaceSettings() {
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col h-full justify-between">
             <div>
               <div className="flex justify-between items-center border-b border-line/40 pb-2 mb-4">
-                <h3 className="font-serif text-lg font-normal">Outbound Caller IDs</h3>
+                <h3 className="font-sans font-semibold text-lg text-ink">Outbound Caller IDs</h3>
                 <Phone className="w-4 h-4 text-saffron" />
               </div>
               <p className="text-xs text-ink-secondary leading-relaxed mb-4">

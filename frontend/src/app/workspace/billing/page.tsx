@@ -155,8 +155,8 @@ export default function WorkspaceBilling() {
       if (result.success && result.invoice) {
         setActiveInvoice(result.invoice);
       }
-    } catch (err) {
-      alert("Error loading invoice: " + err);
+    } catch (err: any) {
+      console.error("Error loading invoice:", err);
     } finally {
       setLoadingInvoice(false);
       setDownloadingId(null);

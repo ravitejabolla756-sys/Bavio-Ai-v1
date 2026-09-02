@@ -27,12 +27,15 @@ import {
   getClientId,
   KnowledgeDoc,
 } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 
 export default function KnowledgeDashboardPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Data State
   const [docs, setDocs] = useState<KnowledgeDoc[]>([]);
@@ -204,17 +207,16 @@ export default function KnowledgeDashboardPage() {
 
   // Delete Knowledge base entry
   const handleDeleteDoc = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this knowledge source?")) return;
     setErrorMsg("");
     setSuccessMsg("");
     try {
       await knowledgeBaseApi.delete(id);
       setDocs(prev => prev.filter(d => d.id !== id));
-      setSuccessMsg("Knowledge source deleted successfully.");
-      setTimeout(() => setSuccessMsg(""), 4000);
+      toast.success("Knowledge source deleted successfully.");
       setSelectedDocId(null);
+      setConfirmDeleteId(null);
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to delete knowledge source");
+      toast.error(err.message || "Failed to delete knowledge source");
     }
   };
 
@@ -243,7 +245,7 @@ export default function KnowledgeDashboardPage() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">Knowledge</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Knowledge</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading AI knowledge base workspace...</p>
           </div>
         </div>
@@ -277,7 +279,7 @@ export default function KnowledgeDashboardPage() {
       {/* 1. Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
         <div className="text-left">
-          <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal font-serif">Knowledge</h1>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Knowledge</h1>
           <p className="text-sm text-ink-tertiary mt-1">
             Give your AI employees the information they need to answer accurately.
           </p>
@@ -338,7 +340,7 @@ export default function KnowledgeDashboardPage() {
       <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-line/40">
           <Shield className="w-5 h-5 text-saffron" />
-          <h3 className="font-serif text-lg font-normal">AI Safety Rules</h3>
+          <h3 className="font-sans font-semibold text-lg text-ink">AI Safety Rules</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed">
           <div className="border border-line/60 rounded-xl p-4 flex justify-between items-start gap-4 bg-canvas/10">
@@ -376,7 +378,7 @@ export default function KnowledgeDashboardPage() {
       {/* 4. Knowledge sources list / grid */}
       <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col gap-6">
         <div className="flex items-center justify-between border-b border-line/40 pb-3">
-          <h3 className="font-serif text-lg font-normal">Active Knowledge Nodes</h3>
+          <h3 className="font-sans font-semibold text-lg text-ink">Active Knowledge Nodes</h3>
           <span className="text-[10px] font-mono text-ink-muted">Total: {docs.length} sources</span>
         </div>
 
@@ -502,7 +504,7 @@ export default function KnowledgeDashboardPage() {
             >
               {/* Header */}
               <div className="flex justify-between items-center border-b border-line/40 pb-4 mb-4">
-                <h3 className="font-serif text-lg font-normal">Add Knowledge Node</h3>
+                <h3 className="font-sans font-semibold text-lg text-ink">Add Knowledge Node</h3>
                 <button
                   onClick={() => setIsAddOpen(false)}
                   className="p-1.5 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"

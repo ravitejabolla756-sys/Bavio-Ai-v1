@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
@@ -59,39 +60,34 @@ export default function RootLayout({
               (function() {
                 try {
                   var p = window.location.pathname || '';
-                  var isApp = p.indexOf('/dashboard') === 0 || p.indexOf('/workspace') === 0;
-                  if (isApp) {
-                    var saved = localStorage.getItem('bavio_theme');
-                    var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (isDark) {
+                  var isWorkspace = p.startsWith('/workspace') || p.startsWith('/dashboard') || p.startsWith('/app');
+                  if (isWorkspace) {
+                    var saved = localStorage.getItem('theme') || localStorage.getItem('bavio_theme');
+                    if (saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                       document.documentElement.classList.add('dark');
                       document.documentElement.style.colorScheme = 'dark';
-                    } else {
-                      document.documentElement.classList.remove('dark');
-                      document.documentElement.style.colorScheme = 'light';
+                      return;
                     }
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.style.colorScheme = 'light';
                   }
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
                 } catch (e) {}
               })();
             `,
           }}
         />
       </head>
-      <body className="antialiased bg-canvas text-ink min-h-[100dvh] font-sans noise-overlay">
-        <ThemeProvider>
-          <CountryProvider>
-            <AuthHashHandler />
-            <NavigationProgress />
-            {children}
-          </CountryProvider>
-        </ThemeProvider>
+      <body className="antialiased bg-background text-foreground min-h-[100dvh] font-sans noise-overlay">
+        <Suspense fallback={null}>
+          <ThemeProvider>
+            <CountryProvider>
+              <AuthHashHandler />
+              <NavigationProgress />
+              {children}
+            </CountryProvider>
+          </ThemeProvider>
+        </Suspense>
       </body>
     </html>
   );
 }
-
-
-
