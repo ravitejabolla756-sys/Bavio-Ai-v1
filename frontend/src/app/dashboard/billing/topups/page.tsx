@@ -111,7 +111,7 @@ export default function TopupPage() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">Minute Top-Ups</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Minute Top-Ups</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading top-up plans...</p>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function TopupPage() {
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Billing
         </Link>
-        <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal font-serif">Minute Top-Ups</h1>
+        <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Minute Top-Ups</h1>
         <p className="text-sm text-ink-tertiary mt-1">
           Add prepaid calling minutes when you need more usage.
         </p>
@@ -183,7 +183,7 @@ export default function TopupPage() {
                 <p className="text-[11px] text-ink-secondary mt-1">{topup.description}</p>
                 
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-serif font-bold text-saffron">${topup.price}</span>
+                  <span className="text-3xl font-display font-extrabold text-saffron">${topup.price}</span>
                   <span className="text-[10px] text-ink-muted">one-time</span>
                 </div>
 
@@ -218,7 +218,7 @@ export default function TopupPage() {
 
       {/* How top-ups work */}
       <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left space-y-4 max-w-2xl mx-auto w-full">
-        <h3 className="font-serif text-lg font-normal border-b border-line/40 pb-2">How top-ups work</h3>
+        <h3 className="font-sans font-semibold text-lg text-ink border-b border-line/40 pb-2">How top-ups work</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs leading-relaxed text-ink-secondary font-sans">
           <div className="space-y-1">
             <span className="font-bold text-ink block">1. Purchase</span>

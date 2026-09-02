@@ -202,21 +202,33 @@ html {
 
 /* ── Global heading typography ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif), "Instrument Serif", "Georgia", serif;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
-.font-heading, .font-display, .font-serif {
+/* Hero / Major Brand Moments Display Typography */
+.font-serif, .font-brand-hero {
   font-family: var(--font-serif), "Instrument Serif", "Georgia", serif !important;
   font-weight: 400 !important;
   letter-spacing: -0.02em !important;
   line-height: 1.15 !important;
 }
 
+/* Modern SaaS Product UI Headings & Body */
+.font-heading, .font-display {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+
 .font-sans {
-  font-family: var(--font-inter), "Inter", sans-serif !important;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains), var(--font-geist-mono), monospace !important;
 }
 
 body {
@@ -356,6 +368,52 @@ body {
   background-color: rgba(59, 130, 246, 0.12) !important;
   color: #93C5FD !important;
   border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Additional Tailwind Slate/Gray utility overrides for Dark mode */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-stone-900,
+.dark .text-zinc-900 {
+  color: var(--color-ink) !important;
+}
+
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-stone-700,
+.dark .text-zinc-700 {
+  color: var(--color-ink-secondary) !important;
+}
+
+.dark .text-slate-500,
+.dark .text-gray-500,
+.dark .text-stone-500,
+.dark .text-zinc-500 {
+  color: var(--color-ink-tertiary) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-stone-50,
+.dark .bg-stone-100,
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
+  background-color: var(--color-surface-raised) !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-gray-200,
+.dark .border-gray-100,
+.dark .border-stone-200,
+.dark .border-zinc-200 {
+  border-color: var(--color-line) !important;
 }
 
 /* Instant tap / click response */
@@ -510,4 +568,5 @@ button:not(.no-press):active,
 
 .widget-glow-active {
   border-color: var(--saffron) !important;
+  box-shadow: none !important;
 }

@@ -67,7 +67,7 @@ export default function WorkspaceHome() {
           <span className="text-[9.5px] font-mono tracking-widest text-saffron font-bold uppercase bg-saffron/5 border border-saffron/10 px-2.5 py-0.5 rounded">
             Bavio Workspace
           </span>
-          <h1 className="font-display font-black text-3xl md:text-4xl text-ink tracking-tight leading-tight">
+          <h1 className="font-serif text-3xl md:text-4xl text-ink font-normal tracking-tight leading-tight">
             Welcome to Bavio
           </h1>
           <p className="text-body-xs text-ink-secondary leading-relaxed">

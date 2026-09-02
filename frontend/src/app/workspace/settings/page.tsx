@@ -192,7 +192,6 @@ function WorkspaceSettingsContent() {
   }
 
   async function handleDeleteDoc(id: string) {
-    if (!confirm("Delete this knowledge document?")) return;
     try {
       await knowledgeBaseApi.delete(id);
       setKbDocs(prev => prev.filter(d => d.id !== id));
@@ -509,7 +508,8 @@ function WorkspaceSettingsContent() {
                       </div>
                       <button
                         onClick={() => {
-                          alert("Webhook test payload sent!");
+                          setSavedGeneralAlert(true);
+                          setTimeout(() => setSavedGeneralAlert(false), 3000);
                         }}
                         className="bg-transparent hover:bg-line-subtle/50 text-ink-secondary border border-line font-bold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all h-[38px]"
                       >

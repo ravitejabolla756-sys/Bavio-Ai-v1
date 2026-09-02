@@ -26,12 +26,15 @@ import {
   Assistant,
   CallRecord,
 } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 
 export default function PhoneNumbersDashboardPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [showExternalLineModal, setShowExternalLineModal] = useState(false);
 
   // Data States
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
@@ -168,7 +171,6 @@ export default function PhoneNumbersDashboardPage() {
 
   // Release / Delete Phone number
   const handleReleaseNumber = async (phoneId: string) => {
-    if (!window.confirm("Are you sure you want to release this phone number? You will lose access to it immediately.")) return;
     setSaving(true);
     setErrorMsg("");
     try {
@@ -195,7 +197,7 @@ export default function PhoneNumbersDashboardPage() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">Phone Numbers</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Phone Numbers</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading phone carrier configuration...</p>
           </div>
         </div>
@@ -229,7 +231,7 @@ export default function PhoneNumbersDashboardPage() {
       {/* 1. Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
         <div className="text-left">
-          <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal">Phone Numbers</h1>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Phone Numbers</h1>
           <p className="text-sm text-ink-tertiary mt-1">
             Manage the numbers your AI employees use to receive and make calls.
           </p>
@@ -288,7 +290,7 @@ export default function PhoneNumbersDashboardPage() {
               Get a Phone Number
             </button>
             <button
-              onClick={() => alert("To link an existing external SIP or carrier line, please contact support@bavio.in.")}
+              onClick={() => setShowExternalLineModal(true)}
               className="px-4 py-2 border border-line bg-white hover:bg-canvas text-xs font-semibold rounded-xl transition-colors text-ink"
             >
               Use an existing number
@@ -381,7 +383,7 @@ export default function PhoneNumbersDashboardPage() {
             >
               {/* Header */}
               <div className="flex justify-between items-center border-b border-line/40 pb-4 mb-4">
-                <h3 className="font-serif text-lg font-normal">Provision Phone Number</h3>
+                <h3 className="font-sans font-semibold text-lg text-ink">Provision Phone Number</h3>
                 <button
                   onClick={() => setIsBuyOpen(false)}
                   className="p-1.5 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"
@@ -708,6 +710,53 @@ export default function PhoneNumbersDashboardPage() {
 
             </motion.div>
           </>
+        )}
+      {/* EXTERNAL LINE MODAL */}
+      <AnimatePresence>
+        {showExternalLineModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowExternalLineModal(false)}
+              className="fixed inset-0 bg-black"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white border border-line rounded-[24px] p-6 shadow-2xl z-50 w-full max-w-md text-left relative"
+            >
+              <div className="flex justify-between items-start border-b border-line/40 pb-3 mb-3">
+                <h3 className="font-sans font-semibold text-lg text-ink">Connect an existing number</h3>
+                <button
+                  onClick={() => setShowExternalLineModal(false)}
+                  className="p-1 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs text-ink-secondary leading-relaxed mb-4">
+                External SIP trunks, BYOC carrier lines, and legacy virtual numbers require manual infrastructure configuration.
+              </p>
+
+              <div className="bg-canvas/30 border border-line/60 rounded-xl p-3.5 text-xs text-ink-tertiary mb-5">
+                <span className="font-semibold text-ink block mb-1">Carrier Integration Support</span>
+                Contact Bavio Support at <strong className="text-saffron font-mono">support@bavio.in</strong> with your SIP URI credentials to complete your line connection.
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowExternalLineModal(false)}
+                  className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

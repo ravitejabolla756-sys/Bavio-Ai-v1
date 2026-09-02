@@ -42,6 +42,8 @@ import {
   demoApi, 
   getClientId 
 } from "@/lib/api";
+import { ToastProvider } from "@/components/ui/Toast";
+import { DashboardErrorBoundary } from "@/components/DashboardErrorBoundary";
 
 const consoleNavigationItems = [
   { name: "Overview", href: "/dashboard", icon: Layout },
@@ -155,9 +157,7 @@ export default function DashboardLayout({
     }
     
     checkChecklistState();
-    const interval = setInterval(checkChecklistState, 10000);
-    return () => clearInterval(interval);
-  }, [checkChecklistState]);
+  }, [checkChecklistState, pathname]);
 
   const toggleCollapsed = () => {
     const next = !isCollapsed;
@@ -234,7 +234,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
+    <ToastProvider>
+      <DashboardErrorBoundary>
+        <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
       
       {/* MOBILE HEADER BAR */}
       <div className="md:hidden w-full bg-surface border-b border-line px-4 py-3 flex items-center justify-between z-40 relative">
@@ -278,7 +280,7 @@ export default function DashboardLayout({
                 <div className="w-5 h-5 bg-saffron rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                   {workspace.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold tracking-wide text-ink truncate font-display font-black">
+                <span className="text-xs font-bold tracking-tight text-ink truncate font-display">
                   {workspace}
                 </span>
               </div>
@@ -814,5 +816,7 @@ export default function DashboardLayout({
         )}
       </AnimatePresence>
     </div>
+      </DashboardErrorBoundary>
+    </ToastProvider>
   );
 }

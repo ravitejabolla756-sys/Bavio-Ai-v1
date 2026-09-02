@@ -352,7 +352,7 @@ export default function AssistantDashboardPage() {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center justify-between border-b border-line/40 pb-6">
           <div className="text-left">
-            <h1 className="font-serif text-3xl text-ink font-normal">AI Employees</h1>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">AI Employees</h1>
             <p className="text-body-xs text-ink-tertiary mt-1">Loading AI receptionist workforce...</p>
           </div>
         </div>
@@ -392,7 +392,7 @@ export default function AssistantDashboardPage() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
             <div className="text-left">
-              <h1 className="font-serif text-3.5xl tracking-tight text-ink font-normal">AI Employees</h1>
+              <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">AI Employees</h1>
               <p className="text-sm text-ink-tertiary mt-1">Build, configure, and manage your AI workforce.</p>
             </div>
             <button
@@ -532,7 +532,7 @@ export default function AssistantDashboardPage() {
             {/* Title / Steps indicator */}
             <div className="flex justify-between items-center border-b border-line/40 pb-4">
               <div>
-                <h2 className="text-lg font-serif text-ink font-normal">Deploy AI Employee</h2>
+                <h2 className="text-lg font-semibold text-ink font-sans">Deploy AI Employee</h2>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mt-0.5 block">
                   Step {createStep} of 6 — {createStep === 1 ? "Identity" : createStep === 2 ? "Behavior & Role" : createStep === 3 ? "Voice Picker" : createStep === 4 ? "Knowledge Base" : createStep === 5 ? "Number Assignment" : "Final Deploy"}
                 </span>
@@ -867,8 +867,8 @@ export default function AssistantDashboardPage() {
                     onClick={() => setActiveConfigTab(tab.key as any)}
                     className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-xs font-semibold transition-all border text-left ${
                       active
-                        ? "bg-ink text-white border-ink shadow-sm"
-                        : "bg-white text-ink-secondary border-transparent hover:bg-canvas/50"
+                        ? "bg-saffron/10 text-saffron border-saffron font-bold shadow-sm"
+                        : "bg-surface text-ink-secondary border-line hover:bg-surface-raised"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -885,7 +885,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: IDENTITY */}
                 {activeConfigTab === "identity" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">AI Employee Identity</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">AI Employee Identity</h3>
                     <div>
                       <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Employee Name</label>
                       <input
@@ -929,7 +929,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: SPEAKING VOICE */}
                 {activeConfigTab === "voice" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Select Curated Speaking Voice</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">Select Curated Speaking Voice</h3>
                     
                     {/* Catalog Picker Filters */}
                     <div className="grid grid-cols-2 gap-4 border-b border-line/40 pb-3">
@@ -997,7 +997,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: AGENT BEHAVIOR */}
                 {activeConfigTab === "behavior" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Behavior & Instructions</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">Behavior & Instructions</h3>
                     <div>
                       <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Welcome First Message Greeting</label>
                       <textarea
@@ -1024,7 +1024,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: KNOWLEDGE FILES */}
                 {activeConfigTab === "knowledge" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Knowledge Documents</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">Knowledge Documents</h3>
                     <p className="text-xs text-ink-secondary leading-relaxed">
                       Select what uploaded sheets the AI employee has access to read during calls.
                     </p>
@@ -1065,7 +1065,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: TWILIO NUMBER */}
                 {activeConfigTab === "phone" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Assign Phone Line</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">Assign Phone Line</h3>
                     <p className="text-xs text-ink-secondary leading-relaxed">
                       Link this AI employee to one of your purchased Twilio carrier phone lines.
                     </p>
@@ -1088,7 +1088,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: CALL HANDLING */}
                 {activeConfigTab === "handling" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">Call Handling Parameters</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">Call Handling Parameters</h3>
                     
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
@@ -1123,7 +1123,7 @@ export default function AssistantDashboardPage() {
                 {/* CONFIG TABS CONTENT: ANALYTICS & LOGS */}
                 {activeConfigTab === "analytics" && (
                   <div className="space-y-4">
-                    <h3 className="font-serif text-xl font-normal border-b border-line/40 pb-2">AI Employee Analytics</h3>
+                    <h3 className="font-semibold text-lg text-ink font-sans border-b border-line/40 pb-2">AI Employee Analytics</h3>
                     
                     {/* Performance Table */}
                     {activeAssistantCalls.length === 0 ? (

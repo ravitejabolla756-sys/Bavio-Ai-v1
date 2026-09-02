@@ -32,7 +32,7 @@ export default function PricingPreview() {
             className="bg-white border border-[#F3E4D4] rounded-[24px] p-8 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] text-center flex flex-col justify-center"
           >
             <h3 className="font-display text-2xl font-bold text-[#140A02] mb-2">Starter</h3>
-            <div className="text-[#F97316] font-bold text-4xl mb-2 font-serif">$39<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
+            <div className="text-[#F97316] font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$39<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
             <p className="text-[#6B5A4C] text-sm font-medium">200 minutes included</p>
           </motion.div>
 
@@ -47,7 +47,7 @@ export default function PricingPreview() {
               Most Popular
             </div>
             <h3 className="font-display text-2xl font-bold text-white mb-2">Growth</h3>
-            <div className="text-white font-bold text-4xl mb-2 font-serif">$99<span className="text-[#F3E4D4]/70 text-sm font-sans font-normal">/month</span></div>
+            <div className="text-white font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$99<span className="text-[#F3E4D4]/70 text-sm font-sans font-normal">/month</span></div>
             <p className="text-[#F3E4D4]/90 text-sm font-medium">500 minutes included</p>
           </motion.div>
 
@@ -59,7 +59,7 @@ export default function PricingPreview() {
             className="bg-white border border-[#F3E4D4] rounded-[24px] p-8 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] text-center flex flex-col justify-center"
           >
             <h3 className="font-display text-2xl font-bold text-[#140A02] mb-2">Scale</h3>
-            <div className="text-[#F97316] font-bold text-4xl mb-2 font-serif">$249<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
+            <div className="text-[#F97316] font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$249<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
             <p className="text-[#6B5A4C] text-sm font-medium">1,500 minutes included</p>
           </motion.div>
           
