@@ -84,14 +84,11 @@ export default function WorkspaceSettings() {
       setNumbers(Array.isArray(numbersData) ? numbersData : []);
     } catch (err: any) {
       console.error("[Settings] Load error:", err);
-      // Only set UI error if essential data failed completely
-      if (!profile) {
-        setError(err.message || "Failed to load settings");
-      }
+      setError(err.message || "Failed to load settings");
     } finally {
       setLoading(false);
     }
-  }, [clientId, profile]);
+  }, [clientId]);
 
   useEffect(() => {
     fetchData();
