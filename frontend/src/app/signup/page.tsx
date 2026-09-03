@@ -20,6 +20,7 @@ import {
   CaretDown
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
+import RotatingAuthHeader from "@/components/auth/RotatingAuthHeader";
 import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 import { useCountry } from "@/context/CountryContext";
@@ -453,7 +454,7 @@ export default function SignUpPage() {
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
       ──────────────────────────────────────── */}
       <section 
-        className="hidden md:flex md:w-[60%] lg:w-[60%] h-full relative flex-col justify-start p-0 overflow-hidden bg-black"
+        className="hidden md:flex md:w-[60%] lg:w-[60%] h-full relative flex-col justify-between pt-10 pb-10 lg:pt-12 lg:pb-12 pl-[9%] lg:pl-[10%] xl:pl-[11%] pr-8 lg:pr-12 overflow-hidden bg-black select-none"
         style={{ 
           borderTopRightRadius: "300px 50%", 
           borderBottomRightRadius: "300px 50%", 
@@ -463,28 +464,42 @@ export default function SignUpPage() {
       >
         <GlobalNetworkVisual className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
 
-        <div className="relative z-20 pl-[76px] pt-[76px]">
+        {/* Brand Header */}
+        <div className="relative z-20">
           <Link href="/" className="flex items-center gap-3 group inline-flex">
-            <Logo className="w-10 h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
-            <span className="font-display text-2xl font-normal tracking-wide text-white">
+            <Logo className="w-9 h-9 lg:w-10 lg:h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
+            <span className="font-display text-xl lg:text-2xl font-black tracking-tight text-white">
               Bavio AI
             </span>
           </Link>
         </div>
 
-        <div className="relative z-20 flex-1 flex flex-col justify-center max-w-xl pl-[76px] pr-8 pb-[8%] w-full">
-          <span className="text-[#FF6B00] uppercase tracking-widest font-bold text-[10px] block mb-[18px] font-sans">
-            BUILT FOR BUSINESS, EVERYWHERE
-          </span>
-          
-          <h2 className="font-display text-4xl lg:text-[3rem] leading-[1.1] font-bold text-white mb-[22px]">
-            AI conversations, <br />
-            <span className="text-[#FF6B00]">without borders.</span>
-          </h2>
-          
-          <p className="text-body-md text-white/85 max-w-[480px] leading-relaxed font-sans">
-            Bavio connects businesses with customers through intelligent voice conversations, wherever they are.
-          </p>
+        {/* Marketing Content Text Block with 3D Mechanical Rotating Header */}
+        <RotatingAuthHeader />
+
+        {/* Bottom Features */}
+        <div className="relative z-20 w-full max-w-[580px]">
+          <div className="grid grid-cols-4 gap-3 lg:gap-4">
+            {[
+              { icon: Phone, label1: "24/7 Call", label2: "Answering" },
+              { icon: User, label1: "Lead", label2: "Qualification" },
+              { icon: Chats, label1: "WhatsApp", label2: "Automation" },
+              { icon: Calendar, label1: "Appointment", label2: "Booking" },
+            ].map((feat, i) => {
+              const Icon = feat.icon;
+              return (
+                <div key={i} className="flex flex-col items-start text-left group">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center text-[#FF6B00] mb-2.5 transition-colors duration-200 group-hover:bg-white/[0.12]">
+                    <Icon className="w-5 h-5" weight="bold" />
+                  </div>
+                  <span className="text-[11px] lg:text-xs font-semibold text-white/90 leading-tight block">
+                    {feat.label1}
+                    <span className="block font-normal text-white/70">{feat.label2}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -504,18 +519,18 @@ export default function SignUpPage() {
         </div>
 
         {/* Mobile Global Visual Banner */}
-        <div className="md:hidden w-full bg-black border border-[#E5E0D8] rounded-[20px] p-5 mb-6 relative overflow-hidden h-[110px] flex items-center justify-between text-left shadow-sm">
-          <GlobalNetworkVisual className="absolute inset-0 w-full h-full opacity-60 z-0 pointer-events-none" />
-          <div className="absolute inset-0 bg-black/40 z-10 pointer-events-none" />
-          <div className="relative z-20 space-y-1">
-            <span className="text-[#FF6B00] uppercase tracking-widest font-black text-[8px] block font-sans">
-              Global Infrastructure
+        <div className="md:hidden w-full bg-black border border-white/10 rounded-[18px] p-4 mb-5 relative overflow-hidden flex items-center justify-between text-left shadow-sm">
+          <GlobalNetworkVisual className="absolute inset-0 w-full h-full opacity-50 z-0 pointer-events-none" />
+          <div className="absolute inset-0 bg-black/50 z-10 pointer-events-none" />
+          <div className="relative z-20 space-y-0.5">
+            <span className="text-[#FF6B00] uppercase tracking-[0.12em] font-bold text-[9px] block font-sans">
+              AI Voice Workforce
             </span>
-            <h3 className="font-display text-sm font-extrabold text-white leading-tight">
-              AI conversations, without borders.
+            <h3 className="font-serif text-[15px] font-normal text-white leading-tight">
+              Your business, <span className="text-[#FF6B00]">always in conversation.</span>
             </h3>
-            <p className="text-[10px] text-white/80 leading-normal font-sans">
-              Voice connections everywhere.
+            <p className="text-[10px] text-white/80 leading-normal font-sans pt-0.5">
+              AI employees answering calls and qualifying leads 24/7.
             </p>
           </div>
         </div>
