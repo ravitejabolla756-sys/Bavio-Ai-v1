@@ -1,30 +1,24 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import * as React from "react";
 import { Moon, Sun } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/ThemeContext";
 
-type AnimatedThemeTogglerProps = {
+interface ThemeSwitchProps {
   className?: string;
   id?: string;
-  variant?: "header" | "sidebar" | "mobile" | "pill";
-};
+}
 
-export const AnimatedThemeToggler = ({
-  className,
-  id = "bavio-theme-toggle",
-  variant = "header",
-}: AnimatedThemeTogglerProps) => {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState<boolean>(false);
+export function ThemeSwitch({ className = "", id }: ThemeSwitchProps) {
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
   const { isDark, toggleTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  const onToggle = useCallback(() => {
+  const onToggle = React.useCallback(() => {
     if (typeof window === "undefined") {
       toggleTheme();
       return;
@@ -69,29 +63,32 @@ export const AnimatedThemeToggler = ({
       type="button"
       onClick={onToggle}
       aria-label={activeDark ? "Switch to light mode" : "Switch to dark mode"}
-      className={cn(
-        "relative flex h-8 w-8 items-center justify-center rounded-full text-ink hover:opacity-80 transition-opacity overflow-hidden outline-none cursor-pointer shrink-0 border border-line/60 bg-surface-raised/40",
-        className
-      )}
+      className={`relative flex h-8 w-8 items-center justify-center rounded-full text-ink hover:opacity-80 transition-opacity overflow-hidden outline-none cursor-pointer shrink-0 border border-line/60 bg-surface-raised/40 ${className}`}
     >
       <Sun
-        className={cn(
-          "absolute h-5 w-5 text-saffron transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-          !activeDark
-            ? "scale-100 translate-y-0 opacity-100"
+        className={`absolute h-5 w-5 text-saffron transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          !activeDark 
+            ? "scale-100 translate-y-0 opacity-100" 
             : "scale-50 translate-y-5 opacity-0"
-        )}
+        }`}
       />
       <Moon
-        className={cn(
-          "absolute h-5 w-5 text-ink transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-          activeDark
-            ? "scale-100 translate-y-0 opacity-100"
+        className={`absolute h-5 w-5 text-ink transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          activeDark 
+            ? "scale-100 translate-y-0 opacity-100" 
             : "scale-50 translate-y-5 opacity-0"
-        )}
+        }`}
       />
     </button>
   );
-};
+}
 
-export default AnimatedThemeToggler;
+export function ThemeSwitchDemo() {
+  return (
+    <div className="flex justify-center items-center py-8">
+      <ThemeSwitch />
+    </div>
+  );
+}
+
+export default ThemeSwitch;
