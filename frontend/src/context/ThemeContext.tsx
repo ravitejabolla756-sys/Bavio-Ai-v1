@@ -81,6 +81,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [isWorkspaceRoute, isDark]);
 
   const setTheme = useCallback((newTheme: ThemeMode) => {
+    if (typeof document !== "undefined") {
+      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!isReducedMotion) {
+        document.documentElement.classList.add("theme-changing");
+        setTimeout(() => {
+          document.documentElement.classList.remove("theme-changing");
+        }, 350);
+      }
+    }
+
     setThemeState(newTheme);
     try {
       localStorage.setItem("theme", newTheme);
@@ -91,6 +101,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
+    if (typeof document !== "undefined") {
+      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!isReducedMotion) {
+        document.documentElement.classList.add("theme-changing");
+        setTimeout(() => {
+          document.documentElement.classList.remove("theme-changing");
+        }, 350);
+      }
+    }
+
     setThemeState(prev => {
       const nextTheme = prev === "dark" ? "light" : "dark";
       try {
