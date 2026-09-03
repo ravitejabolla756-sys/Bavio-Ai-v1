@@ -299,7 +299,7 @@ function WorkspaceSettingsContent() {
                 <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-6 pb-2 border-b border-line">Workspace Parameters</div>
                 
                 {savedGeneralAlert && (
-                  <div className="bg-[#ECFDF5] border border-[#A7F3D0] p-3.5 rounded-xl text-state-success text-body-xs font-bold mb-6">
+                  <div className="bg-state-success/10 border border-state-success/20 p-3.5 rounded-xl text-state-success text-body-xs font-bold mb-6">
                     General workspace details updated successfully!
                   </div>
                 )}
@@ -465,12 +465,12 @@ function WorkspaceSettingsContent() {
                         type={showKey ? "text" : "password"}
                         value={profile?.api_key || ""}
                         readOnly
-                        className="w-full bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl py-3 pl-4 pr-32 font-mono text-[11px] text-ink outline-none"
+                        className="w-full bg-surface-raised border border-line rounded-xl py-3 pl-4 pr-32 font-mono text-[11px] text-ink outline-none"
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <button
                           onClick={() => setShowKey(!showKey)}
-                          className="text-[9px] font-bold bg-white border border-line hover:bg-canvas text-ink-secondary px-2.5 py-1.5 rounded-lg transition-colors"
+                          className="text-[9px] font-bold bg-surface-raised border border-line hover:bg-canvas text-ink-secondary px-2.5 py-1.5 rounded-lg transition-colors"
                         >
                           {showKey ? "Hide" : "Reveal"}
                         </button>
@@ -598,7 +598,7 @@ function WorkspaceSettingsContent() {
 
                   {/* Add / Edit form */}
                   {showAddForm && (
-                    <form onSubmit={handleAddDoc} className="mb-6 p-4 bg-[#FAF7F2] border border-[#E5E0D8] rounded-xl flex flex-col gap-3">
+                    <form onSubmit={handleAddDoc} className="mb-6 p-4 bg-surface-raised border border-line rounded-xl flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">New Knowledge Document</span>
                         <button type="button" onClick={() => setShowAddForm(false)} className="text-ink-muted hover:text-ink">
@@ -610,7 +610,7 @@ function WorkspaceSettingsContent() {
                         placeholder="Document title (e.g. Services & Pricing, Business Hours, FAQs)"
                         value={newDocName}
                         onChange={e => setNewDocName(e.target.value)}
-                        className="w-full bg-white border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors"
+                        className="w-full bg-surface-raised border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors"
                         required
                         maxLength={200}
                       />
@@ -619,7 +619,7 @@ function WorkspaceSettingsContent() {
                         value={newDocContent}
                         onChange={e => setNewDocContent(e.target.value)}
                         rows={8}
-                        className="w-full bg-white border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors resize-y font-mono leading-relaxed"
+                        className="w-full bg-surface-raised border border-line focus:border-saffron rounded-lg py-2.5 px-3 text-xs outline-none transition-colors resize-y font-mono leading-relaxed"
                         required
                         maxLength={500000}
                       />
@@ -722,7 +722,7 @@ function WorkspaceSettingsContent() {
         {/* Right Column: Security Audits & Stats (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-6 text-left">
           
-          <div className="border border-line bg-white/80 p-6 rounded-[22px] shadow-premium">
+          <div className="border border-line bg-surface p-6 rounded-[22px] shadow-premium">
             <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
               <CheckCircle className="w-4.5 h-4.5 text-state-success" weight="fill" />
               <span>Workspace Health</span>
@@ -757,7 +757,7 @@ function WorkspaceSettingsContent() {
             </div>
           </div>
 
-            <div className="border border-line bg-white/80 p-6 rounded-[22px] shadow-premium">
+            <div className="border border-line bg-surface p-6 rounded-[22px] shadow-premium">
               <div className="font-sans font-extrabold text-xs uppercase tracking-wider text-ink mb-4 pb-2 border-b border-line flex items-center gap-2">
                 <Info className="w-4.5 h-4.5 text-saffron" />
                 <span>Support Channels</span>
@@ -778,7 +778,7 @@ function WorkspaceSettingsContent() {
               </div>
             </div>
 
-            <div className="border border-line bg-[#FAF7F2] p-6 rounded-[22px] text-body-xs text-ink-tertiary leading-relaxed font-semibold">
+            <div className="border border-line bg-surface-raised p-6 rounded-[22px] text-body-xs text-ink-tertiary leading-relaxed font-semibold">
               <span className="text-ink font-bold block mb-1">Developer Notice:</span>
               To inspect webhook event payloads, view error logging schemas, or reset credentials, launch the <strong>Voice Operations Dashboard</strong>.
             </div>

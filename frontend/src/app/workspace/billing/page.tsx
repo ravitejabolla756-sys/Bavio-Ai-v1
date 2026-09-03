@@ -298,8 +298,8 @@ export default function WorkspaceBilling() {
             </div>
 
             {/* Auto-renew Setting */}
-            <div className="flex items-center justify-between p-3.5 bg-[#FAF7F2] rounded-xl mb-4 border border-[#E5E0D8]">
-              <span className="text-body-xs font-bold text-[#14141A]">Auto-Renew Subscriptions</span>
+            <div className="flex items-center justify-between p-3.5 bg-surface-raised rounded-xl mb-4 border border-line">
+              <span className="text-body-xs font-bold text-ink">Auto-Renew Subscriptions</span>
               <button
                 type="button"
                 onClick={() => setAutoRenew(!autoRenew)}
@@ -319,7 +319,7 @@ export default function WorkspaceBilling() {
 
 
           {/* Quick compute top up */}
-          <div className="border border-line bg-[#FAF7F2] p-6 rounded-[22px]">
+          <div className="border border-line bg-surface-raised p-6 rounded-[22px]">
             <h3 className="font-bold text-body-xs uppercase tracking-wider text-ink mb-2 flex items-center gap-2">
               <Coins className="w-4.5 h-4.5 text-saffron" />
               <span>Minutes Top-Up</span>
@@ -459,7 +459,7 @@ export default function WorkspaceBilling() {
                 <button
                   type="button"
                   onClick={() => setActiveInvoice(null)}
-                  className="bg-[#FAF7F2] hover:bg-[#EBE6DD] border border-[#E5E0D8] text-[#5A5A66] text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl transition-all"
+                  className="bg-surface-raised hover:bg-canvas border border-line text-ink-secondary text-body-xs font-bold uppercase tracking-wider py-3 px-5 rounded-xl transition-all"
                 >
                   Close Invoice
                 </button>

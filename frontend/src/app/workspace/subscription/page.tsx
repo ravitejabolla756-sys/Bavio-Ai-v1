@@ -125,17 +125,17 @@ export default function WorkspaceSubscription() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
+              <div className="bg-surface-raised border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Talk Time Limit</span>
                 <span className="text-body-sm font-bold text-ink-secondary">
                   {activeProfile.minutes_used || 0} / {activeProfile.minutes_limit || 120} mins
                 </span>
               </div>
-              <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
+              <div className="bg-surface-raised border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Renewal Date</span>
                 <span className="text-body-sm font-bold text-ink-secondary">{expiryFormatted}</span>
               </div>
-              <div className="bg-[#FAF7F2] border border-line p-4 rounded-xl">
+              <div className="bg-surface-raised border border-line p-4 rounded-xl">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted block mb-0.5">Status</span>
                 <span className="text-body-sm font-bold text-state-success flex items-center gap-1.5 mt-0.5 font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-state-success animate-pulse" />
