@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Phone,
   CheckCircle,
@@ -711,6 +712,8 @@ export default function PhoneNumbersDashboardPage() {
             </motion.div>
           </>
         )}
+      </AnimatePresence>
+
       {/* EXTERNAL LINE MODAL */}
       <AnimatePresence>
         {showExternalLineModal && (
