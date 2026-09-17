@@ -294,14 +294,14 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-4xl mx-auto space-y-6"
           >
-            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-5 py-1.5 rounded-full border border-[#FF6B00]/10 w-fit mx-auto block">
+            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-mono bg-[#FF6B00]/5 px-5 py-1.5 rounded-full border border-[#FF6B00]/10 w-fit mx-auto block">
               HOW IT WORKS
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] leading-[1.1] font-display">
-              From Incoming Call <br />
-              to <span className="text-[#FF6B00]">Organized Lead</span>
+            <h1 className="font-serif font-normal text-4xl sm:text-6xl lg:text-[68px] text-[#140A02] leading-[1.02] tracking-tight">
+              From incoming call <br />
+              to <span className="text-[#FF6B00]">organized lead.</span>
             </h1>
-            <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl mx-auto font-sans">
               Bavio answers the call using your saved business information, asks relevant questions and stores the conversation in your dashboard.
             </p>
           </motion.div>
@@ -311,13 +311,13 @@ export default function HowItWorksPage() {
         <section className="border-t border-[#F3E4D4] py-24 bg-white/40">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
             <div className="max-w-3xl mb-16">
-              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
+              <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-mono">
                 The Process
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
+              <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] mt-2 leading-[1.06]">
                 How Bavio Handles an Incoming Call
               </h2>
-              <p className="text-[#6B5A4C] text-sm md:text-base mt-3">
+              <p className="text-[#6B5A4C] text-sm md:text-base mt-3 font-sans">
                 From the moment a customer dials to the moment a lead is structured inside your dashboard.
               </p>
             </div>
@@ -427,7 +427,7 @@ export default function HowItWorksPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 Capability Matrix
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] tracking-tight font-display">
+              <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] tracking-tight leading-[1.04]">
                 What Bavio Does (and Does Not Do)
               </h2>
               <p className="text-sm text-[#6B5A4C] leading-relaxed">
@@ -500,7 +500,7 @@ export default function HowItWorksPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                   FAQ
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
+                <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] mt-2 leading-[1.04]">
                   Common Questions
                 </h2>
               </div>
@@ -526,7 +526,7 @@ export default function HowItWorksPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold block">
                 Speak With Bavio
               </span>
-              <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] leading-tight font-display">
+              <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] leading-[1.04]">
                 Try One Live Bavio Conversation
               </h2>
               <p className="text-[#6B5A4C] text-base md:text-lg leading-relaxed max-w-lg mx-auto font-sans">

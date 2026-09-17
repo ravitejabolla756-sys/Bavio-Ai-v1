@@ -102,12 +102,12 @@ export default function EnterprisePage() {
       <section className="pt-32 pb-20 lg:pt-40 lg:pb-28">
         <div className="max-w-container mx-auto px-6 lg:px-8">
           <ScrollReveal className="max-w-3xl mx-auto text-center">
-            <span className="text-label uppercase tracking-widest text-saffron mb-5 block">
+            <span className="text-label uppercase tracking-widest text-saffron mb-5 block font-mono">
               Enterprise
             </span>
-            <h1 className="font-display text-display-xl tracking-tight text-ink mb-6">
+            <h1 className="font-serif text-4xl sm:text-6xl lg:text-[68px] font-normal tracking-tight text-ink mb-6 leading-[1.02]">
               Voice AI infrastructure{" "}
-              <span className="text-saffron">built for scale</span>
+              <span className="text-saffron">built for scale.</span>
             </h1>
             <p className="text-body-lg text-ink-tertiary max-w-xl mx-auto mb-10">
               Dedicated infrastructure, enterprise-grade security, and
@@ -201,7 +201,7 @@ export default function EnterprisePage() {
               <span className="text-label uppercase tracking-widest text-saffron mb-4 block">
                 Get in touch
               </span>
-              <h2 className="font-display text-display-md text-ink mb-4">
+              <h2 className="font-serif font-normal text-3xl sm:text-4xl text-ink mb-4">
                 Talk to our enterprise team
               </h2>
               <p className="text-body-md text-ink-tertiary mb-8">

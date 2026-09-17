@@ -147,7 +147,7 @@ export default function LegalPage() {
         <div className="max-w-[1160px] mx-auto px-6 md:px-8">
           <div className="text-center mb-14">
             <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] font-mono uppercase tracking-widest mb-4">Intake Process</span>
-            <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#140A02] leading-[1.1]">Professional Intake. Every Time.</h2>
+            <h2 className="font-serif font-normal text-4xl sm:text-5xl tracking-[-0.02em] text-[#140A02] leading-[1.04]">Professional Intake. Every Time.</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
@@ -203,7 +203,7 @@ export default function LegalPage() {
         <div className="max-w-[1160px] mx-auto px-6 md:px-8">
           <div className="text-center mb-14">
             <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] font-mono uppercase tracking-widest mb-4">Results</span>
-            <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#140A02] leading-[1.1]">A Professional Intake Process, Fully Automated.</h2>
+            <h2 className="font-serif font-normal text-4xl sm:text-5xl tracking-[-0.02em] text-[#140A02] leading-[1.04]">A Professional Intake Process, Fully Automated.</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[980px] mx-auto">
             {[

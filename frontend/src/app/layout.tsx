@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
-import { instrumentSerif, jetbrainsMono, geistSans, geistMono, syne, dmSans, playfairDisplay, cormorantGaramond, inter } from "@/lib/fonts";
+import { instrumentSerif, geistSans, geistMono, inter } from "@/lib/fonts";
 import NavigationProgress from "@/components/NavigationProgress";
 import { CountryProvider } from "@/context/CountryContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AuthHashHandler from "@/components/AuthHashHandler";
+import SmoothScrollProvider from "@/components/marketing/SmoothScrollProvider";
 
 export const metadata: Metadata = {
   title: "Bavio AI - Autonomous Voice Agents for Business Calls",
@@ -51,7 +52,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${syne.variable} ${dmSans.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} ${inter.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable}`}
     >
       <head>
         <script
@@ -83,7 +84,9 @@ export default function RootLayout({
             <CountryProvider>
               <AuthHashHandler />
               <NavigationProgress />
-              {children}
+              <SmoothScrollProvider>
+                {children}
+              </SmoothScrollProvider>
             </CountryProvider>
           </ThemeProvider>
         </Suspense>

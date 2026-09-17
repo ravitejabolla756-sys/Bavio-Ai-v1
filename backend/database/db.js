@@ -156,6 +156,63 @@ pool.query('SELECT NOW()')
       } catch (migErr) {
         console.error('❌ Failed to run migration 026:', migErr.message);
       }
+
+      // Run Migration 028: verified internal lead action execution/evidence
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration028Path = path.join(__dirname, '../sql/028_bavio_lead_action_execution.sql');
+        if (fs.existsSync(migration028Path)) {
+          const sql = fs.readFileSync(migration028Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 028 (Bavio Lead Action Execution) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 028:', migErr.message);
+      }
+
+      // Run Migration 029: webhook action execution fields and evidence metadata
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration029Path = path.join(__dirname, '../sql/029_webhook_action_execution_fields.sql');
+        if (fs.existsSync(migration029Path)) {
+          const sql = fs.readFileSync(migration029Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 029 (Webhook Action Execution Fields) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 029:', migErr.message);
+      }
+
+      // Run Migration 030: versioned encrypted webhook secret storage
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration030Path = path.join(__dirname, '../sql/030_webhook_secret_encryption.sql');
+        if (fs.existsSync(migration030Path)) {
+          const sql = fs.readFileSync(migration030Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 030 (Webhook Secret Encryption) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 030:', migErr.message);
+      }
+
+      // Run Migration 031: deterministic Stage 8.1 workflow runtime foundation
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration031Path = path.join(__dirname, '../sql/031_workflow_runtime_foundation.sql');
+        if (fs.existsSync(migration031Path)) {
+          const sql = fs.readFileSync(migration031Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 031 (Workflow Runtime Foundation) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 031:', migErr.message);
+      }
+
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);
     }

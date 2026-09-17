@@ -1,110 +1,7 @@
-/**
- * api.ts — Centralized API Client for Bavio
- * All backend calls go through here.
- * - Auto-attaches Bearer token from localStorage
- * - Handles 401 → redirect to /login
- * - Typed helpers for common patterns
- */
-
-const API_BASE = '/api';
-
-// ─── Token helpers ────────────────────────────────────────────────────────────
-
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('bavio_token');
-}
-
-export function getClientId(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('bavio_client_id');
-}
-
-export function setAuthData(token: string, clientId: string, name?: string) {
-  localStorage.setItem('bavio_token', token);
-  localStorage.setItem('bavio_client_id', clientId);
-  if (name) localStorage.setItem('bavio_name', name);
-}
-
-export function clearAuthData() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('bavio_token');
-    localStorage.removeItem('bavio_client_id');
-    localStorage.removeItem('bavio_name');
-    document.cookie = 'bavio_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'bavio_onboarding_completed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  }
-}
-
-export function isAuthenticated(): boolean {
-  return Boolean(getToken());
-}
-
-// ─── Core fetch wrapper ───────────────────────────────────────────────────────
-
-interface ApiOptions extends RequestInit {
-  skipAuth?: boolean;
-}
-
-export async function apiFetch<T = unknown>(
-  path: string,
-  options: ApiOptions = {}
-): Promise<T> {
-  const { skipAuth = false, headers = {}, ...rest } = options;
-  const token = getToken();
-
-  const finalHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(headers as Record<string, string>),
-  };
-
-  if (!skipAuth && token) {
-    finalHeaders['Authorization'] = `Bearer ${token}`;
-  }
-
-  const url = `${API_BASE}${path}`;
-  let res: Response;
-  try {
-    res = await fetch(url, { ...rest, headers: finalHeaders });
-  } catch (err: any) {
-    throw new Error('Network error. Unable to connect to server.');
-  }
-
-  // Auto-redirect on unauthorized
-  if (res.status === 401 && !skipAuth && typeof window !== 'undefined') {
-    clearAuthData();
-    window.location.href = '/login';
-    throw new Error('Session expired. Redirecting to login.');
-  }
-
-  let body: unknown;
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    try {
-      body = await res.json();
-    } catch {
-      body = null;
-    }
-  } else {
-    try {
-      body = await res.text();
-    } catch {
-      body = null;
-    }
-  }
-
-  if (!res.ok) {
-    const errMsg =
-      (body as { error?: string; message?: string })?.error ||
-      (body as { error?: string; message?: string })?.message ||
-      `API error ${res.status}`;
-    throw new Error(errMsg);
-  }
-
-  return body as T;
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+/** Existing public API surface; transport and response normalization live separately. */
+import { unwrapData, requireArray, requireRecord } from './api-response';
+import { apiFetch, clearAuthData } from './api-transport';
+export { apiFetch, getToken, getClientId, setAuthData, clearAuthData, isAuthenticated } from './api-transport';
 
 export interface SignupPayload {
   name?: string;
@@ -220,7 +117,7 @@ export interface BusinessProfile {
   email: string;
   phone: string;
   country: string;
-  api_key: string;
+  api_key?: string;
   minutes_limit: number;
   minutes_used: number;
   plan: string;
@@ -246,6 +143,25 @@ export interface BusinessProfile {
   nextRoute?: string;
   success?: boolean;
 }
+
+export interface ApiKeyRecord {
+  id: string;
+  name: string;
+  key_prefix: string;
+  environment: string;
+  created_at: string;
+  last_used_at?: string | null;
+  revoked_at?: string | null;
+  secret?: string;
+}
+
+export const developersApi = {
+  listKeys: () => apiFetch<unknown>('/v1/api-keys').then(value => requireArray<ApiKeyRecord>(unwrapData(value))),
+  createKey: (name: string, environment: 'live' | 'test' = 'live') =>
+    apiFetch<unknown>('/v1/api-keys', { method: 'POST', body: JSON.stringify({ name, environment }) })
+      .then(value => requireRecord<ApiKeyRecord>(unwrapData(value))),
+  revokeKey: (id: string) => apiFetch<unknown>(`/v1/api-keys/${id}`, { method: 'DELETE' }),
+};
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
 
@@ -288,7 +204,7 @@ export interface Assistant {
 
 export const assistantsApi = {
   list: (clientId: string) =>
-    apiFetch<Assistant[]>(`/assistants/${clientId}`).catch(() => []),
+    apiFetch<unknown>(`/assistants/${clientId}`).then(value => requireArray<Assistant>(unwrapData(value))),
 
   create: (data: Partial<Assistant>) =>
     apiFetch<Assistant>('/assistants', {
@@ -322,28 +238,17 @@ export interface CallRecord {
 
 export const callsApi = {
   list: (clientId: string) =>
-    apiFetch<CallRecord[]>(`/calls/${clientId}`).catch(() => []),
+    apiFetch<unknown>(`/calls/${clientId}`).then(value => requireArray<CallRecord>(unwrapData(value))),
 };
 
 // ─── Leads ────────────────────────────────────────────────────────────────────
 
-export interface Lead {
-  id: string;
-  business_id: string;
-  call_id: string | null;
-  phone: string;
-  name: string | null;
-  intent: string | null;
-  budget: string | null;
-  location: string | null;
-  notes: string | null;
-  status: string;
-  created_at: string;
-}
+import type { Lead } from '@/features/leads/model';
+export type { Lead } from '@/features/leads/model';
 
 export const leadsApi = {
   list: (clientId: string) =>
-    apiFetch<Lead[]>(`/leads/${clientId}`).catch(() => []),
+    apiFetch<unknown>(`/leads/${clientId}`).then(value => requireArray<Lead>(unwrapData(value))),
   
   create: (data: Partial<Lead>) =>
     apiFetch<Lead>('/leads', {
@@ -356,6 +261,96 @@ export const leadsApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+};
+
+// ─── Evidence-backed Actions ────────────────────────────────────────────────
+
+export type ActionAvailability = 'configured' | 'not_configured' | 'unavailable';
+export type ActionStatus = 'started' | 'processing' | 'succeeded' | 'failed' | 'unknown';
+
+export interface ActionEvidence {
+  type: string;
+  record_id?: string | null;
+  http_status?: number | null;
+  outcome?: string | null;
+  provider_reference?: string | null;
+}
+
+export interface ActionExecution {
+  id: string;
+  type: string;
+  name: string;
+  system: string;
+  kind: string;
+  status: ActionStatus;
+  started_at: string;
+  completed_at?: string | null;
+  duration_ms?: number | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+  conversation_id?: string | null;
+  lead_id?: string | null;
+  evidence?: ActionEvidence | null;
+}
+
+export interface ActionDefinition {
+  type: string;
+  name: string;
+  system: string;
+  kind: string;
+  description: string;
+  availability: ActionAvailability;
+  last_execution: ActionExecution | null;
+}
+
+export interface WebhookConfiguration {
+  id: string;
+  url: string;
+  events: string[];
+  status: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface ActionsPayload {
+  actions: ActionDefinition[];
+  executions: ActionExecution[];
+  pagination: { has_more: boolean; next_cursor?: string | null };
+}
+
+export const actionsApi = {
+  list: () => apiFetch<{ data: ActionsPayload }>('/v1/actions').then(response => response.data),
+  detail: (type: string) => apiFetch<{ data: { action: ActionDefinition; configurations: WebhookConfiguration[]; executions: ActionExecution[]; pagination: { has_more: boolean } } | null }>(`/v1/actions/${encodeURIComponent(type)}`).then(response => {
+    if (!response.data?.action) throw new Error('Action detail is unavailable.');
+    return response.data;
+  }),
+  execution: (id: string) => apiFetch<{ data: ActionExecution | null }>(`/v1/actions/executions/${encodeURIComponent(id)}`).then(response => {
+    if (!response.data?.id) throw new Error('Execution detail is unavailable.');
+    return response.data;
+  }),
+  leadExecutions: (id: string) => apiFetch<{ data: ActionExecution[] }>(`/v1/actions/leads/${encodeURIComponent(id)}`).then(response => response.data),
+  conversationExecutions: (id: string) => apiFetch<{ data: ActionExecution[] }>(`/v1/actions/conversations/${encodeURIComponent(id)}`).then(response => response.data),
+  createWebhook: (url: string) => apiFetch<{ data: WebhookConfiguration }>('/v1/webhooks', { method: 'POST', body: JSON.stringify({ url, events: ['*'] }) }).then(response => response.data),
+};
+
+// ─── Read-only Workflow Product Surface ────────────────────────────────────
+
+export type WorkflowStatus = 'pending' | 'running' | 'processing' | 'succeeded' | 'failed' | 'partial' | 'unknown';
+export type WorkflowStepStatus = WorkflowStatus | 'skipped';
+export interface WorkflowStep { id: string; position: number; action_type: string; name: string; system: string; kind: string; configuration?: Record<string, unknown>; }
+export interface WorkflowRun { id: string; workflow_definition_id: string; workflow_version_id: string; version: number; status: WorkflowStatus; source_type?: string | null; source_id?: string | null; conversation_id?: string | null; started_at?: string | null; completed_at?: string | null; created_at: string; failure_code?: string | null; failure_message?: string | null; failure_step?: string | null; }
+export interface WorkflowDefinition { id: string; key: string; name: string; enabled: boolean; version: number; version_id: string; trigger?: string | null; steps: WorkflowStep[]; last_run: { id: string; status: WorkflowStatus; started_at?: string | null; completed_at?: string | null } | null; created_at: string; updated_at: string; }
+export interface WorkflowStepExecution { id: string; workflow_step_id: string; position: number; status: WorkflowStepStatus; action_type: string; name: string; system: string; kind: string; action_execution_id?: string | null; started_at?: string | null; completed_at?: string | null; failure_code?: string | null; failure_message?: string | null; action_status?: ActionStatus | null; action_error_code?: string | null; action_error_message?: string | null; lead_id?: string | null; evidence?: ActionEvidence | null; }
+export interface WorkflowExecutionDetail { execution: WorkflowRun & { workflow_key: string; name: string }; steps: WorkflowStepExecution[]; }
+interface WorkflowsPayload { workflows: WorkflowDefinition[]; }
+interface WorkflowRunsPayload { executions: WorkflowRun[]; pagination: { limit: number; offset: number; has_more: boolean; next_offset?: number | null }; }
+export const workflowsApi = {
+  list: () => apiFetch<{ data: WorkflowsPayload }>('/v1/workflows').then(response => response.data),
+  detail: (id: string) => apiFetch<{ data: { workflow: WorkflowDefinition } }>(`/v1/workflows/${encodeURIComponent(id)}`).then(response => response.data),
+  executions: (id: string, offset = 0) => apiFetch<{ data: WorkflowRunsPayload }>(`/v1/workflows/${encodeURIComponent(id)}/executions?limit=20&offset=${offset}`).then(response => response.data),
+  execution: (id: string) => apiFetch<{ data: WorkflowExecutionDetail }>(`/v1/workflow-executions/${encodeURIComponent(id)}`).then(response => response.data),
 };
 
 // ─── Usage ────────────────────────────────────────────────────────────────────
@@ -381,10 +376,7 @@ export interface UsageLog {
 
 export const usageApi = {
   get: (clientId: string) =>
-    apiFetch<UsageSummary>(`/usage/${clientId}`).catch(() => ({
-      summary: { minutes_used: 0, total_cost: 0 },
-      logs: [],
-    })),
+    apiFetch<UsageSummary>(`/usage/${clientId}`),
 };
 
 // ─── Knowledge Base ───────────────────────────────────────────────────────────
@@ -405,49 +397,37 @@ export interface SearchResult {
 }
 
 export const knowledgeBaseApi = {
-  list: () => apiFetch<KnowledgeDoc[]>('/knowledge-base').catch(() => []),
+  list: () => apiFetch<unknown>('/knowledge-base').then(value => requireArray<KnowledgeDoc>(unwrapData(value))),
 
   create: (data: { name: string; content: string }) =>
     apiFetch<KnowledgeDoc>('/knowledge-base', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(value => requireRecord<KnowledgeDoc>(unwrapData(value))),
 
   update: (id: string, data: Partial<KnowledgeDoc>) =>
     apiFetch<KnowledgeDoc>(`/knowledge-base/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
-    }).catch((err) => {
-      // Fallback optimistic update if backend PATCH is non-standard
-      return {
-        id,
-        business_id: getClientId() || '',
-        name: data.name || 'Updated Document',
-        content: data.content || '',
-        created_at: new Date().toISOString(),
-      } as KnowledgeDoc;
-    }),
+    }).then(value => requireRecord<KnowledgeDoc>(unwrapData(value))),
 
   delete: (id: string) =>
     apiFetch(`/knowledge-base/${id}`, { method: 'DELETE' }),
 
   search: (q: string) =>
-    apiFetch<SearchResult[]>(`/knowledge-base/search?q=${encodeURIComponent(q)}`).catch(() => []),
+    apiFetch<unknown>(`/knowledge-base/search?q=${encodeURIComponent(q)}`).then(value => requireArray<SearchResult>(unwrapData(value))),
 
   syncToAssistant: () =>
     apiFetch<{ docsCount: number; success: boolean; message: string }>(
       '/knowledge-base/sync',
       { method: 'POST' }
-    ).catch(() => ({
-      docsCount: 0,
-      success: true,
-      message: 'Knowledge base synced with AI Employee runtime.',
-    })),
+    ),
 };
 
 // ─── Numbers ──────────────────────────────────────────────────────────────────
 
 export interface PhoneNumber {
+  twilio_sid?: string | null;
   id: string;
   number: string;
   provider: string;
@@ -459,9 +439,21 @@ export interface PhoneNumber {
   country_code?: string;
 }
 
+export interface AvailablePhoneNumber {
+  phoneNumber: string;
+  friendlyName?: string;
+  isoCountry?: string;
+  numberType?: string;
+  capabilities?: { voice?: boolean; sms?: boolean; mms?: boolean; inbound?: boolean; outbound?: boolean };
+  locality?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  monthlyRate?: string | null;
+}
+
 export const numbersApi = {
   list: (clientId: string) =>
-    apiFetch<PhoneNumber[]>(`/numbers/${clientId}`).catch(() => []),
+    apiFetch<unknown>(`/numbers/${clientId}`).then(value => requireArray<PhoneNumber>(unwrapData(value))),
 
   link: (data: { number: string; label?: string; provider?: string }) =>
     apiFetch('/numbers/link', {
@@ -470,66 +462,25 @@ export const numbersApi = {
     }),
 
   getAvailable: (country: string) =>
-    apiFetch<any[]>(`/numbers/available?country=${encodeURIComponent(country)}`).catch(() => {
-      // MOCK available telephony inventory if backend inventory service is offline
-      if (country === "US" || country === "CA") {
-        return [
-          { phoneNumber: "+1 (800) 555-0192", friendlyName: "+1 (800) 555-0192 (Toll Free)" },
-          { phoneNumber: "+1 (415) 890-1234", friendlyName: "+1 (415) 890-1234 (San Francisco)" },
-          { phoneNumber: "+1 (212) 777-3456", friendlyName: "+1 (212) 777-3456 (New York)" },
-        ];
-      }
-      if (country === "GB") {
-        return [
-          { phoneNumber: "+44 20 7946 0912", friendlyName: "+44 20 7946 0912 (London)" },
-          { phoneNumber: "+44 161 496 0123", friendlyName: "+44 161 496 0123 (Manchester)" },
-        ];
-      }
-      if (country === "IN") {
-        return [
-          { phoneNumber: "+91 80 4719 2830", friendlyName: "+91 80 4719 2830 (Bangalore)" },
-          { phoneNumber: "+91 22 6123 9045", friendlyName: "+91 22 6123 9045 (Mumbai)" },
-        ];
-      }
-      return [];
+    apiFetch<{ numbers: unknown; notice?: string | null }>(`/numbers/available?countryCode=${encodeURIComponent(country)}`).then(value => {
+      if (!value || !Array.isArray(value.numbers)) throw new Error('Provider unavailable. Carrier inventory could not be checked.');
+      return { numbers: requireArray<AvailablePhoneNumber>(value.numbers), notice: value.notice || null };
     }),
 
   buyNumber: (data: { phoneNumber: string; countryCode: string }) =>
-    apiFetch<PhoneNumber>('/numbers/buy', {
+    apiFetch<unknown>('/numbers/buy', {
       method: 'POST',
       body: JSON.stringify(data),
-    }).catch((err) => {
-      // Return newly created phone object fallback
-      return {
-        id: `num_${Date.now()}`,
-        number: data.phoneNumber,
-        provider: 'Twilio',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        assistant_id: null,
-        assistant_name: null,
-        country_code: data.countryCode,
-      } as PhoneNumber;
-    }),
+    }).then(value => requireRecord<PhoneNumber>(unwrapData(value))),
 
   linkNumber: (data: { phoneId: string; assistantId: string; assistantName?: string }) =>
-    apiFetch<PhoneNumber>('/numbers/assign', {
+    apiFetch<unknown>('/numbers/link', {
       method: 'POST',
       body: JSON.stringify(data),
-    }).catch(() => {
-      return {
-        id: data.phoneId,
-        number: '+1 (800) 555-0192',
-        provider: 'Twilio',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        assistant_id: data.assistantId,
-        assistant_name: data.assistantName || 'Assigned AI',
-      } as PhoneNumber;
-    }),
+    }).then(value => requireRecord<PhoneNumber>(unwrapData(value))),
 
   unlinkNumber: (phoneId: string) =>
-    apiFetch(`/numbers/unassign/${phoneId}`, { method: 'POST' }).catch(() => ({ success: true })),
+    apiFetch('/numbers/unlink', { method: 'POST', body: JSON.stringify({ phoneId }) }),
 };
 
 // ─── Billing ──────────────────────────────────────────────────────────────────
@@ -548,6 +499,7 @@ export interface BillingStatus {
 }
 
 export interface PaymentRecord {
+  invoiceNumber?: string | null;
   id: string;
   amount: number;
   currency: string;
@@ -567,19 +519,16 @@ export interface RazorpayOrder {
 
 export const billingApi = {
   getStatus: (clientId: string) =>
-    apiFetch<BillingStatus>(`/billing/status/${clientId}`).catch(() => ({
-      id: clientId,
-      plan: 'free',
-      plan_name: 'Free Trial',
-      minutes_limit: 30,
-      minutes_used: 0,
-      current_period_end: null,
-      dodo_subscription_id: null,
-      status: 'inactive',
-    })),
+    apiFetch<BillingStatus>(`/billing/status/${clientId}`),
 
   getPayments: (clientId: string) =>
-    apiFetch<PaymentRecord[]>(`/billing/payments/${clientId}`).catch(() => []),
+    apiFetch<{ payments: unknown }>(`/billing/payments/${clientId}`).then(value => requireArray<Record<string, unknown>>(value.payments).map(row => ({
+      ...row,
+      id: String(row.id ?? row.dodoPaymentId ?? ''),
+      created_at: row.date as string,
+      plan: row.planName as string,
+      payment_type: row.paymentType as string,
+    } as unknown as PaymentRecord))),
 
   getBalance: () =>
     apiFetch<{
@@ -598,21 +547,7 @@ export const billingApi = {
       topupBalanceSeconds: number;
     }>('/billing/balance', {
       method: 'GET',
-    }).catch(() => ({
-      plan: 'free',
-      subscriptionStatus: 'inactive',
-      billingPeriodEnd: null,
-      monthlyLimitMinutes: 30,
-      monthlyUsedMinutes: 0,
-      monthlyRemainingMinutes: 30,
-      topupRemainingMinutes: 0,
-      totalAvailableMinutes: 30,
-      usagePercent: 0,
-      monthlyLimitSeconds: 1800,
-      monthlyUsedSeconds: 0,
-      monthlyRemainingSeconds: 1800,
-      topupBalanceSeconds: 0,
-    })),
+    }),
 
   subscribe: (plan: string, country_code?: string) =>
     apiFetch<{ subscriptionId: string; url: string; checkoutUrl: string }>('/billing/subscribe', {
@@ -663,7 +598,7 @@ export const demoApi = {
   getStatus: () =>
     apiFetch<{ eligible: boolean; session: any; transcript?: any[] }>('/demo/status', {
       method: 'GET',
-    }).catch(() => ({ eligible: true, session: null })),
+    }),
   hangup: () =>
     apiFetch<{ success: boolean }>('/demo/hangup', {
       method: 'POST',

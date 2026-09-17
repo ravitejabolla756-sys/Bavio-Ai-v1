@@ -19,7 +19,7 @@ export default function FieldServiceUseCase() {
           </span>
 
           {/* Hero */}
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-ink mb-6 leading-tight max-w-4xl">
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl text-ink mb-6 leading-[1.02] max-w-4xl">
             Automate Intake for Plumbing, AC & <span className="text-saffron">Repair Services</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
@@ -29,15 +29,15 @@ export default function FieldServiceUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Zero Missed Jobs</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Zero Missed Jobs</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">24/7 emergency dispatch</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Rapid Capture</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Rapid Capture</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Fast booking detail capture</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Cost deflection</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Cost deflection</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Automated first-line intake</span>
             </div>
           </div>
@@ -45,7 +45,7 @@ export default function FieldServiceUseCase() {
           {/* Two Column details */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
             <div className="lg:col-span-8 flex flex-col gap-8">
-              <h2 className="font-display font-bold text-heading-lg text-ink">Urgent Call Dispatch</h2>
+              <h2 className="font-serif font-normal text-3xl md:text-4xl text-ink leading-[1.04]">Urgent Call Dispatch</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
                 Homeowners with leakage or AC failures call multiple providers until someone answers. If your phone is busy or goes to voicemail, you lose the job. Bavio answers calls on the first ring, diagnostic-scores the urgency, logs location details, and dispatches the lead.
               </p>

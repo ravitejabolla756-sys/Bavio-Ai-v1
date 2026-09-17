@@ -1,0 +1,108 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  /* Keep the fold artwork as the full first viewport instead of exposing the
+     next section's unused top padding at larger browser heights. */
+  min-height: max(clamp(800px, 50vw, 960px), 100svh);
+  overflow: hidden;
+  background: radial-gradient(ellipse at 79% 29%, #e9e5e0 0%, #f5f3ef 24%, transparent 49%), #fff;
+}
+.earthArtwork {
+  position: absolute;
+  z-index: 0;
+  width: min(46vw, 740px);
+  aspect-ratio: 1;
+  right: max(2.8vw, calc((100vw - 1774px) / 2));
+  top: clamp(110px, 6.6vw, 132px);
+  pointer-events: none;
+  user-select: none;
+}
+.earth { display: block; width: 100%; height: 100%; }
+.cobeArtwork { position: absolute; z-index: 0; width: clamp(500px, 44vw, 580px); aspect-ratio: 1; right: max(6vw, calc((100vw - 1774px) / 2)); top: clamp(110px, 6.6vw, 132px); pointer-events: none; user-select: none; }
+.cobeCanvas { display: block; width: 100%; height: 100%; cursor: grab; opacity: .78; pointer-events: auto; touch-action: none; }
+.trafficArtwork { position: absolute; z-index: 1; width: min(46vw, 740px); aspect-ratio: 1; right: max(2.8vw, calc((100vw - 1774px) / 2)); top: clamp(110px, 6.6vw, 132px); pointer-events: none; user-select: none; }
+.trafficOverlay { display: block; width: 100%; height: 100%; overflow: visible; }
+.trafficRoute { fill: none; stroke: rgba(255, 107, 0, .18); stroke-width: .8; vector-effect: non-scaling-stroke; }
+.trafficRouteRear { opacity: .42; stroke-width: .6; }
+.trafficOptional { display: initial; }
+.trafficMarker { fill: #ff6b00; filter: drop-shadow(0 0 4px rgba(255,107,0,.35)) drop-shadow(0 0 10px rgba(255,107,0,.14)); transform-box: fill-box; transform-origin: center; animation: traffic-fade var(--traffic-duration) linear var(--traffic-delay) infinite; }
+.trafficNodes { animation: traffic-node-breathe 4s ease-in-out infinite; }
+.trafficNodes circle:nth-child(even) { fill: #ff6b00; }
+.trafficLabels { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 9px; }
+.trafficLabels rect { fill: rgba(255,253,249,.82); stroke: rgba(255,107,0,.1); stroke-width: 1; }
+.trafficLabels text { fill: #6b625a; }
+@keyframes traffic-fade { 0%, 8% { opacity: 0; } 14%, 82% { opacity: 1; } 94%, 100% { opacity: 0; } }
+@keyframes traffic-node-breathe { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+.earthCaption {
+  position: absolute;
+  top: 41%;
+  left: 101%;
+  margin: 0;
+  color: #50647c;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(22px, 1.8vw, 32px);
+  line-height: 1.04;
+  letter-spacing: -.025em;
+}
+.earthCaption span { display: block; width: 28px; height: 1px; margin-top: 24px; background: #50647c; }
+.waves { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.realUi {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 96px);
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: clamp(170px, 10.8vw, 192px) 0 170px;
+}
+.copy { width: 65%; }
+.eyebrow { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; color: #d95100; font-size: 12px; font-weight: 650; letter-spacing: .17em; text-transform: uppercase; }
+.eyebrow span { width: 8px; height: 8px; flex: 0 0 8px; margin: 0 4px; border-radius: 50%; background: #ff6b00; box-shadow: 0 0 0 6px #ffeadb; }
+.heading { margin: 0; color: #090909; font-family: var(--font-serif), Georgia, serif; font-size: clamp(64px, 5.55vw, 100px); font-weight: 400; line-height: .99; letter-spacing: -.035em; }
+.heading > span { display: block; white-space: nowrap; }
+.heading em { color: #ff6b00; font-style: normal; }
+.description { max-width: min(700px, 49vw); margin: 24px 0 30px; color: #50647c; font-size: clamp(17px, 1.3vw, 23px); line-height: 1.45; letter-spacing: -.025em; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
+.primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 0 23px; border-radius: 28px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background-color .15s, transform .15s; }
+.primary { background: #FF6B00; color: #fff; }.primary:hover { background: #D95700; transform: translateY(-1px); }
+.secondary { border: 1px solid #E7CDBD; color: #0A0A0A; background: rgba(255,255,255,.65); }.secondary svg { color: #FF6B00; }.secondary:hover { background: #fff; transform: translateY(-1px); }
+.primary:focus-visible, .secondary:focus-visible { outline: 2px solid #0A0A0A; outline-offset: 4px; }
+.proofRow { display: flex; flex-wrap: wrap; gap: 28px; max-width: 840px; color: #1B2228; }
+.proofRow > div { display: flex; align-items: center; gap: 12px; min-width: 150px; }.proofRow strong, .proofRow small { display: block; }.proofRow strong { font-size: 14px; font-weight: 650; line-height: 1.2; }.proofRow small { margin-top: 4px; color: #6D7277; font-size: 12px; line-height: 1.2; white-space: nowrap; }
+.proofMark { display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 46px; border: 1px solid rgba(255,107,0,.22); border-radius: 50%; color: #F05B16; font-family: var(--font-serif), Georgia, serif; font-size: 26px; }
+@media (min-width: 1900px) { .copy { width: 70%; } }
+@media (max-width: 1100px) and (min-width: 901px) {
+  .hero { min-height: max(760px, 100svh); }
+  .realUi { width: calc(100% - 64px); padding-top: 156px; }
+  .heading { font-size: 5.6vw; }
+  .description { max-width: min(540px, 49vw); }
+  .cobeArtwork { width: 49vw; top: 170px; right: -2vw; }
+  .earthCaption { display: none; }
+  .trafficOptional { display: none; }
+  .trafficLabels { display: none; }
+  .proofRow { gap: 22px; }
+}
+@media (max-width: 1600px) and (min-width: 901px) { .earthCaption { display: none; } }
+@media (max-width: 900px) {
+  .hero { min-height: 0; background: radial-gradient(ellipse at 60% 80%, #e9e5e0, transparent 48%), #fff; }
+  .realUi { width: calc(100% - 48px); padding: 132px 0 410px; }
+  .copy { width: 100%; }
+  .heading { font-size: clamp(46px, 8.3vw, 63px); line-height: 1.02; }
+  .heading > span { white-space: normal; }
+  .eyebrow { font-size: 10px; gap: 9px; margin-bottom: 22px; }
+  .description { margin: 22px 0 26px; max-width: 550px; font-size: 17px; line-height: 1.55; }
+  .cobeArtwork { width: min(490px, 112vw); top: auto; bottom: -14px; right: 50%; transform: translateX(50%); }
+  .earthCaption { display: none; }
+  .waves { top: auto; bottom: 0; height: 470px; width: 160%; left: -30%; }
+  .actions { margin-bottom: 26px; }
+  .primary, .secondary { padding: 0 18px; min-height: 50px; font-size: 13px; }
+  .proofRow { gap: 18px 24px; }
+  .proofRow small { white-space: normal; }
+}
+@media (max-width: 420px) {
+  .realUi { width: calc(100% - 40px); }
+  .heading { font-size: 46px; }
+  .proofRow { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .proofMark { width: 40px; height: 40px; flex-basis: 40px; font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .trafficMarker, .trafficNodes { animation: none; }.trafficMarker { display: none; }.trafficNodes { opacity: .8; } }

@@ -3,74 +3,79 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
 
 export default function PricingPreview() {
   return (
-    <section className="py-24 bg-[#FFFDF8] border-b border-[#F3E4D4] w-full">
+    <section className="py-24 bg-[#F7F4EE] border-b border-[#E7E0D6] w-full font-sans">
       <div className="max-w-[1440px] mx-auto px-6 md:px-8">
         
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-5 py-1.5 rounded-full text-xs font-bold text-[#F97316] mb-4">
-            Pricing
+          <span className="inline-block bg-white border border-[#E7E0D6] px-4 py-1 rounded-full text-xs font-mono font-bold text-[#FF6B00] mb-4 uppercase tracking-wider">
+            ● Transparent Pricing
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.04em] text-[#140A02] mb-6 leading-[0.9]">
-            Simple, Transparent Plans
+          <h2 className="font-serif text-4xl sm:text-5xl md:text-[60px] font-normal text-[#0A0A0A] mb-6 leading-[1.0]">
+            Simple, Scalable Plans
           </h2>
-          <p className="text-[#6B5A4C] text-[20px] font-normal leading-[1.7] max-w-[720px] mx-auto font-sans">
-            Choose the plan that fits your business.
+          <p className="text-[#706A63] text-[18px] md:text-[20px] font-normal leading-[1.65] max-w-[680px] mx-auto">
+            Choose the plan that fits your call volume. No hidden setup fees or surprise overages.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12 items-stretch">
           
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-white border border-[#F3E4D4] rounded-[24px] p-8 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] text-center flex flex-col justify-center"
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5 }}
+            className="bg-[#FFFDF9] border border-[#E7E0D6] rounded-[24px] p-8 text-center flex flex-col justify-between shadow-sm"
           >
-            <h3 className="font-display text-2xl font-bold text-[#140A02] mb-2">Starter</h3>
-            <div className="text-[#F97316] font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$39<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
-            <p className="text-[#6B5A4C] text-sm font-medium">200 minutes included</p>
+            <div>
+              <h3 className="font-serif text-3xl text-[#0A0A0A] mb-2">Starter</h3>
+              <div className="text-[#FF6B00] font-bold text-4xl mb-2 tracking-tight">$39<span className="text-[#706A63] text-sm font-normal">/month</span></div>
+              <p className="text-[#706A63] text-sm">200 call minutes included</p>
+            </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-[#140A02] border border-[#140A02] rounded-[24px] p-8 shadow-xl text-center flex flex-col justify-center relative transform md:scale-105 z-10"
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="bg-[#0A0A0A] text-white border border-[#0A0A0A] rounded-[24px] p-8 text-center flex flex-col justify-between shadow-xl relative transform md:scale-105"
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F97316] text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FF6B00] text-white text-[10px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full">
               Most Popular
             </div>
-            <h3 className="font-display text-2xl font-bold text-white mb-2">Growth</h3>
-            <div className="text-white font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$99<span className="text-[#F3E4D4]/70 text-sm font-sans font-normal">/month</span></div>
-            <p className="text-[#F3E4D4]/90 text-sm font-medium">500 minutes included</p>
+            <div>
+              <h3 className="font-serif text-3xl text-white mb-2">Growth</h3>
+              <div className="text-white font-bold text-4xl mb-2 tracking-tight">$99<span className="text-[#A89F94] text-sm font-normal">/month</span></div>
+              <p className="text-[#A89F94] text-sm">500 call minutes included</p>
+            </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-white border border-[#F3E4D4] rounded-[24px] p-8 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] text-center flex flex-col justify-center"
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="bg-[#FFFDF9] border border-[#E7E0D6] rounded-[24px] p-8 text-center flex flex-col justify-between shadow-sm"
           >
-            <h3 className="font-display text-2xl font-bold text-[#140A02] mb-2">Scale</h3>
-            <div className="text-[#F97316] font-bold text-4xl mb-2 font-display font-extrabold tracking-tight">$249<span className="text-[#6B5A4C] text-sm font-sans font-normal">/month</span></div>
-            <p className="text-[#6B5A4C] text-sm font-medium">1,500 minutes included</p>
+            <div>
+              <h3 className="font-serif text-3xl text-[#0A0A0A] mb-2">Scale</h3>
+              <div className="text-[#FF6B00] font-bold text-4xl mb-2 tracking-tight">$249<span className="text-[#706A63] text-sm font-normal">/month</span></div>
+              <p className="text-[#706A63] text-sm">1,500 call minutes included</p>
+            </div>
           </motion.div>
-          
+
         </div>
 
         <div className="text-center">
           <Link 
             href="/pricing"
-            className="inline-flex items-center justify-center bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-sm h-12 px-8 rounded-full transition-all shadow-[0_4px_14px_rgba(249,115,22,0.3)] hover:shadow-[0_6px_20px_rgba(249,115,22,0.4)] hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center bg-[#FF6B00] hover:bg-[#EA580C] text-white font-bold text-sm h-12 px-8 rounded-full shadow-sm hover:scale-[1.02] transition-all"
           >
-            View Pricing
+            View Full Pricing Details
           </Link>
         </div>
 

@@ -119,12 +119,12 @@ export default function CompanyPage() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-4xl"
           >
-            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold bg-[#FF6B00]/5 px-3 py-1 rounded-full border border-[#FF6B00]/10 w-fit mb-6 block">
+            <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-mono bg-[#FF6B00]/5 px-3 py-1 rounded-full border border-[#FF6B00]/10 w-fit mb-6 block">
               Our Company
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#140A02] mb-6 leading-[1.1] font-display">
-              We Built Bavio Because <br className="hidden sm:inline" />
-              <span className="text-[#FF6B00]">Every Missed Call Can Mean a Lost Customer.</span>
+            <h1 className="text-4xl sm:text-6xl lg:text-[68px] font-normal font-serif tracking-tight text-[#140A02] mb-6 leading-[1.02]">
+              We built Bavio because <br className="hidden sm:inline" />
+              <span className="text-[#FF6B00]">every missed call can mean a lost customer.</span>
             </h1>
             <p className="text-lg md:text-xl text-[#6B5A4C] leading-relaxed max-w-2xl font-sans">
               Bavio helps businesses answer customer calls, qualify enquiries and keep every
@@ -140,10 +140,10 @@ export default function CompanyPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
               {/* Left Column: Story text */}
               <div className="lg:col-span-7 space-y-6">
-                <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
+                <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold font-mono">
                   The Origin Story
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] font-display">
+                <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] leading-[1.04]">
                   Why We Built Bavio
                 </h2>
                 <div className="text-base text-[#6B5A4C] space-y-5 leading-relaxed font-normal">
@@ -265,7 +265,7 @@ export default function CompanyPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 Values
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
+              <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] mt-2 leading-[1.04]">
                 What Guides Our Decisions
               </h2>
             </div>
@@ -331,7 +331,7 @@ export default function CompanyPage() {
               <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                 Timeline
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] mt-2 font-display">
+              <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] mt-2 leading-[1.04]">
                 {"What We've Built"}
               </h2>
               <p className="text-[#6B5A4C] text-sm md:text-base mt-2">
@@ -425,7 +425,7 @@ export default function CompanyPage() {
                 <span className="text-xs uppercase tracking-widest text-[#FF6B00] font-bold">
                   Contact Us
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#140A02] font-display">
+                <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] leading-[1.04]">
                   Questions? <br />
                   {"We'd love to hear from you."}
                 </h2>
@@ -562,7 +562,7 @@ export default function CompanyPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF6B00]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="max-w-[1440px] mx-auto px-6 md:px-8 text-center relative z-10">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#140A02] tracking-tight mb-4 font-display">
+            <h2 className="font-serif font-normal text-3xl md:text-5xl text-[#140A02] tracking-tight mb-4 leading-[1.04]">
               Ready to see Bavio in action?
             </h2>
             <p className="text-base md:text-lg text-[#6B5A4C] mb-8 max-w-xl mx-auto">

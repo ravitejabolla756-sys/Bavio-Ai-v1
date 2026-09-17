@@ -30,10 +30,10 @@ export default function IndustryFAQ({
         
         {/* Header */}
         <div className="max-w-3xl mx-auto mb-16 text-center space-y-4">
-          <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] font-sans uppercase tracking-widest">
+          <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] font-mono uppercase tracking-widest">
             Common Inquiries
           </span>
-          <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#140A02] leading-[1.1] max-w-[620px] mx-auto">
+          <h2 className="font-serif text-3xl sm:text-5xl font-normal tracking-[-0.02em] text-[#140A02] leading-[1.04] max-w-[620px] mx-auto">
             {heading}
           </h2>
         </div>

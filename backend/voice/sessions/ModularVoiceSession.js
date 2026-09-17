@@ -26,6 +26,7 @@ const ElevenLabsTts            = require('../modular/ElevenLabsTts');
 const CurrentTwilioTelephony   = require('../current/CurrentTwilioTelephony');
 const { getVoiceConfig }       = require('../../config/voiceConfig');
 const db                       = require('../../../database/db');
+const { recordConversationCompletedEvent } = require('../../services/businessEventService');
 const { deductCallSeconds }    = require('../../../middleware/planEnforcement');
 
 class ModularVoiceSession extends VoiceWorkerSession {
@@ -274,6 +275,7 @@ class ModularVoiceSession extends VoiceWorkerSession {
       );
 
       const dbCallId = callRes.rows[0]?.id;
+      if (dbCallId) await recordConversationCompletedEvent({ db, sourceType: 'modular_voice_session', sourceId: this._callSid, businessId: this._businessId, conversationId: String(dbCallId), completedAt: new Date().toISOString() });
       if (dbCallId) {
         await db.query(
           `INSERT INTO transcripts (call_id, business_id, transcript, summary)

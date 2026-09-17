@@ -14,6 +14,16 @@ const db = require('../database/db');
 // ── Developer bypass list ─────────────────────────────────────────────
 const DEVELOPER_EMAILS = ['ravitejabolla756@gmail.com', 'praneeth.dev111@gmail.com'];
 
+function isReviewAccount(email) {
+    return (
+        process.env.NODE_ENV !== 'production' &&
+        process.env.BAVIO_ENABLE_REVIEW_ACCOUNT === 'true' &&
+        process.env.BAVIO_REVIEW_ACCOUNT_EMAIL &&
+        email &&
+        email.trim().toLowerCase() === process.env.BAVIO_REVIEW_ACCOUNT_EMAIL.trim().toLowerCase()
+    );
+}
+
 /**
  * Check available balance before allowing an AI call.
  * Returns an object with balance info and whether the call is allowed.
@@ -44,6 +54,11 @@ async function checkCallBalance(businessId) {
     // Developer bypass
     if (biz.email && DEVELOPER_EMAILS.includes(biz.email.trim().toLowerCase())) {
         return { allowed: true, monthlyRemainingSeconds: 999999, topupRemainingSeconds: 999999, totalAvailableSeconds: 999999, isDeveloper: true };
+    }
+
+    // Review account bypass (development only)
+    if (isReviewAccount(biz.email)) {
+        return { allowed: true, monthlyRemainingSeconds: 999999, topupRemainingSeconds: 999999, totalAvailableSeconds: 999999, isReview: true };
     }
 
     // Subscription must be active

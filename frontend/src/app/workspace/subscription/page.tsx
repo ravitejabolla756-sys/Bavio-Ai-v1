@@ -12,28 +12,14 @@ import { billingApi } from "@/lib/api";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export default function WorkspaceSubscription() {
-  const { profile, payments, refreshProfile, refreshPayments } = useWorkspace();
+  const { profile, payments, refreshProfile, refreshPayments, isProfileLoading, isPaymentsLoading, profileError, paymentsError } = useWorkspace();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const activeProfile = profile || {
-    id: "usr_default",
-    name: "My Workspace",
-    email: "—",
-    phone: "—",
-    country: "US",
-    api_key: "",
-    minutes_limit: 30,
-    minutes_used: 0,
-    plan: "free",
-    plan_name: "free",
-    current_period_end: null,
-    created_at: new Date().toISOString(),
-    onboarding_status: "completed",
-    onboarding_step: 3,
-    dodo_subscription_id: null,
-  };
+  if (isProfileLoading || isPaymentsLoading) return <div role="status">Loading billing…</div>;
+  if (!profile || profileError || paymentsError) return <div role="alert">Billing unavailable. {profileError || paymentsError}</div>;
+  const activeProfile = profile;
 
   const triggerCheckout = async (planName: string) => {
     try {
@@ -288,7 +274,7 @@ export default function WorkspaceSubscription() {
                 {payments.map((p) => (
                   <div key={p.id} className="flex justify-between items-center text-body-xs bg-[#FAF9F6] border border-line p-3 rounded-xl">
                     <div>
-                      <span className="font-mono text-[10px] text-ink-muted block">{p.invoiceNumber || `BAV-${p.id.slice(0,6)}`}</span>
+                      <span className="font-mono text-[10px] text-ink-muted block">{p.invoiceNumber || "Invoice number unavailable"}</span>
                       <span className="text-[10px] font-semibold text-ink-secondary">{new Date(p.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="text-right">

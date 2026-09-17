@@ -3,7 +3,6 @@
 import React from "react";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
-import LiveProductExperience from "@/components/landing/LiveProductExperience";
 import GettingStarted from "@/components/landing/GettingStarted";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import IndustriesTabs from "@/components/landing/IndustriesTabs";
@@ -19,7 +18,6 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-grow">
         <Hero />
-        <LiveProductExperience />
         <GettingStarted />
         <FeaturesGrid />
         <IndustriesTabs />

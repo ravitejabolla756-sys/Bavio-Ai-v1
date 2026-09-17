@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     name VARCHAR(100),
     key_prefix VARCHAR(30),
     hashed_secret VARCHAR(255),
+    key_hash VARCHAR(255),
     environment VARCHAR(20) DEFAULT 'live',
     permissions JSONB DEFAULT '["*"]',
     last_used_at TIMESTAMPTZ,

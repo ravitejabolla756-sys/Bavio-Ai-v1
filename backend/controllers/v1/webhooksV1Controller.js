@@ -16,8 +16,9 @@ async function createWebhook(req, res) {
 
   try {
     const webhook = await webhookService.registerWebhook(businessId, url, events);
+    const { signing_secret: _signingSecret, ...publicWebhook } = webhook;
     res.status(201).json({
-      data: webhook,
+      data: publicWebhook,
       request_id: requestId,
     });
   } catch (err) {

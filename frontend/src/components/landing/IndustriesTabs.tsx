@@ -1,152 +1,88 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Home, Stethoscope, Briefcase, ShoppingBag, CheckCircle, Zap } from "lucide-react";
+import React from "react";
+import { motion } from "framer-motion";
+import { UserCheck, Calendar, PhoneCall, ShieldCheck, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-const tabList = [
+const useCasesList = [
   {
-    id: "real-estate",
-    label: "Real Estate",
-    icon: Home,
-    title: "Customer Inquiry Management Dashboard",
-    desc: "Bavio captures house hunters looking for immediate property listings 24/7. Logs budgets, property specifications, and coordinates viewings directly.",
-    screenshot: (
-      <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
-        <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#140A02]">Property Inquiries Database</span>
-            <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Example data</span>
-          </div>
-          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Real-time Feed</span>
+    id: "sales",
+    badge: "Use Case 01",
+    title: "Sales & Lead Qualification",
+    subtitle: "Turn inbound callers into pre-qualified sales opportunities instantly.",
+    description: "Bavio handles inbound calls, asks key qualification questions (budget, timeline, requirements), and routes high-intent buyers directly to your sales team.",
+    points: ["Budget & timeline verification", "Live CRM lead creation", "Instant SMS confirmation dispatched"],
+    align: "left", // visual left, copy right
+    visual: (
+      <div className="bg-[#FFFDF9] border border-[#E7E0D6] rounded-2xl p-6 shadow-sm space-y-3 text-xs font-sans text-left">
+        <div className="flex justify-between items-center border-b border-[#E7E0D6] pb-2.5">
+          <span className="font-bold text-[#0A0A0A] flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-[#FF6B00]" />
+            High-Value Lead Qualified
+          </span>
+          <span className="text-[10px] font-mono text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full font-bold">
+            Qualified
+          </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-[9px] text-[#6E6256]/60 font-bold uppercase tracking-wider border-b border-[#F3E4D4]/40">
-                <th className="pb-2">Contact Name</th>
-                <th className="pb-2">Location</th>
-                <th className="pb-2">Property Type</th>
-                <th className="pb-2">Budget</th>
-                <th className="pb-2 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F3E4D4]/40">
-              <tr>
-                <td className="py-2 font-bold text-[#140A02]">Alex Morgan</td>
-                <td className="py-2 text-[#6E6256]">Downtown NYC</td>
-                <td className="py-2 text-[#140A02]">3BR</td>
-                <td className="py-2 text-[#F97316] font-bold">$450,000</td>
-                <td className="py-2 text-right"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[9px]">Qualified</span></td>
-              </tr>
-              <tr>
-                <td className="py-2 font-bold text-[#140A02]">Jamie Smith</td>
-                <td className="py-2 text-[#6E6256]">San Francisco</td>
-                <td className="py-2 text-[#140A02]">2BR</td>
-                <td className="py-2 text-[#F97316] font-bold">$375,000</td>
-                <td className="py-2 text-right"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[9px]">Qualified</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Caller</span><span className="font-bold text-[#0A0A0A]">Sarah Johnson</span></div>
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Budget</span><span className="font-bold text-[#FF6B00]">$450,000</span></div>
+          <div className="flex justify-between py-1"><span className="text-[#706A63]">Action</span><span className="font-bold text-[#0A0A0A]">Routed to Senior Sales Rep</span></div>
         </div>
       </div>
     )
   },
   {
-    id: "healthcare",
-    label: "Healthcare",
-    icon: Stethoscope,
-    title: "Patient Intake & Requests",
-    desc: "Patients looking to request appointments get routed through Bavio. Collects symptoms, triages urgency level, and organizes details in your dashboard.",
-    screenshot: (
-      <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
-        <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#140A02]">Patient Intake Desk</span>
-            <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Example data</span>
-          </div>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">4 Slots Requested</span>
+    id: "appointments",
+    badge: "Use Case 02",
+    title: "Automated Appointment Booking",
+    subtitle: "Book viewings, consultations, and service calls over voice.",
+    description: "Allow callers to check real-time availability and lock in appointments without human receptionist delay.",
+    points: ["Real-time Google / Outlook Calendar sync", "Automated SMS/WhatsApp reminders", "Zero double-booking"],
+    align: "right", // copy left, visual right
+    visual: (
+      <div className="bg-[#FFFDF9] border border-[#E7E0D6] rounded-2xl p-6 shadow-sm space-y-3 text-xs font-sans text-left">
+        <div className="flex justify-between items-center border-b border-[#E7E0D6] pb-2.5">
+          <span className="font-bold text-[#0A0A0A] flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#FF6B00]" />
+            Appointment Scheduled
+          </span>
+          <span className="text-[10px] font-mono text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-bold">
+            Calendar Synced
+          </span>
         </div>
-        <div className="space-y-3">
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div>
-              <div className="font-bold text-[#140A02]">Taylor Reed (Dental Intake)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Routine cleanup and cosmetic consultation</div>
-            </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Requested: Fri 4 PM</span>
-          </div>
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div>
-              <div className="font-bold text-[#140A02]">Casey Jordan (General Medicine)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Symptom: Follow-up on blood pressure monitoring</div>
-            </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Requested: Today 6 PM</span>
-          </div>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Date &amp; Time</span><span className="font-bold text-[#0A0A0A]">Saturday at 2:00 PM</span></div>
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Service</span><span className="font-bold text-[#0A0A0A]">On-Site Property Consultation</span></div>
+          <div className="flex justify-between py-1"><span className="text-[#706A63]">Confirmation</span><span className="font-bold text-[#FF6B00]">SMS Dispatched</span></div>
         </div>
       </div>
     )
   },
   {
-    id: "consulting",
-    label: "Consulting",
-    icon: Briefcase,
-    title: "Consultation Request Log",
-    desc: "Clients calling for strategy or advisory sessions get their consultation requests captured. Logs agenda, duration, and specific requirements.",
-    screenshot: (
-      <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
-        <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#140A02]">Consultation Request Log</span>
-            <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Example data</span>
-          </div>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Incoming Requests</span>
+    id: "support",
+    badge: "Use Case 03",
+    title: "24/7 Inbound Reception & Support",
+    subtitle: "Answer customer questions instantly without placing anyone on hold.",
+    description: "Bavio handles routine customer support inquiries, policy questions, business hours, and location guidance around the clock.",
+    points: ["0-second hold times", "Custom Knowledge Base answers", "Seamless human call handoff when required"],
+    align: "left", // visual left, copy right
+    visual: (
+      <div className="bg-[#FFFDF9] border border-[#E7E0D6] rounded-2xl p-6 shadow-sm space-y-3 text-xs font-sans text-left">
+        <div className="flex justify-between items-center border-b border-[#E7E0D6] pb-2.5">
+          <span className="font-bold text-[#0A0A0A] flex items-center gap-2">
+            <PhoneCall className="w-4 h-4 text-[#FF6B00]" />
+            Inbound Reception Desk
+          </span>
+          <span className="text-[10px] font-mono text-[#FF6B00] bg-[#FF6B00]/10 px-2 py-0.5 rounded-full font-bold">
+            24/7 Active
+          </span>
         </div>
-        <div className="space-y-3">
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div className="text-left">
-              <div className="font-bold text-[#140A02]">Jordan Lee &bull; 60 Min Strategy</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Reviewing marketing proposal prior to call</div>
-            </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Requested: Today 8 PM</span>
-          </div>
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div className="text-left">
-              <div className="font-bold text-[#140A02]">Emily Watson &bull; 30 Min Discovery</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Special request: Needs NDA signed beforehand</div>
-            </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2.5 py-1 rounded text-[9px]">Requested: Today 9 PM</span>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: "ecommerce",
-    label: "E-Commerce",
-    icon: ShoppingBag,
-    title: "Order Support & Returns Log",
-    desc: "Bavio handles customer calls about order status, tracking updates, and refunds. Qualifies return requests and escalates tickets instantly.",
-    screenshot: (
-      <div className="w-full bg-[#FFFDF8] border border-[#F3E4D4] rounded-2xl p-5 shadow-sm text-xs font-sans text-left space-y-4">
-        <div className="flex justify-between items-center border-b border-[#F3E4D4]/60 pb-3">
-          <span className="font-bold text-[#140A02]">Order Support Log</span>
-          <span className="text-[10px] text-[#F97316] font-bold bg-[#FFF7ED] px-2 py-0.5 rounded">Active Tickets</span>
-        </div>
-        <div className="space-y-3">
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div>
-              <div className="font-bold text-[#140A02]">Marcus Vance (Return Inquiry)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Order: #9281-EC &bull; Prefers return label emailed</div>
-            </div>
-            <span className="bg-[#F97316] text-white font-bold px-2 py-1 rounded text-[9px]">Return Initiated</span>
-          </div>
-          <div className="bg-white border border-[#F3E4D4] rounded-xl p-3 flex justify-between items-center">
-            <div>
-              <div className="font-bold text-[#140A02]">Jessica Vance (Delivery Issue)</div>
-              <div className="text-[9px] text-[#6E6256] mt-0.5">Order: #8392-EC &bull; Inquiry regarding delayed delivery</div>
-            </div>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold px-2 py-1 rounded text-[9px]">Ticket Escalated</span>
-          </div>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Total Inbound Calls</span><span className="font-bold text-[#0A0A0A]">1,420 Calls</span></div>
+          <div className="flex justify-between py-1 border-b border-[#F7F4EE]"><span className="text-[#706A63]">Answer Rate</span><span className="font-bold text-green-700">100% Instant</span></div>
+          <div className="flex justify-between py-1"><span className="text-[#706A63]">Average Resolution</span><span className="font-bold text-[#FF6B00]">42 Seconds</span></div>
         </div>
       </div>
     )
@@ -154,86 +90,62 @@ const tabList = [
 ];
 
 export default function IndustriesTabs() {
-  const [activeTab, setActiveTab] = useState(tabList[0]);
-
   return (
-    <section className="py-24 bg-[#FFFDF8] w-full">
+    <section className="py-24 bg-[#FFFDF9] w-full">
       <div className="max-w-[1440px] mx-auto px-6 md:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block bg-[#FFF7ED] border border-[#F3E4D4] px-5 py-1.5 rounded-full text-xs font-bold text-[#F97316] mb-4">
-            Vertical Trunks
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <span className="inline-block bg-[#F7F4EE] border border-[#E7E0D6] px-4 py-1 rounded-full text-xs font-mono font-bold text-[#FF6B00] mb-4 uppercase tracking-wider">
+            ● Industry Use Cases
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.04em] text-[#140A02] mb-6 leading-[0.9]">
-            Built For Businesses <br />
-            That Can&apos;t Afford Missed Calls.
+          <h2 className="font-serif text-4xl sm:text-5xl md:text-[60px] font-normal text-[#0A0A0A] mb-6 leading-[1.0]">
+            AI Voice Agents Built for <br className="hidden sm:inline" />
+            Every Marketing Goal
           </h2>
+          <p className="text-[#706A63] text-[18px] md:text-[20px] font-normal leading-[1.65] max-w-[700px] mx-auto font-sans">
+            From high-converting sales qualification to instant appointment scheduling and 24/7 customer reception.
+          </p>
         </div>
 
-        {/* Tab row */}
-        <div className="flex flex-wrap justify-center items-center gap-3 bg-[#FFF7ED] border border-[#F3E4D4] rounded-full p-2 max-w-3xl mx-auto mb-16 shadow-sm relative">
-          {tabList.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab.id === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab)}
-                className={`relative flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold font-sans transition-all duration-300 z-10 ${
-                  isActive ? "text-white" : "text-[#6E6256] hover:text-[#140A02]"
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="active-industry-tab"
-                    className="absolute inset-0 bg-[#F97316] rounded-full z-[-1]"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Alternating Editorial Use Cases Stack */}
+        <div className="space-y-16 max-w-6xl mx-auto font-sans">
+          {useCasesList.map((useCase) => (
+            <motion.div
+              key={useCase.id}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-[#F7F4EE] border border-[#E7E0D6] rounded-[32px] p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
+            >
+              {/* Visual Panel */}
+              <div className={`lg:col-span-7 ${useCase.align === "right" ? "order-1 lg:order-2" : "order-1"}`}>
+                {useCase.visual}
+              </div>
 
-        {/* Dynamic Screenshot Panel */}
-        <div className="max-w-5xl mx-auto bg-[#FFF7ED] border border-[#F3E4D4] rounded-[32px] p-8 md:p-12 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_10px_30px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-[350ms] ease-out grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-          
-          {/* Info Column (Left 5) */}
-          <div className="md:col-span-5 text-left space-y-5">
-            <h3 className="font-display text-3xl font-extrabold text-[#140A02] leading-[1.1] tracking-[-0.02em]">
-              {activeTab.title}
-            </h3>
-            <p className="text-[#6B5A4C] text-sm leading-relaxed font-sans">
-              {activeTab.desc}
-            </p>
-            <div className="text-[#F97316] font-mono text-base font-bold">
-              {activeTab.id === "real-estate" ? "24/7 lead qualification & call capture" : 
-               activeTab.id === "healthcare" ? "95% call capture rate" : 
-               activeTab.id === "consulting" ? "100% call transcript logging" : 
-               "Instant caller lead capture"}
-            </div>
-          </div>
-
-          {/* Screenshot Column (Right 7) */}
-          <div className="md:col-span-7 w-full flex justify-center">
-            <div className="w-full bg-white p-2 rounded-[24px] border border-[#F3E4D4] shadow-md relative overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  {activeTab.screenshot}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
+              {/* Copy Panel */}
+              <div className={`lg:col-span-5 space-y-4 text-left ${useCase.align === "right" ? "order-2 lg:order-1" : "order-2"}`}>
+                <span className="text-xs font-mono font-bold text-[#FF6B00] uppercase tracking-wider block">
+                  {useCase.badge}
+                </span>
+                <h3 className="font-serif text-3xl md:text-4xl text-[#0A0A0A] leading-tight">
+                  {useCase.title}
+                </h3>
+                <p className="text-[#706A63] text-sm leading-relaxed">
+                  {useCase.description}
+                </p>
+                <ul className="space-y-2 pt-2">
+                  {useCase.points.map((pt) => (
+                    <li key={pt} className="flex items-center gap-2 text-xs font-medium text-[#0A0A0A]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
       </div>

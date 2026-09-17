@@ -86,92 +86,7 @@ async function createCall(req, res) {
   }
 }
 
-async function listCalls(req, res) {
-  const businessId = req.business_id || req.user.id;
-  const requestId = req.requestId || `req_${Date.now()}`;
-  const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
-  const cursor = req.query.cursor || null;
-
-  try {
-    let query = `SELECT * FROM calls WHERE business_id = $1 OR user_id = $1`;
-    const params = [businessId];
-
-    if (cursor) {
-      query += ` AND created_at < $2`;
-      params.push(cursor);
-    }
-
-    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
-    params.push(limit + 1);
-
-    const result = await db.query(query, params);
-    const hasMore = result.rows.length > limit;
-    const rawData = hasMore ? result.rows.slice(0, limit) : result.rows;
-
-    const data = rawData.map(c => ({
-      id: c.id,
-      agent_id: c.assistant_id,
-      caller_number: c.caller_number,
-      status: c.status || c.call_status,
-      duration_seconds: c.duration_seconds || c.duration || 0,
-      created_at: c.created_at,
-    }));
-
-    res.status(200).json({
-      data,
-      pagination: {
-        next_cursor: hasMore ? rawData[rawData.length - 1].created_at : null,
-        has_more: hasMore,
-      },
-      request_id: requestId,
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: { code: 'internal_error', message: err.message },
-      request_id: requestId,
-    });
-  }
-}
-
-async function getCallById(req, res) {
-  const businessId = req.business_id || req.user.id;
-  const requestId = req.requestId || `req_${Date.now()}`;
-  const { id } = req.params;
-
-  try {
-    const result = await db.query(
-      `SELECT * FROM calls WHERE id = $1 AND (business_id = $2 OR user_id = $2)`,
-      [id, businessId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        error: { code: 'not_found', message: 'Call not found' },
-        request_id: requestId,
-      });
-    }
-
-    const c = result.rows[0];
-    res.status(200).json({
-      data: {
-        id: c.id,
-        agent_id: c.assistant_id,
-        caller_number: c.caller_number,
-        status: c.status || c.call_status,
-        duration_seconds: c.duration_seconds || c.duration || 0,
-        transcript: c.transcript || '',
-        created_at: c.created_at,
-        ended_at: c.ended_at,
-      },
-      request_id: requestId,
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: { code: 'internal_error', message: err.message },
-      request_id: requestId,
-    });
-  }
-}
+const { listCalls, getCallById } = require('./conversationReads');
 
 async function getCallTranscript(req, res) {
   const businessId = req.business_id || req.user.id;
@@ -228,6 +143,9 @@ async function getCallOutcome(req, res) {
     res.status(200).json({
       data: {
         call_id: outcome.call_id,
+        kind: 'conversation_insight',
+        source: outcome.raw_outcome?.provenance?.source || 'unverified_legacy',
+        executionEvidence: null,
         interested: outcome.interested,
         lead_score: outcome.lead_score,
         budget: outcome.budget,

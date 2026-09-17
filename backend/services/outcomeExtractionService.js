@@ -37,34 +37,20 @@ Analyze the call transcript and extract structured lead qualification fields in 
     } catch (llmErr) {
       console.warn('[OUTCOME EXTRACTION] LLM completion fallback triggered:', llmErr.message);
 
-      const lower = transcript.toLowerCase();
-      const isInterested = lower.includes('dekh raha hoon') || lower.includes('chahiye') || lower.includes('interested') || lower.includes('yes');
+      // Failed extraction must not write invented facts or trigger lead creation.
+      throw new Error('Conversation insight extraction failed');
 
-      // Rule-based entity extraction
-      const budgetMatch = transcript.match(/(\d+\s*(?:lakhs?|cr|crores?|k|thousands?|lakh))/i);
-      const locMatch = transcript.match(/(hyderabad|kondapur|gachibowli|bangalore|mumbai|delhi|pune)/i);
-      const propMatch = transcript.match(/(1bhk|2bhk|3bhk|4bhk|villa|apartment|plot)/i);
-
-      outcomeData = {
-        interested: isInterested,
-        lead_score: isInterested ? 85 : 40,
-        budget: budgetMatch ? budgetMatch[0] : '80 Lakhs',
-        location: locMatch ? locMatch[0] : 'Kondapur, Hyderabad',
-        property_type: propMatch ? propMatch[0] : '3BHK',
-        purchase_timeline: 'Within 2 months',
-        callback_required: isInterested,
-        summary: transcript.slice(0, 150),
-      };
     }
 
-    const interested = Boolean(outcomeData.interested);
-    const leadScore = parseInt(outcomeData.lead_score || 50, 10);
+    outcomeData = require('./conversationInsight').validateInsight(outcomeData);
+    const interested = outcomeData.interested;
+    const leadScore = outcomeData.lead_score;
     const budget = outcomeData.budget || null;
     const location = outcomeData.location || null;
     const propertyType = outcomeData.property_type || null;
     const purchaseTimeline = outcomeData.purchase_timeline || null;
     const callbackRequired = Boolean(outcomeData.callback_required);
-    const summary = outcomeData.summary || 'Call completed';
+    const summary = outcomeData.summary || null;
 
     // Insert or update call_outcomes table
     const outcomeResult = await db.query(
@@ -95,7 +81,7 @@ Analyze the call transcript and extract structured lead qualification fields in 
         purchaseTimeline,
         callbackRequired,
         summary,
-        JSON.stringify(outcomeData),
+        JSON.stringify({ ...outcomeData, provenance: { kind: 'conversation_insight', version: 1, source: 'model_extraction', executionEvidence: null } }),
       ]
     );
 
@@ -113,23 +99,25 @@ Analyze the call transcript and extract structured lead qualification fields in 
       if (item.val) {
         await db.query(
           `INSERT INTO extracted_answers (call_id, question_key, answer_value, confidence)
-           VALUES ($1, $2, $3, 0.95)`,
+           SELECT $1, $2, $3, NULL
+           WHERE NOT EXISTS (SELECT 1 FROM extracted_answers WHERE call_id = $1 AND question_key = $2 AND answer_value = $3)`,
           [callId, item.key, item.val]
         ).catch(e => console.error('[OUTCOME EXTRACTION] Answer save error:', e.message));
       }
     }
 
     // Auto-create/update Lead if interested or lead score high
-    if (interested || leadScore >= 60) {
+    if (callerNumber && (interested === true || (leadScore !== null && leadScore >= 60))) {
       try {
         const leadRes = await db.query(
           `INSERT INTO leads (business_id, client_id, phone, caller_number, name, budget, location, summary, call_id, created_at)
-           VALUES ($1, $1, $2, $2, $3, $4, $5, $6, $7, NOW())
+           SELECT $1, $1, $2, $2, $3, $4, $5, $6, $7, NOW()
+           WHERE NOT EXISTS (SELECT 1 FROM leads WHERE business_id = $1 AND call_id = $7)
            RETURNING *`,
           [
             businessId,
-            callerNumber || '+919999900000',
-            callerNumber ? `Caller ${callerNumber.slice(-4)}` : 'Lead',
+            callerNumber,
+            null,
             budget,
             location,
             summary,

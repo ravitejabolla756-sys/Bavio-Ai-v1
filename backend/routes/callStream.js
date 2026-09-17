@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const db = require('../database/db');
+const { recordConversationCompletedEvent } = require('../services/businessEventService');
 const openAIService = require('../services/openAIService');
 const deepgramService = require('../services/deepgramService');
 const encryption = require('../utils/encryption');
@@ -546,6 +547,8 @@ Speak naturally, keep your answers concise and conversational, and let the calle
       );
 
       const callId = callInsert.rows[0]?.id;
+
+      if (callId) await recordConversationCompletedEvent({ db, sourceType: 'websocket_session', sourceId: callSid || String(callId), businessId, conversationId: String(callId), completedAt: new Date().toISOString() });
 
       // Upsert transcript
       if (callId) {

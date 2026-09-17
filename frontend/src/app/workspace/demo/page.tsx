@@ -646,20 +646,8 @@ function DemoWorkspaceContent() {
 
               {/* Central Interactive Orb / Preview */}
               <div className="flex flex-col items-center justify-center py-10 space-y-4 my-auto">
-                <div className="relative flex items-center justify-center">
-                  <motion.div
-                    animate={{ scale: [1, 1.25, 1], opacity: [0.15, 0.35, 0.15] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                    className="absolute w-28 h-28 bg-saffron rounded-full filter blur-xl pointer-events-none"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.12, 1] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                    className="absolute w-24 h-24 border border-saffron/30 rounded-full"
-                  />
-                  <div className="w-16 h-16 bg-surface-raised border-2 border-saffron rounded-full flex items-center justify-center relative z-10 shadow-premium">
-                    <Mic className="w-6 h-6 text-saffron" />
-                  </div>
+                <div className="w-16 h-16 bg-surface-raised border-2 border-saffron rounded-full flex items-center justify-center">
+                  <Mic className="w-6 h-6 text-saffron" />
                 </div>
 
                 <div className="text-center space-y-1">
@@ -691,7 +679,7 @@ function DemoWorkspaceContent() {
           {/* ── STATE 2: REQUESTING PERMISSION ── */}
           {webCallState === "requesting_permission" && (
             <div className="flex flex-col items-center justify-center my-auto py-12 space-y-4 text-center w-full">
-              <div className="w-16 h-16 rounded-full bg-saffron/10 border border-saffron/20 flex items-center justify-center animate-pulse">
+              <div className="w-16 h-16 rounded-full bg-saffron/10 border border-saffron/20 flex items-center justify-center">
                 <Mic className="w-7 h-7 text-saffron" />
               </div>
               <h4 className="text-sm font-bold text-ink">Requesting Microphone Access...</h4>

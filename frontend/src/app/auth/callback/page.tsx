@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { setCookie, navigateAfterAuth } from '@/lib/auth-utils';

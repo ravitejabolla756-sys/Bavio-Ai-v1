@@ -1,37 +1,8 @@
-import { Instrument_Serif, JetBrains_Mono, Bodoni_Moda, Syne, DM_Sans, Playfair_Display, Cormorant_Garamond, Inter } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 
-export const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-playfair",
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-});
-
-export const cormorantGaramond = Cormorant_Garamond({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-cormorant",
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
-});
-
-export const syne = Syne({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-syne",
-  weight: ["700", "800"],
-});
-
-export const dmSans = DM_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-dm-sans",
-  weight: ["400", "500", "600", "700"],
-});
-
+// Primary Editorial Display Font
 export const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
   display: "swap",
@@ -40,24 +11,13 @@ export const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
 });
 
-export const bodoniModa = Bodoni_Moda({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-bodoni",
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-});
-
-export const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-jetbrains",
-  weight: ["400", "500", "600"],
-});
-
+// Primary Functional Body Font
 export const geistSans = GeistSans;
+
+// Primary Technical Metadata Font
 export const geistMono = GeistMono;
 
+// Fallback Sans
 export const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -65,3 +25,10 @@ export const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+// Backward compatibility exports mapping to core fonts
+export const playfairDisplay = instrumentSerif;
+export const cormorantGaramond = instrumentSerif;
+export const bodoniModa = instrumentSerif;
+export const syne = geistSans;
+export const dmSans = geistSans;
+export const jetbrainsMono = geistMono;

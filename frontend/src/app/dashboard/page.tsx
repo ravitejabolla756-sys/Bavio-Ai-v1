@@ -1,470 +1,121 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  PhoneCall,
-  Clock,
-  CurrencyDollar,
-  CheckCircle,
-  Plus,
-  Users,
-  IdentificationCard,
-  Circle,
-  CaretRight,
-  ChartLine,
-  Warning,
-  Sparkle,
-  ArrowUpRight,
-} from "@phosphor-icons/react";
-import {
-  callsApi,
-  usageApi,
-  assistantsApi,
-  leadsApi,
-  numbersApi,
-  getClientId,
-  CallRecord,
-  UsageSummary,
-  Assistant,
-  Lead,
-  PhoneNumber,
-} from "@/lib/api";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, ArrowUpRight, BookOpen, Circle, IdentificationCard, Plus, Pulse, Warning } from '@phosphor-icons/react';
+import { apiFetch, assistantsApi, callsApi, getClientId, knowledgeBaseApi, leadsApi, numbersApi, usageApi, type Assistant, type CallRecord, type KnowledgeDoc, type Lead, type PhoneNumber, type UsageSummary } from '@/lib/api';
+import { useSystemStatus } from '@/lib/system-status';
+import { isLocalUiPreviewSession } from '@/lib/local-ui-preview';
+import { contactOf } from '@/features/leads/model';
+import styles from './overview.module.css';
+
+type State<T> = { state: 'loading' } | { state: 'ready'; data: T } | { state: 'failed'; message: string };
+type Integration = { connected?: boolean; testStatus?: string | null };
+type IntegrationStatus = { deepgram?: Integration; openai?: Integration; elevenlabs?: Integration };
+type SetupState = 'Complete' | 'Needs setup' | 'Unavailable';
+
+const initial = <T,>(): State<T> => ({ state: 'loading' });
+const time = (value?: string | null) => value ? new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Time unavailable';
+
+function setupState<T>(value: State<T[]>, complete: (items: T[]) => boolean): SetupState {
+  if (value.state !== 'ready') return 'Unavailable';
+  return complete(value.data) ? 'Complete' : 'Needs setup';
+}
+
+function StateLabel({ value }: { value: SetupState | string }) {
+  const tone = value === 'Complete' || value === 'Operational' ? 'complete' : value === 'Needs setup' || value === 'Not configured' ? 'neutral' : 'unavailable';
+  return <span className={styles.status} data-tone={tone}><Circle size={7} weight="fill" aria-hidden="true" />{value}</span>;
+}
+
+function Message({ state, label, empty }: { state: State<unknown>; label: string; empty: string }) {
+  if (state.state === 'loading') return <p className={styles.quiet}>Checking {label.toLowerCase()}…</p>;
+  if (state.state === 'failed') return <p className={styles.quiet} role="alert">Unable to check {label.toLowerCase()}.</p>;
+  return <p className={styles.quiet}>{empty}</p>;
+}
 
 export default function DashboardOverview() {
-  const router = useRouter();
-  const [calls, setCalls] = useState<CallRecord[]>([]);
-  const [usage, setUsage] = useState<UsageSummary | null>(null);
-  const [assistants, setAssistants] = useState<Assistant[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [numbers, setNumbers] = useState<PhoneNumber[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const [calls, setCalls] = useState<State<CallRecord[]>>(initial());
+  const [leads, setLeads] = useState<State<Lead[]>>(initial());
+  const [assistants, setAssistants] = useState<State<Assistant[]>>(initial());
+  const [numbers, setNumbers] = useState<State<PhoneNumber[]>>(initial());
+  const [knowledge, setKnowledge] = useState<State<KnowledgeDoc[]>>(initial());
+  const [usage, setUsage] = useState<State<UsageSummary>>(initial());
+  const [integrations, setIntegrations] = useState<State<IntegrationStatus>>(initial());
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+  const systemStatus = useSystemStatus();
+  const isPreview = isLocalUiPreviewSession();
   const clientId = getClientId();
 
   const fetchData = useCallback(async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("bavio_token") : null;
-    if (!clientId || !token) {
-      router.replace("/login");
-      return;
-    }
-    try {
-      const [callsData, usageData, assistantsData, leadsData, numbersData] = await Promise.all([
-        callsApi.list(clientId),
-        usageApi.get(clientId),
-        assistantsApi.list(clientId),
-        leadsApi.list(clientId),
-        numbersApi.list(clientId),
-      ]);
-      setCalls(Array.isArray(callsData) ? callsData : []);
-      setUsage(usageData);
-      setAssistants(Array.isArray(assistantsData) ? assistantsData : []);
-      setLeads(Array.isArray(leadsData) ? leadsData : []);
-      setNumbers(Array.isArray(numbersData) ? numbersData : []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('bavio_token') : null;
+    if (!clientId || !token) { window.location.assign('/login'); return; }
+    const read = async <T,>(request: Promise<T>, set: (value: State<T>) => void) => {
+      set(initial());
+      try { set({ state: 'ready', data: await request }); } catch (error) { set({ state: 'failed', message: error instanceof Error ? error.message : 'Please retry.' }); }
+    };
+    await Promise.all([
+      read(callsApi.list(clientId), setCalls),
+      read(leadsApi.list(clientId), setLeads),
+      read(assistantsApi.list(clientId), setAssistants),
+      read(numbersApi.list(clientId), setNumbers),
+      read(knowledgeBaseApi.list(), setKnowledge),
+      read(usageApi.get(clientId), setUsage),
+      read(apiFetch<IntegrationStatus>('/integrations/status'), setIntegrations),
+    ]);
+    setCheckedAt(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
   }, [clientId]);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
-  // Calculations
-  const totalCalls = calls.length;
-  const completedCalls = calls.filter(c => c.call_status === "completed").length;
-  const successRateText = totalCalls > 0 ? `${Math.round((completedCalls / totalCalls) * 100)}%` : "—";
-  const minutesUsed = usage?.summary?.minutes_used ?? 0;
-  const totalCost = usage?.summary?.total_cost ?? 0;
+  const recentCalls = !isPreview && calls.state === 'ready' ? [...calls.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5) : [];
+  const recentLeads = !isPreview && leads.state === 'ready' ? [...leads.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5) : [];
+  const activityAvailable = recentCalls.length > 0 || recentLeads.length > 0;
+  const connectedProviders = integrations.state === 'ready' ? [integrations.data.deepgram, integrations.data.openai, integrations.data.elevenlabs].filter(provider => provider?.connected).length : 0;
+  const providerState: SetupState = isPreview || integrations.state !== 'ready' ? 'Unavailable' : connectedProviders === 3 ? 'Complete' : 'Needs setup';
+  const voiceState = isPreview ? 'Unavailable' : setupState(assistants, items => items.some(item => Boolean(item.voice)));
+  const setup = <T,>(value: State<T[]>, complete: (items: T[]) => boolean): SetupState => isPreview ? 'Unavailable' : setupState(value, complete);
+  const usageText = useMemo(() => {
+    if (usage.state !== 'ready') return usage.state === 'loading' ? 'Checking' : 'Usage unavailable';
+    const used = usage.data.summary?.minutes_used ?? 0;
+    return used > 0 || usage.data.logs.length > 0 ? `${used} minutes used` : 'Usage unavailable';
+  }, [usage]);
 
-  // Average call duration (only for completed calls with duration)
-  const callsWithDuration = calls.filter(c => c.duration && c.duration > 0);
-  const avgDurationSeconds = callsWithDuration.length > 0
-    ? Math.round(callsWithDuration.reduce((acc, c) => acc + (c.duration || 0), 0) / callsWithDuration.length)
-    : 0;
-  const avgDurationText = avgDurationSeconds > 0
-    ? `${Math.floor(avgDurationSeconds / 60)}m ${avgDurationSeconds % 60}s`
-    : "—";
+  const serviceRows = [
+    { label: 'Voice provider', value: providerState === 'Complete' ? 'Operational' : providerState === 'Needs setup' ? 'Not configured' : 'Unavailable' },
+    { label: 'Telephony provider', value: isPreview ? 'Unavailable' : setupState(numbers, items => items.length > 0) === 'Complete' ? 'Operational' : numbers.state === 'ready' ? 'Not configured' : 'Unavailable' },
+    { label: 'Knowledge service', value: isPreview ? 'Unavailable' : knowledge.state === 'ready' ? 'Operational' : 'Unavailable' },
+    { label: 'Execution runtime', value: systemStatus },
+  ];
 
-  // Mapped helper for displaying which AI Employee handled the call
-  const getAssistantNameForCall = (virtualNumber?: string) => {
-    if (!virtualNumber) return "AI Employee";
-    const numObj = numbers.find(n => n.number === virtualNumber);
-    if (numObj?.assistant_name) return numObj.assistant_name;
-    return assistants[0]?.name || "AI Employee";
-  };
+  return <main className={styles.root} aria-labelledby="overview-heading">
+    <div className={styles.eyebrow}><span className={styles.mark} />Overview</div>
+    <header className={styles.header}><div><h1 id="overview-heading">Overview</h1><p>Workspace activity and setup state.</p></div><button className={styles.refresh} onClick={() => void fetchData}>Refresh</button></header>
 
-  // Leads metrics
-  const totalLeadsCount = leads.length;
-  const qualifiedLeadsCount = leads.filter(l => l.status === "qualified" || l.status === "converted").length;
-  const leadConversionRate = totalLeadsCount > 0
-    ? `${Math.round((qualifiedLeadsCount / totalLeadsCount) * 100)}%`
-    : "—";
-
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="text-left">
-            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Voice Overview</h1>
-            <p className="text-body-xs text-ink-tertiary mt-1">Loading dashboard telemetry...</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white border border-line rounded-2xl p-6 shadow-sm animate-pulse h-28" />
-          ))}
-        </div>
+    <section className={styles.section} aria-labelledby="setup-heading">
+      <div className={styles.sectionHead}><div><span className={styles.kicker}>Workspace setup</span><h2 id="setup-heading">What is ready to operate</h2><p>Each state reflects records currently available to this workspace.</p></div></div>
+      <div className={styles.setupRows}>
+        {[
+          ['Agent', setup(assistants, items => items.length > 0), '/dashboard/assistant'],
+          ['Knowledge', setup(knowledge, items => items.length > 0), '/dashboard/knowledge'],
+          ['Phone number', setup(numbers, items => items.length > 0), '/dashboard/phone-numbers'],
+          ['Voice', voiceState, '/dashboard/integrations/voice-pipeline'],
+          ['Provider', providerState, '/dashboard/integrations/voice-pipeline'],
+          ['First conversation', setup(calls, items => items.length > 0), '/dashboard/calls'],
+        ].map(([label, value, href]) => <Link className={styles.setupRow} href={href} key={label}><span>{label}</span><StateLabel value={value} /><ArrowRight size={15} aria-hidden="true" /></Link>)}
       </div>
-    );
-  }
+    </section>
 
-  if (error) {
-    return (
-      <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
-        <div className="bg-white border border-line rounded-2xl p-6 shadow-sm">
-          <div className="p-4 flex items-center gap-4">
-            <Warning className="w-6 h-6 text-state-error shrink-0" />
-            <div className="text-left">
-              <h3 className="text-body-xs font-bold text-ink">Failed to load dashboard</h3>
-              <p className="text-[10px] text-ink-muted mt-0.5">{error}</p>
-            </div>
-            <button
-              onClick={fetchData}
-              className="ml-auto bg-saffron text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg hover:bg-saffron-dark transition-all"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    <div className={styles.layout}>
+      <section className={styles.section} aria-labelledby="activity-heading">
+        <div className={styles.sectionHead}><div><span className={styles.kicker}>Recent activity</span><h2 id="activity-heading">Recorded events</h2><p>Chronological records from conversations and leads.</p></div><Link href="/dashboard/calls" className={styles.textLink}>View conversations <ArrowUpRight size={14} /></Link></div>
+        {activityAvailable ? <div className={styles.activityRows}>{recentCalls.slice(0, 4).map(call => <Link href={`/dashboard/calls/${encodeURIComponent(call.id)}`} key={call.id} className={styles.activityRow}><time>{time(call.created_at)}</time><span /><p>Conversation {call.call_status || 'status unavailable'}<small>{call.caller_number || 'Caller unavailable'}</small></p><ArrowRight size={15} /></Link>)}{recentLeads.slice(0, 3).map(lead => <Link href={`/dashboard/leads?lead=${encodeURIComponent(lead.id)}`} key={`lead-${lead.id}`} className={styles.activityRow}><time>{time(lead.created_at)}</time><span /><p>Lead created<small>{contactOf(lead).label}</small></p><ArrowRight size={15} /></Link>)}</div> : <Message state={calls.state === 'failed' || leads.state === 'failed' ? { state: 'failed', message: 'Activity unavailable' } : calls.state === 'loading' || leads.state === 'loading' ? { state: 'loading' } : { state: 'ready', data: [] }} label="activity" empty="No recorded activity yet." />}
+      </section>
 
-  return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative text-ink">
-      
-      {/* 1. Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
-        <div className="text-left">
-          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Voice Overview</h1>
-          <p className="text-sm text-ink-tertiary mt-1">Monitor calls, AI employee performance, usage, and costs.</p>
-        </div>
-      </div>
-
-      {/* 2. KPI row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* KPI: Total Calls */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-[0_1px_2px_rgba(20,10,2,0.03)] hover:border-saffron/40 transition-colors duration-200 flex flex-col justify-between h-28">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-ink-tertiary font-sans">Total Calls</span>
-            <div className="w-7 h-7 rounded-lg bg-saffron/5 flex items-center justify-center">
-              <PhoneCall className="w-3.5 h-3.5 text-saffron" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold font-sans text-ink leading-none">{totalCalls.toLocaleString()}</h3>
-            <span className="text-[9px] text-ink-muted font-sans mt-1 block">All time registered</span>
-          </div>
-        </div>
-
-        {/* KPI: Talk Time */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-[0_1px_2px_rgba(20,10,2,0.03)] hover:border-saffron/40 transition-colors duration-200 flex flex-col justify-between h-28">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-ink-tertiary font-sans">Talk Time</span>
-            <div className="w-7 h-7 rounded-lg bg-saffron/5 flex items-center justify-center">
-              <Clock className="w-3.5 h-3.5 text-saffron" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold font-sans text-ink leading-none">{minutesUsed} min</h3>
-            <span className="text-[9px] text-ink-muted font-sans mt-1 block">This billing period</span>
-          </div>
-        </div>
-
-        {/* KPI: Estimated Cost */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-[0_1px_2px_rgba(20,10,2,0.03)] hover:border-saffron/40 transition-colors duration-200 flex flex-col justify-between h-28">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-ink-tertiary font-sans">Estimated Cost</span>
-            <div className="w-7 h-7 rounded-lg bg-saffron/5 flex items-center justify-center">
-              <CurrencyDollar className="w-3.5 h-3.5 text-saffron" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold font-sans text-ink leading-none">
-              {totalCost > 0 ? `$${totalCost.toFixed(2)}` : "$0.00"}
-            </h3>
-            <span className="text-[9px] text-ink-muted font-sans mt-1 block">Monthly accumulated</span>
-          </div>
-        </div>
-
-        {/* KPI: Call Success Rate */}
-        <div className="bg-white border border-line rounded-2xl p-5 shadow-[0_1px_2px_rgba(20,10,2,0.03)] hover:border-saffron/40 transition-colors duration-200 flex flex-col justify-between h-28">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-ink-tertiary font-sans">Call Success Rate</span>
-            <div className="w-7 h-7 rounded-lg bg-saffron/5 flex items-center justify-center">
-              <CheckCircle className="w-3.5 h-3.5 text-saffron" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold font-sans text-ink leading-none">{successRateText}</h3>
-            <span className="text-[9px] text-ink-muted font-sans mt-1 block">
-              {totalCalls === 0 ? "No completed calls yet" : "Completed calls ratio"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Main Split Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column (Wider, approx 66%) */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          
-          {/* AI Employees Section */}
-          <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-line/40 pb-4 mb-5">
-              <div>
-                <h3 className="font-bold text-sm tracking-wider uppercase text-ink flex items-center gap-2 font-sans">
-                  <Users className="w-4 h-4 text-saffron" />
-                  AI Employees
-                </h3>
-                <p className="text-[11px] text-ink-tertiary font-sans mt-0.5">Your configured receptionists and voice agents.</p>
-              </div>
-              <Link
-                href="/dashboard/assistant"
-                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-saffron hover:text-saffron-dark border border-line hover:border-saffron/20 px-3 py-1.5 rounded-lg transition-colors font-sans"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Create AI Employee
-              </Link>
-            </div>
-
-            {assistants.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-line rounded-xl bg-canvas/30">
-                <Sparkle className="w-7 h-7 text-saffron/20 mb-2" />
-                <h4 className="text-xs font-semibold text-ink mb-1 font-sans">No AI Employees Configured</h4>
-                <p className="text-[11px] text-ink-tertiary max-w-sm mb-4 leading-relaxed font-sans">
-                  Start by deploying your first automated voice employee to handle calls.
-                </p>
-                <Link
-                  href="/dashboard/assistant"
-                  className="px-4 py-2 bg-saffron text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-saffron-dark transition-colors font-sans"
-                >
-                  Create AI Employee
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assistants.map((ast) => {
-                  const assignedNumber = numbers.find(n => n.number && n.assistant_name === ast.name)?.number || "Unassigned";
-                  return (
-                    <div key={ast.id} className="border border-line rounded-xl p-4 bg-canvas/20 flex flex-col justify-between hover:border-saffron/30 transition-colors">
-                      <div>
-                        <div className="flex justify-between items-center mb-2.5">
-                          <h4 className="font-bold text-xs text-ink font-sans">{ast.name}</h4>
-                          <span className="flex items-center gap-1.5 text-[9px] font-bold text-state-success bg-state-success/5 px-2 py-0.5 rounded-full border border-state-success/15 font-sans">
-                            <Circle className="w-1 h-1 fill-state-success text-state-success" />
-                            Online
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-[11px] text-ink-secondary font-sans">
-                          <p><span className="text-ink-tertiary">Role:</span> AI Voice Agent ({ast.language || "English"})</p>
-                          <p><span className="text-ink-tertiary">Number:</span> <span className="font-mono">{assignedNumber}</span></p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-4 border-t border-line/40 pt-3">
-                        <div className="flex gap-4">
-                          <div className="text-left">
-                            <span className="text-[9px] text-ink-tertiary block uppercase tracking-wider font-sans">Calls</span>
-                            <span className="font-bold text-xs font-sans text-ink">{totalCalls}</span>
-                          </div>
-                          <div className="text-left">
-                            <span className="text-[9px] text-ink-tertiary block uppercase tracking-wider font-sans">Success</span>
-                            <span className="font-bold text-xs font-sans text-ink">{successRateText}</span>
-                          </div>
-                        </div>
-                        <Link
-                          href="/dashboard/assistant"
-                          className="flex items-center gap-0.5 text-[10px] font-bold uppercase tracking-wider text-saffron hover:text-saffron-dark font-sans"
-                        >
-                          Configure
-                          <CaretRight className="w-3 h-3" />
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Recent Calls */}
-          <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left">
-            <div className="flex items-center justify-between border-b border-line/40 pb-4 mb-5">
-              <div>
-                <h3 className="font-bold text-sm tracking-wider uppercase text-ink flex items-center gap-2 font-sans">
-                  Recent Calls
-                </h3>
-                <p className="text-[11px] text-ink-tertiary font-sans mt-0.5">Stream of conversations handled by your team.</p>
-              </div>
-              <Link
-                href="/dashboard/calls"
-                className="text-[10px] font-bold uppercase tracking-wider text-saffron hover:text-saffron-dark font-sans"
-              >
-                View all →
-              </Link>
-            </div>
-
-            {calls.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-canvas border border-line flex items-center justify-center">
-                  <PhoneCall className="w-4 h-4 text-ink-tertiary" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-ink mb-1 font-sans">No calls yet</h4>
-                  <p className="text-[11px] text-ink-tertiary max-w-sm font-sans leading-relaxed">
-                    Your AI employee&apos;s conversations will appear here once your first call is received.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-line/40 text-[9px] font-bold uppercase tracking-widest text-ink-tertiary">
-                      <th className="py-2.5 font-sans">Caller</th>
-                      <th className="py-2.5 font-sans">AI Employee</th>
-                      <th className="py-2.5 font-sans">Duration</th>
-                      <th className="py-2.5 font-sans">Outcome</th>
-                      <th className="py-2.5 font-sans text-right">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line-subtle/50 text-[11px] font-sans">
-                    {calls.slice(0, 5).map((call) => (
-                      <tr key={call.id} className="hover:bg-canvas/20 transition-colors">
-                        <td className="py-3 font-mono font-medium text-ink">{call.caller_number || "Unknown"}</td>
-                        <td className="py-3 text-ink-secondary">{getAssistantNameForCall(call.virtual_number)}</td>
-                        <td className="py-3 font-mono text-ink-secondary">
-                          {call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : "0s"}
-                        </td>
-                        <td className="py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${
-                            call.call_status === "completed"
-                              ? "bg-state-success/5 text-state-success border-state-success/20"
-                              : "bg-saffron/5 text-saffron border-saffron/20"
-                          }`}>
-                            {call.call_status}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right text-ink-tertiary font-mono">
-                          {new Date(call.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column (Narrower, approx 33%) */}
-        <div className="flex flex-col gap-8">
-          
-          {/* Performance Card */}
-          <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-ink mb-4 flex items-center gap-2 border-b border-line/40 pb-3 font-sans">
-              <ChartLine className="w-4 h-4 text-saffron" />
-              Performance
-            </h3>
-            <div className="space-y-3 font-sans text-xs">
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Calls Handled</span>
-                <span className="font-bold text-ink">{totalCalls}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Total Talk Time</span>
-                <span className="font-bold text-ink">{minutesUsed} min</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Success Rate</span>
-                <span className="font-bold text-ink">{successRateText}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-secondary">Avg. Call Duration</span>
-                <span className="font-bold text-ink">{avgDurationText}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Leads Card */}
-          <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left">
-            <div className="flex justify-between items-center border-b border-line/40 pb-3 mb-4">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-ink flex items-center gap-2 font-sans">
-                <IdentificationCard className="w-4 h-4 text-saffron" />
-                Leads
-              </h3>
-              <Link
-                href="/dashboard/leads"
-                className="text-[10px] font-bold uppercase tracking-wider text-saffron hover:text-saffron-dark font-sans"
-              >
-                View leads →
-              </Link>
-            </div>
-            <div className="space-y-3 font-sans text-xs">
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">New Leads</span>
-                <span className="font-bold text-ink">{totalLeadsCount}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Qualified Leads</span>
-                <span className="font-bold text-ink">{qualifiedLeadsCount}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-secondary">Conversion Rate</span>
-                <span className="font-bold text-ink">{leadConversionRate}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Usage & Cost Card */}
-          <div className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-ink mb-4 flex items-center gap-2 border-b border-line/40 pb-3 font-sans">
-              <CurrencyDollar className="w-4 h-4 text-saffron" />
-              Usage & Cost
-            </h3>
-            <div className="space-y-3 font-sans text-xs">
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Talk Time Used</span>
-                <span className="font-bold text-ink">{minutesUsed} min</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">AI Engine Cost</span>
-                <span className="font-bold text-ink">${(totalCost * 0.4).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-line-subtle/50 pb-2.5">
-                <span className="text-ink-secondary">Telephony Cost</span>
-                <span className="font-bold text-ink">${(totalCost * 0.6).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-secondary">Total Accrued Cost</span>
-                <span className="font-bold text-ink">${totalCost.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-          
-        </div>
-      </div>
+      <aside className={styles.rail}>
+        <section className={styles.section} aria-labelledby="services-heading"><div className={styles.sectionHead}><div><span className={styles.kicker}>Service status</span><h2 id="services-heading">Checks from this session</h2></div><Pulse size={18} aria-hidden="true" /></div><div className={styles.serviceRows}>{serviceRows.map(service => <div className={styles.serviceRow} key={service.label}><span>{service.label}</span><StateLabel value={service.value} /></div>)}</div><p className={styles.lastChecked}>Last checked {checkedAt || 'Not checked'}</p></section>
+        <section className={styles.section} aria-labelledby="usage-heading"><div className={styles.sectionHead}><div><span className={styles.kicker}>Usage</span><h2 id="usage-heading">Workspace usage</h2></div></div><div className={styles.usageRow}><strong>{usageText}</strong><span>{usage.state === 'ready' && usageText !== 'Usage unavailable' ? 'Recorded usage' : 'Billing connection required for a usable total.'}</span></div></section>
+        <section className={styles.section} aria-labelledby="actions-heading"><div className={styles.sectionHead}><div><span className={styles.kicker}>Quick actions</span><h2 id="actions-heading">Continue setup</h2></div><Warning size={17} aria-hidden="true" /></div><div className={styles.actions}><Link href="/dashboard/assistant"><Plus size={15} />Create agent</Link><Link href="/dashboard/knowledge"><BookOpen size={15} />Add knowledge</Link><Link href="/dashboard/phone-numbers"><IdentificationCard size={15} />Connect phone number</Link><Link href="/dashboard/calls"><ArrowUpRight size={15} />View conversations</Link></div></section>
+      </aside>
     </div>
-  );
+  </main>;
 }

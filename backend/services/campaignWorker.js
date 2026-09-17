@@ -3,7 +3,6 @@
 const db = require('../database/db');
 const twilioProvider = require('../providers/twilio');
 const webhookService = require('./webhookService');
-const outcomeExtractionService = require('./outcomeExtractionService');
 
 class CampaignWorker {
   constructor() {
@@ -148,9 +147,12 @@ class CampaignWorker {
           [callSid, callRecord.id]
         );
       } catch (telephonyErr) {
-        console.warn(`[CAMPAIGN WORKER] Telephony outbound call simulated for test mode (${telephonyErr.message})`);
-        // Simulate call completion after brief async delay for local testing
-        this.simulateCompletedCall(campaign, contact, callRecord.id, attemptRes.rows[0].id);
+        // A provider error is not a completed call; do not generate transcript/history.
+        await db.query(
+          "UPDATE calls SET status = 'failed', call_status = 'failed' WHERE id = $1",
+          [callRecord.id]
+        );
+        throw telephonyErr;
       }
 
     } catch (err) {
@@ -165,41 +167,7 @@ class CampaignWorker {
     }
   }
 
-  async simulateCompletedCall(campaign, contact, callId, attemptId) {
-    setTimeout(async () => {
-      try {
-        const simulatedTranscript = `Caller: Namaste! Main ${contact.name} bol raha hoon. Mujhe ${contact.metadata?.property_type || '3BHK'} chahiye ${contact.metadata?.city || 'Hyderabad'} mein. Budget 80 Lakhs hai.`;
-        const duration = 45;
 
-        await db.query(
-          `UPDATE calls SET status = 'completed', call_status = 'completed', ended_at = NOW(), duration_seconds = $1, transcript = $2 WHERE id = $3`,
-          [duration, simulatedTranscript, callId]
-        );
-
-        await db.query(
-          `UPDATE campaign_contacts SET status = 'completed', updated_at = NOW() WHERE id = $1`,
-          [contact.id]
-        );
-
-        await db.query(
-          `UPDATE campaign_attempts SET status = 'completed', duration_seconds = $1, ended_at = NOW() WHERE id = $2`,
-          [duration, attemptId]
-        );
-
-        // Run structured outcome extraction
-        await outcomeExtractionService.extractCallOutcome(callId, campaign.business_id, simulatedTranscript, contact.phone_number);
-
-        webhookService.dispatchWebhook(campaign.business_id, 'campaign.contact.completed', {
-          campaign_id: campaign.id,
-          contact_id: contact.id,
-          phone_number: contact.phone_number,
-          status: 'completed',
-        });
-      } catch (simErr) {
-        console.error('[CAMPAIGN WORKER] Simulation completion error:', simErr.message);
-      }
-    }, 1500);
-  }
 }
 
 const campaignWorker = new CampaignWorker();

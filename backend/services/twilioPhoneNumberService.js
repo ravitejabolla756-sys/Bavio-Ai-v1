@@ -257,9 +257,7 @@ async function searchAvailableNumbers({
   const client = getTwilioClient();
 
   if (!client) {
-    // Generate clean sandbox mock numbers for local development/testing without credentials
-    console.log(`[PHONE SEARCH] Twilio client not initialized, returning sandbox numbers for ${code}`);
-    return generateSandboxNumbers(code, numberType, limit);
+    throw new Error('Telephony is not configured. Carrier inventory is unavailable.');
   }
 
   try {
@@ -294,17 +292,14 @@ async function searchAvailableNumbers({
       friendlyName: n.friendlyName || n.phoneNumber,
       isoCountry: n.isoCountry || code,
       numberType: targetType,
-      capabilities: {
-        voice: n.capabilities ? !!n.capabilities.voice : true,
-        sms: n.capabilities ? !!n.capabilities.SMS : false,
-        mms: n.capabilities ? !!n.capabilities.MMS : false,
-        inbound: true,
-        outbound: true,
-      },
+      ...(n.capabilities ? { capabilities: {
+        ...(typeof n.capabilities.voice === 'boolean' ? { voice: n.capabilities.voice } : {}),
+        ...(typeof n.capabilities.SMS === 'boolean' ? { sms: n.capabilities.SMS } : {}),
+        ...(typeof n.capabilities.MMS === 'boolean' ? { mms: n.capabilities.MMS } : {}),
+      } } : {}),
       locality: n.locality || null,
       region: n.region || null,
       postalCode: n.postalCode || null,
-      monthlyRate: '$2.00',
     }));
 
     return {
@@ -321,42 +316,8 @@ async function searchAvailableNumbers({
       };
     }
 
-    // In non-production, return graceful sandbox numbers if Twilio API errors out
-    if (process.env.NODE_ENV !== 'production') {
-      return generateSandboxNumbers(code, numberType, limit);
-    }
-
-    return {
-      numbers: [],
-      message: 'Telephony inventory lookup temporarily unavailable. Please try again shortly.',
-    };
+    throw new Error('Telephony inventory lookup is unavailable. Please retry.');
   }
-}
-
-function generateSandboxNumbers(countryCode, numberType, limit = 5) {
-  const prefix = countryCode === 'US' ? '+1888' : countryCode === 'GB' ? '+44800' : countryCode === 'CA' ? '+1800' : '+1888';
-  const numbers = [];
-  for (let i = 0; i < limit; i++) {
-    const raw = prefix + Math.floor(1000000 + Math.random() * 9000000);
-    numbers.push({
-      phoneNumber: raw,
-      friendlyName: raw,
-      isoCountry: countryCode,
-      numberType: numberType,
-      capabilities: {
-        voice: true,
-        sms: true,
-        mms: false,
-        inbound: true,
-        outbound: true,
-      },
-      locality: countryCode === 'US' ? 'Dallas' : 'London',
-      region: countryCode === 'US' ? 'TX' : 'England',
-      postalCode: '75001',
-      monthlyRate: '$2.00',
-    });
-  }
-  return { numbers, message: null };
 }
 
 /**
@@ -375,6 +336,7 @@ async function provisionPhoneNumber({
 
   const code = countryCode.toUpperCase();
   const client = getTwilioClient();
+  if (!client) throw new Error('Telephony is not configured. No number was provisioned.');
 
   // 1. Enforce plan virtual phone numbers limit
   const countRes = await db.query(
@@ -430,17 +392,10 @@ async function provisionPhoneNumber({
     } catch (twErr) {
       console.error('[TWILIO PROVISION ERROR]', twErr.message);
 
-      // In non-production sandbox environment, fallback to simulated provisioning
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[SANDBOX FALLBACK] Simulating successful provisioning for ${phoneNumber}`);
-        purchasedSid = 'PN_sandbox_' + Date.now();
-      } else {
-        throw new Error(`Carrier provisioning failed: ${twErr.message}`);
-      }
+      throw new Error(`Carrier provisioning could not be confirmed: ${twErr.message}. Reconcile inventory before retrying.`);
     }
-  } else {
-    purchasedSid = 'PN_mock_' + Date.now();
   }
+  if (!purchasedSid) throw new Error('Carrier did not return a provisioning receipt.');
 
   try {
     // 4. Save to database

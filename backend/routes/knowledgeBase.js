@@ -9,6 +9,9 @@ router.post('/sync-vapi', requireAuth, kbController.syncToVapi);    // POST /kno
 router.post('/sync', requireAuth, kbController.syncToVapi);         // POST /knowledge-base/sync
 router.get('/', requireAuth, kbController.listDocs);                // GET  /knowledge-base/
 router.post('/', requireAuth, kbController.createDoc);              // POST /knowledge-base/
+router.post('/:id/summarize', requireAuth, kbController.summarizeDoc);
+router.get('/:id', requireAuth, kbController.getDoc);
+router.patch('/:id', requireAuth, kbController.updateDoc);
 router.delete('/:id', requireAuth, kbController.deleteDoc);         // DELETE /knowledge-base/:id
 
 module.exports = router;

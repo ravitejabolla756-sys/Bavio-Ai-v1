@@ -1,18 +1,19 @@
 const twilio = require('twilio');
 
-function validateTwilioSignature(req, res, next) {
+function validateTwilioSignature(req, res, next, options = {}) {
     const token = process.env.TWILIO_AUTH_TOKEN;
     const signature = req.headers['x-twilio-signature'] || req.headers['X-Twilio-Signature'];
 
     const isProd = process.env.NODE_ENV === 'production';
+    const strict = options.strict === true;
     const isPlaceholder = !token || token.includes('your_');
 
-    if (isProd && isPlaceholder) {
+    if ((isProd || strict) && isPlaceholder) {
         console.error('[TWILIO AUTH] Twilio Auth Token is not configured in production.');
         return res.status(403).json({ error: 'Forbidden: Twilio Auth Token not configured' });
     }
 
-    if (isPlaceholder || !isProd) {
+    if (!strict && (isPlaceholder || !isProd)) {
         console.warn('[TWILIO AUTH] Bypass signature check in non-production/sandbox mode');
         return next();
     }

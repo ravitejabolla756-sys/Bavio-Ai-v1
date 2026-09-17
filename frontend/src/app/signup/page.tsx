@@ -6,10 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Phone,
-  User,
-  Chats,
-  Calendar,
   Envelope,
   Lock,
   Eye,
@@ -448,7 +444,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="relative h-[100dvh] max-h-[100dvh] w-full bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col md:flex-row overflow-hidden">
+    <div className="relative min-h-[100dvh] w-full bg-[#F7F4EF] dark:bg-canvas text-[#14141A] dark:text-ink font-sans flex flex-col md:h-[100dvh] md:max-h-[100dvh] md:flex-row overflow-x-hidden">
       
       {/* ────────────────────────────────────────
           LEFT SIDE: BRAND EXPERIENCE PANEL (60%)
@@ -469,44 +465,19 @@ export default function SignUpPage() {
           <Link href="/" className="flex items-center gap-3 group inline-flex">
             <Logo className="w-9 h-9 lg:w-10 lg:h-10 transition-transform duration-300 group-hover:scale-105 brightness-0 invert" />
             <span className="font-display text-xl lg:text-2xl font-black tracking-tight text-white">
-              Bavio AI
+              Bavio
             </span>
           </Link>
         </div>
 
         {/* Marketing Content Text Block with 3D Mechanical Rotating Header */}
-        <RotatingAuthHeader />
-
-        {/* Bottom Features */}
-        <div className="relative z-20 w-full max-w-[580px]">
-          <div className="grid grid-cols-4 gap-3 lg:gap-4">
-            {[
-              { icon: Phone, label1: "24/7 Call", label2: "Answering" },
-              { icon: User, label1: "Lead", label2: "Qualification" },
-              { icon: Chats, label1: "WhatsApp", label2: "Automation" },
-              { icon: Calendar, label1: "Appointment", label2: "Booking" },
-            ].map((feat, i) => {
-              const Icon = feat.icon;
-              return (
-                <div key={i} className="flex flex-col items-start text-left group">
-                  <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center text-[#FF6B00] mb-2.5 transition-colors duration-200 group-hover:bg-white/[0.12]">
-                    <Icon className="w-5 h-5" weight="bold" />
-                  </div>
-                  <span className="text-[11px] lg:text-xs font-semibold text-white/90 leading-tight block">
-                    {feat.label1}
-                    <span className="block font-normal text-white/70">{feat.label2}</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <RotatingAuthHeader variant="signup" />
       </section>
 
       {/* ────────────────────────────────────────
           RIGHT SIDE: SIGNUP CARD PANEL (40%)
       ──────────────────────────────────────── */}
-      <section className="w-full md:w-[40%] lg:w-[40%] h-full flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 lg:p-10 bg-[#F7F4EF] relative overflow-y-auto overflow-x-hidden">
+      <section className="w-full min-h-[100dvh] md:w-[40%] lg:w-[40%] md:h-full flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 lg:p-10 bg-[#F7F4EF] relative overflow-y-auto overflow-x-hidden">
         
         <div className="absolute w-[250px] h-[250px] bg-[#FF6B00]/5 rounded-full blur-[60px] pointer-events-none top-1/4" />
 
@@ -514,7 +485,7 @@ export default function SignUpPage() {
         <div className="md:hidden flex items-center gap-2 mb-4 relative z-10 self-start">
           <Logo className="w-8 h-8" />
           <span className="font-display text-2xl font-normal tracking-wide">
-            Bavio AI
+            Bavio
           </span>
         </div>
 
@@ -539,7 +510,7 @@ export default function SignUpPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[28px] p-6 sm:p-7 lg:p-8 shadow-premium relative z-20 my-auto"
+          className="w-full max-w-[480px] bg-white border border-[#E5E0D8] rounded-[24px] sm:rounded-[28px] p-5 sm:p-7 lg:p-8 shadow-premium relative z-20 my-auto"
         >
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
@@ -552,10 +523,10 @@ export default function SignUpPage() {
                 {/* Header */}
                 <div className="flex flex-col text-left mb-6">
                   <h1 className="font-display text-2xl font-bold text-[#14141A] tracking-tight mb-2">
-                    Create Workspace Account
+                    Create your workspace
                   </h1>
                   <p className="text-body-xs text-[#5A5A66]">
-                    Create your administrative credentials to configure call routing.
+                    Set up your business and start building your first voice agent.
                   </p>
                 </div>
 
@@ -860,7 +831,7 @@ export default function SignUpPage() {
         {/* Secure encryption footer */}
         <div className="mt-8 flex items-center gap-2 text-body-xs text-[#8A8A96] pointer-events-none relative">
           <ShieldCheck className="w-4 h-4 text-state-success" weight="fill" />
-          <span>Your data is secure and encrypted</span>
+          <span>Your account data is encrypted in transit.</span>
         </div>
 
         {/* Need help? contact */}

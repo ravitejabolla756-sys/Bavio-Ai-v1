@@ -85,14 +85,13 @@ async function subscribe(req, res) {
             [assistantId, clientId]
         );
 
-        // 4. Update businesses record
-        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'free';
-        console.log('[DEBUG] Updating business plan details:', [dbPlan, plan, billingCycle, clientId]);
+        // 4. Update businesses record with selected plan intent (remains inactive until payment confirmation)
+        const dbPlan = DB_PLAN_MAP[plan.toLowerCase()] || 'starter';
+        console.log('[DEBUG] Setting pending business plan intent:', [dbPlan, plan, billingCycle, clientId]);
         await db.query(
             `UPDATE businesses 
              SET plan = $1,
                  plan_name = $2,
-                 status = 'active',
                  billing_cycle = $3,
                  updated_at = NOW()
              WHERE id = $4`,
@@ -115,10 +114,13 @@ async function subscribe(req, res) {
             [clientId, plan, billingCycle, subscription.subscriptionId]
         );
 
-        // Send JSON response
+        // Send JSON response with canonical URL properties
         res.status(201).json({
             success: true,
             checkout_url: subscription.checkoutUrl,
+            checkoutUrl: subscription.checkoutUrl,
+            url: subscription.checkoutUrl,
+            subscriptionId: subscription.subscriptionId,
             plan: plan,
             billingCycle: billingCycle
         });

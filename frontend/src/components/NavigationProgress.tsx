@@ -9,10 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
  */
 export default function NavigationProgress() {
   const pathname = usePathname();
-  let router: ReturnType<typeof useRouter> | null = null;
-  try {
-    router = useRouter();
-  } catch {}
+  const router = useRouter();
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);

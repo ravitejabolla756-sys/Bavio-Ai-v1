@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import ApplicationNavigation from "@/components/ApplicationNavigation";
+import { applicationNavigationItems } from "@/config/application-navigation";
+import "@/styles/application-tokens.css";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,10 +25,9 @@ import {
   Pulse,
   SignOut,
   Sparkle,
+  ArrowLeft,
   List,
   X,
-  Bell,
-  ArrowLeft,
   IdentificationCard,
   Circle,
   Spinner,
@@ -44,22 +46,10 @@ import {
 } from "@/lib/api";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardErrorBoundary } from "@/components/DashboardErrorBoundary";
+import { isLocalUiPreviewSession } from "@/lib/local-ui-preview";
+import { useSystemStatus } from "@/lib/system-status";
 
-const consoleNavigationItems = [
-  { name: "Overview", href: "/dashboard", icon: Layout },
-  { name: "Calls", href: "/dashboard/calls", icon: PhoneCall },
-  { name: "Leads", href: "/dashboard/leads", icon: IdentificationCard },
-  { name: "AI Employees", href: "/dashboard/assistant", icon: Users },
-  { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
-  { name: "Phone Numbers", href: "/dashboard/phone-numbers", icon: GitFork },
-];
-
-const accountNavigationItems = [
-  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Gear },
-];
-
-const allNavigationItems = [...consoleNavigationItems, ...accountNavigationItems];
+const allNavigationItems = applicationNavigationItems;
 
 export default function DashboardLayout({
   children,
@@ -67,18 +57,23 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isConversations = pathname === "/dashboard/calls" || pathname.startsWith("/dashboard/calls/");
+  const isOverview = pathname === "/dashboard" || pathname === "/dashboard/overview";
+  const isAgents = pathname === "/dashboard/assistant";
+  const isKnowledge = pathname === "/dashboard/knowledge";
+  const isPhoneNumbers = pathname === "/dashboard/phone-numbers";
+  const isLeads = pathname === "/dashboard/leads";
+  const isActions = pathname === "/dashboard/actions" || pathname.startsWith("/dashboard/actions/");
+  const isWorkflows = pathname === "/dashboard/workflows" || pathname.startsWith("/dashboard/workflows/");
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
-    if (typeof window !== "undefined") {
-      return Boolean(localStorage.getItem("bavio_token"));
-    }
-    return null;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandKOpen, setCommandKOpen] = useState(false);
-  const [workspace, setWorkspace] = useState("Medcare Hospitals");
+  const [workspace, setWorkspace] = useState("Workspace unavailable");
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCommand, setActiveCommand] = useState(0);
+  const systemStatus = useSystemStatus();
 
   // 1. Strict Authentication Guard
   useEffect(() => {
@@ -103,20 +98,21 @@ export default function DashboardLayout({
     firstCallCompleted: false,
   });
   const [checklistLoading, setChecklistLoading] = useState(true);
+  const [checklistError, setChecklistError] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   const clientId = getClientId();
 
   const checkChecklistState = React.useCallback(async () => {
-    if (!clientId) return;
+    if (!clientId || isConversations || isAgents || isKnowledge || isPhoneNumbers || isLeads || isActions || isWorkflows) return;
     try {
       const [profileData, assistantsData, knowledgeData, phoneData, callsData, demoData] = await Promise.all([
         authApi.getProfile().catch(() => null),
-        assistantsApi.list(clientId).catch(() => []),
-        knowledgeBaseApi.list().catch(() => []),
-        numbersApi.list(clientId).catch(() => []),
-        callsApi.list(clientId).catch(() => []),
+        assistantsApi.list(clientId),
+        knowledgeBaseApi.list(),
+        numbersApi.list(clientId),
+        callsApi.list(clientId),
         demoApi.getStatus().catch(() => null),
       ]);
 
@@ -142,11 +138,11 @@ export default function DashboardLayout({
         firstCallCompleted,
       });
     } catch (err) {
-      console.error("Failed to calculate onboarding checklist state:", err);
+      setChecklistError(true);
     } finally {
       setChecklistLoading(false);
     }
-  }, [clientId]);
+  }, [clientId, isConversations, isAgents, isKnowledge, isPhoneNumbers, isLeads, isActions, isWorkflows]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -177,12 +173,12 @@ export default function DashboardLayout({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedName = localStorage.getItem("bavio_name");
-      if (savedName) {
+      if (savedName && !isLocalUiPreviewSession()) {
         setWorkspace(savedName);
       }
       
       const token = localStorage.getItem("bavio_token");
-      if (token) {
+      if (token && !isLocalUiPreviewSession()) {
         fetch("/api/auth/profile", {
           headers: {
             "Authorization": `Bearer ${token}`
@@ -207,10 +203,13 @@ export default function DashboardLayout({
       if (e.key === "Escape") {
         setCommandKOpen(false);
       }
+      if (commandKOpen && e.key === "ArrowDown") { e.preventDefault(); setActiveCommand(value => value + 1); }
+      if (commandKOpen && e.key === "ArrowUp") { e.preventDefault(); setActiveCommand(value => Math.max(0, value - 1)); }
+      if (commandKOpen && e.key === "Enter") { e.preventDefault(); document.querySelector<HTMLButtonElement>(`[data-dashboard-command-index="${activeCommand}"]`)?.click(); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [commandKOpen, activeCommand]);
 
   const handleCommandKSelect = (href: string) => {
     router.push(href);
@@ -236,14 +235,15 @@ export default function DashboardLayout({
   return (
     <ToastProvider>
       <DashboardErrorBoundary>
-        <div className="min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
+        {!isConversations && !isAgents && !isKnowledge && !isPhoneNumbers && !isLeads && !isActions && !isWorkflows && checklistError && <p role="status" className="p-3">Setup progress unavailable. Refresh to check again.</p>}
+        <div className="bavio-app min-h-screen bg-transparent text-ink flex flex-col md:flex-row relative font-sans noise-overlay">
       
       {/* MOBILE HEADER BAR */}
       <div className="md:hidden w-full bg-surface border-b border-line px-4 py-3 flex items-center justify-between z-40 relative">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Logo className="w-7 h-7" color="text-saffron" />
           <span className="font-display font-extrabold text-base tracking-tight text-ink">
-            Bavio AI<span className="text-saffron">.dashboard</span>
+            Bavio
           </span>
         </Link>
         <div className="flex items-center gap-2.5">
@@ -273,7 +273,7 @@ export default function DashboardLayout({
         <div className="flex flex-col gap-6 p-4 overflow-y-auto flex-grow">
           {/* Brand header / Workspace switcher */}
           <div className="relative">
-            <div 
+            <Link href="/workspace" aria-label="Open workspace menu"
               className="w-full flex items-center justify-between bg-surface-raised border border-line px-3.5 py-2.5 rounded-xl text-left"
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
@@ -284,82 +284,12 @@ export default function DashboardLayout({
                   {workspace}
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* Back to Workspace button */}
-          <div className="mt-1 mb-2">
-            <Link
-              href="/workspace"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-ink-secondary hover:text-saffron hover:bg-saffron/5 border border-dashed border-line hover:border-saffron/20 transition-all text-left"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Workspace</span>
+              <CaretDown className="w-3.5 h-3.5 text-ink-tertiary" aria-hidden="true" />
             </Link>
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mb-1">
-              Voice Console
-            </span>
-            {consoleNavigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
-                    isActive 
-                      ? "text-saffron bg-saffron/10 font-bold border border-saffron/20" 
-                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink border border-transparent"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
-                  <span>{item.name}</span>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeSidebarIndicator" 
-                      className="absolute right-3 w-1.5 h-1.5 bg-saffron rounded-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-
-            <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-3 mt-4 mb-1">
-              Account
-            </span>
-            {accountNavigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${
-                    isActive 
-                      ? "text-saffron bg-saffron/10 font-bold border border-saffron/20" 
-                      : "text-ink-secondary hover:bg-line-subtle/50 hover:text-ink border border-transparent"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
-                  <span>{item.name}</span>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeSidebarIndicator" 
-                      className="absolute right-3 w-1.5 h-1.5 bg-saffron rounded-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+          <ApplicationNavigation onNavigate={() => setSidebarOpen(false)} />
         </div>
 
         {/* Sidebar Footer info */}
@@ -368,12 +298,22 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between bg-canvas/45 border border-line rounded-xl px-3 py-2">
             <div className="flex items-center gap-2 overflow-hidden">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-state-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-state-success"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ink-muted opacity-50"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-ink-muted"></span>
               </span>
-              <span className="text-[10px] font-mono text-ink-secondary truncate">System Operational</span>
+              <span className="text-[10px] font-mono text-ink-secondary truncate">{systemStatus}</span>
             </div>
           </div>
+
+          {!checklistLoading && !checklistError && !isAllCompleted && (
+            <Link
+              href="/dashboard/settings"
+              className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-[10px] font-mono text-ink-secondary transition-colors hover:border-saffron/40 hover:text-ink"
+            >
+              <span>Setup progress</span>
+              <span className="text-saffron">{completedCount}/6</span>
+            </Link>
+          )}
 
           {/* Quick command reminder */}
           <button 
@@ -407,24 +347,22 @@ export default function DashboardLayout({
       )}
 
       {/* MAIN WORKSPACE WRAPPER */}
-      <div className="flex-grow flex flex-col overflow-y-auto h-screen z-10 relative">
+      <div className="min-w-0 flex-grow flex flex-col overflow-y-auto h-screen z-10 relative">
         
         {/* TOP BAR SEARCH HEADER */}
         <header className="hidden lg:flex items-center justify-between border-b border-line px-8 py-4 bg-surface/65 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 border-r border-line pr-4">
-              <span className="text-[10px] font-mono text-ink-muted uppercase">Workspace:</span>
-              <span className="text-xs font-bold text-ink tracking-wide">{workspace}</span>
+              <span className="text-xs font-medium text-ink-secondary">{workspace}</span>
+              <span className="text-ink-muted">/</span>
+              <span className="text-xs font-semibold text-ink">{isConversations ? "Conversations" : isOverview ? "Overview" : isAgents ? "Agents" : isKnowledge ? "Knowledge" : isPhoneNumbers ? "Phone Numbers" : isLeads ? "Leads" : isActions ? "Actions" : isWorkflows ? "Workflows" : "Application"}</span>
             </div>
             
             {/* Live Metrics / Agent Status */}
-            <div className="flex items-center gap-4 text-[10px] font-mono">
+            <div className={isAgents || isKnowledge || isLeads || isActions || isWorkflows ? "hidden" : "flex items-center gap-4 text-[10px] font-mono"}>
               <div className="flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-state-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-state-success"></span>
-                </span>
-                <span className="text-ink-secondary">System Operational</span>
+                <span className={`inline-flex rounded-full h-1.5 w-1.5 ${systemStatus === "Operational" ? "bg-state-success" : systemStatus === "Degraded" ? "bg-saffron" : "bg-ink-muted"}`}></span>
+                <span className="text-ink-secondary">{systemStatus}</span>
               </div>
             </div>
           </div>
@@ -436,18 +374,12 @@ export default function DashboardLayout({
               className="flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-48"
             >
               <MagnifyingGlass className="w-3.5 h-3.5" />
-              <span className="flex-grow text-left">Search Dashboard...</span>
+              <span className="flex-grow text-left">Search Bavio…</span>
               <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted">Ctrl K</kbd>
             </button>
 
             {/* Theme switcher toggle */}
             <ThemeToggle variant="header" />
-
-            {/* Notification alert */}
-            <button className="p-2 text-ink-tertiary hover:text-ink border border-line rounded-full hover:bg-line-subtle/50 relative transition-all">
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-saffron animate-pulse" />
-              <Bell className="w-4 h-4" />
-            </button>
 
             {/* Header Action Buttons */}
             <div className="flex items-center gap-2 border-l border-line pl-4">
@@ -456,7 +388,7 @@ export default function DashboardLayout({
         </header>
 
         {/* DASHBOARD PAGE INJECT */}
-        <main className="flex-grow p-6 md:p-8 overflow-y-auto">
+        <main className={`flex-grow overflow-y-auto ${isConversations ? "p-4 md:p-6" : "p-6 md:p-8"}`}>
           {children}
         </main>
       </div>
@@ -490,9 +422,9 @@ export default function DashboardLayout({
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Type a command or search sections..."
+                  placeholder="Search Bavio…"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setActiveCommand(0); }}
                   className="flex-grow bg-transparent text-sm text-ink focus:outline-none placeholder:text-ink-muted font-sans"
                 />
                 <button 
@@ -504,15 +436,13 @@ export default function DashboardLayout({
               </div>
 
               <div className="flex-grow overflow-y-auto p-2.5 flex flex-col gap-1.5">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-2.5 py-1">
-                  Navigate Workspace
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-2.5 py-1">Navigation</span>
 
                 {filteredNavItems.length > 0 ? (
                   filteredNavItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <button
+                      <button data-dashboard-command-index={filteredNavItems.indexOf(item)}
                         key={item.name}
                         onClick={() => handleCommandKSelect(item.href)}
                         className="w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl hover:bg-saffron/10 text-xs font-semibold tracking-wide text-ink-secondary hover:text-ink transition-all group"
@@ -530,6 +460,8 @@ export default function DashboardLayout({
                     No results found for &ldquo;{searchQuery}&rdquo;
                   </div>
                 )}
+                <span className="text-[9px] font-bold uppercase tracking-widest text-ink-muted px-2.5 py-1 mt-2">Actions</span>
+                {[{ name: "Create agent", href: "/dashboard/assistant", icon: Users }, { name: "Add knowledge", href: "/dashboard/knowledge", icon: BookOpen }, { name: "Connect phone number", href: "/dashboard/phone-numbers", icon: PhoneCall }].filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase())).map((item, index) => { const Icon = item.icon; const commandIndex = filteredNavItems.length + index; return <button key={item.name} data-dashboard-command-index={commandIndex} onClick={() => handleCommandKSelect(item.href)} className="w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl hover:bg-saffron/10 text-xs font-semibold text-ink-secondary hover:text-ink transition-all"><div className="flex items-center gap-3"><Icon className="w-4 h-4" /><span>{item.name}</span></div><kbd className="font-mono text-[9px] text-ink-muted">↵</kbd></button>; })}
                 
                 {/* Advanced Quick Actions Removed */}
               </div>
@@ -545,7 +477,7 @@ export default function DashboardLayout({
 
       {/* ONBOARDING CHECKLIST FLOATING CARD / BOTTOM DRAWER */}
       <AnimatePresence>
-        {!isDismissed ? (
+        {false ? (
           <>
             {/* Desktop Onboarding Checklist: hidden on mobile */}
             <motion.div
@@ -800,7 +732,7 @@ export default function DashboardLayout({
               </div>
             </motion.div>
           </>
-        ) : (
+        ) : !isConversations && !isOverview && !isAgents && !isKnowledge && !isPhoneNumbers && !isLeads && !isActions && !isWorkflows ? (
           /* Launcher Button when collapsed/dismissed */
           <button
             onClick={() => {
@@ -813,7 +745,7 @@ export default function DashboardLayout({
             <Sparkle className="w-5 h-5 text-white" />
             <span className="text-[10px] font-bold uppercase tracking-wider pr-1 hidden md:inline">Setup</span>
           </button>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
       </DashboardErrorBoundary>

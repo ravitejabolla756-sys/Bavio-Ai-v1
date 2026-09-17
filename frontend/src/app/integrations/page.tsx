@@ -146,7 +146,7 @@ if __name__ == '__main__':
               Ecosystem Connectivity
             </div>
 
-            <h1 className="font-display text-[40px] md:text-[56px] font-black text-white mb-6 leading-tight tracking-tight">
+            <h1 className="font-serif font-normal text-4xl md:text-[62px] text-white mb-6 leading-[1.02] tracking-tight">
               Connect Bavio to Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-saffron to-orange-400">Entire Stack</span>
             </h1>
 
@@ -239,7 +239,7 @@ if __name__ == '__main__':
           <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
             <div className="flex flex-col items-start text-left">
-              <h2 className="font-display font-extrabold text-[28px] md:text-[36px] text-white mb-4 leading-tight">
+              <h2 className="font-serif font-normal text-[28px] md:text-[40px] text-white mb-4 leading-[1.04]">
                 Don&apos;t See Your CRM? <br />Use Webhooks.
               </h2>
               <p className="text-body-xs md:text-body-sm text-darkTextMuted leading-relaxed mb-8">

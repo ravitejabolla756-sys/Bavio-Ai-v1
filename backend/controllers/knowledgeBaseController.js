@@ -1,10 +1,25 @@
 const db = require('../database/db');
 const axios = require('axios');
+const { summarizeKnowledgeSource } = require('../services/knowledgeSummarizer');
 
 // ── GET /knowledge-base — list all docs for the authenticated business ────────
 async function listDocs(req, res) {
   try {
     const businessId = req.user.id;
+    // Opt-in metadata contract preserves older consumers of the full list.
+    if (req.query?.view === 'summary') {
+      const page = Number(req.query.page ?? 1);
+      const limit = Number(req.query.limit ?? 20);
+      if (!Number.isSafeInteger(page) || page < 1 || page > 100000 || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+        return res.status(400).json({ success: false, error: 'Invalid pagination.' });
+      }
+      const result = await db.query(
+        `SELECT id, name, word_count, created_at, updated_at FROM knowledge_base_docs
+         WHERE business_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2 OFFSET $3`,
+        [businessId, limit + 1, (page - 1) * limit]
+      );
+      return res.json({ success: true, data: result.rows.slice(0, limit), hasMore: result.rows.length > limit, page });
+    }
     const result = await db.query(
       `SELECT id, name, content, word_count, created_at, updated_at
        FROM knowledge_base_docs
@@ -15,7 +30,7 @@ async function listDocs(req, res) {
     res.status(200).json({ success: true, data: result.rows });
   } catch (err) {
     console.error('[KB] listDocs error:', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Unable to load sources. Please retry.' });
   }
 }
 
@@ -25,7 +40,7 @@ async function createDoc(req, res) {
     const businessId = req.user.id;
     const { name, content } = req.body;
 
-    if (!name || !content) {
+    if (typeof name !== 'string' || !name.trim() || typeof content !== 'string' || !content.trim()) {
       return res.status(400).json({ success: false, error: 'name and content are required' });
     }
 
@@ -52,7 +67,7 @@ async function createDoc(req, res) {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error('[KB] createDoc error:', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Unable to save source. Reload sources before retrying.' });
   }
 }
 
@@ -76,7 +91,7 @@ async function deleteDoc(req, res) {
     res.status(200).json({ success: true, message: 'Document deleted successfully' });
   } catch (err) {
     console.error('[KB] deleteDoc error:', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Unable to delete source. Reload sources before retrying.' });
   }
 }
 
@@ -179,10 +194,80 @@ async function syncToVapi(req, res) {
   }
 }
 
+
+async function updateDoc(req, res) {
+  const { name, content } = req.body;
+  if (typeof name !== 'string' || !name.trim() || typeof content !== 'string' || !content.trim() || content.length > 500000) {
+    return res.status(400).json({ success: false, error: 'A name and content of at most 500,000 characters are required.' });
+  }
+  try {
+    const result = await db.query(
+      'UPDATE knowledge_base_docs SET name = $1, content = $2, updated_at = NOW() WHERE id = $3 AND business_id = $4 RETURNING id, name, content, word_count, created_at, updated_at',
+      [name.trim(), content.trim(), req.params.id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, error: 'Document not found or access denied' });
+    return res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error('[KB] updateDoc error:', err.message);
+    return res.status(500).json({ success: false, error: 'Unable to save document. Please retry.' });
+  }
+}
+
+async function summarizeDoc(req, res) {
+  try {
+    const result = await db.query(
+      'SELECT name, content FROM knowledge_base_docs WHERE id = $1 AND business_id = $2',
+      [req.params.id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, error: 'Document not found or access denied' });
+
+    const source = result.rows[0];
+    if (typeof source.content !== 'string' || !source.content.trim()) {
+      return res.status(422).json({ success: false, error: 'NO_READABLE_CONTENT' });
+    }
+
+    const data = await summarizeKnowledgeSource({
+      businessId: req.user.id,
+      sourceId: req.params.id,
+      sourceName: source.name,
+      sourceType: 'text',
+      text: source.content,
+    });
+    return res.json({ success: true, data });
+  } catch (err) {
+    if (err.code === 'NO_READABLE_CONTENT') return res.status(422).json({ success: false, error: 'NO_READABLE_CONTENT' });
+    if (err.code === 'INVALID_KNOWLEDGE_SUMMARY' || err.code === 'AI_SUMMARY_INVALID_RESPONSE') {
+      console.warn('[KB] Knowledge summary rejected:', err.code);
+      return res.status(502).json({ success: false, error: err.code });
+    }
+    console.error('[KB] summarizeDoc error:', err.message);
+    return res.status(502).json({ success: false, error: 'AI_SUMMARY_UNAVAILABLE' });
+  }
+}
+
 module.exports = {
+  getDoc,
+  updateDoc,
   listDocs,
   createDoc,
   deleteDoc,
   searchDocs,
   syncToVapi,
+  summarizeDoc,
 };
+
+// Content is loaded only when the user opens a source. Ownership is checked here,
+// not inferred from the fact that its identifier appeared in an earlier list.
+async function getDoc(req, res) {
+  try {
+    const result = await db.query(
+      'SELECT id, name, content, word_count, created_at, updated_at FROM knowledge_base_docs WHERE id = $1 AND business_id = $2',
+      [req.params.id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, error: 'Document not found or access denied' });
+    return res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error('[KB] getDoc error:', err.message);
+    return res.status(500).json({ success: false, error: 'Unable to load source. Please retry.' });
+  }
+}

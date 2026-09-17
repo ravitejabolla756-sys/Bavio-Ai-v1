@@ -52,7 +52,7 @@ export default function IndustryHero({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-1.5 bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] mb-6 font-sans uppercase tracking-widest"
+            className="inline-flex items-center gap-1.5 bg-[#FFF7ED] border border-[#F3E4D4] px-4 py-1.5 rounded-full text-xs font-bold text-[#FF6B00] font-mono uppercase tracking-widest mb-6"
           >
             {eyebrow}
           </motion.span>
@@ -61,7 +61,7 @@ export default function IndustryHero({
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
-            className="font-display text-4xl sm:text-5xl md:text-[62px] tracking-[-0.03em] text-[#140A02] font-extrabold mb-6 leading-[1.05] max-w-[540px]"
+            className="font-serif text-4xl sm:text-5xl md:text-[62px] tracking-[-0.02em] text-[#140A02] font-normal mb-6 leading-[1.02] max-w-[580px]"
           >
             {headline}
           </motion.h1>

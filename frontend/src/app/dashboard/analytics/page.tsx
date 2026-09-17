@@ -79,6 +79,8 @@ export default function AnalyticsDashboard() {
     );
   }
 
+  if (error) return <div role="alert" className="p-6">Analytics unavailable. {error}</div>;
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
       {/* Title */}
@@ -86,10 +88,6 @@ export default function AnalyticsDashboard() {
         <div className="text-left">
           <h1 className="font-display font-extrabold text-3xl tracking-tight text-ink">Analytics</h1>
           <p className="text-body-xs text-ink-tertiary mt-1">Linguistic telemetry logs, trunk latency tracks, and credit-burn stats.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono text-ink-muted">Diagnostic engine: Online</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-state-success animate-pulse" />
         </div>
       </div>
 
@@ -202,7 +200,7 @@ export default function AnalyticsDashboard() {
 
             <div className="border-t border-line/50 pt-4 mt-6 flex justify-between items-center text-[10px] font-mono text-ink-muted">
               <span>Chart metrics from real usage logs.</span>
-              <span className="text-saffron">Live Data Active</span>
+              <span className="text-ink-muted">Recorded usage logs</span>
             </div>
           </div>
         </div>
@@ -256,14 +254,14 @@ export default function AnalyticsDashboard() {
                     <HardDrive className="w-3.5 h-3.5 text-ink-tertiary" />
                     <span className="text-[10px] text-ink-secondary font-mono">Equinix Ashburn SIP Hub</span>
                   </div>
-                  <span className="text-[9px] font-mono text-state-success bg-state-success/15 px-2 py-0.5 rounded">Online</span>
+                  <span className="text-[9px] font-mono text-ink-muted bg-canvas/40 px-2 py-0.5 rounded">Unavailable</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <Globe className="w-3.5 h-3.5 text-ink-tertiary" />
                     <span className="text-[10px] text-ink-secondary font-mono">AWS US East Gateway</span>
                   </div>
-                  <span className="text-[9px] font-mono text-state-success bg-state-success/15 px-2 py-0.5 rounded">Online</span>
+                  <span className="text-[9px] font-mono text-ink-muted bg-canvas/40 px-2 py-0.5 rounded">Unavailable</span>
                 </div>
               </div>
             </div>

@@ -19,7 +19,7 @@ export default function RealEstateUseCase() {
           </span>
 
           {/* Hero */}
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-ink mb-6 leading-tight max-w-4xl">
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl text-ink mb-6 leading-[1.02] max-w-4xl">
             Never Miss a Hot Buyer Inquiry. <span className="text-saffron">Qualify 24/7.</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
@@ -29,15 +29,15 @@ export default function RealEstateUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Lead Capture</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Lead Capture</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Every qualified enquiry recorded</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">More Enquiries</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">More Enquiries</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Captured when agents are on site visits</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Fast Responses</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Fast Responses</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Fast, natural voice responses</span>
             </div>
           </div>
@@ -45,7 +45,7 @@ export default function RealEstateUseCase() {
           {/* Two Column details */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
             <div className="lg:col-span-8 flex flex-col gap-8">
-              <h2 className="font-display font-bold text-heading-lg text-ink">Asymmetric Call Splitting</h2>
+              <h2 className="font-serif font-normal text-3xl md:text-4xl text-ink leading-[1.04]">Asymmetric Call Splitting</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
                 Property listing inquiries spike during evenings and weekends when sales desks are offline. Bavio acts as the first line of engagement, holding human-like conversations in English to filter out tire-kickers from high-intent buyers.
               </p>

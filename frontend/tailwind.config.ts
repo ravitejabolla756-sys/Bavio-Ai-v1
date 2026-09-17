@@ -3,9 +3,7 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   darkMode: "class",
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   future: {
     hoverOnlyWhenSupported: true,
@@ -100,10 +98,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "var(--font-dm-sans)", "Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-serif)", "Instrument Serif", "Georgia", "serif"],
         serif: ["var(--font-serif)", "Instrument Serif", "Georgia", "serif"],
-        mono: ["var(--font-jetbrains)", "var(--font-geist-mono)", "monospace"],
+        mono: ["var(--font-geist-mono)", "var(--font-jetbrains)", "monospace"],
       },
       fontSize: {
         "display-xl": ["3.5rem", { lineHeight: "1.08", letterSpacing: "-0.025em", fontWeight: "800" }],

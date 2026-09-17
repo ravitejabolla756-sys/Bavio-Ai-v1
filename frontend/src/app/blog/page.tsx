@@ -64,7 +64,7 @@ export default function Blog() {
               Resources & Insights
             </div>
             
-            <h1 className="font-display text-[40px] md:text-[56px] font-black text-white mb-5 tracking-tight leading-tight">
+            <h1 className="font-serif font-normal text-4xl md:text-[62px] text-white mb-5 tracking-tight leading-[1.02]">
               Bavio AI <span className="text-transparent bg-clip-text bg-gradient-to-r from-saffron to-orange-400">Blog</span>
             </h1>
             
@@ -94,7 +94,7 @@ export default function Blog() {
                       {FEATURED_ARTICLE.category}
                     </span>
 
-                    <h2 className="font-display text-[26px] md:text-[32px] font-extrabold text-white mb-4 leading-tight group-hover:text-saffron transition-colors duration-300">
+                    <h2 className="font-serif font-normal text-[26px] md:text-[32px] text-white mb-4 leading-[1.06] group-hover:text-saffron transition-colors duration-300">
                       {FEATURED_ARTICLE.title}
                     </h2>
 
@@ -142,7 +142,7 @@ export default function Blog() {
                         {article.category}
                       </span>
 
-                      <h3 className="font-display text-body-sm font-bold text-white mb-3 leading-snug group-hover:text-saffron transition-colors duration-300">
+                      <h3 className="font-sans text-body-sm font-bold text-white mb-3 leading-snug group-hover:text-saffron transition-colors duration-300">
                         {article.title}
                       </h3>
 

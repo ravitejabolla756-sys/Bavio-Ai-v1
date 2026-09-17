@@ -49,7 +49,7 @@ async function createSubscription(client_id, plan, email, billingCycle = 'monthl
 
     try {
         const response = await axios.post(
-            `${DODO_BASE_URL}/v1/subscriptions`,
+            `${DODO_BASE_URL}/subscriptions`,
             {
                 product_id: productId,
                 customer: { email },
@@ -69,31 +69,17 @@ async function createSubscription(client_id, plan, email, billingCycle = 'monthl
         );
 
         return {
-            subscriptionId: response.data.subscription_id,
+            subscriptionId: response.data.subscription_id || response.data.id,
             customerId:     response.data.customer?.id,
             status:         response.data.status,
-            checkoutUrl:    response.data.checkout_url,
+            checkoutUrl:    response.data.checkout_url || response.data.payment_link || response.data.url,
             plan,
             billingCycle,
         };
     } catch (error) {
         console.error('Dodo createSubscription error:', error.response?.data || error.message);
 
-        // Development mock fallback (network errors only)
-        if (process.env.NODE_ENV !== 'production') {
-            if (['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(error.code)) {
-                console.warn('[Dodo] Offline — returning mock subscription for development.');
-                return {
-                    subscriptionId: 'sub_mock_' + Math.random().toString(36).substring(2, 15),
-                    customerId:     'cust_mock_' + Math.random().toString(36).substring(2, 15),
-                    status:         'pending',
-                    checkoutUrl:    `https://checkout.dodopayments.com/buy/mock?client_id=${client_id}&plan=${plan}`,
-                    plan,
-                    billingCycle,
-                };
-            }
-        }
-        throw new Error(error.response?.data?.message || 'Failed to create subscription');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to create subscription');
     }
 }
 
@@ -111,7 +97,7 @@ async function createTopupCheckout(businessId, topupId, email) {
 
     try {
         const response = await axios.post(
-            `${DODO_BASE_URL}/v1/payments`,
+            `${DODO_BASE_URL}/payments`,
             {
                 product_id: productId,
                 customer:   { email },
@@ -133,7 +119,7 @@ async function createTopupCheckout(businessId, topupId, email) {
 
         return {
             paymentId:   response.data.payment_id || response.data.id,
-            checkoutUrl: response.data.checkout_url,
+            checkoutUrl: response.data.checkout_url || response.data.payment_link || response.data.url,
             topupId,
             minutes:     topupConfig.minutes,
             amount:      topupConfig.price,
@@ -142,21 +128,7 @@ async function createTopupCheckout(businessId, topupId, email) {
     } catch (error) {
         console.error('Dodo createTopupCheckout error:', error.response?.data || error.message);
 
-        // Development mock fallback
-        if (process.env.NODE_ENV !== 'production') {
-            if (['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(error.code)) {
-                console.warn('[Dodo] Offline — returning mock top-up checkout for development.');
-                return {
-                    paymentId:   'pay_mock_' + Math.random().toString(36).substring(2, 15),
-                    checkoutUrl: `https://checkout.dodopayments.com/buy/mock?topup=${topupId}&biz=${businessId}`,
-                    topupId,
-                    minutes:     topupConfig.minutes,
-                    amount:      topupConfig.price,
-                    currency:    topupConfig.currency,
-                };
-            }
-        }
-        throw new Error(error.response?.data?.message || 'Failed to create top-up checkout');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to create top-up checkout');
     }
 }
 
@@ -164,13 +136,13 @@ async function createTopupCheckout(businessId, topupId, email) {
 async function getSubscription(subscriptionId) {
     try {
         const response = await axios.get(
-            `${DODO_BASE_URL}/v1/subscriptions/${subscriptionId}`,
+            `${DODO_BASE_URL}/subscriptions/${subscriptionId}`,
             { headers: { Authorization: `Bearer ${DODO_API_KEY}` } }
         );
         return response.data;
     } catch (error) {
         console.error('Dodo getSubscription error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to fetch subscription');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch subscription');
     }
 }
 
@@ -178,7 +150,7 @@ async function getSubscription(subscriptionId) {
 async function cancelSubscription(subscriptionId) {
     try {
         const response = await axios.post(
-            `${DODO_BASE_URL}/v1/subscriptions/${subscriptionId}/cancel`,
+            `${DODO_BASE_URL}/subscriptions/${subscriptionId}/cancel`,
             {},
             {
                 headers: {
@@ -190,7 +162,7 @@ async function cancelSubscription(subscriptionId) {
         return response.data;
     } catch (error) {
         console.error('Dodo cancelSubscription error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to cancel subscription');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to cancel subscription');
     }
 }
 
@@ -198,7 +170,7 @@ async function cancelSubscription(subscriptionId) {
 async function updateSubscription(subscriptionId, newProductId) {
     try {
         const response = await axios.patch(
-            `${DODO_BASE_URL}/v1/subscriptions/${subscriptionId}`,
+            `${DODO_BASE_URL}/subscriptions/${subscriptionId}`,
             { product_id: newProductId },
             {
                 headers: {
@@ -210,7 +182,7 @@ async function updateSubscription(subscriptionId, newProductId) {
         return response.data;
     } catch (error) {
         console.error('Dodo updateSubscription error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to update subscription');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to update subscription');
     }
 }
 
@@ -218,39 +190,40 @@ async function updateSubscription(subscriptionId, newProductId) {
 async function getCustomerPayments(customerId) {
     try {
         const response = await axios.get(
-            `${DODO_BASE_URL}/v1/customers/${customerId}/payments`,
+            `${DODO_BASE_URL}/customers/${customerId}/payments`,
             { headers: { Authorization: `Bearer ${DODO_API_KEY}` } }
         );
         return response.data;
     } catch (error) {
         console.error('Dodo getCustomerPayments error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to fetch payments');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch payments');
     }
 }
 
+// ── Payment lookups ───────────────────────────────────────────────────
 async function getPayment(paymentId) {
     try {
         const response = await axios.get(
-            `${DODO_BASE_URL}/v1/payments/${paymentId}`,
+            `${DODO_BASE_URL}/payments/${paymentId}`,
             { headers: { Authorization: `Bearer ${DODO_API_KEY}` } }
         );
         return response.data;
     } catch (error) {
         console.error('Dodo getPayment error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to fetch payment');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch payment');
     }
 }
 
 async function getCustomer(customerId) {
     try {
         const response = await axios.get(
-            `${DODO_BASE_URL}/v1/customers/${customerId}`,
+            `${DODO_BASE_URL}/customers/${customerId}`,
             { headers: { Authorization: `Bearer ${DODO_API_KEY}` } }
         );
         return response.data;
     } catch (error) {
         console.error('Dodo getCustomer error:', error.response?.data || error.message);
-        throw new Error(error.response?.data?.message || 'Failed to fetch customer');
+        throw new Error(error.response?.data?.message || error.response?.data?.error || 'Failed to fetch customer');
     }
 }
 

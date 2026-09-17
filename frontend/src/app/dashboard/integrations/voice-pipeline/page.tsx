@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   CheckCircle, 
   Warning, 
@@ -8,8 +8,6 @@ import {
   XCircle,
   Lightning, 
   Spinner, 
-  Play,
-  Pause,
   ArrowClockwise,
   Check
 } from "@phosphor-icons/react";
@@ -20,8 +18,8 @@ interface IntegrationStatus {
   keyMasked: string;
   lastTested: string | null;
   testStatus: "success" | "failed" | "pending";
-  usageLimit: number;
-  usageCurrent: number;
+  usageLimit: number | null;
+  usageCurrent: number | null;
   model?: string;
   voice?: string;
 }
@@ -33,9 +31,9 @@ interface StatusResponse {
 }
 
 const VOICES = [
-  { id: "21m00Tcm4TlvDq8ikWAM", name: "Luna", gender: "Female", lang: "EN - US (Natural)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
-  { id: "pNInz6obpgfrhhF21wbu", name: "Charles", gender: "Male", lang: "EN - UK (Executive)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" },
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Olivia", gender: "Female", lang: "EN - AU (Warming)", audioUrl: "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" }
+  { id: "21m00Tcm4TlvDq8ikWAM", name: "Luna", gender: "Female", lang: "EN - US (Natural)" },
+  { id: "pNInz6obpgfrhhF21wbu", name: "Charles", gender: "Male", lang: "EN - UK (Executive)" },
+  { id: "EXAVITQu4vr4xnSDxMaL", name: "Olivia", gender: "Female", lang: "EN - AU (Warming)" }
 ];
 
 export default function VoicePipelinePage() {
@@ -51,7 +49,6 @@ export default function VoicePipelinePage() {
   // Voice selection states
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [isSavingVoice, setIsSavingVoice] = useState(false);
-  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   
   // Testing connection states
   const [testingService, setTestingService] = useState<string | null>(null);
@@ -59,7 +56,6 @@ export default function VoicePipelinePage() {
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch initial integrations status on mount
   const fetchStatus = useCallback(async () => {
@@ -76,13 +72,6 @@ export default function VoicePipelinePage() {
   useEffect(() => {
     fetchStatus();
     
-    // Clean up audio on unmount
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
   }, [fetchStatus]);
 
   const showToast = (message: string, type: "success" | "error" | "info") => {
@@ -149,42 +138,6 @@ export default function VoicePipelinePage() {
     }
   };
 
-  const handlePlayVoiceDemo = (voice: typeof VOICES[0]) => {
-    if (playingVoiceId === voice.id) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      setPlayingVoiceId(null);
-      return;
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
-    console.log(`[Demo] Playing voice demo: ${voice.name}`);
-    audioRef.current = new Audio(voice.audioUrl);
-    audioRef.current.play()
-      .then(() => {
-        setPlayingVoiceId(voice.id);
-      })
-      .catch(err => {
-        console.error("Audio demo failed to play:", err);
-        setPlayingVoiceId(voice.id);
-      });
-
-    // Reset playing state after 3 seconds
-    setTimeout(() => {
-      setPlayingVoiceId((current) => {
-        if (current === voice.id) {
-          if (audioRef.current) audioRef.current.pause();
-          return null;
-        }
-        return current;
-      });
-    }, 3000);
-  };
-
   const handleSelectVoice = async (voice: typeof VOICES[0]) => {
     setIsSavingVoice(true);
     try {
@@ -225,7 +178,9 @@ export default function VoicePipelinePage() {
     );
   }
 
-  const isEmptyState = !data || (!data.deepgram.connected && !data.openai.connected && !data.elevenlabs.connected);
+  if (!data) return <div role="alert" className="p-6 text-ink">Unable to load provider connections. <button onClick={() => { setLoading(true); fetchStatus(); }}>Retry</button></div>;
+
+  const isEmptyState = (!data.deepgram.connected && !data.openai.connected && !data.elevenlabs.connected);
 
   return (
     <div 
@@ -239,7 +194,7 @@ export default function VoicePipelinePage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-darkBorder pb-6">
           <div>
             <h1 
-              style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "36px" }}
+              style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontWeight: 700, fontSize: "36px" }}
               className="text-[#F5F0E8] tracking-tight leading-none mb-2"
             >
               Voice Pipeline Configuration
@@ -277,7 +232,7 @@ export default function VoicePipelinePage() {
         {isEmptyState ? (
           <div className="border border-dashed border-darkBorder bg-darkSurface/30 p-12 rounded-[22px] text-center max-w-2xl mx-auto my-12">
             <Lightning className="w-12 h-12 text-[#FF6B00] mx-auto mb-4 animate-bounce" />
-            <h2 className="text-lg font-bold text-[#F5F0E8] mb-2" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+            <h2 className="text-lg font-bold text-[#F5F0E8] mb-2" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
               Complete your voice pipeline
             </h2>
             <p className="text-[#7a6e5f] text-xs mb-8 max-w-sm mx-auto leading-relaxed">
@@ -334,7 +289,7 @@ export default function VoicePipelinePage() {
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-darkBorder pb-3">
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
                       [D] DEEPGRAM
                     </h3>
                     <p className="text-[10px] text-[#7a6e5f]">Speech Recognition</p>
@@ -359,7 +314,7 @@ export default function VoicePipelinePage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#7a6e5f] text-[11px]">Monthly Usage:</span>
-                    <span className="text-[#F5F0E8] font-mono">{data.deepgram.usageCurrent} min / ∞</span>
+                    <span className="text-[#F5F0E8] font-mono">{data.deepgram.usageCurrent === null ? "Usage unavailable" : `${data.deepgram.usageCurrent} min`}</span>
                   </div>
                 </div>
               </div>
@@ -396,7 +351,7 @@ export default function VoicePipelinePage() {
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-darkBorder pb-3">
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
                       [⚡] OPENAI
                     </h3>
                     <p className="text-[10px] text-[#7a6e5f]">Language Understanding</p>
@@ -421,7 +376,7 @@ export default function VoicePipelinePage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#7a6e5f] text-[11px]">Monthly Usage:</span>
-                    <span className="text-[#F5F0E8] font-mono">{data.openai.usageCurrent.toLocaleString()} tokens / ∞</span>
+                    <span className="text-[#F5F0E8] font-mono">{data.openai.usageCurrent === null ? "Usage unavailable" : `${data.openai.usageCurrent.toLocaleString()} tokens`}</span>
                   </div>
                 </div>
               </div>
@@ -458,7 +413,7 @@ export default function VoicePipelinePage() {
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-darkBorder pb-3">
                   <div>
-                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+                    <h3 className="text-sm font-black text-[#F5F0E8] tracking-wide" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
                       [🔊] ELEVENLABS
                     </h3>
                     <p className="text-[10px] text-[#7a6e5f]">Voice Synthesis</p>
@@ -484,12 +439,9 @@ export default function VoicePipelinePage() {
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-[10px] text-[#7a6e5f]">
                       <span>Monthly Usage:</span>
-                      <span className="font-mono text-[#F5F0E8]">1.2M chars / 3M</span>
+                      <span className="font-mono text-[#F5F0E8]">Usage unavailable</span>
                     </div>
-                    {/* Visual Progress Bar */}
-                    <div className="w-full h-1 bg-darkBorder rounded-full overflow-hidden">
-                      <div className="h-full bg-[#FF6B00] rounded-full" style={{ width: "40%" }} />
-                    </div>
+
                   </div>
                 </div>
               </div>
@@ -533,7 +485,7 @@ export default function VoicePipelinePage() {
 
         {/* BOTTOM SECTION: SYSTEM HEALTH */}
         <div className="border border-darkBorder bg-darkSurface/50 p-6 rounded-2xl">
-          <h2 className="text-[15px] font-bold uppercase tracking-wider text-[#F5F0E8] mb-4" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+          <h2 className="text-[15px] font-bold uppercase tracking-wider text-[#F5F0E8] mb-4" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
             Pipeline Health
           </h2>
 
@@ -603,7 +555,7 @@ export default function VoicePipelinePage() {
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-xl font-bold text-[#F5F0E8] mb-2" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+            <h2 className="text-xl font-bold text-[#F5F0E8] mb-2" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
               Add {editingService === "deepgram" ? "Deepgram" : editingService === "openai" ? "OpenAI" : "ElevenLabs"} API Key
             </h2>
 
@@ -674,7 +626,7 @@ export default function VoicePipelinePage() {
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-xl font-bold text-[#F5F0E8] mb-6" style={{ fontFamily: "var(--font-syne), sans-serif" }}>
+            <h2 className="text-xl font-bold text-[#F5F0E8] mb-6" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
               Choose Your AI Voice
             </h2>
 
@@ -682,7 +634,6 @@ export default function VoicePipelinePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {VOICES.map((voice) => {
                 const isSelected = data?.elevenlabs.voice === voice.name;
-                const isPlaying = playingVoiceId === voice.id;
 
                 return (
                   <div 
@@ -708,46 +659,8 @@ export default function VoicePipelinePage() {
                       <span className="text-[10px] text-[#7a6e5f] block">{voice.lang}</span>
                     </div>
 
-                    {/* Waveform Visualization (if playing) */}
-                    {isPlaying && (
-                      <div className="h-6 flex items-center justify-center gap-1 my-1">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
-                          <div 
-                            key={bar}
-                            className="w-0.5 bg-[#FF6B00] rounded-full animate-pulse"
-                            style={{ 
-                              height: `${10 + Math.random() * 90}%`,
-                              animationDuration: `${0.4 + Math.random() * 0.4}s` 
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {isPlaying && (
-                      <span className="text-[9px] text-[#FF6B00]/80 italic text-center block">
-                        &ldquo;Thank you for calling. How can I help?&rdquo;
-                      </span>
-                    )}
-
+                    <p className="text-xs text-ink-muted">Voice preview unavailable. No verified sample is configured.</p>
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => handlePlayVoiceDemo(voice)}
-                        className="flex-1 bg-white/5 border border-darkBorder hover:border-[#FF6B00]/20 text-[#F5F0E8] text-[9px] font-bold py-1.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-1"
-                      >
-                        {isPlaying ? (
-                          <>
-                            <Pause className="w-3 h-3" weight="fill" />
-                            <span>Pause</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3 h-3" weight="fill" />
-                            <span>Play Demo</span>
-                          </>
-                        )}
-                      </button>
-                      
                       <button 
                         onClick={() => handleSelectVoice(voice)}
                         disabled={isSavingVoice}

@@ -26,6 +26,6 @@ router.post('/status', validateTwilioSignature, handleCallStatus);
 router.post('/telephony-sync', validateTwilioSignature, handleTelephonySync);
 
 // Step 5: Bavio Voice Tool Callback (save lead during call)
-router.post('/save-lead', validateTwilioSignature, handleSaveLeadTool);
+router.post('/save-lead', (req, res, next) => validateTwilioSignature(req, res, next, { strict: true }), handleSaveLeadTool);
 
 module.exports = router;

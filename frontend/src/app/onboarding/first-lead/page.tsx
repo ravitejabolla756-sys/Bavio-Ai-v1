@@ -192,15 +192,15 @@ export default function OnboardingFirstLeadPage() {
         </div>
 
         <h1 
-          style={{ fontFamily: "var(--font-syne), sans-serif", fontWeight: 700, fontSize: "32px", color: "#10B981", marginBottom: "12px" }}
-          className="tracking-tight leading-tight text-center"
+          style={{ fontWeight: 700, fontSize: "32px", color: "#10B981", marginBottom: "12px" }}
+          className="tracking-tight leading-tight text-center font-sans"
         >
           ✅ Your First Lead Captured!
         </h1>
 
         <p 
-          style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "36px" }}
-          className="text-center max-w-md mx-auto"
+          style={{ fontWeight: 400, fontSize: "15px", color: "#5A5A66", lineHeight: 1.6, marginBottom: "36px" }}
+          className="text-center max-w-md mx-auto font-sans"
         >
           Bavio captured and organized this information automatically.
         </p>

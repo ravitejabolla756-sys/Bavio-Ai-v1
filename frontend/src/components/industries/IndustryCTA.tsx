@@ -48,7 +48,7 @@ export default function IndustryCTA({
         </motion.div>
 
         {/* Heading */}
-        <h2 className="font-display text-4xl sm:text-5xl md:text-[56px] font-extrabold tracking-[-0.03em] mb-6 leading-[1.05] max-w-[800px]">
+        <h2 className="font-serif text-4xl sm:text-5xl md:text-[56px] font-normal tracking-[-0.02em] mb-6 leading-[1.04] max-w-[800px]">
           {heading}
         </h2>
 

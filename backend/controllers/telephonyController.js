@@ -3,6 +3,7 @@ const providerFactory = require('../providers/index');
 const billingService = require('../services/billingService');
 const { incrementMinutesUsed } = require('../middleware/planEnforcement');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
+const { recordConversationCompletedEvent } = require('../services/businessEventService');
 
 async function handleIncoming(req, res) {
     try {
@@ -102,11 +103,19 @@ async function handleStatus(req, res) {
         const call = callResult.rows[0];
 
         if (callStatus === 'completed' && durationSeconds > 0) {
-            await billingService.processCallEnd({
+          await billingService.processCallEnd({
                 providerCallId,
                 phoneNumberId: call.phone_number_id,
                 callerNumber: call.caller_number,
-                durationSeconds
+            durationSeconds
+          });
+            await recordConversationCompletedEvent({
+              db,
+              sourceType: 'telephony_status_callback',
+              sourceId: providerCallId,
+              businessId: call.business_id || call.client_id || call.user_id,
+              conversationId: String(call.id),
+              completedAt: new Date().toISOString(),
             });
         } else {
             // Update the status only

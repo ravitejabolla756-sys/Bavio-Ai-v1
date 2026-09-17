@@ -1,6 +1,7 @@
 'use strict';
 
 const db                     = require('../../database');
+const { recordConversationCompletedEvent } = require('../../services/businessEventService');
 const VoiceWorkerSessionBase = require('../providers/interfaces/VoiceWorkerSession');
 const DeepgramStt            = require('../providers/modular/DeepgramStt');
 const ElevenLabsTts          = require('../providers/modular/ElevenLabsTts');
@@ -1211,6 +1212,8 @@ class VoiceWorkerSession extends VoiceWorkerSessionBase {
       );
 
       const dbCallId = callRes.rows[0]?.id;
+
+      if (dbCallId) await recordConversationCompletedEvent({ db, sourceType: 'voice_session', sourceId: this.callSid, businessId: this.businessId, conversationId: String(dbCallId), completedAt: new Date().toISOString() });
 
       if (dbCallId) {
         await db.query(

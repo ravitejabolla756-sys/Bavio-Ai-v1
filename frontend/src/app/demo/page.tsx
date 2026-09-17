@@ -34,17 +34,17 @@ export default function PublicDemoPage() {
           
           {/* Hero Header */}
           <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#FF6B00]/5 border border-[#FF6B00]/10 rounded-full text-[10px] font-black uppercase tracking-widest text-[#FF6B00]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#FF6B00]/5 border border-[#FF6B00]/10 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF6B00]">
               <Sparkles className="w-3.5 h-3.5 fill-[#FF6B00]" />
               Experience Bavio Live
             </div>
             
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[#140A02] leading-[1.1]">
+            <h1 className="font-serif font-normal text-4xl sm:text-5xl md:text-6xl tracking-tight text-[#140A02] leading-[1.02]">
               Hear the future of <br />
               <span className="text-[#FF6B00]">automated voice calling.</span>
             </h1>
 
-            <p className="text-[#6B5A4C] text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="text-[#6B5A4C] text-base sm:text-lg max-w-xl mx-auto leading-relaxed font-sans">
               See how Bavio's advanced AI agents handle real business conversations, qualify leads, answer customer questions, and book appointments.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default function PublicDemoPage() {
             
             {/* Info description */}
             <div className="md:col-span-7 space-y-6">
-              <h3 className="font-display text-2xl md:text-3xl font-extrabold text-[#140A02]">
+              <h3 className="font-serif font-normal text-2xl md:text-3xl text-[#140A02]">
                 Live Demos Are Available <br />
                 Inside Your Workspace.
               </h3>
@@ -133,7 +133,7 @@ export default function PublicDemoPage() {
 
           {/* Capabilities bento details */}
           <div className="w-full max-w-4xl space-y-6 text-left">
-            <h3 className="font-display text-xl font-bold text-[#140A02] border-b border-[#E5E0D8]/80 pb-3">
+            <h3 className="font-serif font-normal text-2xl text-[#140A02] border-b border-[#E5E0D8]/80 pb-3">
               Explore Bavio Capabilities
             </h3>
             

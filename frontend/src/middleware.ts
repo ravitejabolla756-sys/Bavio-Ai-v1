@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
   // Protect Workspace & Dashboard: must be authenticated
   if (pathname.startsWith("/workspace") || pathname.startsWith("/dashboard")) {
     if (!isAuthenticated) {
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL(`${request.nextUrl.basePath || ""}/login`, request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }

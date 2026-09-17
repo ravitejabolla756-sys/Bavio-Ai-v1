@@ -4,11 +4,18 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Backend URL: default to production AWS backend, override via env if needed
-const BACKEND_URL = process.env.BACKEND_URL || 'https://api.bavio.in';
+// Keep local development fail-closed against the local API. Production retains
+// the explicit production API default and can still be overridden by deploy env.
+const BACKEND_URL = process.env.BACKEND_URL || (
+  process.env.NODE_ENV === 'production'
+    ? 'https://api.bavio.in'
+    : 'http://localhost:4000'
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: process.env.NODE_ENV !== 'production' && process.env.BAVIO_MOBILE_REVIEW === 'true' ? '/review' : '',
+  distDir: process.env.NODE_ENV !== 'production' && process.env.BAVIO_MOBILE_REVIEW === 'true' ? '.next-mobile-review' : '.next',
   outputFileTracingRoot: path.join(__dirname),
   devIndicators: false,
   eslint: {

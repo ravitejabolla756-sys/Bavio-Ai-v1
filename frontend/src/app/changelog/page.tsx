@@ -40,7 +40,7 @@ export default function Changelog() {
             Product Timeline
           </span>
 
-          <h1 className="font-display font-extrabold text-display-lg text-ink mb-4 leading-tight">
+          <h1 className="font-serif font-normal text-4xl sm:text-5xl text-ink mb-4 leading-[1.02]">
             Changelog & <span className="text-saffron">Releases</span>
           </h1>
           <p className="text-body-md text-ink-tertiary mb-12 max-w-xl">

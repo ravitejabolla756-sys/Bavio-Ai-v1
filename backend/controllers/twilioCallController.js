@@ -1,4 +1,7 @@
 const db = require('../database/db');
+const { recordConversationCompletedEvent } = require('../services/businessEventService');
+const { createBavioLead } = require('../services/bavioLeadAction');
+const { resolveSignedLeadTenant } = require('../services/signedLeadTenant');
 // ── Voice pipeline: OpenAI Whisper (STT) + GPT-4o (LLM) + ElevenLabs (TTS) ──
 const sttService   = require('../services/openAIService');   // transcribeAudio()
 const llmService   = require('../services/openAIService');   // chat(), buildSystemPrompt()
@@ -582,7 +585,7 @@ async function handleCallStatus(req, res) {
       );
       callData = callResult.rows[0];
       if (callData) {
-        callData.business_id = callData.user_id; // map user_id to business_id for backward compatibility
+        callData.business_id = callData.business_id || callData.client_id || callData.user_id;
       }
     } catch (dbErr) {
       console.error('[TWILIO] Call lookup error:', dbErr.message);
@@ -629,6 +632,7 @@ async function handleCallStatus(req, res) {
         'UPDATE calls SET status = $1, duration_seconds = $2, ended_at = NOW() WHERE call_sid = $3',
         ['completed', duration, CallSid]
       );
+      await recordConversationCompletedEvent({ db, sourceType: 'twilio_callback', sourceId: CallSid, businessId: callData.business_id, conversationId: String(callData.id), completedAt: new Date().toISOString() });
     } catch (updErr) {
       console.error('[TWILIO] Call update error:', updErr.message);
     }
@@ -827,13 +831,11 @@ async function handleTelephonySync(req, res) {
       }
     }
 
-    // Fallback: Use the first business if not found (for Bavio Voice web testing convenience)
+    // Never associate a mutation with an arbitrary tenant. Missing routing is a
+    // hard failure, even for internal/test callbacks.
     if (!businessId) {
-      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
-      if (firstBiz.rows.length > 0) {
-        businessId = firstBiz.rows[0].id;
-        countryCode = firstBiz.rows[0].country_code || 'US';
-      }
+      console.warn('[TELEPHONY SYNC] Tenant resolution failed: no tenant context');
+      return res.status(403).json({ error: 'Tenant could not be resolved for this telephony event.' });
     }
 
     const currency = 'USD';
@@ -848,6 +850,17 @@ async function handleTelephonySync(req, res) {
     );
 
     const dbCallId = insertCallResult.rows[0]?.id;
+
+    if (dbCallId) {
+      await recordConversationCompletedEvent({
+        db,
+        sourceType: 'telephony_sync',
+        sourceId: callSid,
+        businessId,
+        conversationId: String(dbCallId),
+        completedAt: new Date().toISOString(),
+      });
+    }
 
     if (dbCallId) {
       // 3. Format Bavio Voice transcript into standard database array
@@ -1018,7 +1031,11 @@ async function handleTelephonySync(req, res) {
 // ── STEP 5: Bavio Voice Tool Call (Save Lead During Call) ────────────────────────────
 async function handleSaveLeadTool(req, res) {
   try {
-    console.log('[SAVE LEAD TOOL] Payload received:', JSON.stringify(req.body, null, 2));
+    console.log('[SAVE LEAD TOOL] Request received:', {
+      hasMessage: Boolean(req.body?.message),
+      hasToolCalls: Array.isArray(req.body?.toolCalls),
+      callId: req.body?.message?.call?.id || req.body?.call?.id || null,
+    });
 
     const { message } = req.body;
     let toolCalls = [];
@@ -1085,60 +1102,21 @@ async function handleSaveLeadTool(req, res) {
     let toNumber = rawTo !== 'Unknown' ? '+' + rawTo.replace(/\D/g, '') : rawTo;
     const callSid = call.id || 'Unknown';
 
-    // 1. Resolve business owner details
-    let businessId = req.query?.business_id || null;
-    let countryCode = 'US';
-
-    if (!businessId && toNumber && toNumber !== 'Unknown') {
-      const phoneResult = await db.query(
-        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
-        [toNumber]
-      );
-      if (phoneResult.rows.length > 0) {
-        businessId = phoneResult.rows[0].business_id;
-        countryCode = phoneResult.rows[0].country_code || 'US';
-      }
-    }
-
-    if (!businessId && fromNumber && fromNumber !== 'Unknown') {
-      const phoneResult = await db.query(
-        'SELECT business_id, country_code FROM phone_numbers WHERE number = $1 OR phone_number = $1 OR user_original_number = $1',
-        [fromNumber]
-      );
-      if (phoneResult.rows.length > 0) {
-        businessId = phoneResult.rows[0].business_id;
-        countryCode = phoneResult.rows[0].country_code || 'US';
-      }
-    }
-
-    // Try assistantId lookup if we still don't have businessId
+    // 1. Resolve one tenant deterministically from the signed call context.
+    // Never accept a tenant query parameter or choose an arbitrary business.
     const assistantId = call.assistantId || req.body.assistantId;
-    if (!businessId && assistantId) {
-      const astResult = await db.query(
-        'SELECT business_id FROM assistants WHERE id = $1',
-        [assistantId]
-      );
-      if (astResult.rows.length > 0) {
-        businessId = astResult.rows[0].business_id;
-      }
-    }
-
-    // Fallback: Use the first business if not found (for Bavio Voice web testing convenience)
-    if (!businessId) {
-      const firstBiz = await db.query('SELECT id, country_code FROM businesses LIMIT 1');
-      businessId = firstBiz.rows[0]?.id || null;
-      countryCode = firstBiz.rows[0]?.country_code || 'US';
-    } else {
-      // If we have businessId but didn't resolve countryCode (e.g. from assistantId path), lookup country
-      if (!countryCode) {
-        const bizRes = await db.query('SELECT country_code FROM businesses WHERE id = $1', [businessId]);
-        countryCode = bizRes.rows[0]?.country_code || 'US';
-      }
+    let businessId;
+    let countryCode;
+    try {
+      ({ businessId, countryCode } = await resolveSignedLeadTenant({ db, toNumber, fromNumber, assistantId }));
+    } catch (tenantError) {
+      console.warn('[SAVE LEAD TOOL] Tenant resolution failed:', tenantError.code);
+      return res.status(403).json({ error: 'Tenant could not be resolved for this signed lead event.' });
     }
 
     // 2. Find the db call record if it exists, or create one
     let dbCallId = null;
-    const callResult = await db.query('SELECT id FROM calls WHERE call_sid = $1', [callSid]);
+    const callResult = await db.query('SELECT id FROM calls WHERE call_sid = $1 AND (business_id = $2 OR user_id = $2)', [callSid, businessId]);
     if (callResult.rows.length > 0) {
       dbCallId = callResult.rows[0].id;
     } else {
@@ -1183,25 +1161,26 @@ async function handleSaveLeadTool(req, res) {
         if (location === 'None' || location === '...') location = null;
         if (appointmentTime === 'None' || appointmentTime === '...') appointmentTime = null;
 
-        // Insert into leads table
-        await db.query(
-          `INSERT INTO leads (business_id, call_id, phone, name, intent, budget, location, notes, status, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', NOW())`,
-          [
-            businessId,
-            dbCallId,
-            phone,
-            name || null,
-            intent || null,
-            appointmentTime || null,
-            location || null,
-            JSON.stringify(args)
-          ]
-        );
+        const leadIdempotencyKey = callSid !== 'Unknown' && toolCall.id
+          ? `twilio:${callSid}:tool:${toolCall.id}`
+          : null;
+
+        const execution = await createBavioLead({
+          db,
+          businessId,
+          idempotencyKey: leadIdempotencyKey,
+          lead: { phone, name, intent, budget: appointmentTime, location, notes: JSON.stringify(args), status: 'new' },
+          sourceType: 'signed_ingestion',
+          sourceId: callSid !== 'Unknown' ? callSid : null,
+          conversationId: dbCallId,
+        });
 
         results.push({
           toolCallId: toolCall.id,
-          result: "Lead details saved successfully to Supabase."
+          result: 'Lead details saved internally to Bavio.',
+          executionId: execution.executionId,
+          leadId: execution.leadId,
+          evidence: execution.evidence,
         });
       } else {
         results.push({
@@ -1215,8 +1194,8 @@ async function handleSaveLeadTool(req, res) {
     return res.status(200).json({ results });
 
   } catch (err) {
-    console.error('[SAVE LEAD TOOL] Error:', err.stack);
-    return res.status(500).json({ error: err.message });
+    console.error('[SAVE LEAD TOOL] Error:', { code: err.code || 'LEAD_CREATE_FAILED', message: err.message });
+    return res.status(err.code?.startsWith('TENANT_') ? 403 : 500).json({ error: err.message, executionId: err.executionId || undefined });
   }
 }
 

@@ -12,6 +12,8 @@ const callsCtrl = require('../../controllers/v1/callsV1Controller');
 const campaignsCtrl = require('../../controllers/v1/campaignsV1Controller');
 const webhooksCtrl = require('../../controllers/v1/webhooksV1Controller');
 const devCtrl = require('../../controllers/v1/developersV1Controller');
+const actionsCtrl = require('../../controllers/v1/actionsV1Controller');
+const workflowsCtrl = require('../../controllers/v1/workflowsV1Controller');
 
 // Flex auth middleware (supports either Bearer API key OR JWT session)
 const flexAuth = async (req, res, next) => {
@@ -30,6 +32,19 @@ const flexAuth = async (req, res, next) => {
 };
 
 router.use(flexAuth);
+
+// Evidence-backed action reads. Every query is scoped by flexAuth's tenant.
+router.get('/actions', actionsCtrl.listActions);
+router.get('/actions/leads/:leadId', actionsCtrl.getLeadExecutions);
+router.get('/actions/conversations/:conversationId', actionsCtrl.getConversationExecutions);
+router.get('/actions/executions/:id', actionsCtrl.getExecution);
+router.get('/actions/:actionType', actionsCtrl.getAction);
+
+// Read-only workflow product surface. All reads inherit the flexAuth tenant.
+router.get('/workflows', workflowsCtrl.listWorkflows);
+router.get('/workflows/:id/executions', workflowsCtrl.listWorkflowExecutions);
+router.get('/workflows/:id', workflowsCtrl.getWorkflow);
+router.get('/workflow-executions/:id', workflowsCtrl.getWorkflowExecution);
 
 // ── Agents V1 API ─────────────────────────────────────────────────────────────
 router.post('/agents', requireIdempotency, agentsCtrl.createAgent);

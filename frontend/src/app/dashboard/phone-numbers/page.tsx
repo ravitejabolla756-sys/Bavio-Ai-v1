@@ -1,768 +1,150 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Phone,
-  CheckCircle,
-  Warning,
-  Spinner,
-  ArrowLeft,
-  Plus,
-  Trash,
-  Globe,
-  Sliders,
-  TrendUp,
-  X,
-  CaretDown,
-  CaretRight,
-  Info,
-} from "@phosphor-icons/react";
-import {
-  numbersApi,
-  assistantsApi,
-  callsApi,
-  getClientId,
-  PhoneNumber,
-  Assistant,
-  CallRecord,
-} from "@/lib/api";
-import { useToast } from "@/components/ui/Toast";
+import { useCallback, useEffect, useState } from 'react';
+import { CheckCircle, Info, Phone, Plus, ShieldWarning, Spinner, X } from '@phosphor-icons/react';
+import { assistantsApi, getClientId, numbersApi, type Assistant, type AvailablePhoneNumber, type PhoneNumber } from '@/lib/api';
+
+type InventoryState = 'idle' | 'loading' | 'ready' | 'empty' | 'unavailable';
+type ProvisionState = 'idle' | 'provisioning' | 'connected' | 'failed';
+
+function messageFor(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function capabilityLabels(item: AvailablePhoneNumber) {
+  const capabilities = item.capabilities;
+  if (!capabilities) return [];
+  return [
+    capabilities.voice ? 'Voice' : null,
+    capabilities.sms ? 'SMS' : null,
+    capabilities.mms ? 'MMS' : null,
+    capabilities.inbound ? 'Inbound' : null,
+    capabilities.outbound ? 'Outbound' : null,
+  ].filter((value): value is string => Boolean(value));
+}
 
 export default function PhoneNumbersDashboardPage() {
-  const toast = useToast();
+  const clientId = getClientId();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [showExternalLineModal, setShowExternalLineModal] = useState(false);
-
-  // Data States
+  const [loadError, setLoadError] = useState('');
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [assistants, setAssistants] = useState<Assistant[]>([]);
-  const [calls, setCalls] = useState<CallRecord[]>([]);
-
-  // Buy Flow Wizard State
-  const [isBuyOpen, setIsBuyOpen] = useState(false);
-  const [buyStep, setBuyStep] = useState(1);
-  const [buyCountry, setBuyCountry] = useState("US");
-  const [availableNumbers, setAvailableNumbers] = useState<any[]>([]);
-  const [loadingAvailable, setLoadingAvailable] = useState(false);
-  const [selectedNumberToBuy, setSelectedNumberToBuy] = useState<string | null>(null);
-  const [assignAssistantId, setAssignAssistantId] = useState("");
-
-  // Details drawer edit state
   const [selectedPhoneId, setSelectedPhoneId] = useState<string | null>(null);
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [linkAssistantId, setLinkAssistantId] = useState("");
-
-  const clientId = getClientId();
+  const [isBuyOpen, setIsBuyOpen] = useState(false);
+  const [isExternalOpen, setIsExternalOpen] = useState(false);
+  const [buyStep, setBuyStep] = useState<1 | 2 | 3 | 4>(1);
+  const [buyCountry, setBuyCountry] = useState('US');
+  const [availableNumbers, setAvailableNumbers] = useState<AvailablePhoneNumber[]>([]);
+  const [inventoryState, setInventoryState] = useState<InventoryState>('idle');
+  const [inventoryMessage, setInventoryMessage] = useState('');
+  const [selectedNumber, setSelectedNumber] = useState<AvailablePhoneNumber | null>(null);
+  const [provisionState, setProvisionState] = useState<ProvisionState>('idle');
+  const [provisionMessage, setProvisionMessage] = useState('');
+  const [assignAssistantId, setAssignAssistantId] = useState('');
+  const [assignmentBusy, setAssignmentBusy] = useState(false);
+  const [assignmentMessage, setAssignmentMessage] = useState('');
+  const [detailAssistantId, setDetailAssistantId] = useState('');
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [detailMessage, setDetailMessage] = useState('');
 
   const loadData = useCallback(async () => {
-    if (!clientId) {
-      setErrorMsg("Not authenticated");
-      setLoading(false);
-      return;
-    }
+    if (!clientId) { setLoadError('Phone numbers unavailable. Sign in again to view telephony.'); setLoading(false); return; }
+    setLoading(true);
+    setLoadError('');
     try {
-      setLoading(true);
-      setErrorMsg("");
-
-      const [nums, asts, callList] = await Promise.all([
-        numbersApi.list(clientId),
-        assistantsApi.list(clientId),
-        callsApi.list(clientId),
-      ]);
-
-      setPhoneNumbers(Array.isArray(nums) ? nums : []);
-      setAssistants(Array.isArray(asts) ? asts : []);
-      setCalls(Array.isArray(callList) ? callList : []);
-    } catch (err: any) {
-      console.error("Failed to load telephony data:", err);
-      setErrorMsg(err.message || "Failed to load phone numbers. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      const [numbers, agentList] = await Promise.all([numbersApi.list(clientId), assistantsApi.list(clientId)]);
+      setPhoneNumbers(Array.isArray(numbers) ? numbers : []);
+      setAssistants(Array.isArray(agentList) ? agentList : []);
+    } catch (error) {
+      setLoadError(messageFor(error, 'Phone numbers could not be loaded.'));
+    } finally { setLoading(false); }
   }, [clientId]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { void loadData(); }, [loadData]);
 
-  const selectedPhone = phoneNumbers.find(p => p.id === selectedPhoneId);
+  const selectedPhone = phoneNumbers.find(phone => phone.id === selectedPhoneId) || null;
 
-  // Sync linkAssistantId when selectedPhone changes
-  useEffect(() => {
-    if (selectedPhone) {
-      setLinkAssistantId(selectedPhone.assistant_id || "");
-    }
-  }, [selectedPhone]);
-
-  // Fetch available numbers to buy
-  const handleFetchAvailable = async (country: string) => {
-    setLoadingAvailable(true);
-    setErrorMsg("");
-    try {
-      const data = await numbersApi.getAvailable(country);
-      setAvailableNumbers(Array.isArray(data) ? data : []);
-      setBuyStep(2);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to find available numbers for this country");
-    } finally {
-      setLoadingAvailable(false);
-    }
-  };
-
-  // Trigger Purchase number
-  const handleBuyNumber = async () => {
-    if (!selectedNumberToBuy) return;
-    setSaving(true);
-    setErrorMsg("");
-    try {
-      const purchased = await numbersApi.buyNumber({
-        phoneNumber: selectedNumberToBuy,
-        countryCode: buyCountry,
-      });
-
-      setSuccessMsg(`Successfully purchased ${purchased.number}!`);
-      setPhoneNumbers(prev => [...prev, purchased]);
-
-      // Move to step 4 for assignment
-      setBuyStep(4);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to purchase number");
-      setIsBuyOpen(false);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Trigger AI assistant linking
-  const handleLinkNumber = async (phoneId: string, assistantId: string) => {
-    setSaving(true);
-    setErrorMsg("");
-    try {
-      if (!assistantId) {
-        // Unlink if empty
-        await numbersApi.unlinkNumber(phoneId);
-        setPhoneNumbers(prev => prev.map(p => p.id === phoneId ? { ...p, assistant_id: null, assistant_name: null } : p));
-        setSuccessMsg("Phone number unlinked from AI Employee.");
-      } else {
-        const ast = assistants.find(a => a.id === assistantId);
-        if (!ast) throw new Error("AI Employee not found");
-
-        const updated = await numbersApi.linkNumber({
-          phoneId,
-          assistantId,
-          assistantName: ast.name,
-        });
-
-        setPhoneNumbers(prev => prev.map(p => p.id === phoneId ? updated : p));
-        setSuccessMsg(`Phone number linked to "${ast.name}" successfully.`);
-      }
-      setTimeout(() => setSuccessMsg(""), 4000);
-      setSelectedPhoneId(null);
-      setIsBuyOpen(false);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to update phone link");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Release / Delete Phone number
-  const handleReleaseNumber = async (phoneId: string) => {
-    setSaving(true);
-    setErrorMsg("");
-    try {
-      await numbersApi.unlinkNumber(phoneId); // Cleanup links
-      // Release is mapped to unlink in v1, but we filter it locally or we let it unlink
-      setPhoneNumbers(prev => prev.filter(p => p.id !== phoneId));
-      setSuccessMsg("Phone number released successfully.");
-      setTimeout(() => setSuccessMsg(""), 4000);
-      setSelectedPhoneId(null);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to release number");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Helper: count calls handled by number
-  const getCallCountForNumber = (numStr: string) => {
-    return calls.filter(c => c.virtual_number === numStr).length;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">
-        <div className="flex items-center justify-between border-b border-line/40 pb-6">
-          <div className="text-left">
-            <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Phone Numbers</h1>
-            <p className="text-body-xs text-ink-tertiary mt-1">Loading phone carrier configuration...</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white border border-line rounded-2xl p-6 shadow-sm animate-pulse h-48" />
-          ))}
-        </div>
-      </div>
-    );
+  function openBuy() {
+    setBuyStep(1); setInventoryState('idle'); setInventoryMessage(''); setSelectedNumber(null); setProvisionState('idle'); setProvisionMessage(''); setAssignmentMessage(''); setIsBuyOpen(true);
   }
 
-  return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative text-ink font-sans">
-      
-      {/* Alert Notices */}
-      {errorMsg && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3 text-red-700 text-xs text-left">
-          <ShieldWarning className="w-4 h-4 mt-0.5 shrink-0" />
-          <div>{errorMsg}</div>
-        </div>
-      )}
+  async function searchInventory() {
+    setInventoryState('loading'); setInventoryMessage(''); setAvailableNumbers([]); setSelectedNumber(null);
+    try {
+      const result = await numbersApi.getAvailable(buyCountry);
+      setAvailableNumbers(result.numbers);
+      setInventoryMessage(result.notice || '');
+      setInventoryState(result.numbers.length ? 'ready' : 'empty');
+      setBuyStep(2);
+    } catch (error) {
+      setInventoryState('unavailable');
+      setInventoryMessage(messageFor(error, 'Provider unavailable. Carrier inventory could not be checked.'));
+      setBuyStep(2);
+    }
+  }
 
-      {successMsg && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex gap-3 text-green-700 text-xs font-semibold text-left">
-          <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <div>{successMsg}</div>
-        </div>
-      )}
+  async function provisionNumber() {
+    if (!selectedNumber) return;
+    setProvisionState('provisioning'); setProvisionMessage(''); setBuyStep(4);
+    try {
+      const purchased = await numbersApi.buyNumber({ phoneNumber: selectedNumber.phoneNumber, countryCode: buyCountry });
+      setPhoneNumbers(previous => [...previous, purchased]);
+      setProvisionState('connected');
+      setBuyStep(4);
+    } catch (error) {
+      setProvisionState('failed');
+      setProvisionMessage(messageFor(error, 'Provision failed. The number was not connected.'));
+    }
+  }
 
-      {/* 1. Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/40 pb-6">
-        <div className="text-left">
-          <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Phone Numbers</h1>
-          <p className="text-sm text-ink-tertiary mt-1">
-            Manage the numbers your AI employees use to receive and make calls.
-          </p>
-        </div>
-        
-        <button
-          onClick={() => {
-            setBuyStep(1);
-            setIsBuyOpen(true);
-          }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Get a Phone Number
-        </button>
-      </div>
+  async function assignProvisionedNumber() {
+    const number = phoneNumbers[phoneNumbers.length - 1];
+    if (!number || !assignAssistantId) { setIsBuyOpen(false); return; }
+    setAssignmentBusy(true); setAssignmentMessage('Saving assignment…');
+    try {
+      const agent = assistants.find(item => item.id === assignAssistantId);
+      const updated = await numbersApi.linkNumber({ phoneId: number.id, assistantId: assignAssistantId, assistantName: agent?.name });
+      setPhoneNumbers(previous => previous.map(item => item.id === number.id ? updated : item));
+      setAssignmentMessage('Number assigned to agent.');
+    } catch (error) { setAssignmentMessage(messageFor(error, 'Assignment could not be confirmed.')); }
+    finally { setAssignmentBusy(false); }
+  }
 
-      {/* 2. Number Overview Grid */}
-      {phoneNumbers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center gap-4 bg-white border border-line rounded-[24px] shadow-[0_1px_3px_rgba(20,10,2,0.02)]">
-          <div className="w-12 h-12 bg-saffron/5 border border-saffron/10 rounded-2xl flex items-center justify-center text-saffron">
-            <Phone className="w-6 h-6" />
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-bold text-ink mb-1 font-sans">Connect a phone number</h4>
-            <p className="text-xs text-ink-tertiary max-w-sm font-sans leading-relaxed">
-              Give your AI employee a real business number so customers can call you.
-            </p>
-          </div>
+  async function saveDetailAssignment() {
+    if (!selectedPhone) return;
+    setDetailBusy(true); setDetailMessage('Saving assignment…');
+    try {
+      const agent = assistants.find(item => item.id === detailAssistantId);
+      if (!detailAssistantId) {
+        await numbersApi.unlinkNumber(selectedPhone.id);
+        setPhoneNumbers(previous => previous.map(item => item.id === selectedPhone.id ? { ...item, assistant_id: null, assistant_name: null } : item));
+        setDetailMessage('Agent unassigned.');
+      } else {
+        const updated = await numbersApi.linkNumber({ phoneId: selectedPhone.id, assistantId: detailAssistantId, assistantName: agent?.name });
+        setPhoneNumbers(previous => previous.map(item => item.id === selectedPhone.id ? updated : item));
+        setDetailMessage('Assignment saved.');
+      }
+    } catch (error) { setDetailMessage(messageFor(error, 'Assignment could not be confirmed.')); }
+    finally { setDetailBusy(false); }
+  }
 
-          {/* Capabilities features overview */}
-          <div className="flex flex-wrap justify-center gap-4 mt-2 text-[10px] font-bold text-ink-secondary uppercase tracking-wider">
-            <span className="flex items-center gap-1.5 bg-canvas/20 border border-line/50 px-3 py-1 rounded-full">
-              <CheckCircle className="w-3.5 h-3.5 text-state-success" />
-              Voice inbound
-            </span>
-            <span className="flex items-center gap-1.5 bg-canvas/20 border border-line/50 px-3 py-1 rounded-full">
-              <CheckCircle className="w-3.5 h-3.5 text-state-success" />
-              Voice outbound
-            </span>
-            <span className="flex items-center gap-1.5 bg-canvas/20 border border-line/50 px-3 py-1 rounded-full">
-              <CheckCircle className="w-3.5 h-3.5 text-state-success" />
-              AI employee routing
-            </span>
-          </div>
+  if (loading) return <div className="flex w-full max-w-7xl flex-col gap-6"><header className="border-b border-line/40 pb-6"><h1 className="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">Phone Numbers</h1><p className="mt-1 text-sm text-ink-tertiary">Loading phone numbers…</p></header><div role="status" className="h-24 animate-pulse border-y border-line/40 bg-white/40" /></div>;
+  if (loadError) return <div role="alert" className="w-full max-w-3xl border-y border-line/40 py-10 text-ink"><h1 className="font-display text-2xl font-bold tracking-tight">Phone Numbers</h1><p className="mt-3 text-sm text-ink-secondary">{loadError}</p><button className="mt-5 min-h-11 border border-line bg-white px-4 text-sm font-semibold" onClick={() => void loadData()}>Retry</button></div>;
 
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => {
-                setBuyStep(1);
-                setIsBuyOpen(true);
-              }}
-              className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-colors shadow-sm"
-            >
-              Get a Phone Number
-            </button>
-            <button
-              onClick={() => setShowExternalLineModal(true)}
-              className="px-4 py-2 border border-line bg-white hover:bg-canvas text-xs font-semibold rounded-xl transition-colors text-ink"
-            >
-              Use an existing number
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-          {phoneNumbers.map((num) => {
-            const hasAgent = !!num.assistant_id;
-            const callsCount = getCallCountForNumber(num.number);
-            return (
-              <div
-                key={num.id}
-                className="bg-white border border-line rounded-2xl p-6 shadow-[0_1px_2px_rgba(20,10,2,0.02)] hover:border-saffron/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[230px]"
-              >
-                <div>
-                  {/* Phone Header & status */}
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-mono text-base font-bold text-ink leading-tight">{num.number}</h3>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border capitalize ${
-                      hasAgent
-                        ? "text-green-700 border-green-150 bg-green-50"
-                        : "text-red-700 border-red-150 bg-red-50"
-                    }`}>
-                      {hasAgent ? "Online" : "Offline / Unassigned"}
-                    </span>
-                  </div>
-                  
-                  {/* Country & capabilities specs */}
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-2 mt-4 text-[10px] font-sans border-t border-line/40 pt-3">
-                    <div>
-                      <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Assigned Employee</span>
-                      <span className="font-semibold text-ink mt-0.5 block truncate">
-                        {num.assistant_name || "Unassigned"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Capabilities</span>
-                      <span className="font-semibold text-ink mt-0.5 block">Voice IN / OUT</span>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Country</span>
-                      <span className="font-semibold text-ink mt-0.5 block capitalize">
-                        {num.country_code || "US"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block uppercase tracking-wider text-[8px]">Calls Routed</span>
-                      <span className="font-semibold text-ink mt-0.5 block">{callsCount} handled</span>
-                    </div>
-                  </div>
-                </div>
+  return <div className="relative flex w-full max-w-7xl flex-col gap-6 text-ink">
+    <header className="flex flex-col justify-between gap-5 border-b border-line/40 pb-6 md:flex-row md:items-end"><div><h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">Phone Numbers</h1><p className="mt-1 text-sm text-ink-tertiary">Manage phone numbers connected to your Bavio workspace.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setIsExternalOpen(true)} className="min-h-11 border border-line bg-white px-4 text-xs font-semibold text-ink">Connect existing number</button><button onClick={openBuy} className="flex min-h-11 items-center gap-2 bg-saffron px-4 text-xs font-semibold text-white"><Plus size={15} />Get a phone number</button></div></header>
 
-                {/* Footer specs */}
-                <div className="flex justify-between items-center border-t border-line/30 pt-3 mt-4">
-                  <span className="text-[10px] font-mono text-ink-tertiary font-bold">$2.00 / mo</span>
-                  <button
-                    onClick={() => setSelectedPhoneId(num.id)}
-                    className="px-3.5 py-1.5 border border-line bg-canvas hover:bg-canvas/50 text-[9px] font-bold uppercase tracking-wider text-ink rounded-xl transition-all"
-                  >
-                    Configure
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+    {phoneNumbers.length === 0 ? <section className="border-b border-line/40 py-12"><div className="flex max-w-xl items-start gap-4"><div className="grid h-11 w-11 shrink-0 place-items-center border-l-2 border-saffron bg-white text-saffron"><Phone size={21} /></div><div><h2 className="font-display text-xl font-semibold">No phone numbers connected</h2><p className="mt-2 text-sm leading-6 text-ink-secondary">Connect a Bavio number when you are ready to receive calls. Use the actions above to search carrier inventory or learn about existing-number connections.</p></div></div></section> : <section aria-labelledby="connected-numbers"><div className="mb-3 flex items-end justify-between"><div><span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-tertiary">Workspace register</span><h2 id="connected-numbers" className="mt-1 font-display text-xl font-semibold">Connected numbers</h2></div><span className="text-xs text-ink-tertiary">{phoneNumbers.length} connected</span></div><div className="divide-y divide-line border-y border-line">{phoneNumbers.map(number => <button key={number.id} className="grid w-full grid-cols-1 gap-3 py-5 text-left transition hover:bg-white/60 md:grid-cols-[1.6fr_1fr_1fr_1.4fr_auto] md:items-center md:gap-5" onClick={() => { setSelectedPhoneId(number.id); setDetailAssistantId(number.assistant_id || ''); setDetailMessage(''); }}><div><strong className="font-mono text-sm">{number.number}</strong><small className="mt-1 block text-xs text-ink-tertiary">{number.provider || 'Provider unavailable'}{number.country_code ? ` · ${number.country_code}` : ''}</small></div><span className="text-xs"><small className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Status</small>{number.status || 'Unavailable'}</span><span className="text-xs"><small className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Assigned agent</small>{number.assistant_name || 'No agent assigned'}</span><span className="text-xs"><small className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Connected</small>{number.created_at ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(number.created_at)) : 'Date unavailable'}</span><span aria-hidden="true" className="text-lg text-ink-tertiary">→</span></button>)}</div></section>}
 
-      {/* 3. NUMBER SETUP FLOW WIZARD (BUY FLOW MODAL) */}
-      <AnimatePresence>
-        {isBuyOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsBuyOpen(false)}
-              className="fixed inset-0 bg-black"
-            />
+    {isBuyOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="provision-title" className="max-h-[calc(100dvh-32px)] w-full max-w-xl overflow-y-auto border border-line bg-canvas p-5 shadow-2xl md:p-7"><div className="mb-5 flex items-start justify-between border-b border-line pb-4"><div><span className="font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">Provisioning</span><h2 id="provision-title" className="mt-1 font-display text-xl font-semibold">Get a phone number</h2></div><button aria-label="Close provisioning" onClick={() => setIsBuyOpen(false)} className="border border-line bg-white p-2"><X size={16} /></button></div><div className="mb-6 flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-ink-tertiary"><span className={buyStep >= 1 ? 'font-bold text-ink' : ''}>1 Country</span><span>·</span><span className={buyStep >= 2 ? 'font-bold text-ink' : ''}>2 Search</span><span>·</span><span className={buyStep >= 3 ? 'font-bold text-ink' : ''}>3 Confirm</span><span>·</span><span className={buyStep >= 4 ? 'font-bold text-ink' : ''}>4 Provision</span></div>
+      {buyStep === 1 && <div className="space-y-5"><p className="text-sm leading-6 text-ink-secondary">Choose a country to search the provider&apos;s current inventory.</p><label className="block text-xs font-semibold">Country<select className="mt-2 min-h-11 w-full border border-line bg-white px-3 text-sm" value={buyCountry} onChange={event => setBuyCountry(event.target.value)}><option value="US">United States (+1)</option><option value="GB">United Kingdom (+44)</option><option value="CA">Canada (+1)</option><option value="IN">India (+91)</option></select></label><button onClick={() => void searchInventory()} className="flex min-h-11 w-full items-center justify-center gap-2 bg-saffron text-sm font-semibold text-white" disabled={inventoryState === 'loading'}>{inventoryState === 'loading' && <Spinner className="animate-spin" size={16} />}Search available numbers</button></div>}
+      {buyStep === 2 && <div className="space-y-5"><div className="flex items-center justify-between"><div><h3 className="font-semibold">Available numbers</h3><p className="text-xs text-ink-tertiary">{buyCountry} inventory from the provider</p></div><button className="text-xs underline" onClick={() => setBuyStep(1)}>Change country</button></div>{inventoryState === 'unavailable' && <div className="border-l-2 border-red-600 bg-red-50 p-3 text-sm text-red-800"><strong>Provider unavailable</strong><p className="mt-1 text-xs">{inventoryMessage}</p></div>}{inventoryState === 'empty' && <div className="border-l-2 border-line bg-white p-3 text-sm"><strong>No numbers found</strong><p className="mt-1 text-xs text-ink-secondary">{inventoryMessage || 'No numbers are currently available for this country.'}</p></div>}{inventoryState === 'ready' && <div className="divide-y divide-line border-y border-line">{availableNumbers.map(item => <button key={item.phoneNumber} onClick={() => setSelectedNumber(item)} className={`w-full p-4 text-left transition ${selectedNumber?.phoneNumber === item.phoneNumber ? 'bg-saffron/5' : 'hover:bg-white'}`}><div className="flex items-start justify-between gap-4"><strong className="font-mono text-sm">{item.phoneNumber}</strong>{item.monthlyRate && <span className="text-xs font-semibold">{item.monthlyRate}/mo</span>}</div><p className="mt-1 text-xs text-ink-secondary">{[item.locality, item.region, item.isoCountry].filter(Boolean).join(', ') || 'Location unavailable'}{item.numberType ? ` · ${item.numberType}` : ''}</p>{capabilityLabels(item).length > 0 && <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-ink-tertiary">{capabilityLabels(item).map(capability => <span key={capability}>{capability}</span>)}</div>}</button>)}</div>}{inventoryState !== 'unavailable' && inventoryState !== 'empty' && <div className="flex justify-between border-t border-line pt-4"><button onClick={() => setBuyStep(1)} className="min-h-10 border border-line bg-white px-4 text-xs font-semibold">Back</button><button onClick={() => setBuyStep(3)} disabled={!selectedNumber} className="min-h-10 bg-saffron px-4 text-xs font-semibold text-white disabled:opacity-40">Continue</button></div>}</div>}
+      {buyStep === 3 && selectedNumber && <div className="space-y-5"><h3 className="font-semibold">Confirm number</h3><div className="divide-y divide-line border-y border-line bg-white"><div className="flex justify-between gap-4 p-4 text-sm"><span className="text-ink-tertiary">Number</span><strong className="font-mono">{selectedNumber.phoneNumber}</strong></div>{selectedNumber.monthlyRate && <div className="flex justify-between gap-4 p-4 text-sm"><span className="text-ink-tertiary">Recurring price</span><strong>{selectedNumber.monthlyRate}/mo</strong></div>}{capabilityLabels(selectedNumber).length > 0 && <div className="p-4 text-sm"><span className="text-ink-tertiary">Capabilities</span><p className="mt-1">{capabilityLabels(selectedNumber).join(' · ')}</p></div>}</div><p className="text-xs leading-5 text-ink-tertiary">Provisioning will request this number from the provider. Assignment to an agent is optional and happens after connection.</p>{provisionState === 'failed' && <div className="border-l-2 border-red-600 bg-red-50 p-3 text-sm text-red-800"><strong>Provision failed</strong><p className="mt-1 text-xs">{provisionMessage}</p></div>}<div className="flex justify-between border-t border-line pt-4"><button onClick={() => setBuyStep(2)} className="min-h-10 border border-line bg-white px-4 text-xs font-semibold">Back</button><button onClick={() => void provisionNumber()} disabled={provisionState === 'provisioning'} className="flex min-h-10 items-center gap-2 bg-saffron px-4 text-xs font-semibold text-white disabled:opacity-50">{provisionState === 'provisioning' && <Spinner className="animate-spin" size={15} />}{provisionState === 'provisioning' ? 'Provisioning…' : 'Provision number'}</button></div></div>}
+      {buyStep === 4 && <div className="space-y-5">{provisionState === 'provisioning' ? <div role="status" className="border-l-2 border-saffron bg-white p-4"><Spinner className="mb-2 animate-spin text-saffron" size={20} /><strong className="block text-sm">Provisioning…</strong><p className="mt-1 text-xs text-ink-secondary">The provider is connecting {selectedNumber?.phoneNumber}. This can take a moment.</p></div> : provisionState === 'connected' ? <><div className="flex items-start gap-3 border-l-2 border-state-success bg-white p-4"><CheckCircle className="mt-0.5 shrink-0 text-state-success" size={20} /><div><strong className="text-sm">Connected</strong><p className="mt-1 font-mono text-sm">{selectedNumber?.phoneNumber}</p><p className="mt-1 text-xs text-ink-secondary">The number is connected. Assign it to an agent if one is ready.</p></div></div>{assistants.length > 0 ? <label className="block text-xs font-semibold">Assign to agent<select className="mt-2 min-h-11 w-full border border-line bg-white px-3 text-sm" value={assignAssistantId} onChange={event => setAssignAssistantId(event.target.value)}><option value="">Leave unassigned</option>{assistants.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label> : <p className="text-sm text-ink-secondary">No agents are available for assignment.</p>}{assignmentMessage && <p role="status" className="text-xs text-ink-secondary">{assignmentMessage}</p>}<div className="flex justify-end gap-2 border-t border-line pt-4"><button onClick={() => setIsBuyOpen(false)} className="min-h-10 border border-line bg-white px-4 text-xs font-semibold">{assignAssistantId ? 'Skip assignment' : 'Done'}</button>{assistants.length > 0 && <button onClick={() => void assignProvisionedNumber()} disabled={!assignAssistantId || assignmentBusy} className="min-h-10 bg-saffron px-4 text-xs font-semibold text-white disabled:opacity-40">{assignmentBusy ? 'Saving…' : 'Assign to agent'}</button>}</div></> : <div className="border-l-2 border-red-600 bg-red-50 p-4 text-sm text-red-800"><strong>Provision failed</strong><p className="mt-1 text-xs">{provisionMessage || 'The number was not connected.'}</p><button onClick={() => setBuyStep(3)} className="mt-4 min-h-10 border border-red-200 bg-white px-4 text-xs font-semibold">Back to confirmation</button></div>}</div>}
+    </section></div>}
 
-            {/* Wizard Box */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border border-line rounded-[24px] p-6 shadow-2xl z-50 w-full max-w-lg text-left"
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center border-b border-line/40 pb-4 mb-4">
-                <h3 className="font-sans font-semibold text-lg text-ink">Provision Phone Number</h3>
-                <button
-                  onClick={() => setIsBuyOpen(false)}
-                  className="p-1.5 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+    {selectedPhone && <div className="fixed inset-0 z-50 flex justify-end bg-black/35" role="presentation" onClick={event => { if (event.target === event.currentTarget) setSelectedPhoneId(null); }}><aside role="dialog" aria-modal="true" aria-labelledby="number-detail-title" className="flex h-full w-full max-w-md flex-col bg-canvas shadow-2xl"><header className="flex items-start justify-between border-b border-line p-6"><div><span className="font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">Connected number</span><h2 id="number-detail-title" className="mt-1 font-mono text-lg font-semibold">{selectedPhone.number}</h2></div><button aria-label="Close number details" onClick={() => setSelectedPhoneId(null)} className="border border-line bg-white p-2"><X size={16} /></button></header><div className="flex-1 space-y-7 overflow-y-auto p-6"><dl className="grid grid-cols-2 gap-5 border-y border-line py-5 text-sm">{selectedPhone.provider && <div><dt className="text-xs text-ink-tertiary">Provider</dt><dd className="mt-1">{selectedPhone.provider}</dd></div>}{selectedPhone.status && <div><dt className="text-xs text-ink-tertiary">Status</dt><dd className="mt-1">{selectedPhone.status}</dd></div>}{selectedPhone.country_code && <div><dt className="text-xs text-ink-tertiary">Country</dt><dd className="mt-1">{selectedPhone.country_code}</dd></div>}<div><dt className="text-xs text-ink-tertiary">Assigned agent</dt><dd className="mt-1">{selectedPhone.assistant_name || 'No agent assigned'}</dd></div></dl><section><h3 className="font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">Assignment</h3><p className="mt-2 text-sm text-ink-secondary">Choose an existing agent. This does not change the number&apos;s provider status.</p><select aria-label="Assign connected number to agent" className="mt-4 min-h-11 w-full border border-line bg-white px-3 text-sm" value={detailAssistantId} onChange={event => setDetailAssistantId(event.target.value)}><option value="">No agent assigned</option>{assistants.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select>{detailMessage && <p role="status" className="mt-3 text-xs text-ink-secondary">{detailMessage}</p>}<button onClick={() => void saveDetailAssignment()} disabled={detailBusy} className="mt-4 min-h-10 bg-saffron px-4 text-xs font-semibold text-white disabled:opacity-50">{detailBusy ? 'Saving…' : 'Save assignment'}</button></section></div><footer className="border-t border-line p-5"><p className="flex gap-2 text-xs leading-5 text-ink-tertiary"><Info className="mt-0.5 shrink-0" size={15} />Provider capabilities are shown only when returned by the carrier.</p></footer></aside></div>}
 
-              {/* Progress Line */}
-              <div className="w-full h-1 bg-canvas/30 rounded-full overflow-hidden mb-4">
-                <div
-                  className="bg-saffron h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(buyStep / 5) * 100}%` }}
-                />
-              </div>
-
-              {/* STEP 1: COUNTRY SELECTION */}
-              {buyStep === 1 && (
-                <div className="space-y-4">
-                  <p className="text-xs text-ink-secondary leading-relaxed">
-                    Select the geographic origin country for your virtual receptionist phone line.
-                  </p>
-                  <div>
-                    <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Country</label>
-                    <select
-                      value={buyCountry}
-                      onChange={(e) => setBuyCountry(e.target.value)}
-                      className="w-full bg-white border border-line rounded-xl px-3 py-2 text-xs text-ink focus:outline-none cursor-pointer"
-                    >
-                      <option value="US">United States (+1)</option>
-                      <option value="GB">United Kingdom (+44)</option>
-                      <option value="CA">Canada (+1)</option>
-                      <option value="IN">India (+91)</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => handleFetchAvailable(buyCountry)}
-                    disabled={loadingAvailable}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-40"
-                  >
-                    {loadingAvailable && <Spinner className="w-4 h-4 animate-spin" />}
-                    Search Available Lines
-                  </button>
-                </div>
-              )}
-
-              {/* STEP 2: NUMBER SELECTION */}
-              {buyStep === 2 && (
-                <div className="space-y-4">
-                  <p className="text-xs text-ink-secondary leading-relaxed">
-                    Choose one of the active numbers search found in the Twilio carrier directory.
-                  </p>
-                  <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
-                    {availableNumbers.map(item => (
-                      <div
-                        key={item.phoneNumber}
-                        onClick={() => setSelectedNumberToBuy(item.phoneNumber)}
-                        className={`flex justify-between items-center p-3 border rounded-xl cursor-pointer transition-colors ${
-                          selectedNumberToBuy === item.phoneNumber ? "border-saffron bg-saffron/5" : "border-line hover:border-saffron/30"
-                        }`}
-                      >
-                        <span className="font-mono text-xs font-semibold text-ink">{item.friendlyName || item.phoneNumber}</span>
-                        <span className="text-[9px] font-bold text-ink-muted uppercase">Voice Line</span>
-                      </div>
-                    ))}
-                    {availableNumbers.length === 0 && (
-                      <p className="text-xs text-ink-muted text-center py-6">No available numbers found. Try another country.</p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-center border-t border-line/40 pt-4">
-                    <button
-                      onClick={() => setBuyStep(1)}
-                      className="px-4 py-2 border border-line hover:bg-canvas text-xs font-semibold rounded-xl text-ink"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={() => setBuyStep(3)}
-                      disabled={!selectedNumberToBuy}
-                      className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm"
-                    >
-                      Confirm Selection
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: CAPABILITIES & PURCHASE */}
-              {buyStep === 3 && (
-                <div className="space-y-4">
-                  <div className="bg-canvas/20 border border-line rounded-xl p-4 text-xs font-sans text-left space-y-3">
-                    <span className="font-bold text-sm text-ink block mb-2">Carrier Checkout Details</span>
-                    <div className="flex justify-between">
-                      <span className="text-ink-tertiary">Selected Line</span>
-                      <span className="font-mono font-semibold text-ink">{selectedNumberToBuy}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-ink-tertiary">Line Type</span>
-                      <span className="font-semibold text-ink">Inbound / Outbound Voice</span>
-                    </div>
-                    <div className="flex justify-between border-t border-line/45 pt-2 font-bold">
-                      <span className="text-ink">Telephony Monthly Rate</span>
-                      <span className="text-ink">$2.00 / mo</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center border-t border-line/40 pt-4">
-                    <button
-                      onClick={() => setBuyStep(2)}
-                      className="px-4 py-2 border border-line hover:bg-canvas text-xs font-semibold rounded-xl text-ink"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={handleBuyNumber}
-                      disabled={saving}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-40"
-                    >
-                      {saving && <Spinner className="w-4 h-4 animate-spin" />}
-                      Buy & Provision Line
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: AI EMPLOYEE ASSIGNMENT */}
-              {buyStep === 4 && (
-                <div className="space-y-4">
-                  <p className="text-xs text-ink-secondary leading-relaxed">
-                    Assign this new phone line to one of your active AI Employees to start handling calls immediately.
-                  </p>
-                  <div>
-                    <label className="text-[10px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Select AI Employee</label>
-                    <select
-                      value={assignAssistantId}
-                      onChange={(e) => setAssignAssistantId(e.target.value)}
-                      className="w-full bg-white border border-line rounded-xl px-3 py-2 text-xs text-ink focus:outline-none cursor-pointer"
-                    >
-                      <option value="">Leave Unassigned (Offline Draft)</option>
-                      {assistants.map(ast => (
-                        <option key={ast.id} value={ast.id}>{ast.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      const latestNum = phoneNumbers[phoneNumbers.length - 1];
-                      if (latestNum) {
-                        handleLinkNumber(latestNum.id, assignAssistantId);
-                      } else {
-                        setIsBuyOpen(false);
-                      }
-                    }}
-                    disabled={saving}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
-                  >
-                    {saving && <Spinner className="w-4 h-4 animate-spin" />}
-                    Save Assignment & Complete
-                  </button>
-                </div>
-              )}
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 4. SLIDING NUMBER CONFIGURATION & ADVANCED SPECS DRAWER */}
-      <AnimatePresence>
-        {selectedPhone && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedPhoneId(null)}
-              className="fixed inset-0 bg-black z-40"
-            />
-
-            {/* Drawer Box */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-white border-l border-line shadow-2xl z-50 flex flex-col justify-between"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-line/40 flex justify-between items-center bg-canvas/10">
-                <div className="flex items-center gap-2.5 text-left">
-                  <div className="w-8 h-8 bg-saffron/5 flex items-center justify-center rounded-xl">
-                    <Phone className="w-4 h-4 text-saffron" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold text-sm text-ink">{selectedPhone.number}</h4>
-                    <span className="text-[9px] font-mono text-ink-tertiary">Telephony ID: {selectedPhone.id}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedPhoneId(null)}
-                  className="p-1.5 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Drawer Content */}
-              <div className="flex-grow overflow-y-auto p-6 flex flex-col gap-6 text-left">
-                
-                {/* Details list */}
-                <div className="bg-canvas/30 border border-line rounded-xl p-4 grid grid-cols-2 gap-4 text-xs font-sans">
-                  <div>
-                    <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Carrier Network</span>
-                    <p className="font-semibold text-ink mt-0.5">Twilio Voice Trunk</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Monthly Rate</span>
-                    <p className="font-semibold text-ink mt-0.5">$2.00 / mo</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Inbound Routing</span>
-                    <p className="font-semibold text-ink mt-0.5">AI Agent Flow</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block">Outbound Status</span>
-                    <p className="font-semibold text-ink mt-0.5">Active ID</p>
-                  </div>
-                </div>
-
-                {/* Assignment settings */}
-                <div className="space-y-4">
-                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-ink-tertiary border-b border-line/40 pb-2">
-                    Routing & AI Assignment
-                  </h5>
-                  <div>
-                    <label className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">AI Employee Assigned</label>
-                    <select
-                      value={linkAssistantId}
-                      onChange={(e) => setLinkAssistantId(e.target.value)}
-                      className="w-full bg-canvas/20 border border-line rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-saffron text-ink font-semibold"
-                    >
-                      <option value="">Leave Unassigned (Offline)</option>
-                      {assistants.map(ast => (
-                        <option key={ast.id} value={ast.id}>{ast.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {/* Save button */}
-                  <button
-                    onClick={() => handleLinkNumber(selectedPhone.id, linkAssistantId)}
-                    disabled={saving}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors shadow-sm disabled:opacity-40"
-                  >
-                    Save Routing Assignment
-                  </button>
-                </div>
-
-                {/* ADVANCED ACCORDION: SIP TRUNKS & WEBHOCK ENDPOINTS */}
-                <div className="border border-line rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                    className="w-full flex justify-between items-center p-3 bg-canvas/15 hover:bg-canvas/30 text-xs font-semibold transition-all"
-                  >
-                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-ink-secondary">
-                      <Sliders className="w-3.5 h-3.5 text-saffron" />
-                      Advanced Technical Specs
-                    </span>
-                    {isAdvancedOpen ? <CaretDown className="w-4 h-4" /> : <CaretRight className="w-4 h-4" />}
-                  </button>
-
-                  <AnimatePresence>
-                    {isAdvancedOpen && (
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: "auto" }}
-                        exit={{ height: 0 }}
-                        className="overflow-hidden bg-white border-t border-line"
-                      >
-                        <div className="p-4 space-y-3 text-[10px] font-mono text-ink-secondary leading-relaxed">
-                          <div>
-                            <span className="text-ink-muted uppercase block text-[8px]">Inbound Webhook URI</span>
-                            <span className="break-all mt-0.5 block">https://api.bavio.in/twilio/webhook</span>
-                          </div>
-                          <div>
-                            <span className="text-ink-muted uppercase block text-[8px]">SIP Trunk Address</span>
-                            <span className="break-all mt-0.5 block">sip:trunk.us1.twilio.com</span>
-                          </div>
-                          <div>
-                            <span className="text-ink-muted uppercase block text-[8px]">Twilio SID Reference</span>
-                            <span className="break-all mt-0.5 block">{selectedPhone.twilio_sid || "—"}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-              </div>
-
-              {/* Footer */}
-              <div className="p-4 border-t border-line/40 bg-canvas/10 flex justify-between items-center gap-4">
-                <button
-                  onClick={() => handleReleaseNumber(selectedPhone.id)}
-                  disabled={saving}
-                  className="flex items-center gap-1 px-3.5 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors font-sans"
-                >
-                  <Trash className="w-3.5 h-3.5" />
-                  Release Line
-                </button>
-
-                <button
-                  onClick={() => handleLinkNumber(selectedPhone.id, linkAssistantId)}
-                  disabled={saving}
-                  className="flex items-center gap-1 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-sm transition-all disabled:opacity-40 font-sans"
-                >
-                  {saving && <Spinner className="w-3.5 h-3.5 animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* EXTERNAL LINE MODAL */}
-      <AnimatePresence>
-        {showExternalLineModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowExternalLineModal(false)}
-              className="fixed inset-0 bg-black"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border border-line rounded-[24px] p-6 shadow-2xl z-50 w-full max-w-md text-left relative"
-            >
-              <div className="flex justify-between items-start border-b border-line/40 pb-3 mb-3">
-                <h3 className="font-sans font-semibold text-lg text-ink">Connect an existing number</h3>
-                <button
-                  onClick={() => setShowExternalLineModal(false)}
-                  className="p-1 text-ink-tertiary hover:text-ink border border-line hover:bg-canvas rounded-full transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-ink-secondary leading-relaxed mb-4">
-                External SIP trunks, BYOC carrier lines, and legacy virtual numbers require manual infrastructure configuration.
-              </p>
-
-              <div className="bg-canvas/30 border border-line/60 rounded-xl p-3.5 text-xs text-ink-tertiary mb-5">
-                <span className="font-semibold text-ink block mb-1">Carrier Integration Support</span>
-                Contact Bavio Support at <strong className="text-saffron font-mono">support@bavio.in</strong> with your SIP URI credentials to complete your line connection.
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowExternalLineModal(false)}
-                  className="px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-    </div>
-  );
+    {isExternalOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="existing-number-title" className="w-full max-w-md border border-line bg-canvas p-6 shadow-2xl"><div className="flex items-start justify-between border-b border-line pb-4"><div><span className="font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">Existing number</span><h2 id="existing-number-title" className="mt-1 font-display text-xl font-semibold">Connect existing number</h2></div><button aria-label="Close existing number information" onClick={() => setIsExternalOpen(false)} className="border border-line bg-white p-2"><X size={16} /></button></div><div className="space-y-4 py-5 text-sm leading-6 text-ink-secondary"><p>A provider or SIP/BYOC connection form is not available in this workspace yet.</p><p>Contact your Bavio administrator to configure an existing-number connection. No connection was created.</p></div><div className="flex justify-end border-t border-line pt-4"><button onClick={() => setIsExternalOpen(false)} className="min-h-10 bg-saffron px-4 text-xs font-semibold text-white">Close</button></div></section></div>}
+  </div>;
 }

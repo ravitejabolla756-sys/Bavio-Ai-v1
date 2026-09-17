@@ -19,7 +19,7 @@ export default function ECommerceUseCase() {
           </span>
 
           {/* Hero */}
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-ink mb-6 leading-tight max-w-4xl">
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl text-ink mb-6 leading-[1.02] max-w-4xl">
             Automate Returns, Refunds & <span className="text-saffron">Order Tracking</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
@@ -29,15 +29,15 @@ export default function ECommerceUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Ticket Deflection</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Ticket Deflection</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">From automated phone support</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">API Integrations</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">API Integrations</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Real-time shipping updates</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Scale Support</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Scale Support</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Without hiring support agents</span>
             </div>
           </div>
@@ -45,7 +45,7 @@ export default function ECommerceUseCase() {
           {/* Two Column details */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
             <div className="lg:col-span-8 flex flex-col gap-8">
-              <h2 className="font-display font-bold text-heading-lg text-ink">Scale Post-Purchase Support</h2>
+              <h2 className="font-serif font-normal text-3xl md:text-4xl text-ink leading-[1.04]">Scale Post-Purchase Support</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
                 Post-purchase calls about &ldquo;where is my order&rdquo; or return rules occupy customer service teams. Bavio answers calls instantly, queries shipping APIs, and updates customers.
               </p>

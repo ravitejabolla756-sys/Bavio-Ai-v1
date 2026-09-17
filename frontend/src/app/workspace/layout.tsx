@@ -5,6 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Layout,
+  Users,
+  BookOpen,
+  PhoneCall,
   CreditCard,
   Gear,
   Sparkle,
@@ -19,17 +22,14 @@ import {
   ShieldCheck,
   Spinner
 } from "@phosphor-icons/react";
+import ApplicationNavigation from "@/components/ApplicationNavigation";
+import { applicationNavigationItems } from "@/config/application-navigation";
+import "@/styles/application-tokens.css";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { clearAuthData, authApi } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
-
-const navigation = [
-  { name: "Overview", href: "/workspace", icon: Layout },
-  { name: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
-  { name: "Settings & Profile", href: "/workspace/settings", icon: Gear },
-];
 
 export default function WorkspaceLayout({
   children,
@@ -43,14 +43,15 @@ export default function WorkspaceLayout({
   const [commandKOpen, setCommandKOpen] = useState(false);
   const [workspace, setWorkspace] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("bavio_name") || "My Workspace";
+      return localStorage.getItem("bavio_name") || "";
     }
-    return "My Workspace";
+    return "";
   });
   const [commercialState, setCommercialState] = useState("FREE PLAN");
   const [mounted, setMounted] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCommand, setActiveCommand] = useState(0);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -148,16 +149,40 @@ export default function WorkspaceLayout({
       if (e.key === "Escape") {
         setCommandKOpen(false);
       }
+      if (!commandKOpen) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveCommand(value => value + 1); }
+      if (e.key === "ArrowUp") { e.preventDefault(); setActiveCommand(value => Math.max(0, value - 1)); }
+      if (e.key === "Enter") { e.preventDefault(); document.querySelector<HTMLButtonElement>(`[data-command-index="${activeCommand}"]`)?.click(); }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [commandKOpen, activeCommand]);
 
   const handleCommandKSelect = (href: string) => {
     router.push(href);
     setCommandKOpen(false);
     setSearchQuery("");
   };
+
+  const fuzzyMatch = (value: string, query: string) => {
+    if (!query.trim()) return true;
+    let cursor = 0;
+    for (const char of value.toLowerCase()) {
+      if (char === query.toLowerCase()[cursor]) cursor += 1;
+      if (cursor === query.trim().length) return true;
+    }
+    return false;
+  };
+  const commandGroups = [
+    { label: "Navigation", items: applicationNavigationItems.filter(item => fuzzyMatch(item.name, searchQuery)).map(item => ({ ...item, label: item.name, href: item.href })) },
+    { label: "Recent", items: pathname ? applicationNavigationItems.filter(item => pathname === item.href || pathname.startsWith(`${item.href}/`)).map(item => ({ ...item, label: item.name, href: item.href })) : [] },
+    { label: "Actions", items: [
+      { name: "Create agent", label: "Create agent", href: "/dashboard/assistant", icon: Users },
+      { name: "Add knowledge", label: "Add knowledge", href: "/dashboard/knowledge", icon: BookOpen },
+      { name: "Connect phone number", label: "Connect phone number", href: "/dashboard/phone-numbers", icon: PhoneCall },
+    ].filter(item => fuzzyMatch(item.name, searchQuery)) },
+  ];
+  const visibleCommands = commandGroups.flatMap(group => group.items);
 
   // If unauthenticated or checking, show loading HUD and do not render protected workspace
   if (!mounted || isAuthenticated === null || isAuthenticated === false) {
@@ -173,11 +198,11 @@ export default function WorkspaceLayout({
 
   return (
     <WorkspaceProvider>
-      <div className="flex h-screen bg-canvas text-ink font-sans overflow-hidden">
+      <div className="bavio-app flex h-screen bg-canvas text-ink font-sans overflow-hidden">
       
       {/* ── 1. FIXED LEFT SIDEBAR (Desktop) ── */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-surface border-r border-line flex flex-col justify-between transition-transform duration-300 ease-in-out ${
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-surface border-r border-line flex flex-col justify-between overflow-y-auto transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -191,15 +216,11 @@ export default function WorkspaceLayout({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-[#FF6B00] text-white flex items-center justify-center font-display font-black text-sm shrink-0 shadow-sm">
-                    {workspace.charAt(0).toUpperCase() || "B"}
+                    {workspace ? workspace.charAt(0).toUpperCase() : "W"}
                   </div>
                   <div className="truncate">
                     <span className="text-xs font-bold text-ink block truncate leading-tight">
-                      {workspace || "Bavio Workspace"}
-                    </span>
-                    <span className="text-[10px] text-ink-muted flex items-center gap-1 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-state-success" />
-                      Online
+                      {workspace || "Workspace unavailable"}
                     </span>
                   </div>
                 </div>
@@ -212,84 +233,22 @@ export default function WorkspaceLayout({
                   <div className="px-3 py-2 border-b border-line text-[10px] font-mono uppercase tracking-wider text-ink-muted">
                     Switch Workspace
                   </div>
-                  <button
+                  {workspace && <button
                     onClick={() => setShowWorkspaceDropdown(false)}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-ink bg-saffron/10 text-saffron rounded-lg mt-1 text-left"
                   >
                     <span className="w-2 h-2 rounded-full bg-saffron" />
-                    <span>{workspace || "Bavio Workspace"}</span>
+                    <span>{workspace}</span>
                   </button>
+                  }
+                  {!workspace && <p className="px-3 py-2 text-xs text-ink-muted">Workspace unavailable</p>}
                 </div>
               )}
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-3 space-y-1">
-            <span className="px-3 text-[10px] font-mono uppercase tracking-widest text-ink-muted block py-2">
-              Workspace OS
-            </span>
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-surface-raised border border-line font-bold text-ink shadow-sm"
-                      : "text-ink-secondary hover:text-ink hover:bg-surface-raised"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-saffron" : "text-ink-tertiary"}`} />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-
-            <div className="pt-4 pb-2">
-              <span className="px-3 text-[10px] font-mono uppercase tracking-widest text-ink-muted block py-1">
-                Voice Operations
-              </span>
-            </div>
-
-            {/* AI Voice Dashboard Link */}
-            <Link
-              href="/dashboard"
-              onClick={() => setSidebarOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-secondary hover:text-ink hover:bg-surface-raised transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <Sparkle className="w-4 h-4 text-saffron" />
-                <span>AI Voice Dashboard</span>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-ink-tertiary group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-
-            {/* Web Call link */}
-            <Link
-              href="/workspace/demo"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
-                pathname === "/workspace/demo"
-                  ? "bg-saffron/10 border border-saffron/20 text-saffron shadow-sm"
-                  : "bg-saffron/5 border border-saffron/10 hover:bg-saffron/10 text-saffron"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Sparkle className="w-4 h-4 text-saffron" weight="fill" />
-                <span>Web Call</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[8px] font-mono font-black tracking-wider bg-saffron text-white px-1.5 py-0.5 rounded leading-none">
-                  3 MIN
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 text-saffron" />
-              </div>
-            </Link>
-          </nav>
+          <ApplicationNavigation onNavigate={() => setSidebarOpen(false)} />
         </div>
 
         {/* Sidebar Footer info */}
@@ -301,7 +260,7 @@ export default function WorkspaceLayout({
           >
             <div className="flex items-center gap-1.5">
               <Command className="w-3 h-3" />
-              <span>Search workspace</span>
+              <span>Search Bavio…</span>
             </div>
             <span className="font-mono text-[9px] bg-white/10 px-1 rounded text-ink-secondary">Ctrl+K</span>
           </button>
@@ -341,7 +300,7 @@ export default function WorkspaceLayout({
             <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
               <span>Workspaces</span>
               <span>/</span>
-              <span className="text-ink font-bold truncate max-w-[160px] md:max-w-xs">{workspace}</span>
+              <span className="text-ink font-bold truncate max-w-[160px] md:max-w-xs">{workspace || "Workspace"}</span>
             </div>
           </div>
 
@@ -352,7 +311,7 @@ export default function WorkspaceLayout({
               className="hidden sm:flex items-center gap-2 bg-surface-raised hover:bg-canvas border border-line hover:border-saffron/40 px-3.5 py-1.5 rounded-full text-xs text-ink-tertiary hover:text-ink transition-all w-48"
             >
               <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
-              <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Workspace...</span>
+              <span className="flex-grow text-left whitespace-nowrap overflow-hidden text-ellipsis">Search Bavio…</span>
               <kbd className="font-mono text-[9px] bg-white/5 border border-line px-1.5 py-0.5 rounded text-ink-muted whitespace-nowrap shrink-0">Ctrl K</kbd>
             </button>
 
@@ -392,7 +351,7 @@ export default function WorkspaceLayout({
               <input
                 type="text"
                 autoFocus
-                placeholder="Type a command or jump to page..."
+                placeholder="Search Bavio…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted font-medium"
@@ -406,33 +365,8 @@ export default function WorkspaceLayout({
             </div>
 
             <div className="p-2 max-h-80 overflow-y-auto space-y-1">
-              <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-ink-muted">
-                Navigation
-              </div>
-              {[
-                { title: "Overview Dashboard", href: "/workspace", icon: Layout },
-                { title: "Live Web Call & Demo", href: "/workspace/demo", icon: Sparkle },
-                { title: "Subscription & Billing", href: "/workspace/subscription", icon: CreditCard },
-                { title: "Settings & Profile", href: "/workspace/settings", icon: Gear },
-                { title: "AI Voice Console", href: "/dashboard", icon: ArrowRight },
-              ]
-                .filter(cmd => cmd.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((cmd, idx) => {
-                  const Icon = cmd.icon;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleCommandKSelect(cmd.href)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-raised text-xs font-semibold text-ink group transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="w-4 h-4 text-ink-tertiary group-hover:text-saffron transition-colors" />
-                        <span>{cmd.title}</span>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-ink-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
-                    </button>
-                  );
-                })}
+              {commandGroups.map(group => group.items.length > 0 && <section key={group.label} aria-labelledby={`command-${group.label}`}><div id={`command-${group.label}`} className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-ink-muted">{group.label}</div>{group.items.map((cmd) => { const index = visibleCommands.indexOf(cmd); const Icon = cmd.icon; return <button data-command-index={index} key={`${group.label}-${cmd.href}`} onClick={() => handleCommandKSelect(cmd.href)} className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold text-ink group transition-colors ${activeCommand === index ? "bg-surface-raised" : "hover:bg-surface-raised"}`}><div className="flex items-center gap-3"><Icon className="w-4 h-4 text-ink-tertiary group-hover:text-saffron" /><span>{cmd.label}</span></div><ArrowRight className="w-3.5 h-3.5 text-ink-muted" /></button>; })}</section>)}
+              {visibleCommands.length === 0 && <div className="px-3 py-8 text-center text-xs text-ink-muted">No executable commands found.</div>}
             </div>
           </div>
         </div>

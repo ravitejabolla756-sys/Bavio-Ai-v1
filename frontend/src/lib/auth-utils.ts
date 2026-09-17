@@ -25,7 +25,7 @@ export function setCookie(name: string, value: string, days = 365) {
  */
 export function navigateAfterAuth(url: string) {
   if (typeof window !== "undefined") {
-    window.location.href = url;
+    window.location.href = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_BAVIO_REVIEW_HOST && !url.startsWith('/review') ? `/review${url}` : url;
   }
 }
 

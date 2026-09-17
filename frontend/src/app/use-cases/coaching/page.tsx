@@ -19,7 +19,7 @@ export default function CoachingUseCase() {
           </span>
 
           {/* Hero */}
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-ink mb-6 leading-tight max-w-4xl">
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl text-ink mb-6 leading-[1.02] max-w-4xl">
             Syllabus FAQs & Admission <span className="text-saffron">Qualification</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
@@ -29,15 +29,15 @@ export default function CoachingUseCase() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left border-y border-line py-8 mb-16">
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Student Enquiries</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Student Enquiries</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">All conversations qualified</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">Response Rate</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">Response Rate</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Parent calls answered instantly</span>
             </div>
             <div>
-              <span className="text-2xl font-bold font-display text-saffron block">24/7 Availability</span>
+              <span className="text-2xl font-bold font-sans text-saffron block">24/7 Availability</span>
               <span className="text-body-xs text-ink-tertiary uppercase tracking-wider block mt-1">Qualify midnight traffic</span>
             </div>
           </div>
@@ -45,7 +45,7 @@ export default function CoachingUseCase() {
           {/* Two Column details */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-16">
             <div className="lg:col-span-8 flex flex-col gap-8">
-              <h2 className="font-display font-bold text-heading-lg text-ink">Resolve Student Inquiry Backlogs</h2>
+              <h2 className="font-serif font-normal text-3xl md:text-4xl text-ink leading-[1.04]">Resolve Student Inquiry Backlogs</h2>
               <p className="text-body-sm text-ink-tertiary leading-relaxed">
                 Parents call at all hours to verify test dates, offline batches, syllabus details, and installment options. Admissions teams get bogged down repeating the same replies. Bavio takes the load off, holding structured qualification flows in English.
               </p>

@@ -74,7 +74,7 @@ export default function Customers() {
           <span className="text-body-xs font-bold uppercase tracking-widest text-saffron bg-saffron-muted px-3.5 py-1.5 rounded-full mb-6 border border-saffron-border">
             Social Proof Gold
           </span>
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-ink mb-6 max-w-3xl leading-[1.08] tracking-tight">
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl text-ink mb-6 max-w-3xl leading-[1.02] tracking-tight">
             Businesses That Choose Bavio <span className="text-saffron">Never Go Back</span>
           </h1>
           <p className="text-body-lg text-ink-tertiary mb-12 max-w-2xl leading-relaxed">
@@ -170,7 +170,7 @@ export default function Customers() {
         <section className="w-full bg-surface border-y border-line-subtle py-20 px-6 md:px-8 flex justify-center">
           <div className="w-full max-w-5xl">
             <div className="text-center mb-12">
-              <h2 className="font-display font-extrabold text-heading-lg text-ink mb-3">
+              <h2 className="font-serif font-normal text-3xl md:text-4xl text-ink mb-3 leading-[1.04]">
                 Built for Every Marketing Goal
               </h2>
               <p className="text-ink-tertiary text-body-sm max-w-md mx-auto">
@@ -207,7 +207,7 @@ export default function Customers() {
         {/* BOTTOM CTA */}
         <section className="w-full max-w-4xl mx-auto my-20 bg-surface text-ink rounded-3xl p-10 md:p-16 text-center relative overflow-hidden border border-line">
           <div className="z-10 relative flex flex-col items-center gap-6">
-            <h2 className="font-display font-extrabold text-heading-lg md:text-display-md text-ink max-w-xl">
+            <h2 className="font-serif font-normal text-3xl md:text-5xl text-ink max-w-xl leading-[1.04]">
               Never Miss Another Lead
             </h2>
             <p className="text-ink-tertiary max-w-md text-body-sm leading-relaxed">

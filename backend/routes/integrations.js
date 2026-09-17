@@ -8,8 +8,8 @@ const axios = require('axios');
 // Helper to mask API keys
 function maskKey(key) {
   if (!key) return '';
-  if (key.length <= 8) return '••••';
-  return '••••••••' + key.slice(-8);
+  if (key.length <= 8) return 'â€¢â€¢â€¢â€¢';
+  return 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢' + key.slice(-8);
 }
 
 // -- 1. GET /integrations/status ----------------------------------------------
@@ -25,21 +25,22 @@ router.get('/status', requireAuth, async (req, res) => {
 
     // Initial state
     const response = {
-      deepgram: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: 0, usageCurrent: 45 },
-      openai: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: 0, usageCurrent: 2300, model: 'gpt-4o-mini' },
-      elevenlabs: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: 3000000, usageCurrent: 1200000, voice: 'Luna' }
+      deepgram: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: null, usageCurrent: null },
+      openai: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: null, usageCurrent: null, model: 'gpt-4o-mini' },
+      elevenlabs: { connected: false, keyMasked: '', lastTested: null, testStatus: 'pending', usageLimit: null, usageCurrent: null, voice: 'Luna' }
     };
 
     result.rows.forEach(row => {
       const service = row.service_name;
       if (response[service]) {
-        response[service].connected = true;
         const decrypted = encryption.decrypt(row.api_key_encrypted);
+        response[service].connected = Boolean(decrypted) && row.test_status === 'success';
         response[service].keyMasked = maskKey(decrypted);
         response[service].lastTested = row.last_tested_at;
         response[service].testStatus = row.test_status || 'pending';
-        response[service].usageLimit = Number(row.usage_limit || 0);
-        response[service].usageCurrent = Number(row.usage_current || 0);
+        // Legacy usage lacks measurement provenance.
+        response[service].usageLimit = null;
+        response[service].usageCurrent = null;
         
         if (service === 'openai') {
           response[service].model = row.selected_model || 'gpt-4o-mini';

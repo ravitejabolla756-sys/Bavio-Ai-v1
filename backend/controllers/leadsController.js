@@ -1,4 +1,5 @@
 const db = require('../database/db');
+const { STATUSES } = require('../services/leadReadQuery');
 
 async function createLead(req, res) {
     try {
@@ -40,6 +41,13 @@ async function getLeads(req, res) {
 }
 
 async function updateLead(req, res) {
+    const fields = ['status', 'intent', 'budget', 'notes', 'name', 'location'];
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) || !Object.keys(req.body).length || Object.keys(req.body).some(key => !fields.includes(key))) {
+        return res.status(400).json({ error: 'Provide supported lead fields only.' });
+    }
+    if (Object.entries(req.body).some(([key, value]) => value !== null && (typeof value !== 'string' || value.length > (key === 'notes' ? 50000 : 1000))) || (req.body.status !== undefined && req.body.status !== null && !STATUSES.includes(req.body.status))) {
+        return res.status(400).json({ error: 'Invalid lead fields or status. Notes are limited to 50,000 characters; other text to 1,000.' });
+    }
     try {
         const { id } = req.params;
         const business_id = req.user.id;
@@ -73,7 +81,7 @@ async function updateLead(req, res) {
         res.status(200).json(result.rows[0]);
     } catch (err) {
         console.error('[LEADS CONTROLLER] Update error explicitly:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Unable to save lead. Reload the record before retrying.' });
     }
 }
 

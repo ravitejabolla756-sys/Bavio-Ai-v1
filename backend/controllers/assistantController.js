@@ -1,6 +1,7 @@
 const assistantService = require('../services/assistantService');
 const voiceOrchestrator = require('../services/voiceOrchestrator');
 const { modelRouter } = require('../services/modelRouter');
+const db = require('../database/db');
 
 async function getModelTiersCatalog(req, res) {
     try {
@@ -11,9 +12,25 @@ async function getModelTiersCatalog(req, res) {
     }
 }
 
+function isReviewAccount(email) {
+    return (
+        process.env.NODE_ENV !== 'production' &&
+        process.env.BAVIO_ENABLE_REVIEW_ACCOUNT === 'true' &&
+        process.env.BAVIO_REVIEW_ACCOUNT_EMAIL &&
+        email &&
+        email.trim().toLowerCase() === process.env.BAVIO_REVIEW_ACCOUNT_EMAIL.trim().toLowerCase()
+    );
+}
+
 async function createAssistant(req, res) {
     try {
         const business_id = req.user.id;
+        const billing = await db.query('SELECT email, subscription_status FROM businesses WHERE id = $1', [business_id]);
+        const bizEmail = billing.rows[0]?.email || req.user?.email;
+        const isActive = String(billing.rows[0]?.subscription_status || '').toLowerCase() === 'active';
+        if (!isActive && !isReviewAccount(bizEmail)) {
+            return res.status(402).json({ error: 'SUBSCRIPTION_REQUIRED', message: 'Choose a plan before creating an agent.' });
+        }
         const {
             name,
             system_prompt,

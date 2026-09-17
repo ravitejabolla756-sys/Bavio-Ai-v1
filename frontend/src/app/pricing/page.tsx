@@ -20,8 +20,8 @@ export default function PricingPage() {
       <main className="flex-grow pt-32 pb-20 relative z-10 flex flex-col items-center">
         {/* HERO HEADER */}
         <section className="w-full text-center flex flex-col items-center px-6 lg:px-8 mb-16">
-          <h1 className="font-display text-4xl sm:text-6xl md:text-[64px] font-extrabold tracking-tight text-[#140A02] mb-6 leading-tight max-w-[800px]">
-            Simple, transparent <span className="text-[#FF6B00]">pricing</span>
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl md:text-[64px] tracking-tight text-[#140A02] mb-6 leading-[1.02] max-w-[800px]">
+            Simple, transparent <span className="text-[#FF6B00]">pricing.</span>
           </h1>
           <p className="text-[#6B5A4C] text-lg md:text-[20px] max-w-md mx-auto mb-10 leading-relaxed font-sans">
             Choose the plan that fits your business. All plans include a 7-day free trial.
@@ -65,7 +65,7 @@ export default function PricingPage() {
                 </p>
                 
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="font-display text-4xl lg:text-5xl font-extrabold text-[#FF6B00]">
+                  <span className="font-sans text-4xl lg:text-5xl font-bold text-[#FF6B00]">
                     {isAnnual ? "$40" : "$49"}
                   </span>
                   <span className="text-body-sm text-[#6E6256]">/mo</span>
@@ -151,7 +151,7 @@ export default function PricingPage() {
                 </p>
                 
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="font-display text-4xl lg:text-5xl font-extrabold text-[#FF6B00]">
+                  <span className="font-sans text-4xl lg:text-5xl font-bold text-[#FF6B00]">
                     {isAnnual ? "$82" : "$99"}
                   </span>
                   <span className="text-body-sm text-[#6E6256]">/mo</span>
@@ -234,7 +234,7 @@ export default function PricingPage() {
                 </p>
                 
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="font-display text-4xl lg:text-5xl font-extrabold text-[#FF6B00]">
+                  <span className="font-sans text-4xl lg:text-5xl font-bold text-[#FF6B00]">
                     {isAnnual ? "$165" : "$199"}
                   </span>
                   <span className="text-body-sm text-[#6E6256]">/mo</span>

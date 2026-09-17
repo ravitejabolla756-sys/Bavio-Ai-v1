@@ -193,7 +193,7 @@ export default function Footer({ dark = false }: { dark?: boolean }) {
         {/* Bottom bar */}
         <div className={`mt-16 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 ${dark ? 'border-darkBorder' : 'border-line-subtle'}`}>
           <p className={`text-body-xs ${dark ? 'text-darkTextMuted' : 'text-ink-muted'}`}>
-            Copyright &copy; 2026 Bavio
+            © 2026 Bavio. All rights reserved.
           </p>
         </div>
       </div>

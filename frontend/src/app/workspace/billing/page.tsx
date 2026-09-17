@@ -70,7 +70,7 @@ interface InvoiceDetail {
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export default function WorkspaceBilling() {
-  const { profile: contextProfile, payments: contextPayments, refreshPayments } = useWorkspace();
+  const { profile: contextProfile, payments: contextPayments, refreshPayments, isProfileLoading, isPaymentsLoading, profileError, paymentsError } = useWorkspace();
   const [profile, setProfile] = useState<any>(contextProfile);
   const [payments, setPayments] = useState<any[]>(contextPayments);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -162,6 +162,9 @@ export default function WorkspaceBilling() {
       setDownloadingId(null);
     }
   };
+
+  if (isProfileLoading || isPaymentsLoading) return <div role="status">Loading billing…</div>;
+  if (profileError || paymentsError || !contextProfile) return <div role="alert">Billing unavailable. {profileError || paymentsError}</div>;
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto z-10 relative">

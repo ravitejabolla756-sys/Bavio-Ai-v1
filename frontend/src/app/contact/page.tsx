@@ -29,11 +29,11 @@ export default function Contact() {
         <div className="absolute top-[40%] -right-[12%] w-[500px] h-[500px] rounded-full bg-[#EA580C] opacity-[0.06] filter blur-[130px] pointer-events-none" />
 
         <section className="w-full max-w-7xl px-6 text-center flex flex-col items-center relative z-10">
-          <span className="text-body-xs font-bold uppercase tracking-widest text-[#FF6B00] bg-[#FFF7ED] px-3.5 py-1.5 rounded-full mb-6 border border-[#F3E4D4]">
+          <span className="text-body-xs font-bold uppercase tracking-widest text-[#FF6B00] font-mono bg-[#FFF7ED] px-3.5 py-1.5 rounded-full mb-6 border border-[#F3E4D4]">
             Get in Touch
           </span>
-          <h1 className="font-display font-extrabold text-display-lg md:text-display-xl text-[#140A02] mb-6 max-w-3xl leading-[1.08] tracking-tight">
-            Sales & Partnership <span className="text-[#FF6B00]">Inquiries</span>
+          <h1 className="font-serif font-normal text-4xl sm:text-6xl lg:text-[66px] text-[#140A02] mb-6 max-w-3xl leading-[1.02] tracking-tight">
+            Sales & Partnership <span className="text-[#FF6B00]">inquiries.</span>
           </h1>
           <p className="text-body-lg text-[#6B5A4C] mb-12 max-w-xl leading-relaxed">
             Contact our team for billing arrangements, customized voice alignments, or partnership inquiries.
@@ -109,7 +109,7 @@ export default function Contact() {
               {formSubmitted ? (
                 <div className="bg-white border border-[#F3E4D4] rounded-3xl p-8 text-center shadow-sm flex flex-col items-center gap-4">
                   <CheckCircle className="w-16 h-16 text-[#10B981] animate-bounce" weight="fill" />
-                  <h3 className="font-display font-extrabold text-heading-lg text-[#140A02]">Inquiry Sent</h3>
+                  <h3 className="font-serif font-normal text-2xl text-[#140A02]">Inquiry Sent</h3>
                   <p className="text-body-sm text-[#6B5A4C] max-w-sm">
                     We have received your message. A client success manager will email you at <span className="font-semibold text-[#140A02]">{formData.email}</span> within 2 hours.
                   </p>

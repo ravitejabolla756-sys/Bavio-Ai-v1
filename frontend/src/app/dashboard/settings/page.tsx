@@ -1,35 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Key,
-  Plus,
-  Trash,
-  Copy,
-  Check,
-  HardDrive,
-  Phone,
-  ShieldCheck,
-  Warning,
-  X,
-  Sliders,
-  CaretDown,
-  CaretRight,
-  Envelope,
-  Building,
-  Globe,
-  Spinner,
-  CheckCircle,
-} from "@phosphor-icons/react";
+import { Key, Plus, Phone, Warning, X, Spinner } from "@phosphor-icons/react";
 import {
   authApi,
   numbersApi,
+  developersApi,
   getClientId,
   BusinessProfile,
   PhoneNumber,
+  ApiKeyRecord,
 } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+import { isLocalUiPreviewSession } from "@/lib/local-ui-preview";
 
 export default function WorkspaceSettings() {
   const toast = useToast();
@@ -37,8 +20,12 @@ export default function WorkspaceSettings() {
   const [numbers, setNumbers] = useState<PhoneNumber[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveState, setProfileSaveState] = useState<"No changes" | "Unsaved changes" | "Saving…" | "Saved" | "Save failed">("No changes");
   const [error, setError] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKeyRecord[]>([]);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newSecret, setNewSecret] = useState<string | null>(null);
 
   // Profile Form States
   const [companyName, setCompanyName] = useState("");
@@ -47,15 +34,8 @@ export default function WorkspaceSettings() {
   const [companyLanguage, setCompanyLanguage] = useState("en");
 
   // Number Verification Form States
-  const [showNumberForm, setShowNumberForm] = useState(false);
-  const [newNumber, setNewNumber] = useState("");
-  const [newNumberLabel, setNewNumberLabel] = useState("");
-  const [addingNumber, setAddingNumber] = useState(false);
-  const [showNumberToast, setShowNumberToast] = useState(false);
 
   // Accordion for Sip specs
-  const [isSipOpen, setIsSipOpen] = useState(false);
-
   const clientId = getClientId();
 
   const fetchData = useCallback(async () => {
@@ -63,8 +43,9 @@ export default function WorkspaceSettings() {
       setLoading(true);
       setError(null);
       
-      const [profileData, numbersData] = await Promise.all([
-        authApi.getProfile().catch((err) => {
+      const previewSession = isLocalUiPreviewSession();
+      const [profileData, numbersData, keysData] = await Promise.all([
+        previewSession ? Promise.resolve(null) : authApi.getProfile().catch((err) => {
           console.warn("[Settings] Profile fetch fallback:", err);
           return null;
         }),
@@ -72,6 +53,7 @@ export default function WorkspaceSettings() {
           console.warn("[Settings] Numbers list fallback:", err);
           return [];
         }),
+        previewSession ? Promise.resolve([]) : developersApi.listKeys().catch(() => []),
       ]);
 
       if (profileData) {
@@ -82,6 +64,7 @@ export default function WorkspaceSettings() {
         setCompanyLanguage(profileData.language || "en");
       }
       setNumbers(Array.isArray(numbersData) ? numbersData : []);
+      setApiKeys(Array.isArray(keysData) ? keysData : []);
     } catch (err: any) {
       console.error("[Settings] Load error:", err);
       setError(err.message || "Failed to load settings");
@@ -94,17 +77,29 @@ export default function WorkspaceSettings() {
     fetchData();
   }, [fetchData]);
 
-  const handleCopyKey = () => {
-    if (!profile?.api_key) return;
-    navigator.clipboard.writeText(profile.api_key);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
+  const handleCreateKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) return;
+    setCreatingKey(true);
+    try {
+      const created = await developersApi.createKey(newKeyName.trim());
+      setApiKeys(prev => [created, ...prev]);
+      setNewSecret(created.secret || null);
+      setNewKeyName("");
+    } catch (err: any) { setError(err.message || "Unable to create API key"); }
+    finally { setCreatingKey(false); }
+  };
+
+  const handleRevokeKey = async (id: string) => {
+    try { await developersApi.revokeKey(id); setApiKeys(prev => prev.map(key => key.id === id ? { ...key, revoked_at: new Date().toISOString() } : key)); }
+    catch (err: any) { setError(err.message || "Unable to revoke API key"); }
   };
 
   // Update profile handler
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
+    setProfileSaveState("Saving…");
     setError(null);
     try {
       const updated = await authApi.updateProfile({
@@ -114,38 +109,16 @@ export default function WorkspaceSettings() {
         language: companyLanguage,
       });
       setProfile(updated);
+      setProfileSaveState("Saved");
       
       // Update global layout sync values
       localStorage.setItem("bavio_name", companyName);
       toast.success("Workspace profile updated successfully.");
     } catch (err: any) {
+      setProfileSaveState("Save failed");
       setError(err.message || "Failed to save profile changes");
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  // Register Verified outbound number (via Twilio caller ID)
-  const handleAddNumber = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNumber || !newNumberLabel) return;
-    setAddingNumber(true);
-    setError(null);
-    try {
-      const created = await numbersApi.link({
-        number: newNumber,
-        label: newNumberLabel,
-      });
-      setNumbers(prev => [...prev, created as PhoneNumber]);
-      setNewNumber("");
-      setNewNumberLabel("");
-      setShowNumberForm(false);
-      setShowNumberToast(true);
-      setTimeout(() => setShowNumberToast(false), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to register number");
-    } finally {
-      setAddingNumber(false);
     }
   };
 
@@ -178,14 +151,8 @@ export default function WorkspaceSettings() {
         <div className="text-left">
           <h1 className="font-display font-bold text-2xl md:text-3xl text-ink tracking-tight">Settings</h1>
           <p className="text-sm text-ink-tertiary mt-1 font-sans">
-            Configure your workspace profile, API credentials, and verify outbound caller IDs.
+            Manage workspace details, calling, and API credentials.
           </p>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-[10px]">
-          <span className="text-ink-muted">Account Status:</span>
-          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-green-700 bg-green-50 border border-green-150 px-2 py-0.5 rounded-full uppercase">
-            Active
-          </span>
         </div>
       </div>
 
@@ -217,11 +184,11 @@ export default function WorkspaceSettings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Company / Business Name</label>
-                <input
+              <input
                   type="text"
                   required
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
+                  onChange={(e) => { setCompanyName(e.target.value); setProfileSaveState("Unsaved changes"); }}
                   className="w-full bg-canvas/20 border border-line rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-saffron text-ink font-semibold"
                 />
               </div>
@@ -232,7 +199,7 @@ export default function WorkspaceSettings() {
                   type="text"
                   required
                   value={companyIndustry}
-                  onChange={(e) => setCompanyIndustry(e.target.value)}
+                  onChange={(e) => { setCompanyIndustry(e.target.value); setProfileSaveState("Unsaved changes"); }}
                   className="w-full bg-canvas/20 border border-line rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-saffron text-ink font-semibold"
                 />
               </div>
@@ -243,7 +210,7 @@ export default function WorkspaceSettings() {
               <textarea
                 rows={3}
                 value={companyDescription}
-                onChange={(e) => setCompanyDescription(e.target.value)}
+                onChange={(e) => { setCompanyDescription(e.target.value); setProfileSaveState("Unsaved changes"); }}
                 placeholder="Brief description of your business to guide AI employees..."
                 className="w-full bg-canvas/20 border border-line rounded-xl p-3 text-xs focus:outline-none focus:border-saffron text-ink leading-relaxed"
               />
@@ -254,7 +221,7 @@ export default function WorkspaceSettings() {
                 <label className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider block mb-1">Primary Language</label>
                 <select
                   value={companyLanguage}
-                  onChange={(e) => setCompanyLanguage(e.target.value)}
+                  onChange={(e) => { setCompanyLanguage(e.target.value); setProfileSaveState("Unsaved changes"); }}
                   className="w-full bg-white border border-line rounded-xl px-3 py-2 text-xs text-ink focus:outline-none cursor-pointer"
                 >
                   <option value="en">English (US/UK)</option>
@@ -265,14 +232,15 @@ export default function WorkspaceSettings() {
               </div>
             </div>
 
-            <div className="border-t border-line/40 pt-4 flex justify-end">
+            <div className="border-t border-line/40 pt-4 flex items-center justify-between">
+              <span className="text-[11px] text-ink-muted" role="status">{profileSaveState}</span>
               <button
                 type="submit"
-                disabled={savingProfile}
+                disabled={savingProfile || profileSaveState === "No changes"}
                 className="flex items-center gap-1.5 px-4 py-2 bg-saffron hover:bg-saffron-dark text-white text-xs font-semibold rounded-xl transition-all shadow-sm disabled:opacity-40"
               >
                 {savingProfile && <Spinner className="w-4 h-4 animate-spin" />}
-                Save Changes
+                {savingProfile ? "Saving…" : "Save changes"}
               </button>
             </div>
           </form>
@@ -280,35 +248,16 @@ export default function WorkspaceSettings() {
           {/* API Key Credentials */}
           <div className="bg-white border border-line rounded-[24px] p-6 shadow-[0_1px_3px_rgba(20,10,2,0.02)] text-left flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-line/40 pb-2">
-              <h3 className="font-sans font-semibold text-lg text-ink">API Keys & Integrations</h3>
+              <h3 className="font-sans font-semibold text-lg text-ink">API credentials</h3>
               <Key className="w-4 h-4 text-saffron" />
             </div>
             <p className="text-xs text-ink-secondary leading-relaxed">
-              Use this private authentication token to link Bavio with your CRM webhook triggers, messaging channels, or telephony trunks.
+              Manage keys used to authenticate API requests. Secret values are shown once when created.
             </p>
-
-            {profile?.api_key ? (
-              <div className="bg-canvas/20 border border-line p-3 rounded-xl flex items-center justify-between gap-4 font-mono text-[10px]">
-                <div className="flex flex-col gap-1 overflow-hidden pr-3">
-                  <span className="font-bold text-ink">Primary Workspace Token</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-ink-muted select-all truncate">{profile.api_key}</span>
-                    <button
-                      onClick={handleCopyKey}
-                      className="text-ink-muted hover:text-ink shrink-0 p-1.5 rounded-lg hover:bg-canvas transition-all flex items-center justify-center"
-                      title="Copy api key"
-                    >
-                      {copiedKey ? <Check className="w-3.5 h-3.5 text-state-success" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-                <span className="text-[9px] text-ink-tertiary hidden sm:inline whitespace-nowrap">
-                  Provisioned: {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "—"}
-                </span>
-              </div>
-            ) : (
-              <p className="text-xs text-ink-muted font-mono">No API key available for this workspace.</p>
-            )}
+            <form onSubmit={handleCreateKey} className="flex gap-2"><label className="sr-only" htmlFor="api-key-name">API key name</label><input id="api-key-name" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} required maxLength={64} placeholder="API key name" className="flex-1 bg-canvas/20 border border-line rounded-xl px-3 py-2 text-xs" /><button disabled={creatingKey} className="px-3 py-2 bg-saffron text-white text-xs rounded-xl">{creatingKey ? "Creating…" : "Create"}</button></form>
+            {newSecret && <div className="border border-saffron/40 bg-saffron/5 rounded-xl p-3 text-xs"><p className="font-semibold">Copy this secret now</p><code className="block mt-1 break-all">{newSecret}</code><button onClick={() => setNewSecret(null)} className="mt-2 text-ink-muted underline">Dismiss</button></div>}
+            <div className="divide-y divide-line/50">{apiKeys.map(key => <div key={key.id} className="py-3 flex items-center justify-between gap-3 text-xs"><div><p className="font-semibold">{key.name}</p><p className="text-ink-muted font-mono">{key.key_prefix} · Created {new Date(key.created_at).toLocaleDateString()} {key.last_used_at ? `· Last used ${new Date(key.last_used_at).toLocaleDateString()}` : ""}</p></div><div className="flex items-center gap-2"><span className="text-[10px]">{key.revoked_at ? "Revoked" : "Active"}</span>{!key.revoked_at && <><button onClick={() => handleRevokeKey(key.id)} className="text-xs underline">Revoke</button><button disabled title="Rotation is not available" className="text-xs text-ink-muted underline opacity-50">Rotate</button></>}</div></div>)}</div>
+            <p className="text-[11px] text-ink-muted">Key rotation is unavailable because no backend rotation endpoint is configured.</p>
           </div>
 
         </div>
@@ -327,60 +276,9 @@ export default function WorkspaceSettings() {
                 Verify your existing business phone lines to place automated outbound voice calls.
               </p>
 
-              <button
-                onClick={() => setShowNumberForm(!showNumberForm)}
-                className="w-full flex items-center justify-center gap-1.5 border border-dashed border-line hover:border-saffron/40 text-ink-secondary hover:text-ink text-[10px] font-bold uppercase tracking-wider py-2.5 rounded-xl transition-all mb-4 hover:bg-canvas/30"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Register Caller ID
-              </button>
+              <button disabled title="Caller ID verification is not available in this workspace" className="w-full flex items-center justify-center gap-1.5 border border-line text-ink-muted text-[10px] font-bold uppercase tracking-wider py-2.5 rounded-xl mb-4 opacity-60 cursor-not-allowed"><Plus className="w-3.5 h-3.5" />Verify & Link Line</button>
+              <p className="text-[11px] text-ink-muted mb-4">Caller ID verification is unavailable until a provider verification path is configured.</p>
 
-              <AnimatePresence>
-                {showNumberForm && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <form
-                      onSubmit={handleAddNumber}
-                      className="flex flex-col gap-3 bg-canvas/20 border border-line p-4 rounded-xl mb-4 text-left text-xs"
-                    >
-                      <div className="space-y-0.5">
-                        <label className="text-[8px] font-bold uppercase tracking-widest text-ink-tertiary">Phone Number</label>
-                        <input
-                          type="tel"
-                          required
-                          placeholder="e.g. +1 (555) 024-5232"
-                          value={newNumber}
-                          onChange={(e) => setNewNumber(e.target.value)}
-                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-saffron font-mono"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <label className="text-[8px] font-bold uppercase tracking-widest text-ink-tertiary">Trunk Label</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Support Outbound Line"
-                          value={newNumberLabel}
-                          onChange={(e) => setNewNumberLabel(e.target.value)}
-                          className="w-full bg-white border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-saffron"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={addingNumber}
-                        className="w-full bg-saffron hover:bg-saffron-dark text-white text-[9px] font-bold uppercase tracking-wider py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"
-                      >
-                        {addingNumber && <Spinner className="w-3.5 h-3.5 animate-spin" />}
-                        Verify & Link Line
-                      </button>
-                    </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {numbers.length === 0 ? (
                 <div className="flex flex-col items-center gap-1.5 py-8 text-center bg-canvas/10 border border-dashed border-line rounded-xl">
@@ -398,8 +296,8 @@ export default function WorkspaceSettings() {
                         <h4 className="text-xs font-bold text-ink font-mono">{num.number}</h4>
                         <span className="text-[9px] text-ink-tertiary truncate">{num.label || num.provider || "—"}</span>
                       </div>
-                      <span className="inline-flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded border border-green-150 bg-green-50 text-green-700 uppercase shrink-0">
-                        Active
+                      <span className="inline-flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded border border-line bg-canvas/40 text-ink-muted uppercase shrink-0">
+                        {{ verified: "Verified", pending: "Verification pending", failed: "Failed" }[num.status] || "Not verified"}
                       </span>
                     </div>
                   ))}
@@ -409,78 +307,14 @@ export default function WorkspaceSettings() {
 
             <div className="border-t border-line/45 pt-4 mt-6 flex justify-between items-center text-[10px] font-mono text-ink-muted">
               <span>Verified IDs</span>
-              <span className="text-ink-tertiary font-bold">Secure Cloud</span>
             </div>
           </div>
 
-          {/* ADVANCED ACCORDION: SIP GATEWAY SPECIFICS (Removes technical leaks) */}
-          <div className="border border-line rounded-xl overflow-hidden bg-white text-left">
-            <button
-              onClick={() => setIsSipOpen(!isSipOpen)}
-              className="w-full flex justify-between items-center p-3.5 bg-canvas/10 hover:bg-canvas/25 text-xs font-semibold transition-all"
-            >
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-ink-secondary">
-                <Sliders className="w-3.5 h-3.5 text-saffron" />
-                SIP Signaling & Developer Details
-              </span>
-              {isSipOpen ? <CaretDown className="w-4 h-4 text-ink-tertiary" /> : <CaretRight className="w-4 h-4 text-ink-tertiary" />}
-            </button>
-
-            <AnimatePresence>
-              {isSipOpen && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: "auto" }}
-                  exit={{ height: 0 }}
-                  className="overflow-hidden border-t border-line"
-                >
-                  <div className="p-4 space-y-3 text-[10px] font-mono text-ink-secondary bg-white">
-                    {[
-                      ["Primary SIP Target Host", "sip.bavio.in:5060"],
-                      ["US East Gateway", "us-east.sip-gateway.bavio.in"],
-                      ["Signaling Protocol", "UDP / TLS Lock"],
-                    ].map(([label, val]) => (
-                      <div key={label} className="flex justify-between items-center bg-canvas/15 border border-line/50 p-2.5 rounded-lg">
-                        <span className="text-ink-muted">{label}:</span>
-                        <span className="text-ink select-all">{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Compliance Card */}
-          <div className="bg-canvas/15 border border-line/65 rounded-xl p-4 text-left flex flex-col gap-2">
-            <div className="flex gap-1.5 items-center text-xs font-bold text-ink">
-              <ShieldCheck className="w-4 h-4 text-saffron shrink-0" />
-              <span>Compliance Standards</span>
-            </div>
-            <p className="text-[10px] text-ink-tertiary leading-relaxed">
-              Bavio is fully aligned with industry security standards. All client data channels use 256-bit TLS encryption pipelines.
-            </p>
-          </div>
 
         </div>
 
       </div>
 
-      {/* Floating Notification */}
-      <AnimatePresence>
-        {showNumberToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 right-6 z-50 bg-green-500 border border-green-600 px-4 py-3 rounded-xl shadow-premium text-white text-[10px] font-bold flex items-center gap-2"
-          >
-            <CheckCircle className="w-4 h-4" />
-            <span>Outbound caller ID verified successfully.</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
     </div>
   );
 }
