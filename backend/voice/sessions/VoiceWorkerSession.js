@@ -1,6 +1,6 @@
 'use strict';
 
-const db                     = require('../../database');
+const db                     = require('../../database/db');
 const { recordConversationCompletedEvent } = require('../../services/businessEventService');
 const VoiceWorkerSessionBase = require('../providers/interfaces/VoiceWorkerSession');
 const DeepgramStt            = require('../providers/modular/DeepgramStt');

@@ -1,25 +1,214 @@
-import { useState } from 'react';
-import Link from 'next/link';
-import type { Draft, Voice } from './service';
-import type { PhoneNumber } from '@/lib/api';
-import s from './agents.module.css';
+'use client';
 
-export const sections = [ ['identity', 'Behavior', 'Identity'], ['instructions', 'Behavior', 'Instructions'], ['knowledge', 'Intelligence', 'Knowledge'], ['voice', 'Conversation', 'Voice & language'], ['deployment', 'Deploy', 'Phone assignment'], ['test', 'Quality', 'Test'] ] as const;
+import React, { useState } from 'react';
+import Link from 'next/link';
+import type { Draft, Voice } from './types';
+import type { PhoneNumber } from '@/lib/api';
+import IdentityStep from './steps/IdentityStep';
+import VoiceLanguageStep from './steps/VoiceLanguageStep';
+import s from './create-agent.module.css';
+
+export const sections = [
+  ['identity', 'Behavior', 'Identity'],
+  ['instructions', 'Behavior', 'Instructions'],
+  ['knowledge', 'Intelligence', 'Knowledge'],
+  ['voice', 'Conversation', 'Voice & language'],
+  ['deployment', 'Deploy', 'Phone assignment'],
+  ['test', 'Quality', 'Test'],
+] as const;
+
 export type Section = typeof sections[number][0];
-interface Props { section: Section; draft: Draft; set: (key: keyof Draft, value: string | boolean) => void; creating: boolean; voices: Voice[]; voiceError: boolean; knowledgeCount: number | null; numbers: PhoneNumber[]; numberError: boolean; assigned: string; }
+
+interface Props {
+  section: Section;
+  draft: Draft;
+  set: (key: keyof Draft, value: any) => void;
+  creating: boolean;
+  voices: Voice[];
+  voiceError: boolean;
+  onRetryVoices?: () => void;
+  knowledgeCount: number | null;
+  numbers: PhoneNumber[];
+  numberError: boolean;
+  assigned: string;
+  onNavigateStep: (step: Section) => void;
+  onCancel: () => void;
+  onSaveDraft?: () => void;
+}
 
 const starterTemplate = 'You are the AI receptionist for [Business]. Your responsibilities are…';
 
 export default function AgentFields(p: Props) {
-  const [nameTouched, setNameTouched] = useState(false);
-  const { draft: d, set } = p;
-  const nameInvalid = (nameTouched && !d.name.trim()) || d.name.length > 120;
+  const { draft: d, set, onNavigateStep, onCancel } = p;
   const selectedVoice = p.voiceError || d.voice_id.startsWith('local-preview-') ? '' : d.voice_id;
-  return <div className={s.fields}>
-    {p.section === 'identity' && <><span className={s.eyebrow}>Behavior</span><h2>Who this agent is</h2><p>Configure how this agent represents your business.</p><label htmlFor="agent-name">Agent name<span className={s.helper}>Use a clear name your team will recognize.</span><input id="agent-name" required maxLength={120} value={d.name} onBlur={() => setNameTouched(true)} aria-invalid={nameInvalid} onChange={e => set('name', e.target.value)} autoComplete="off" aria-describedby="agent-name-help" /></label><small id="agent-name-help" className={s.fieldMeta}>{nameInvalid ? 'Enter an agent name between 1 and 120 characters. ' : ''}{d.name.length}/120 characters</small>{!p.creating && <><label htmlFor="agent-greeting">Greeting<textarea id="agent-greeting" rows={3} value={d.greeting} onChange={e => set('greeting', e.target.value)} /></label><label className={s.check}><input type="checkbox" checked={d.is_active} onChange={e => set('is_active', e.target.checked)} />Enable agent configuration</label><p>Enables this agent configuration. Phone service is managed separately.</p></>}</>}
-    {p.section === 'instructions' && <><span className={s.eyebrow}>Behavior</span><h2>How this agent should behave</h2><p>Set responsibilities, tone, and boundaries for each response.</p>{!d.system_prompt.trim() && <div className={s.starter}><strong>Start with a clear brief</strong><p>Suggested starter: “{starterTemplate}”</p><button type="button" onClick={() => { set('system_prompt', starterTemplate); document.getElementById('agent-instructions')?.focus(); }}>Insert starter template</button></div>}<label htmlFor="agent-instructions">Instructions<textarea id="agent-instructions" className={s.editor} required value={d.system_prompt} onChange={e => set('system_prompt', e.target.value)} spellCheck aria-describedby="instructions-help" /></label><div id="instructions-help" className={s.guidance}><strong>Include guidance on:</strong><ul><li>role and responsibilities</li><li>tone and boundaries</li><li>when to escalate</li><li>questions it cannot answer</li></ul></div><div className={s.editorFooter}><small>{d.system_prompt.length.toLocaleString()} characters</small><small>Write the rules this agent should follow.</small></div></>}
-    {p.section === 'knowledge' && <><span className={s.eyebrow}>Intelligence</span><h2>Workspace knowledge</h2><p>Knowledge is managed at workspace level.</p><p>{p.knowledgeCount === null ? 'Knowledge unavailable.' : `${p.knowledgeCount} sources available`}</p><Link href="/dashboard/knowledge">Manage knowledge →</Link></>}
-    {p.section === 'voice' && <><span className={s.eyebrow}>Conversation</span><h2>Voice & language</h2><p>How this agent communicates.</p><label htmlFor="agent-voice">Selected voice<select id="agent-voice" value={selectedVoice} disabled={p.voiceError} onChange={e => set('voice_id', e.target.value)}>{p.voiceError ? <option value="">Voice service unavailable</option> : <><option value="">Select a voice</option>{p.voices.map(v => <option key={v.voice_id} value={v.voice_id}>{v.voice_display_name} · {v.voice_language}</option>)}</>}</select></label>{p.voiceError && <p role="status">Voice service unavailable</p>}<label htmlFor="agent-language">Primary language<select id="agent-language" value={d.language} onChange={e => set('language', e.target.value)}>{!['en-US','hi-IN'].includes(d.language) && <option value={d.language}>{d.language} (stored language)</option>}<option value="en-US">English</option><option value="hi-IN">Hindi</option></select></label><p>Open Test to hear a preview when one is available.</p></>}
-    {p.section === 'deployment' && <><span className={s.eyebrow}>Deploy / voice</span><h2>Phone assignment</h2><p>Route incoming calls from a workspace number to this agent.</p>{p.creating ? <p>No number assigned. Create the agent before assigning a number.</p> : p.numberError ? <p role="status">Phone assignment unavailable.</p> : <><div><strong>Assigned number</strong><p>{p.numbers.find(n => n.id === p.assigned)?.number || 'No number assigned'}</p></div></>}<Link href="/dashboard/phone-numbers">Manage phone numbers →</Link></>}
-  </div>;
+
+  if (p.section === 'identity') {
+    return (
+      <IdentityStep
+        draft={d}
+        onChange={(key, val) => set(key, val)}
+        onContinue={() => onNavigateStep('instructions')}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  return (
+    <div className={s.stepContentColumn}>
+      {p.section === 'instructions' && (
+        <>
+          <div className={s.stepHeader}>
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-geist-mono)', color: '#F97316', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              INSTRUCTIONS
+            </span>
+            <h2 className={s.stepNumberTitle} style={{ marginTop: '4px' }}>
+              How this agent should behave
+            </h2>
+            <p className={s.stepDescription}>
+              Set responsibilities, tone, and boundaries for each response.
+            </p>
+          </div>
+
+          <div className={s.fieldsGrid}>
+            <div className={s.bannerBox}>
+              <div>
+                <h3 className={s.bannerTitle}>Start with a clear brief</h3>
+                <p className={s.bannerSubtitle}>
+                  Suggested starter: &ldquo;{starterTemplate}&rdquo;
+                </p>
+              </div>
+              <button
+                type="button"
+                className={s.cancelButton}
+                onClick={() => {
+                  set('system_prompt', starterTemplate);
+                  document.getElementById('agent-instructions')?.focus();
+                }}
+              >
+                Insert starter template
+              </button>
+            </div>
+
+            <div className={s.fieldGroup}>
+              <label htmlFor="agent-instructions" className={s.fieldLabel}>
+                Instructions <span className={s.requiredStar}>*</span>
+              </label>
+              <textarea
+                id="agent-instructions"
+                className={s.textareaControl}
+                style={{ minHeight: '220px', lineHeight: '1.7' }}
+                required
+                value={d.system_prompt}
+                onChange={e => set('system_prompt', e.target.value)}
+                placeholder="Describe role, responsibilities, tone, business rules, escalation, and how to handle unknown questions..."
+              />
+              <div className={s.fieldMetaRow}>
+                <span className={s.fieldHelperText}>
+                  Write the rules and guidelines this agent should follow.
+                </span>
+                <span className={s.charCounterRight}>
+                  {d.system_prompt.length.toLocaleString()} characters
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className={s.bottomActionBar}>
+            <button type="button" className={s.cancelButton} onClick={() => onNavigateStep('identity')}>
+              ← Identity
+            </button>
+            <button type="button" className={s.continueButton} onClick={() => onNavigateStep('knowledge')}>
+              Continue to Knowledge →
+            </button>
+          </div>
+        </>
+      )}
+
+      {p.section === 'knowledge' && (
+        <>
+          <div className={s.stepHeader}>
+            <h2 className={s.stepNumberTitle}>3. Knowledge</h2>
+            <p className={s.stepDescription}>
+              Give {d.name.trim() || 'this agent'} access to the right information from your workspace so it can answer customer questions accurately.
+            </p>
+          </div>
+
+          <div className={s.fieldsGrid}>
+            <div className={s.bannerBox}>
+              <div>
+                <h3 className={s.bannerTitle}>Workspace knowledge</h3>
+                <p className={s.bannerSubtitle}>
+                  Agents use information stored in your workspace knowledge base.
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: p.knowledgeCount ? 'var(--ca-badge-draft-text)' : 'var(--ca-text-faint)' }}>
+                  {p.knowledgeCount === null ? 'Knowledge sources unavailable.' : `${p.knowledgeCount} sources available in workspace`}
+                </p>
+              </div>
+              <Link href="/dashboard/knowledge" className={s.cancelButton} style={{ textDecoration: 'none' }}>
+                Manage knowledge →
+              </Link>
+            </div>
+          </div>
+
+          <div className={s.bottomActionBar}>
+            <button type="button" className={s.cancelButton} onClick={() => onNavigateStep('instructions')}>
+              ← Instructions
+            </button>
+            <button type="button" className={s.continueButton} onClick={() => onNavigateStep('voice')}>
+              Continue to Voice & language →
+            </button>
+          </div>
+        </>
+      )}
+
+      {p.section === 'voice' && (
+        <VoiceLanguageStep
+          draft={d}
+          onChange={(key, val) => set(key, val)}
+          voices={p.voices}
+          voiceError={p.voiceError}
+          onRetryVoices={p.onRetryVoices}
+          onNavigateStep={p.onNavigateStep}
+        />
+      )}
+
+      {p.section === 'deployment' && (
+        <>
+          <div className={s.stepHeader}>
+            <h2 className={s.stepNumberTitle}>5. Phone assignment</h2>
+            <p className={s.stepDescription}>
+              Assign a phone number to your agent. Numbers are managed directly within your workspace.
+            </p>
+          </div>
+
+          <div className={s.fieldsGrid}>
+            <div className={s.bannerBox}>
+              <div>
+                <h3 className={s.bannerTitle}>Assigned phone number</h3>
+                <p className={s.bannerSubtitle}>
+                  {p.creating
+                    ? 'Create the agent first to bind an active inbound line.'
+                    : p.numberError
+                    ? 'Phone assignment unavailable.'
+                    : p.numbers.find(n => n.id === p.assigned)?.number || 'No number assigned'}
+                </p>
+              </div>
+              <Link href="/dashboard/phone-numbers" className={s.cancelButton} style={{ textDecoration: 'none' }}>
+                Manage phone numbers →
+              </Link>
+            </div>
+          </div>
+
+          <div className={s.bottomActionBar}>
+            <button type="button" className={s.cancelButton} onClick={() => onNavigateStep('voice')}>
+              ← Back to Voice & language
+            </button>
+            <button type="button" className={s.continueButton} onClick={() => onNavigateStep('test')}>
+              Continue to Test →
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }

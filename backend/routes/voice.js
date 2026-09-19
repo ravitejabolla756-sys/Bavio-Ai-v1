@@ -125,65 +125,60 @@ router.post('/chat', requireAuth, async (req, res) => {
     }
 });
 
-/**
- * GET /voice/catalog - Expose stored voices catalog
- */
-router.get('/catalog', requireAuth, async (req, res) => {
-    try {
-        const result = await db.query(
-            `SELECT voice_id, voice_display_name, voice_gender, voice_accent, voice_language, voice_style, preview_url
-             FROM voices
-             ORDER BY voice_language, voice_accent, voice_display_name`
-        );
-        
-        if (result.rows && result.rows.length > 0) {
-            const catalog = result.rows.map(v => ({
-                voice_id: v.voice_id,
-                voice_display_name: v.voice_display_name,
-                voice_gender: v.voice_gender,
-                voice_accent: v.voice_accent,
-                voice_language: v.voice_language,
-                voice_style: v.voice_style,
-                preview_url: `/voice/preview/${v.voice_id}`
-            }));
-            return res.json(catalog);
-        }
+const voiceCatalogService = require('../services/voiceCatalogService');
 
-        return res.json([]);
+/**
+ * GET /voice/languages - Expose runtime supported languages
+ */
+router.get('/languages', async (req, res) => {
+    try {
+        const languages = voiceCatalogService.getSupportedLanguages();
+        res.json({ success: true, languages });
     } catch (error) {
-        console.error('Failed to retrieve voices catalog:', error);
-        return res.status(503).json({ error: 'Voice service unavailable' });
+        console.error('Failed to retrieve supported languages:', error);
+        res.status(503).json({ success: false, error: 'Language availability is temporarily unavailable.' });
     }
 });
 
 /**
- * GET /voice/preview/:voiceId - Proxied preview stream to protect provider credentials
+ * GET /voice/catalog - Expose canonical Bavio voices catalog
+ */
+router.get('/catalog', async (req, res) => {
+    try {
+        const voices = voiceCatalogService.getVoiceCatalog();
+        // Also map legacy format fields (voice_id, voice_display_name, etc.) for backward compatibility
+        const catalog = voices.map(v => ({
+            ...v,
+            voice_id: v.id,
+            voice_display_name: v.name,
+            voice_gender: v.gender,
+            voice_language: v.supportedLanguages[0] || 'en-US',
+            preview_url: `/voice/preview/${v.id}`,
+        }));
+        return res.json({ success: true, voices: catalog, catalog });
+    } catch (error) {
+        console.error('Failed to retrieve voices catalog:', error);
+        return res.status(503).json({ success: false, error: 'Voice service is temporarily unavailable.' });
+    }
+});
+
+/**
+ * GET /voice/preview/:voiceId - Proxied / synthesized real audio preview stream
  */
 router.get('/preview/:voiceId', async (req, res) => {
     try {
         const { voiceId } = req.params;
+        const { language = 'en-US' } = req.query;
+
+        const audioBuffer = await voiceCatalogService.getVoicePreviewAudio(voiceId, language);
         
-        const result = await db.query('SELECT * FROM voices WHERE voice_id = $1', [voiceId]);
-        const voice = result.rows[0];
-        if (!voice) {
-            return res.status(404).json({ error: 'Voice not found' });
-        }
-        
-        const previewUrl = `https://api.elevenlabs.io/v1/voices/${voiceId}/previews`;
-        
-        const response = await axios({
-            method: 'get',
-            url: previewUrl,
-            responseType: 'stream',
-            timeout: 5000
-        });
-        
-        res.set('Content-Type', response.headers['content-type'] || 'audio/mpeg');
-        response.data.pipe(res);
-        
+        res.set('Content-Type', 'audio/mpeg');
+        res.set('Content-Length', audioBuffer.length);
+        res.set('Cache-Control', 'public, max-age=86400');
+        res.send(audioBuffer);
     } catch (error) {
-        console.error('Failed to proxy voice preview:', error);
-        res.status(500).json({ error: 'Failed to retrieve preview' });
+        console.error('[VOICE PREVIEW ERROR] Failed to stream voice preview:', error.message);
+        res.status(500).json({ error: 'Preview unavailable' });
     }
 });
 

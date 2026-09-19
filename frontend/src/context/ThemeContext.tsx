@@ -33,7 +33,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = (localStorage.getItem("theme") || localStorage.getItem("bavio_theme")) as ThemeMode | null;
+        const isWs = window.location.pathname.startsWith("/dashboard") || window.location.pathname.startsWith("/workspace");
+        const savedWs = localStorage.getItem("bavio_workspace_theme") as ThemeMode | null;
+        if (savedWs === "dark" || savedWs === "light" || savedWs === "system") {
+          return savedWs;
+        }
+        if (isWs) {
+          return "dark";
+        }
+        const saved = (localStorage.getItem("bavio_theme") || localStorage.getItem("theme")) as ThemeMode | null;
         if (saved === "dark" || saved === "light" || saved === "system") {
           return saved;
         }
@@ -42,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
     }
-    return "light";
+    return "dark";
   });
 
   const [isSystemDark, setIsSystemDark] = useState<boolean>(() => {
@@ -95,6 +103,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem("theme", newTheme);
       localStorage.setItem("bavio_theme", newTheme);
+      if (typeof window !== "undefined" && (window.location.pathname.startsWith("/dashboard") || window.location.pathname.startsWith("/workspace"))) {
+        localStorage.setItem("bavio_workspace_theme", newTheme);
+      }
     } catch (e) {
       console.error("Theme storage error:", e);
     }
@@ -116,6 +127,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem("theme", nextTheme);
         localStorage.setItem("bavio_theme", nextTheme);
+        if (typeof window !== "undefined" && (window.location.pathname.startsWith("/dashboard") || window.location.pathname.startsWith("/workspace"))) {
+          localStorage.setItem("bavio_workspace_theme", nextTheme);
+        }
       } catch (e) {
         console.error("Theme storage error:", e);
       }

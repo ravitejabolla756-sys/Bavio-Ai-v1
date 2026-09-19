@@ -10,8 +10,6 @@ import { contactOf } from '@/features/leads/model';
 import styles from './overview.module.css';
 
 type State<T> = { state: 'loading' } | { state: 'ready'; data: T } | { state: 'failed'; message: string };
-type Integration = { connected?: boolean; testStatus?: string | null };
-type IntegrationStatus = { deepgram?: Integration; openai?: Integration; elevenlabs?: Integration };
 type SetupState = 'Complete' | 'Needs setup' | 'Unavailable';
 
 const initial = <T,>(): State<T> => ({ state: 'loading' });
@@ -40,7 +38,6 @@ export default function DashboardOverview() {
   const [numbers, setNumbers] = useState<State<PhoneNumber[]>>(initial());
   const [knowledge, setKnowledge] = useState<State<KnowledgeDoc[]>>(initial());
   const [usage, setUsage] = useState<State<UsageSummary>>(initial());
-  const [integrations, setIntegrations] = useState<State<IntegrationStatus>>(initial());
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const systemStatus = useSystemStatus();
   const isPreview = isLocalUiPreviewSession();
@@ -60,7 +57,6 @@ export default function DashboardOverview() {
       read(numbersApi.list(clientId), setNumbers),
       read(knowledgeBaseApi.list(), setKnowledge),
       read(usageApi.get(clientId), setUsage),
-      read(apiFetch<IntegrationStatus>('/integrations/status'), setIntegrations),
     ]);
     setCheckedAt(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
   }, [clientId]);
@@ -70,9 +66,7 @@ export default function DashboardOverview() {
   const recentCalls = !isPreview && calls.state === 'ready' ? [...calls.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5) : [];
   const recentLeads = !isPreview && leads.state === 'ready' ? [...leads.data].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5) : [];
   const activityAvailable = recentCalls.length > 0 || recentLeads.length > 0;
-  const connectedProviders = integrations.state === 'ready' ? [integrations.data.deepgram, integrations.data.openai, integrations.data.elevenlabs].filter(provider => provider?.connected).length : 0;
-  const providerState: SetupState = isPreview || integrations.state !== 'ready' ? 'Unavailable' : connectedProviders === 3 ? 'Complete' : 'Needs setup';
-  const voiceState = isPreview ? 'Unavailable' : setupState(assistants, items => items.some(item => Boolean(item.voice)));
+  const voiceState = isPreview ? 'Unavailable' : setupState(assistants, items => items.some(item => Boolean(item.voice || (item as unknown as { voice_id?: string }).voice_id)));
   const setup = <T,>(value: State<T[]>, complete: (items: T[]) => boolean): SetupState => isPreview ? 'Unavailable' : setupState(value, complete);
   const usageText = useMemo(() => {
     if (usage.state !== 'ready') return usage.state === 'loading' ? 'Checking' : 'Usage unavailable';
@@ -81,8 +75,8 @@ export default function DashboardOverview() {
   }, [usage]);
 
   const serviceRows = [
-    { label: 'Voice provider', value: providerState === 'Complete' ? 'Operational' : providerState === 'Needs setup' ? 'Not configured' : 'Unavailable' },
-    { label: 'Telephony provider', value: isPreview ? 'Unavailable' : setupState(numbers, items => items.length > 0) === 'Complete' ? 'Operational' : numbers.state === 'ready' ? 'Not configured' : 'Unavailable' },
+    { label: 'Voice service', value: systemStatus === 'Operational' ? 'Operational' : 'Degraded' },
+    { label: 'Telephony service', value: isPreview ? 'Unavailable' : numbers.state === 'ready' ? 'Operational' : 'Unavailable' },
     { label: 'Knowledge service', value: isPreview ? 'Unavailable' : knowledge.state === 'ready' ? 'Operational' : 'Unavailable' },
     { label: 'Execution runtime', value: systemStatus },
   ];
@@ -98,8 +92,7 @@ export default function DashboardOverview() {
           ['Agent', setup(assistants, items => items.length > 0), '/dashboard/assistant'],
           ['Knowledge', setup(knowledge, items => items.length > 0), '/dashboard/knowledge'],
           ['Phone number', setup(numbers, items => items.length > 0), '/dashboard/phone-numbers'],
-          ['Voice', voiceState, '/dashboard/integrations/voice-pipeline'],
-          ['Provider', providerState, '/dashboard/integrations/voice-pipeline'],
+          ['Voice', voiceState, '/dashboard/assistant'],
           ['First conversation', setup(calls, items => items.length > 0), '/dashboard/calls'],
         ].map(([label, value, href]) => <Link className={styles.setupRow} href={href} key={label}><span>{label}</span><StateLabel value={value} /><ArrowRight size={15} aria-hidden="true" /></Link>)}
       </div>

@@ -277,7 +277,7 @@ export default function WorkspaceSettings() {
               </p>
 
               <button disabled title="Caller ID verification is not available in this workspace" className="w-full flex items-center justify-center gap-1.5 border border-line text-ink-muted text-[10px] font-bold uppercase tracking-wider py-2.5 rounded-xl mb-4 opacity-60 cursor-not-allowed"><Plus className="w-3.5 h-3.5" />Verify & Link Line</button>
-              <p className="text-[11px] text-ink-muted mb-4">Caller ID verification is unavailable until a provider verification path is configured.</p>
+              <p className="text-[11px] text-ink-muted mb-4">Caller ID verification is currently unavailable for this workspace.</p>
 
 
               {numbers.length === 0 ? (
@@ -294,7 +294,7 @@ export default function WorkspaceSettings() {
                     >
                       <div className="flex flex-col gap-0.5 text-left truncate">
                         <h4 className="text-xs font-bold text-ink font-mono">{num.number}</h4>
-                        <span className="text-[9px] text-ink-tertiary truncate">{num.label || num.provider || "—"}</span>
+                        <span className="text-[9px] text-ink-tertiary truncate">{num.label || "Bavio Line"}</span>
                       </div>
                       <span className="inline-flex items-center gap-1 text-[8px] font-bold px-2 py-0.5 rounded border border-line bg-canvas/40 text-ink-muted uppercase shrink-0">
                         {{ verified: "Verified", pending: "Verification pending", failed: "Failed" }[num.status] || "Not verified"}
@@ -309,7 +309,6 @@ export default function WorkspaceSettings() {
               <span>Verified IDs</span>
             </div>
           </div>
-
 
         </div>
 

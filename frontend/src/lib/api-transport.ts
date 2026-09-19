@@ -52,16 +52,19 @@ export async function apiFetch<T = unknown>(
   const { skipAuth = false, headers = {}, ...rest } = options;
   const token = getToken();
 
-  const preview = getLocalUiPreviewResponse<T>(path, rest.method);
-  if (preview.handled) {
-    if (rest.method && rest.method.toUpperCase() !== 'GET') {
+  const isAuthPath = path.startsWith('/auth/');
+  if (!isAuthPath && !skipAuth) {
+    const preview = getLocalUiPreviewResponse<T>(path, rest.method);
+    if (preview.handled) {
+      if (rest.method && rest.method.toUpperCase() !== 'GET') {
+        throw new ApiError('This action is disabled in local UI preview.', 403);
+      }
+      return preview.value as T;
+    }
+
+    if (isLocalUiPreviewSession() && rest.method && rest.method.toUpperCase() !== 'GET') {
       throw new ApiError('This action is disabled in local UI preview.', 403);
     }
-    return preview.value as T;
-  }
-
-  if (isLocalUiPreviewSession() && rest.method && rest.method.toUpperCase() !== 'GET') {
-    throw new ApiError('This action is disabled in local UI preview.', 403);
   }
 
   const finalHeaders: Record<string, string> = {

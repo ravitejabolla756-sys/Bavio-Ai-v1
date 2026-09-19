@@ -451,6 +451,36 @@ export interface AvailablePhoneNumber {
   monthlyRate?: string | null;
 }
 
+/** A country Bavio supports for phone number provisioning, sourced from the canonical backend catalog. */
+export interface SupportedCountry {
+  code: string;
+  name: string;
+  flag: string;
+  dialCode: string;
+  hasDirectInventory: boolean;
+  availableTypes: string[];
+  notice: string | null;
+  /**
+   * available                – Twilio confirmed this country supports provisioning
+   * regulatory_requirements  – provisioning possible but requires compliance docs
+   * temporarily_unavailable  – Twilio API was unreachable this cycle; may work
+   * unsupported              – not confirmed by provider; excluded from selector
+   */
+  provisioningStatus: 'available' | 'regulatory_requirements' | 'temporarily_unavailable' | 'unsupported';
+}
+
+export interface CountriesResponse {
+  status: 'available' | 'temporarily_unavailable';
+  countries: SupportedCountry[];
+}
+
+/** A number type (local, tollFree, mobile, etc.) supported for a given country. */
+export interface SupportedNumberType {
+  type: string;
+  label: string;
+  supported: boolean;
+}
+
 export const numbersApi = {
   list: (clientId: string) =>
     apiFetch<unknown>(`/numbers/${clientId}`).then(value => requireArray<PhoneNumber>(unwrapData(value))),
@@ -461,9 +491,26 @@ export const numbersApi = {
       body: JSON.stringify(data),
     }),
 
-  getAvailable: (country: string) =>
-    apiFetch<{ numbers: unknown; notice?: string | null }>(`/numbers/available?countryCode=${encodeURIComponent(country)}`).then(value => {
-      if (!value || !Array.isArray(value.numbers)) throw new Error('Provider unavailable. Carrier inventory could not be checked.');
+  /** Fetch the canonical Bavio-supported country catalog from the backend. */
+  getCountries: (): Promise<CountriesResponse> =>
+    apiFetch<{ success: boolean; status?: 'available' | 'temporarily_unavailable'; countries: unknown }>('/numbers/countries').then(value => {
+      const countriesList = Array.isArray(value?.countries) ? (value.countries as SupportedCountry[]) : [];
+      const status = value?.status || (countriesList.length > 0 ? 'available' : 'temporarily_unavailable');
+      return { status, countries: countriesList };
+    }),
+
+  /** Fetch available number types for a country from the backend. */
+  getNumberTypes: (countryCode: string): Promise<SupportedNumberType[]> =>
+    apiFetch<{ success: boolean; types: unknown }>(`/numbers/types?countryCode=${encodeURIComponent(countryCode)}`).then(value => {
+      if (!value || !Array.isArray(value.types)) throw new Error('Number types unavailable.');
+      return value.types as SupportedNumberType[];
+    }),
+
+  getAvailable: (country: string, type?: string) =>
+    apiFetch<{ numbers: unknown; notice?: string | null }>(
+      `/numbers/available?countryCode=${encodeURIComponent(country)}${type ? `&type=${encodeURIComponent(type)}` : ''}`
+    ).then(value => {
+      if (!value || !Array.isArray(value.numbers)) throw new Error('Telephony service unavailable. Phone number inventory could not be checked.');
       return { numbers: requireArray<AvailablePhoneNumber>(value.numbers), notice: value.notice || null };
     }),
 
@@ -481,6 +528,28 @@ export const numbersApi = {
 
   unlinkNumber: (phoneId: string) =>
     apiFetch('/numbers/unlink', { method: 'POST', body: JSON.stringify({ phoneId }) }),
+};
+
+// ─── Voice & Languages Catalog ────────────────────────────────────────────────
+
+export interface BavioLanguage {
+  code: string;
+  name: string;
+}
+
+export const voiceApi = {
+  getLanguages: (): Promise<BavioLanguage[]> =>
+    apiFetch<{ success: boolean; languages: BavioLanguage[] }>('/voice/languages').then(res => {
+      if (!res || !Array.isArray(res.languages)) throw new Error('Language availability is temporarily unavailable.');
+      return res.languages;
+    }),
+
+  getCatalog: (): Promise<any[]> =>
+    apiFetch<{ success: boolean; voices: unknown; catalog: unknown }>('/voice/catalog').then(res => {
+      const list = res?.voices || res?.catalog || res;
+      if (!Array.isArray(list)) throw new Error('Voice service is temporarily unavailable.');
+      return list;
+    }),
 };
 
 // ─── Billing ──────────────────────────────────────────────────────────────────

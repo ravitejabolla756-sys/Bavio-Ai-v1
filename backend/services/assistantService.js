@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const { DEFAULT_SYSTEM_PROMPT } = require('./voiceOrchestrator');
+const voiceCatalogService = require('./voiceCatalogService');
 
 async function createAssistant({
     business_id,
@@ -17,6 +18,12 @@ async function createAssistant({
     tts_model = 'automatic',
     model_routing_config = {},
 }) {
+    if (voice_id && !voiceCatalogService.isVoiceCompatible(voice_id, language)) {
+        throw Object.assign(
+            new Error(`Voice '${voice_id}' does not support the selected language '${language}'.`),
+            { statusCode: 400, code: 'INCOMPATIBLE_VOICE' }
+        );
+    }
     const sarvamKey = process.env.SARVAM_API_KEY;
     let sarvamConfig = null;
 

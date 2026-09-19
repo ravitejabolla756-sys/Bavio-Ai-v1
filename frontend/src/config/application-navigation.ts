@@ -1,4 +1,4 @@
-import { Layout, PhoneCall, IdentificationCard, Users, BookOpen, GitFork, Plugs, ChartBar, CreditCard, Gear, Lightning } from '@phosphor-icons/react';
+import { Layout, PhoneCall, IdentificationCard, Users, BookOpen, GitFork, ChartBar, CreditCard, Gear, Lightning } from '@phosphor-icons/react';
 
 /** Only implemented destinations. Both application shells consume this registry. */
 export const applicationNavigation = [
@@ -15,7 +15,6 @@ export const applicationNavigation = [
   ] },
   { group: 'Connect', items: [
     { name: 'Phone Numbers', href: '/dashboard/phone-numbers', icon: GitFork },
-    { name: 'Provider Connections', href: '/dashboard/integrations/voice-pipeline', icon: Plugs },
   ] },
   { group: 'Improve', items: [{ name: 'Analytics', href: '/dashboard/analytics', icon: ChartBar }] },
   { group: 'Account', items: [

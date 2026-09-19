@@ -5,11 +5,11 @@ const phoneNumberService = require('../services/twilioPhoneNumberService');
  */
 async function getCountries(req, res) {
   try {
-    const countries = await phoneNumberService.getSupportedCountries();
-    res.status(200).json({ success: true, countries });
+    const result = await phoneNumberService.getSupportedCountries();
+    res.status(200).json({ success: true, status: result.status, countries: result.countries });
   } catch (err) {
     console.error('[PHONE CONTROLLER] getCountries error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to retrieve country list' });
+    res.status(500).json({ success: false, status: 'temporarily_unavailable', countries: [], error: 'Failed to retrieve country list' });
   }
 }
 

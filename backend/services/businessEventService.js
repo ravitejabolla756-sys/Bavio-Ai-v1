@@ -31,7 +31,7 @@ async function resolveCanonicalConversation({ db = getDb(), sourceType, sourceId
     predicates.push('(c.business_id = $2 OR c.client_id = $2 OR c.user_id = $2)');
   }
   const result = await db.query(
-    `SELECT c.id, c.business_id, c.client_id, c.user_id, c.assistant_id, c.phone_number_id, c.provider,
+    `SELECT c.id, c.business_id, c.client_id, c.user_id, c.provider,
             c.call_sid, c.provider_call_id, c.status, c.call_status, c.started_at, c.ended_at, c.created_at
        FROM calls c WHERE ${predicates.join(' AND ')} LIMIT 2`,
     params

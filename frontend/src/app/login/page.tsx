@@ -80,6 +80,11 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
+      document.cookie = "bavio_ui_review=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      if (localStorage.getItem("bavio_token") === "local-ui-preview-token") {
+        localStorage.removeItem("bavio_token");
+        localStorage.removeItem("bavio_client_id");
+      }
       const params = new URLSearchParams(window.location.search);
       const redirectUrl = params.get("redirect");
       if (redirectUrl) {
@@ -95,6 +100,14 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg(null);
     setIsLoading(true);
+
+    if (typeof window !== "undefined") {
+      document.cookie = "bavio_ui_review=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      if (localStorage.getItem("bavio_token") === "local-ui-preview-token") {
+        localStorage.removeItem("bavio_token");
+        localStorage.removeItem("bavio_client_id");
+      }
+    }
 
     try {
       const result = await authApi.login({ email, password });

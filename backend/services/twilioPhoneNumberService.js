@@ -58,8 +58,27 @@ const WORLD_COUNTRIES = [
 ];
 
 let twilioClientInstance = null;
-let countryCatalogCache = { data: null, timestamp: 0 };
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * TWO-TIER CACHE
+ *
+ * verifiedCache: Only written on a successful Twilio API response.
+ *   Stores the confirmed, verified country capability set.
+ *   Fresh window: 1 hour. Stale-but-usable window: 24 hours.
+ *   NEVER replaced by a failure or metadata fallback.
+ *
+ * failureCache: Written on failure. Prevents hammering a failing API on
+ *   every request. Short TTL: 2 minutes.
+ */
+const VERIFIED_TTL_MS = 60 * 60 * 1000;       // 1 hour — consider fresh
+const VERIFIED_STALE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours — stale but usable
+const FAILURE_TTL_MS = 2 * 60 * 1000;          // 2 minutes — retry delay on failure
+
+let verifiedCache = {
+  countries: /** @type {object[]|null} */ (null),
+  timestamp: 0,
+};
+let failureCache = { timestamp: 0 };
 
 function getTwilioClient() {
   if (twilioClientInstance) return twilioClientInstance;
@@ -74,21 +93,54 @@ function getTwilioClient() {
 }
 
 /**
- * 1. GET ALL BUSINESS & PHONE NUMBER COUNTRIES
- * Dynamically queries Twilio AvailablePhoneNumbers resource and enriches with global metadata.
+ * 1. GET VERIFIED BAVIO-SUPPORTED COUNTRIES
+ *
+ * Returns only countries confirmed by the live telephony provider API.
+ * NEVER returns the raw WORLD_COUNTRIES metadata as a selectable set.
+ *
+ * Return shape:
+ *   { status: 'available', countries: [...] }           – verified set, proceed normally
+ *   { status: 'temporarily_unavailable', countries: [] } – provider unreachable, fail closed
+ *
+ * provisioningStatus per-country:
+ *   'available'               – provider confirmed this country can provision numbers
+ *   'regulatory_requirements' – provider confirmed, but compliance docs needed
+ *
+ * Countries with status 'temporarily_unavailable' or 'unsupported' are never
+ * returned in the customer-facing set.
  */
 async function getSupportedCountries() {
   const now = Date.now();
-  if (countryCatalogCache.data && now - countryCatalogCache.timestamp < CACHE_TTL_MS) {
-    return countryCatalogCache.data;
+
+  // ── Serve fresh verified cache ─────────────────────────────────────────────
+  if (verifiedCache.countries && (now - verifiedCache.timestamp) < VERIFIED_TTL_MS) {
+    return { status: 'available', countries: verifiedCache.countries };
+  }
+
+  // ── Skip hitting a recently-failed API ────────────────────────────────────
+  const recentFailure = (now - failureCache.timestamp) < FAILURE_TTL_MS;
+  if (recentFailure) {
+    // Use stale verified cache if available and not too old
+    if (verifiedCache.countries && (now - verifiedCache.timestamp) < VERIFIED_STALE_TTL_MS) {
+      console.log('[PHONE SERVICE] Using stale verified cache (provider recently failed)');
+      return { status: 'available', countries: verifiedCache.countries };
+    }
+    // Stale or no cache — fail closed
+    return { status: 'temporarily_unavailable', countries: [] };
   }
 
   const client = getTwilioClient();
-  const twilioCountryMap = new Map();
 
-  if (client) {
+  if (!client) {
+    console.warn('[PHONE SERVICE] Twilio client not configured — fail closed');
+    failureCache.timestamp = now;
+    // Fall through to stale cache check below
+  } else {
+    // ── Attempt live Twilio capability discovery ─────────────────────────────
     try {
       const twilioCountries = await client.availablePhoneNumbers.list({ limit: 120 });
+      const twilioCountryMap = new Map();
+
       for (const tc of twilioCountries) {
         const types = [];
         if (tc.subresourceUris) {
@@ -103,64 +155,94 @@ async function getSupportedCountries() {
           types: types.length > 0 ? types : ['local'],
         });
       }
+
+      console.log(`[PHONE SERVICE] Twilio capability discovery: ${twilioCountryMap.size} verified countries`);
+
+      // Build verified country list from confirmed Twilio entries
+      // WORLD_COUNTRIES provides metadata (name, flag, dialCode) for enrichment only.
+      const metaMap = new Map(WORLD_COUNTRIES.map(wc => [wc.code, wc]));
+      const verified = [];
+
+      for (const [code, info] of twilioCountryMap.entries()) {
+        const meta = metaMap.get(code);
+
+        // Determine if this country requires regulatory compliance docs.
+        // Only applies when Twilio has confirmed the country — never assumed.
+        const isRegulatory = code === 'IN'; // India known regulatory requirement
+        const provisioningStatus = isRegulatory ? 'regulatory_requirements' : 'available';
+
+        let notice = null;
+        if (isRegulatory) {
+          notice = 'Phone numbers in this region may require compliance information before activation. You can search — provisioning will guide you through any requirements.';
+        }
+
+        verified.push({
+          code,
+          name: meta?.name || info.country || code,
+          flag: meta?.flag || '🌐',
+          dialCode: meta?.dialCode || '',
+          availableTypes: info.types,
+          notice,
+          provisioningStatus,
+        });
+      }
+
+      // Sort alphabetically by name
+      verified.sort((a, b) => a.name.localeCompare(b.name));
+
+      // ── Write verified cache ─────────────────────────────────────────────
+      verifiedCache = { countries: verified, timestamp: now };
+      // Clear any stale failure marker now that we have fresh data
+      failureCache.timestamp = 0;
+
+      return { status: 'available', countries: verified };
+
     } catch (err) {
-      console.warn('[PHONE SERVICE] Twilio country fetch failed, using built-in catalog:', err.message);
+      console.warn('[PHONE SERVICE] Twilio capability discovery failed:', err.message);
+      failureCache.timestamp = now;
+      // Fall through to stale cache check below
     }
   }
 
-  // Combine world countries with Twilio availability
-  const combined = WORLD_COUNTRIES.map((wc) => {
-    const twilioInfo = twilioCountryMap.get(wc.code);
-    const hasTwilioInventory = !!twilioInfo;
-    const availableTypes = twilioInfo ? twilioInfo.types : (wc.code === 'US' || wc.code === 'CA' ? ['local', 'tollFree'] : ['local']);
-
-    let notice = null;
-    if (wc.code === 'IN') {
-      notice = 'Indian phone-number availability depends on current regulatory and carrier requirements. You can use an eligible international Bavio number where available.';
-    }
-
-    return {
-      code: wc.code,
-      name: wc.name,
-      flag: wc.flag,
-      dialCode: wc.dialCode,
-      hasDirectInventory: hasTwilioInventory,
-      availableTypes,
-      notice,
-    };
-  });
-
-  // Ensure any other Twilio countries not in WORLD_COUNTRIES are also included
-  for (const [code, info] of twilioCountryMap.entries()) {
-    if (!combined.some((c) => c.code === code)) {
-      combined.push({
-        code: code,
-        name: info.country || code,
-        flag: '🌐',
-        dialCode: '',
-        hasDirectInventory: true,
-        availableTypes: info.types,
-        notice: null,
-      });
-    }
+  // ── Stale verified cache: use if within 24h window ────────────────────────
+  if (verifiedCache.countries && (now - verifiedCache.timestamp) < VERIFIED_STALE_TTL_MS) {
+    console.log('[PHONE SERVICE] Using stale verified cache after provider failure');
+    return { status: 'available', countries: verifiedCache.countries };
   }
 
-  // Sort alphabetically
-  combined.sort((a, b) => a.name.localeCompare(b.name));
-
-  countryCatalogCache = { data: combined, timestamp: now };
-  return combined;
+  // ── No valid cache, provider failed — fail closed ─────────────────────────
+  // Do NOT fall back to WORLD_COUNTRIES metadata.
+  // Returning 52 unverified countries would misrepresent provisioning capability.
+  console.warn('[PHONE SERVICE] No verified capability data available — returning temporarily_unavailable');
+  return { status: 'temporarily_unavailable', countries: [] };
 }
 
 /**
+ * Returns the set of currently verified country codes (for validation).
+ * Returns empty set if no verified data is available.
+ * @returns {Promise<Set<string>>}
+ */
+async function getVerifiedCountryCodes() {
+  const { countries } = await getSupportedCountries();
+  return new Set(countries.map(c => c.code));
+}
+
+
+/**
  * 2. GET AVAILABLE NUMBER TYPES FOR A COUNTRY
+ * Only works for countries in the verified supported set.
  */
 async function getNumberTypes(countryCode) {
   const code = (countryCode || 'US').toUpperCase();
-  const countries = await getSupportedCountries();
+  const { countries } = await getSupportedCountries();
   const target = countries.find((c) => c.code === code);
 
-  if (target && target.availableTypes && target.availableTypes.length > 0) {
+  if (!target) {
+    // Country not in verified set — return only local as a safe default
+    return [{ type: 'local', label: 'Local', supported: false }];
+  }
+
+  if (target.availableTypes && target.availableTypes.length > 0) {
     return target.availableTypes.map((t) => ({
       type: t,
       label: t === 'tollFree' ? 'Toll-Free' : t.charAt(0).toUpperCase() + t.slice(1),
@@ -168,11 +250,8 @@ async function getNumberTypes(countryCode) {
     }));
   }
 
-  // Default fallback
-  return [
-    { type: 'local', label: 'Local', supported: true },
-    { type: 'tollFree', label: 'Toll-Free', supported: code === 'US' || code === 'CA' },
-  ];
+  // Verified country but no type data — default to local
+  return [{ type: 'local', label: 'Local', supported: true }];
 }
 
 /**
@@ -242,6 +321,9 @@ async function getRegulatoryRequirements(countryCode, numberType = 'local') {
 
 /**
  * 4. SEARCH LIVE AVAILABLE PHONE NUMBERS FROM TWILIO
+ *
+ * Validates countryCode against the verified supported country set.
+ * Rejects arbitrary ISO codes not in the verified set.
  */
 async function searchAvailableNumbers({
   countryCode = 'US',
@@ -257,8 +339,19 @@ async function searchAvailableNumbers({
   const client = getTwilioClient();
 
   if (!client) {
-    throw new Error('Telephony is not configured. Carrier inventory is unavailable.');
+    throw new Error('Phone number availability is temporarily unavailable. Please try again shortly.');
   }
+
+  // Validate against verified country set — fail-closed for unverified countries
+  const verifiedCodes = await getVerifiedCountryCodes();
+  if (verifiedCodes.size > 0 && !verifiedCodes.has(code)) {
+    // Verified set exists but this code is not in it
+    throw Object.assign(
+      new Error(`Phone numbers are not currently available for the selected region.`),
+      { code: 'COUNTRY_NOT_SUPPORTED' }
+    );
+  }
+  // If verifiedCodes.size === 0, provider is unavailable — let the Twilio call fail naturally
 
   try {
     const targetType = numberType === 'tollFree' ? 'tollFree' : numberType.toLowerCase();
@@ -283,7 +376,7 @@ async function searchAvailableNumbers({
     if (!available || available.length === 0) {
       return {
         numbers: [],
-        message: `No voice numbers are currently available in ${code} for this selection. Try another number type or country.`,
+        message: `No numbers are currently available in ${code} for this selection. Try another number type or country.`,
       };
     }
 
@@ -307,18 +400,21 @@ async function searchAvailableNumbers({
       message: null,
     };
   } catch (err) {
-    console.error(`[PHONE SEARCH ERROR] Failed to query Twilio numbers for ${code}:`, err.message);
+    console.error(`[PHONE SEARCH ERROR] Failed to query available numbers for ${code}:`, err.message);
+
+    if (err.code === 'COUNTRY_NOT_SUPPORTED') throw err;
 
     if (err.status === 404 || err.message.includes('not found') || err.message.includes('not available')) {
       return {
         numbers: [],
-        message: `No voice numbers are currently available for country code ${code}. Please select an eligible international Bavio number.`,
+        message: `No numbers are currently available for the selected region. Please try another country.`,
       };
     }
 
-    throw new Error('Telephony inventory lookup is unavailable. Please retry.');
+    throw new Error('Phone number availability is temporarily unavailable. Please try again shortly.');
   }
 }
+
 
 /**
  * 5. PROVISION / PURCHASE PHONE NUMBER ON TWILIO AND SAVE TO DATABASE

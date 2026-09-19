@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const BACKEND_URL = process.env.BACKEND_URL || (
   process.env.NODE_ENV === 'production'
     ? 'https://api.bavio.in'
-    : 'http://localhost:4000'
+    : 'http://localhost:5000'
 );
 
 /** @type {import('next').NextConfig} */
@@ -55,6 +55,16 @@ const nextConfig = {
         source: '/refund-policy',
         destination: '/legal/refund-policy',
         permanent: true,
+      },
+      {
+        source: '/dashboard/integrations/voice-pipeline',
+        destination: '/dashboard/phone-numbers',
+        permanent: false,
+      },
+      {
+        source: '/dashboard/integrations',
+        destination: '/dashboard/phone-numbers',
+        permanent: false,
       },
     ];
   },

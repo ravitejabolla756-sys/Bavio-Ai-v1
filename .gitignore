@@ -19,6 +19,7 @@ tsconfig.tsbuildinfo
 .env.development.local
 .env.test.local
 .env.production.local
+.env.verification.local
 
 # ── Logs ──────────────────────────────────────
 logs/
@@ -41,6 +42,8 @@ Thumbs.db
 tmp/
 temp/
 
+
+
 # ── Large Media (use CDN or Supabase Storage) ─
 *.mp4
 *.mov
@@ -49,3 +52,20 @@ temp/
 
 # ── Ngrok / Local dev ────────────────────────
 ngrok_tunnels.json
+
+# ── Visual Review & Screenshot Artifacts ─────────
+artifacts/
+frontend/.next-mobile-review/
+frontend/*-1440.png
+frontend/*-390.png
+frontend/stage*.png
+frontend/hero-reference*.png
+frontend/action-*.png
+frontend/execution-*.png
+
+# ── Local Development & Audit Scratch ───────────
+backend/scratch/
+frontend/capture-*.js
+frontend/capture-*.cjs
+frontend/verify-restored-website.js
+supabase/
