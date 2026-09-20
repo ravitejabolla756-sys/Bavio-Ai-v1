@@ -14,7 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import Logo from "@/components/Logo";
 import RotatingAuthHeader from "@/components/auth/RotatingAuthHeader";
-import { setCookie, navigateAfterAuth } from "@/lib/auth-utils";
+import { setCookie, navigateAfterAuth, getCanonicalAuthCallbackUrl } from "@/lib/auth-utils";
 import { authApi, setAuthData } from "@/lib/api";
 
 function GlobalNetworkVisual({ className }: { className?: string }) {
@@ -51,7 +51,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`
+          redirectTo: getCanonicalAuthCallbackUrl(isPopup)
         }
       });
       if (error) throw error;
@@ -68,7 +68,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "azure",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getCanonicalAuthCallbackUrl(false),
           scopes: "email profile openid",
         }
       });

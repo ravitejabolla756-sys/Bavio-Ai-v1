@@ -58,3 +58,39 @@ export function useCTADestination() {
 
   return destination;
 }
+
+/**
+ * Resolves the canonical callback URL for Supabase OAuth.
+ * Ensures consistent host origin so PKCE code_verifier is not lost
+ * due to apex -> www canonical redirects.
+ */
+export function getCanonicalAuthCallbackUrl(isPopup = false): string {
+  if (typeof window === "undefined") {
+    return `https://www.bavio.in/auth/callback${isPopup ? "?oauth_popup=true" : ""}`;
+  }
+  const hostname = window.location.hostname;
+  const isLocalOrPreview =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".local") ||
+    hostname.includes("vercel.app") ||
+    hostname.includes("ngrok-free.dev") ||
+    hostname.includes("ngrok.io");
+
+  const origin = isLocalOrPreview ? window.location.origin : "https://www.bavio.in";
+  return `${origin}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`;
+}
+
+/**
+ * Sanitizes an intended redirect path to prevent open redirects.
+ * Only relative paths starting with a single '/' are allowed.
+ */
+export function sanitizeRedirectPath(url: string | null | undefined, fallback = "/workspace"): string {
+  if (!url || typeof url !== "string") return fallback;
+  const trimmed = url.trim();
+  // Ensure it starts with '/' and not '//' (which browsers treat as protocol-relative URL)
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.includes("\\")) {
+    return trimmed;
+  }
+  return fallback;
+}

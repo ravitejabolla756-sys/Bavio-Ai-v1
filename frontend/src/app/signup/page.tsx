@@ -252,6 +252,7 @@ export default function SignUpPage() {
   const [resendError, setResendError] = useState("");
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(45);
+  const [submitCooldown, setSubmitCooldown] = useState(0);
 
   // OTP code verification states
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
@@ -275,6 +276,14 @@ export default function SignUpPage() {
       return () => clearTimeout(timer);
     }
   }, [resendCooldown, needsEmailVerification]);
+
+  // Submit cooldown timer
+  useEffect(() => {
+    if (submitCooldown > 0) {
+      const timer = setTimeout(() => setSubmitCooldown(submitCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitCooldown]);
 
   const handleOtpChange = (element: HTMLInputElement, index: number) => {
     const value = element.value.replace(/\D/g, ""); // digits only
@@ -396,19 +405,21 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitCooldown > 0 || isLoading) return;
     if (!validateForm()) return;
     
     setIsLoading(true);
+    setErrors({});
     
     try {
       const result = await authApi.signup({
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        business_name: businessName,
-        business_phone: businessPhone,
+        business_name: businessName.trim(),
+        business_phone: businessPhone.trim(),
         industry,
-        name: businessName, // Fallback for name
-        phone: businessPhone, // Fallback for phone
+        name: businessName.trim(),
+        phone: businessPhone.trim(),
         country_code: selectedCountry.code,
       });
 
@@ -422,10 +433,11 @@ export default function SignUpPage() {
         } else if ((result as any).emailVerificationRequired) {
           // Production: email verification email was sent
           if (typeof window !== "undefined") {
-            localStorage.setItem("bavio_signup_email", email);
+            localStorage.setItem("bavio_signup_email", email.trim().toLowerCase());
           }
           setNeedsEmailVerification(true);
           setIsSubmitted(true);
+          setResendCooldown(45);
         } else {
           throw new Error((result as any).error || "Signup failed");
         }
@@ -433,7 +445,30 @@ export default function SignUpPage() {
         throw new Error((result as any).error || "Signup failed");
       }
     } catch (err: any) {
-      setErrors({ form: err.message || "Failed to create account. Please try again." });
+      const errorMsg = String(err.message || "").trim();
+      const errorCode = err.code || (err as any).data?.code;
+      const retrySeconds = err.retry_after_seconds || (err as any).data?.retry_after_seconds;
+
+      if (errorCode === "VERIFICATION_COOLDOWN" || err.status === 429 || errorMsg.toLowerCase().includes("seconds") || errorMsg.toLowerCase().includes("security purposes")) {
+        const cooldown = retrySeconds || 50;
+        setSubmitCooldown(cooldown);
+        setErrors({
+          form: `Please wait ${cooldown} seconds before submitting again.`
+        });
+      } else if (errorCode === "ACCOUNT_ALREADY_EXISTS" || err.status === 409 || errorMsg.toLowerCase().includes("already exists")) {
+        setErrors({
+          form: "An account already exists for this email. Sign in instead."
+        });
+      } else if (errorMsg.includes("pkey") || errorMsg.includes("23505") || errorMsg.includes("duplicate key")) {
+        // Extra client-side sanitization shield
+        setErrors({
+          form: "An account already exists for this email. Sign in instead."
+        });
+      } else {
+        setErrors({
+          form: errorMsg || "Failed to create account. Please try again."
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -531,8 +566,13 @@ export default function SignUpPage() {
                 </div>
 
                 {errors.form && (
-                  <div className="mb-4 bg-state-error/10 border border-state-error/20 rounded-xl p-3 text-state-error text-body-xs font-semibold">
-                    {errors.form}
+                  <div className="mb-4 bg-state-error/10 border border-state-error/20 rounded-xl p-3 text-state-error text-body-xs font-semibold flex items-center justify-between">
+                    <span>{errors.form}</span>
+                    {errors.form.toLowerCase().includes("sign in") && (
+                      <Link href="/login" className="underline font-bold ml-2 text-[#FF6B00] hover:text-[#FF8C3A] whitespace-nowrap">
+                        Sign In
+                      </Link>
+                    )}
                   </div>
                 )}
 
@@ -672,10 +712,16 @@ export default function SignUpPage() {
                   {/* Submit CTA */}
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || submitCooldown > 0}
                     className="mt-2 w-full flex items-center justify-center gap-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] disabled:bg-gray-400 text-white text-body-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all duration-200 hover:shadow-[0_8px_24px_rgba(255,107,0,0.25)] active:scale-[0.98]"
                   >
-                    <span>{isLoading ? "Creating Account..." : "Create Account"}</span>
+                    <span>
+                      {isLoading
+                        ? "Creating Account..."
+                        : submitCooldown > 0
+                        ? `Please wait ${submitCooldown}s`
+                        : "Create Account"}
+                    </span>
                     <ArrowRight className="w-4 h-4" weight="bold" />
                   </button>
                 </form>

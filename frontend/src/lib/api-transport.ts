@@ -42,7 +42,19 @@ interface ApiOptions extends RequestInit {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) { super(message); this.name = 'ApiError'; }
+  public readonly code?: string;
+  public readonly retry_after_seconds?: number;
+  public readonly data?: any;
+
+  constructor(message: string, public readonly status: number, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    if (data && typeof data === 'object') {
+      this.code = data.code;
+      this.retry_after_seconds = data.retry_after_seconds;
+      this.data = data;
+    }
+  }
 }
 
 export async function apiFetch<T = unknown>(
@@ -112,12 +124,13 @@ export async function apiFetch<T = unknown>(
     }
   }
 
-  if (!res.ok || (body && typeof body === 'object' && 'success' in body && body.success === false)) {
+  if (!res.ok || (body && typeof body === 'object' && 'success' in body && (body as { success?: boolean }).success === false)) {
+    const errObj = body && typeof body === 'object' ? (body as Record<string, any>) : {};
     const errMsg =
-      (body as { message?: string })?.message ||
-      (typeof (body as { error?: unknown })?.error === 'string' ? (body as { error: string }).error : undefined) ||
+      (typeof errObj.error === 'string' ? errObj.error : undefined) ||
+      (typeof errObj.message === 'string' ? errObj.message : undefined) ||
       `API error ${res.status}`;
-    throw new ApiError(errMsg, res.status);
+    throw new ApiError(errMsg, res.status, errObj);
   }
 
   return body as T;
