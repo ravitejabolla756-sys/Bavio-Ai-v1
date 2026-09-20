@@ -156,6 +156,7 @@ class OpenAiLlm extends LanguageModelProvider {
     this._apiKey    = apiKey;
     this._model     = model;
     this._sessions  = new Map();
+    this._activeControllers = new Map();
   }
 
   async createSession({ systemPrompt, callSid = '', tools = TOOLS }) {
@@ -209,6 +210,13 @@ class OpenAiLlm extends LanguageModelProvider {
     };
     let toolCalls = [];
 
+    const controller = new AbortController();
+    this._activeControllers.set(sessionId, controller);
+    if (abortSignal) {
+      if (abortSignal.aborted) controller.abort();
+      else abortSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+
     try {
       const response = await axios.post(
         `${OPENAI_BASE_URL}/chat/completions`,
@@ -228,7 +236,7 @@ class OpenAiLlm extends LanguageModelProvider {
           },
           responseType: 'stream',
           timeout     : 25000,
-          signal      : abortSignal,
+          signal      : controller.signal,
           httpsAgent  : keepAliveAgent
         }
       );
@@ -241,12 +249,8 @@ class OpenAiLlm extends LanguageModelProvider {
           reject(new Error('AbortError'));
         };
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            return onAbort();
-          }
-          abortSignal.addEventListener('abort', onAbort);
-        }
+        if (controller.signal.aborted) return onAbort();
+        controller.signal.addEventListener('abort', onAbort, { once: true });
 
         response.data.on('data', (chunk) => {
           buffer += chunk.toString();
@@ -293,25 +297,23 @@ class OpenAiLlm extends LanguageModelProvider {
         });
 
         response.data.on('end', () => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
+          controller.signal.removeEventListener('abort', onAbort);
           resolve();
         });
         response.data.on('error', (err) => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
+          controller.signal.removeEventListener('abort', onAbort);
           reject(err);
         });
       });
 
     } catch (err) {
-      if (err.name === 'AbortError' || err.message === 'AbortError') {
+      if (err.name === 'AbortError' || err.name === 'CanceledError' || err.message === 'AbortError') {
         throw err;
       }
       console.error(`[OpenAiLlm] streamResponse error: ${err.message}`);
       throw err;
+    } finally {
+      this._activeControllers.delete(sessionId);
     }
 
     if (fullText.includes('[END_CALL]')) {
@@ -334,7 +336,12 @@ class OpenAiLlm extends LanguageModelProvider {
   }
 
   async cancelResponse(sessionId) {
-    console.log(`[OpenAiLlm] cancelResponse(${sessionId})`);
+    const controller = this._activeControllers.get(sessionId);
+    if (controller) {
+      controller.abort();
+      this._activeControllers.delete(sessionId);
+      console.log(`[OpenAiLlm] Cancelled active response for ${sessionId}`);
+    }
   }
 
   async callTool({ sessionId, toolName, toolArgs }) {
@@ -350,6 +357,7 @@ class OpenAiLlm extends LanguageModelProvider {
   }
 
   async close(sessionId) {
+    await this.cancelResponse(sessionId);
     this._sessions.delete(sessionId);
   }
 
