@@ -105,8 +105,6 @@ class ModularVoiceSession extends VoiceWorkerSession {
         this._eagerPromise = this._handleTurn(text, {
           speculative: true,
           turnToken: token,
-        }).finally(() => {
-          this._eagerPromise = null;
         });
       });
 
@@ -132,10 +130,12 @@ class ModularVoiceSession extends VoiceWorkerSession {
           )
         ) {
           await this._eagerPromise.catch(() => {});
+          this._eagerPromise = null;
           this._eagerTranscript = '';
           return;
         }
 
+        this._eagerPromise = null;
         this._eagerTranscript = '';
         const token = ++this._activeTurnToken;
         await this._handleTurn(text, { speculative: false, turnToken: token });
@@ -290,6 +290,7 @@ class ModularVoiceSession extends VoiceWorkerSession {
 
     this._tts?.cancel();
     this._telephony?.clearAudio();
+    this._eagerPromise = null;
 
     if (this._llm && this._sessionId) {
       await this._llm.cancelResponse(this._sessionId).catch(() => {});
