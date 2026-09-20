@@ -48,7 +48,7 @@ function buildConfig() {
     model   : process.env.DEEPGRAM_MODEL || 'flux-general-en',
     eagerEotThreshold: numberEnv('DEEPGRAM_EAGER_EOT_THRESHOLD', 0.4),
     eotThreshold: numberEnv('DEEPGRAM_EOT_THRESHOLD', 0.7),
-    eotTimeoutMs: numberEnv('DEEPGRAM_EOT_TIMEOUT_MS', 6000),
+    eotTimeoutMs: numberEnv('DEEPGRAM_EOT_TIMEOUT_MS', 1500),
     audioChunkMs: numberEnv('DEEPGRAM_AUDIO_CHUNK_MS', 80),
     get hasKey() { return !!this._apiKey; },
   };
