@@ -27,6 +27,7 @@ class SarvamTts extends TextToSpeechProvider {
     this._open = false;
     this._cancelled = false;
     this._flushResolver = null;
+    this._keepalive = null;
   }
 
   async connect({ voiceId, modelId, language = 'hi-IN' } = {}) {
@@ -69,17 +70,29 @@ class SarvamTts extends TextToSpeechProvider {
         this._ws.send(JSON.stringify({
           type: 'config',
           data: {
-            language_code: this._language,
+            target_language_code: this._language,
             speaker: this._speaker,
             pace: 1.0,
-            speech_sample_rate: 8000,
+            speech_sample_rate: '8000',
+            enable_preprocessing: true,
+            min_buffer_size: 50,
+            max_chunk_length: 200,
             output_audio_codec: 'mulaw',
+            output_audio_bitrate: '64k',
+            model: this._model,
           },
         }));
 
         console.log(
           `[SarvamTts] Connected — speaker=${this._speaker} model=${this._model} language=${this._language}`
         );
+
+        this._keepalive = setInterval(() => {
+          if (this._ws?.readyState === WebSocket.OPEN) {
+            this._ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 20000);
+
         resolve();
       });
 
@@ -91,6 +104,10 @@ class SarvamTts extends TextToSpeechProvider {
 
       this._ws.on('close', () => {
         this._open = false;
+        if (this._keepalive) {
+          clearInterval(this._keepalive);
+          this._keepalive = null;
+        }
         if (this._flushResolver) {
           const resolveFlush = this._flushResolver;
           this._flushResolver = null;
@@ -141,6 +158,10 @@ class SarvamTts extends TextToSpeechProvider {
   async close() {
     this._cancelled = true;
     this._open = false;
+    if (this._keepalive) {
+      clearInterval(this._keepalive);
+      this._keepalive = null;
+    }
 
     if (this._ws) {
       try {
@@ -172,6 +193,7 @@ class SarvamTts extends TextToSpeechProvider {
       msg.type;
 
     if (
+      (msg.type === 'event' && msg.data?.event_type === 'final') ||
       eventName === 'completion' ||
       eventName === 'complete' ||
       eventName === 'completed' ||
