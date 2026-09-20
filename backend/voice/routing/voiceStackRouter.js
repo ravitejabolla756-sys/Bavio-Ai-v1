@@ -117,6 +117,7 @@ function getStackSummary() {
       deepgramReady    : cfg.deepgram.hasKey,
       cerebrasReady    : cfg.cerebras.hasKey,
       elevenlabsReady  : cfg.elevenlabs.hasKey,
+      sarvamReady      : cfg.sarvam?.hasKey || false,
       groqReady        : cfg.groq.hasKey,
     };
   } catch (err) {

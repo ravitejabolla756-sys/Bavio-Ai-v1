@@ -92,7 +92,7 @@ class SpeechToTextProvider {
   /**
    * Fired when the provider detects the start of speech (VAD onset).
    * Use to interrupt TTS playback (barge-in).
-   * @param {function(): void} cb
+   * @param {function(transcript?: string): void} cb
    */
   onSpeechStarted(cb) {
     this._onSpeechStarted = cb;
@@ -134,8 +134,8 @@ class SpeechToTextProvider {
     if (this._onSpeechStarted) this._onSpeechStarted();
   }
 
-  _emitEagerEndOfTurn() {
-    if (this._onEagerEndOfTurn) this._onEagerEndOfTurn();
+  _emitEagerEndOfTurn(transcript = '') {
+    if (this._onEagerEndOfTurn) this._onEagerEndOfTurn(transcript);
   }
 
   _emitEndOfTurn(finalTranscript) {

@@ -98,7 +98,9 @@ class ElevenLabsTts extends TextToSpeechProvider {
 
   async connect({ voiceId = DEFAULT_VOICE_ID, modelId, language } = {}) {
     const targetModelId = modelId || this._modelId;
-    const targetLanguage = language || this._language;
+    // ElevenLabs language_code expects an ISO 639-1 code (e.g. en, hi),
+    // while Bavio stores locale-style values such as en-US.
+    const targetLanguage = (language || this._language || 'en').split('-')[0].toLowerCase();
 
     if (this._open && this._ws && this._ws.readyState === WebSocket.OPEN && 
         this._voiceId === voiceId && this._modelId === targetModelId && this._language === targetLanguage) {
@@ -110,7 +112,7 @@ class ElevenLabsTts extends TextToSpeechProvider {
     this._voiceId   = voiceId;
     this._cancelled = false;
     if (modelId) this._modelId = modelId;
-    if (language) this._language = language;
+    this._language = targetLanguage;
 
     const url = (
       `${ELEVENLABS_WS_URL}/${encodeURIComponent(this._voiceId)}/stream-input` +
@@ -143,7 +145,7 @@ class ElevenLabsTts extends TextToSpeechProvider {
         reject(err);
       });
 
-      this._ws.on('message', (data) => this._handleMessage(data));
+      this._ws.on('message', (data, isBinary) => this._handleMessage(data, isBinary));
 
       this._ws.on('close', (code) => {
         this._open = false;
@@ -234,20 +236,27 @@ class ElevenLabsTts extends TextToSpeechProvider {
 
   // ── Message Handler ───────────────────────────────────────────────────────
 
-  _handleMessage(data) {
+  _handleMessage(data, isBinary = false) {
     let msg;
-    try {
-      if (Buffer.isBuffer(data)) {
-        if (!this._cancelled) {
-          if (this.metrics.tts_first_audio_at === null) {
-            this.metrics.tts_first_audio_at = Date.now();
-          }
-          this.metrics.tts_audio_chunks++;
-          this._emitAudioChunk(data, this._currentResponseId);
+
+    // Node's `ws` library commonly delivers TEXT WebSocket frames as Buffer
+    // objects with isBinary=false. ElevenLabs TTS sends JSON text frames whose
+    // `audio` field is base64. Treating every Buffer as raw audio corrupts the
+    // stream (JSON bytes get forwarded to Twilio/Deepgram as if they were
+    // mu-law). Only explicit binary frames may be forwarded as raw audio.
+    if (isBinary) {
+      if (!this._cancelled) {
+        if (this.metrics.tts_first_audio_at === null) {
+          this.metrics.tts_first_audio_at = Date.now();
         }
-        return;
+        this.metrics.tts_audio_chunks++;
+        this._emitAudioChunk(Buffer.from(data), this._currentResponseId);
       }
-      msg = JSON.parse(data.toString());
+      return;
+    }
+
+    try {
+      msg = JSON.parse(data.toString('utf8'));
     } catch {
       return;
     }
@@ -263,7 +272,7 @@ class ElevenLabsTts extends TextToSpeechProvider {
       }
     }
 
-    if (msg.isFinal === true || msg.message === 'EOS') {
+    if (msg.isFinal === true || msg.is_final === true || msg.message === 'EOS') {
       this._emitComplete();
     }
 

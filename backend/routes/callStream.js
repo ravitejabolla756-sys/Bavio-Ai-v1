@@ -242,7 +242,6 @@ twilioWss.on('connection', async (ws, request) => {
 
     ws.on('close', async () => {
       console.log('[Twilio Stream][modular_v1] WebSocket closed.');
-      if (demoTimer) clearTimeout(demoTimer);
       await modularSession.end().catch(e => console.error('[Twilio Stream] modularSession.end error:', e.message));
     });
 
