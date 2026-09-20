@@ -98,7 +98,9 @@ class ElevenLabsTts extends TextToSpeechProvider {
 
   async connect({ voiceId = DEFAULT_VOICE_ID, modelId, language } = {}) {
     const targetModelId = modelId || this._modelId;
-    const targetLanguage = language || this._language;
+    // ElevenLabs language_code expects an ISO 639-1 code (e.g. en, hi),
+    // while Bavio stores locale-style values such as en-US.
+    const targetLanguage = (language || this._language || 'en').split('-')[0].toLowerCase();
 
     if (this._open && this._ws && this._ws.readyState === WebSocket.OPEN && 
         this._voiceId === voiceId && this._modelId === targetModelId && this._language === targetLanguage) {
@@ -110,7 +112,7 @@ class ElevenLabsTts extends TextToSpeechProvider {
     this._voiceId   = voiceId;
     this._cancelled = false;
     if (modelId) this._modelId = modelId;
-    if (language) this._language = language;
+    this._language = targetLanguage;
 
     const url = (
       `${ELEVENLABS_WS_URL}/${encodeURIComponent(this._voiceId)}/stream-input` +
