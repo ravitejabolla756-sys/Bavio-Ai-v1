@@ -93,15 +93,38 @@ class DeepgramStt extends SpeechToTextProvider {
   async close() {
     this._closing = true;
     this._connected = false;
-    if (this._ws) {
-      if (this._ws.readyState === WebSocket.OPEN) {
-        if (this._audioBuffer.length > 0) this._ws.send(this._audioBuffer);
-        this._audioBuffer = Buffer.alloc(0);
-        this._ws.send(JSON.stringify({ type: 'CloseStream' }));
-      }
-      this._ws.terminate();
-      this._ws = null;
+
+    const ws = this._ws;
+    this._ws = null;
+    if (!ws) return;
+
+    if (ws.readyState === WebSocket.OPEN) {
+      if (this._audioBuffer.length > 0) ws.send(this._audioBuffer);
+      this._audioBuffer = Buffer.alloc(0);
+      ws.send(JSON.stringify({ type: 'CloseStream' }));
+
+      await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          try { ws.terminate(); } catch {}
+          resolve();
+        }, 750);
+
+        ws.once('close', () => {
+          clearTimeout(timer);
+          resolve();
+        });
+
+        try {
+          ws.close(1000, 'client_close');
+        } catch {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+      return;
     }
+
+    try { ws.terminate(); } catch {}
   }
 
   // ── Realtime Dynamic EOT Threshold Configuration ──────────────────────────
