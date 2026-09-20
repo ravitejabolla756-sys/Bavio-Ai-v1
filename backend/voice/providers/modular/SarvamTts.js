@@ -70,16 +70,13 @@ class SarvamTts extends TextToSpeechProvider {
         this._ws.send(JSON.stringify({
           type: 'config',
           data: {
-            target_language_code: this._language,
+            language_code: this._language,
             speaker: this._speaker,
             pace: 1.0,
-            speech_sample_rate: '8000',
-            enable_preprocessing: true,
-            min_buffer_size: 50,
-            max_chunk_length: 200,
+            speech_sample_rate: 8000,
+            min_buffer_size: 30,
+            max_chunk_length: 150,
             output_audio_codec: 'mulaw',
-            output_audio_bitrate: '64k',
-            model: this._model,
           },
         }));
 
