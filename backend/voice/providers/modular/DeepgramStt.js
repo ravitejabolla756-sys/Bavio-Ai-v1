@@ -33,6 +33,7 @@ class DeepgramStt extends SpeechToTextProvider {
     this._eotTimeoutMs = eotTimeoutMs;
     this._audioChunkMs = audioChunkMs;
     this._audioBuffer = Buffer.alloc(0);
+    this._closing = false;
 
     // Metrics & Reconnection counters
     this.reconnectCount  = 0;
@@ -46,6 +47,7 @@ class DeepgramStt extends SpeechToTextProvider {
   // ── SpeechToTextProvider implementation ───────────────────────────────────
 
   async connect({ language = 'en-US', encoding = 'mulaw', sampleRate = 8000, channels = 1 } = {}) {
+    this._closing = false;
     this._options = { language, encoding, sampleRate, channels };
 
     // Select correct Flux model identifier based on language
@@ -62,7 +64,6 @@ class DeepgramStt extends SpeechToTextProvider {
       `?model=${encodeURIComponent(this._model)}` +
       `&encoding=${encodeURIComponent(encoding)}` +
       `&sample_rate=${sampleRate}` +
-      `&channels=${channels}` +
       `&eot_threshold=${encodeURIComponent(this._eotThreshold)}` +
       `&eager_eot_threshold=${encodeURIComponent(this._eagerEotThreshold)}` +
       `&eot_timeout_ms=${encodeURIComponent(this._eotTimeoutMs)}`
@@ -90,6 +91,7 @@ class DeepgramStt extends SpeechToTextProvider {
   }
 
   async close() {
+    this._closing = true;
     this._connected = false;
     if (this._ws) {
       if (this._ws.readyState === WebSocket.OPEN) {
@@ -135,12 +137,14 @@ class DeepgramStt extends SpeechToTextProvider {
 
   async _connectToUrl(url) {
     return new Promise((resolve, reject) => {
+      let opened = false;
       console.log(`[DeepgramStt] Connecting to Deepgram v2: ${url}`);
       this._ws = new WebSocket(url, {
         headers: { Authorization: `Token ${this._apiKey}` },
       });
 
       this._ws.once('open', () => {
+        opened = true;
         this._connected = true;
         this.reconnectCount = 0;
         console.log(`[DeepgramStt] Connection established successfully.`);
@@ -160,7 +164,7 @@ class DeepgramStt extends SpeechToTextProvider {
         console.log(`[DeepgramStt] Connection closed. Code: ${code}, Reason: ${reason}`);
 
         // Try reconnect if closed unexpectedly and we are still active
-        if (code !== 1000 && this.reconnectCount < 3) {
+        if (opened && !this._closing && code !== 1000 && this.reconnectCount < 3) {
           this.reconnectCount++;
           const delay = Math.pow(2, this.reconnectCount) * 500;
           console.warn(`[DeepgramStt] Reconnecting in ${delay}ms (attempt ${this.reconnectCount}/3)...`);
@@ -185,8 +189,8 @@ class DeepgramStt extends SpeechToTextProvider {
       return;
     }
 
-    // Flux v2 endpoint sends event packets as ListenV2TurnInfo
-    if (msg.type === 'ListenV2TurnInfo') {
+    // Flux v2 wire protocol uses type='TurnInfo'.
+    if (msg.type === 'TurnInfo') {
       const eventType  = msg.event;
       const transcript = msg.transcript || '';
 
@@ -217,9 +221,9 @@ class DeepgramStt extends SpeechToTextProvider {
         default:
           break;
       }
-    } else if (msg.type === 'ListenV2FatalError') {
-      console.error(`[DeepgramStt] Fatal server error received:`, msg.error);
-      this.errorCode = msg.error_code || 'fatal_error';
+    } else if (msg.type === 'Error') {
+      console.error(`[DeepgramStt] Fatal server error received: ${msg.code || 'ERROR'} ${msg.description || ''}`);
+      this.errorCode = msg.code || 'fatal_error';
     }
   }
 }
