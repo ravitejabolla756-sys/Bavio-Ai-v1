@@ -17,10 +17,10 @@
 const WebSocket            = require('ws');
 const SpeechToTextProvider = require('../interfaces/SpeechToTextProvider');
 
-const DEEPGRAM_V2_URL      = 'wss://api.api.deepgram.com/v2/listen'; // v2 endpoint
+const DEEPGRAM_V2_URL      = 'wss://api.deepgram.com/v2/listen';
 
 class DeepgramStt extends SpeechToTextProvider {
-  constructor({ apiKey, model = 'flux-general-en' }) {
+  constructor({ apiKey, model = 'flux-general-en', eagerEotThreshold = 0.4, eotThreshold = 0.7, eotTimeoutMs = 6000, audioChunkMs = 80 } = {}) {
     super('DeepgramStt');
     if (!apiKey) throw new Error('[DeepgramStt] apiKey is required');
     this._apiKey         = apiKey;
@@ -28,6 +28,11 @@ class DeepgramStt extends SpeechToTextProvider {
     this._ws             = null;
     this._connected      = false;
     this._options        = null;
+    this._eagerEotThreshold = eagerEotThreshold;
+    this._eotThreshold = eotThreshold;
+    this._eotTimeoutMs = eotTimeoutMs;
+    this._audioChunkMs = audioChunkMs;
+    this._audioBuffer = Buffer.alloc(0);
 
     // Metrics & Reconnection counters
     this.reconnectCount  = 0;
@@ -53,22 +58,34 @@ class DeepgramStt extends SpeechToTextProvider {
     }
 
     const url = (
-      `wss://api.deepgram.com/v2/listen` +
+      `${DEEPGRAM_V2_URL}` +
       `?model=${encodeURIComponent(this._model)}` +
       `&encoding=${encodeURIComponent(encoding)}` +
       `&sample_rate=${sampleRate}` +
       `&channels=${channels}` +
-      `&eot_threshold=0.7` +            // Initial normal EOT threshold
-      `&eager_eot_threshold=0.4` +      // Initial eager EOT threshold
-      `&eot_timeout_ms=600`             // Default EOT timeout
+      `&eot_threshold=${encodeURIComponent(this._eotThreshold)}` +
+      `&eager_eot_threshold=${encodeURIComponent(this._eagerEotThreshold)}` +
+      `&eot_timeout_ms=${encodeURIComponent(this._eotTimeoutMs)}`
     );
 
     return this._connectToUrl(url);
   }
 
   sendAudio(audioChunk) {
-    if (this._ws && this._ws.readyState === WebSocket.OPEN) {
-      this._ws.send(audioChunk);
+    if (!audioChunk || audioChunk.length === 0) return;
+    this._audioBuffer = Buffer.concat([this._audioBuffer, audioChunk]);
+
+    // Twilio sends 20 ms / 160-byte mu-law frames. Flux performs best when
+    // frames are coalesced into ~80 ms chunks instead of forwarding every 20 ms.
+    const bytesPerMs = (this._options?.sampleRate || 8000) / 1000; // 1 byte/sample for mu-law
+    const targetBytes = Math.max(160, Math.round(bytesPerMs * this._audioChunkMs));
+
+    while (this._audioBuffer.length >= targetBytes) {
+      const chunk = this._audioBuffer.subarray(0, targetBytes);
+      this._audioBuffer = this._audioBuffer.subarray(targetBytes);
+      if (this._ws && this._ws.readyState === WebSocket.OPEN) {
+        this._ws.send(chunk);
+      }
     }
   }
 
@@ -76,7 +93,8 @@ class DeepgramStt extends SpeechToTextProvider {
     this._connected = false;
     if (this._ws) {
       if (this._ws.readyState === WebSocket.OPEN) {
-        // Send close stream control message
+        if (this._audioBuffer.length > 0) this._ws.send(this._audioBuffer);
+        this._audioBuffer = Buffer.alloc(0);
         this._ws.send(JSON.stringify({ type: 'CloseStream' }));
       }
       this._ws.terminate();
