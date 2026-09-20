@@ -283,10 +283,16 @@ export default function WorkspaceBilling() {
 
             <div className="bg-[#14141A] text-white p-5 rounded-2xl shadow-md relative overflow-hidden mb-5">
               <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6B00]/25 to-transparent pointer-events-none" />
-              <div className="absolute top-2 right-2 font-display text-[9px] font-bold text-white/50 tracking-wider">DODO PAYMENTS</div>
+              <div className="absolute top-2 right-2 font-display text-[9px] font-bold text-white/50 tracking-wider">
+                {profile?.plan_name === "internal_qa_starter" ? "INTERNAL QA" : "DODO PAYMENTS"}
+              </div>
               
-              <span className="text-[9px] font-mono tracking-widest text-white/40 block mb-6">VISA / MC / AMEX SECURED</span>
-              <span className="text-sm font-mono tracking-[0.2em] font-bold block mb-4">•••• •••• •••• 4021</span>
+              <span className="text-[9px] font-mono tracking-widest text-white/40 block mb-6">
+                {profile?.plan_name === "internal_qa_starter" ? "INTERNAL QA ENTITLEMENT" : "VISA / MC / AMEX SECURED"}
+              </span>
+              <span className="text-sm font-mono tracking-[0.2em] font-bold block mb-4">
+                {profile?.plan_name === "internal_qa_starter" ? "NO CARD REQUIRED" : "•••• •••• •••• 4021"}
+              </span>
               
               <div className="flex justify-between items-end">
                 <div>

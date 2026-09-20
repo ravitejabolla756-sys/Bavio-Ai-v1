@@ -141,50 +141,146 @@ async function checkMinutesLimit(req, res, next) {
  * @param {number}  durationSeconds - Actual call duration in seconds
  * @param {string}  callSid         - Provider call SID for idempotency
  */
-async function deductCallSeconds(businessId, durationSeconds, callSid = null, detailedMetrics = null) {
+/**
+ * Deduct actual call seconds from a business account atomically with strict idempotency.
+ *
+ * Atomicity & Idempotency Guarantee:
+ * Uses a single PostgreSQL transaction with row-level locking (FOR UPDATE)
+ * and an atomic claim on usage_logs(call_sid).
+ * If a call_sid was already claimed/charged, the transaction safely aborts without
+ * mutating balance, guaranteeing that duplicate or concurrent callbacks never double-charge.
+ *
+ * @param {string}  businessId      - UUID
+ * @param {number}  durationSeconds - Actual call duration in seconds
+ * @param {string}  callSid         - Provider call SID for idempotency
+ * @param {object}  detailedMetrics - Optional COGS metrics
+ * @param {object}  options         - Optional overrides, e.g. { db } for dependency injection
+ */
+async function deductCallSeconds(businessId, durationSeconds, callSid = null, detailedMetrics = null, options = {}) {
+    if (!businessId) {
+        console.warn('[BILLING] Skipping deduction: missing businessId');
+        return { success: false, reason: 'MISSING_BUSINESS_ID' };
+    }
+
+    if (!durationSeconds || durationSeconds <= 0) {
+        console.warn(`[BILLING] Skipping deduction: invalid duration ${durationSeconds}s`);
+        return { success: false, reason: 'INVALID_DURATION' };
+    }
+
+    // ── 1. Strict Fail-Closed Check for callSid ────────────────────
+    if (!callSid) {
+        if (options.allowUnanchored || options.isSimulation) {
+            console.warn(`[BILLING] Non-billable simulation flow invoked without callSid for business ${businessId}.`);
+            return {
+                success: true,
+                isSimulation: true,
+                deductedSeconds: 0,
+                reason: 'SIMULATION_NON_BILLABLE'
+            };
+        }
+        console.error(`[BILLING CORE ERROR] Missing callSid on billable call deduction for business ${businessId}. Failing closed.`);
+        return {
+            success: false,
+            reason: 'BILLING_IDEMPOTENCY_KEY_MISSING',
+            deductedSeconds: 0
+        };
+    }
+
+    const secondsToDeduct = Math.ceil(durationSeconds);
+    const dbInstance = options.db || db;
+    const pool = dbInstance.pool || dbInstance;
+    const client = await pool.connect();
+    let inTransaction = false;
+
     try {
-        if (!durationSeconds || durationSeconds <= 0) {
-            console.warn(`[BILLING] Skipping deduction: invalid duration ${durationSeconds}s`);
-            return;
-        }
+        await client.query('BEGIN');
+        inTransaction = true;
 
-        const secondsToDeduct = Math.ceil(durationSeconds);
-
-        // ── Idempotency check ─────────────────────────────────────────
-        if (callSid) {
-            const existing = await db.query(
-                `SELECT id FROM usage_logs WHERE call_sid = $1 LIMIT 1`,
-                [callSid]
-            );
-            if (existing.rows.length > 0) {
-                console.log(`[BILLING] Call ${callSid} already charged. Skipping.`);
-                return;
-            }
-        }
-
-        // ── Read current balances ─────────────────────────────────────
-        const bizRes = await db.query(
+        // ── 2. Lock and retrieve business and canonical user balances ──
+        const bizRes = await client.query(
             `SELECT
-                email, name, country,
-                monthly_limit_seconds, monthly_usage_seconds,
-                topup_balance_seconds
-             FROM businesses WHERE id = $1
-             FOR UPDATE`,
+                b.id AS business_id,
+                b.email,
+                b.name,
+                b.country,
+                b.monthly_limit_seconds,
+                b.monthly_usage_seconds,
+                b.topup_balance_seconds,
+                u.id AS user_id
+             FROM businesses b
+             LEFT JOIN users u ON u.id = b.id
+             WHERE b.id = $1
+             FOR UPDATE OF b`,
             [businessId]
         );
 
         if (bizRes.rows.length === 0) {
             console.error(`[BILLING] Business ${businessId} not found`);
-            return;
+            await client.query('ROLLBACK');
+            inTransaction = false;
+            return { success: false, reason: 'BUSINESS_NOT_FOUND', deductedSeconds: 0 };
         }
 
         const biz = bizRes.rows[0];
+
+        // Ensure canonical user_id exists in users table (guarantees FK integrity)
+        if (!biz.user_id) {
+            console.error(`[BILLING CORE ERROR] Business ${businessId} has no corresponding user_id in users table. Aborting deduction.`);
+            await client.query('ROLLBACK');
+            inTransaction = false;
+            return { success: false, reason: 'USER_REFERENCE_NOT_FOUND', deductedSeconds: 0 };
+        }
+
+        // ── 3. Explicitly derive country_code (no false 'US' default) ──
+        const rawCountry = detailedMetrics?.telephony?.country ||
+                           detailedMetrics?.telephony?.region ||
+                           options.countryCode ||
+                           biz.country;
+        const countryCode = (rawCountry && typeof rawCountry === 'string' && rawCountry.trim().length >= 2)
+            ? rawCountry.trim().slice(0, 2).toUpperCase()
+            : null;
+
+        if (!countryCode) {
+            console.error(`[BILLING CORE ERROR] Cannot derive country_code for business ${businessId}. Aborting deduction.`);
+            await client.query('ROLLBACK');
+            inTransaction = false;
+            return { success: false, reason: 'COUNTRY_CODE_UNRESOLVED', deductedSeconds: 0 };
+        }
+
+        // ── 4. Explicit billing month and year ─────────────────────────
+        const now = new Date();
+        const billingMonth = now.getUTCMonth() + 1;
+        const billingYear  = now.getUTCFullYear();
+
+        // ── 5. Atomic Idempotency Claim with Full Core Durability ──────
+        // If already claimed, ON CONFLICT DO NOTHING returns 0 rows.
+        const claimRes = await client.query(
+            `INSERT INTO usage_logs (
+                user_id, country_code, call_sid, minutes_used, cost_total,
+                billing_month, billing_year, created_at
+             )
+             VALUES (
+                $1, $2, $3, $4, 0,
+                $5, $6, NOW()
+             )
+             ON CONFLICT (call_sid) WHERE call_sid IS NOT NULL DO NOTHING
+             RETURNING id`,
+            [biz.user_id, countryCode, callSid, Math.ceil(secondsToDeduct / 60), billingMonth, billingYear]
+        );
+
+        if (claimRes.rows.length === 0) {
+            console.log(`[BILLING] Call ${callSid} already charged (atomic idempotency claim rejected). Skipping.`);
+            await client.query('ROLLBACK');
+            inTransaction = false;
+            return { success: true, alreadyCharged: true, deductedSeconds: 0 };
+        }
+
+        // ── 3. Compute deductions: monthly first, then top-up ───────────
         const monthlyLimit    = Math.max(0, biz.monthly_limit_seconds  || 0);
         const monthlyUsed     = Math.max(0, biz.monthly_usage_seconds  || 0);
         const monthlyRem      = Math.max(0, monthlyLimit - monthlyUsed);
         const topupBalance    = Math.max(0, biz.topup_balance_seconds  || 0);
 
-        // ── Compute deductions: monthly first, then top-up ───────────
         let monthlyDeduct = Math.min(secondsToDeduct, monthlyRem);
         let remaining     = secondsToDeduct - monthlyDeduct;
         let topupDeduct   = Math.min(remaining, topupBalance);
@@ -196,110 +292,136 @@ async function deductCallSeconds(businessId, durationSeconds, callSid = null, de
         const newMonthlyUsed  = monthlyUsed + monthlyDeduct;
         const newTopupBalance = Math.max(0, topupBalance - topupDeduct);
 
-        // ── Atomic DB update ──────────────────────────────────────────
-        await db.query(
+        // ── 4. Atomic DB balance update ─────────────────────────────────
+        const newMinutesUsed = Math.ceil(newMonthlyUsed / 60);
+        await client.query(
             `UPDATE businesses
              SET monthly_usage_seconds = $1,
                  topup_balance_seconds = $2,
+                 minutes_used          = $3,
                  last_usage_update_at  = NOW()
-             WHERE id = $3`,
-            [newMonthlyUsed, newTopupBalance, businessId]
+             WHERE id = $4`,
+            [newMonthlyUsed, newTopupBalance, newMinutesUsed, businessId]
         );
 
-        // Legacy minutes_used sync (keep for dashboard compatibility)
-        await db.query(
-            `UPDATE businesses
-             SET minutes_used = CEIL(monthly_usage_seconds::float / 60)
-             WHERE id = $1`,
-            [businessId]
-        );
+        // ── 5. Optional telemetry persistence (Non-fatal) ───────────────
+        if (callSid && detailedMetrics) {
+            try {
+                const telephony = detailedMetrics.telephony || {};
+                const stt = detailedMetrics.stt || {};
+                const llm = detailedMetrics.llm || {};
+                const tts = detailedMetrics.tts || {};
+
+                const costTelephony = (telephony.billedSeconds || secondsToDeduct) * 0.0002167 +
+                                      (telephony.recordingUsed ? (telephony.billedSeconds || secondsToDeduct) * 0.0000417 : 0);
+                const costStt = (stt.seconds || 0) * 0.0000717;
+
+                let costLlm = 0;
+                const llmProv = (llm.provider || 'cerebras').toLowerCase();
+                if (llmProv === 'groq') {
+                    costLlm = (llm.inputTokens || 0) * 0.0000007 + (llm.outputTokens || 0) * 0.0000009;
+                } else {
+                    costLlm = ((llm.inputTokens || 0) + (llm.outputTokens || 0)) * 0.0000006;
+                }
+
+                const costTts = (tts.characters || 0) * 0.000015;
+                const costTotal = costTelephony + costStt + costLlm + costTts;
+
+                await client.query(
+                    `UPDATE usage_logs
+                     SET cost_telephony = $1,
+                         cost_stt       = $2,
+                         cost_tts       = $3,
+                         cost_total     = $4,
+                         stt_minutes    = $5,
+                         tts_characters = $6
+                     WHERE call_sid = $7`,
+                    [
+                        costTelephony,
+                        costStt,
+                        costTts,
+                        costTotal,
+                        (stt.seconds || 0) / 60,
+                        tts.characters || 0,
+                        callSid
+                    ]
+                );
+            } catch (telemetryErr) {
+                // Structured warning: optional telemetry failed, but core billing is unaffected
+                console.warn('[BILLING TELEMETRY] Optional detailed telemetry persistence skipped non-fatally:', telemetryErr.message);
+            }
+        }
+
+        // ── 6. Commit transaction ───────────────────────────────────────
+        await client.query('COMMIT');
+        inTransaction = false;
 
         console.log(`[BILLING] Deducted ${secondsToDeduct}s for ${businessId}: monthly -${monthlyDeduct}s, topup -${topupDeduct}s (CallSid: ${callSid})`);
 
-        // ── Write to usage_logs (idempotency anchor) ──────────────────
-        if (callSid) {
-            const telephony = detailedMetrics?.telephony || {};
-            const stt = detailedMetrics?.stt || {};
-            const llm = detailedMetrics?.llm || {};
-            const tts = detailedMetrics?.tts || {};
-            const infra = detailedMetrics?.infra || {};
+        // ── 7. Async notifications outside transaction ─────────────────
+        _dispatchUsageAlerts(dbInstance, businessId, biz, monthlyLimit, monthlyUsed, newMonthlyUsed, newTopupBalance).catch(alertErr => {
+            console.warn('[BILLING ALERT] Asynchronous warning processing encountered an error:', alertErr.message);
+        });
 
-            // Wholesale Cost Estimation Formulas
-            const costTelephony = (telephony.billedSeconds || secondsToDeduct) * 0.0002167 +
-                                  (telephony.recordingUsed ? (telephony.billedSeconds || secondsToDeduct) * 0.0000417 : 0);
-            const costStt = (stt.seconds || 0) * 0.0000717;
-
-            let costLlm = 0;
-            const llmProv = (llm.provider || 'cerebras').toLowerCase();
-            if (llmProv === 'groq') {
-                costLlm = (llm.inputTokens || 0) * 0.0000007 + (llm.outputTokens || 0) * 0.0000009;
-            } else {
-                costLlm = ((llm.inputTokens || 0) + (llm.outputTokens || 0)) * 0.0000006;
-            }
-
-            const costTts = (tts.characters || 0) * 0.000015;
-            const costTotal = costTelephony + costStt + costLlm + costTts;
-
-            await db.query(
-                `INSERT INTO usage_logs (
-                    business_id, client_id, user_id, call_sid, minutes_used, seconds_used, cost,
-                    cost_telephony, cost_stt, cost_tts, cost_total,
-                    telephony_provider, telephony_region, telephony_duration_seconds, telephony_billed_seconds, recording_used,
-                    stt_seconds, stt_model, stt_cost,
-                    llm_input_tokens, llm_output_tokens, llm_reasoning_tokens, llm_provider, llm_model, llm_tool_calls_count, llm_cost,
-                    tts_characters, tts_duration_seconds, tts_voice_id, tts_model, tts_cost,
-                    worker_region, session_duration_seconds, data_transferred_bytes
-                 )
-                 VALUES ($1, $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
-                 ON CONFLICT (call_sid) DO NOTHING`,
-                [
-                    businessId, callSid, Math.ceil(secondsToDeduct / 60), secondsToDeduct, costTotal,
-                    costTelephony, costStt, costTts, costTotal,
-                    telephony.provider || 'twilio', telephony.region || biz.country || 'US', telephony.durationSeconds || secondsToDeduct, telephony.billedSeconds || secondsToDeduct, telephony.recordingUsed || false,
-                    stt.seconds || 0, stt.model || 'deepgram-flux', costStt,
-                    llm.inputTokens || 0, llm.outputTokens || 0, llm.reasoningTokens || 0, llm.provider || 'cerebras', llm.model || 'gpt-oss-120b', llm.toolCallsCount || 0, costLlm,
-                    tts.characters || 0, tts.durationSeconds || 0, tts.voiceId || null, tts.model || 'eleven-flash-2.5', costTts,
-                    infra.workerRegion || 'us-east-1', infra.sessionDurationSeconds || secondsToDeduct, infra.dataTransferredBytes || 0
-                ]
-            );
-        }
-
-        // ── Usage warnings ────────────────────────────────────────────
-        if (monthlyLimit > 0) {
-            const usagePct     = (newMonthlyUsed / monthlyLimit) * 100;
-            const prevUsagePct = (monthlyUsed    / monthlyLimit) * 100;
-
-            let threshold = null;
-            if (prevUsagePct < 70  && usagePct >= 70  && usagePct < 90)  threshold = 70;
-            else if (prevUsagePct < 90  && usagePct >= 90  && usagePct < 100) threshold = 90;
-            else if (prevUsagePct < 100 && usagePct >= 100)                    threshold = 100;
-
-            if (threshold !== null) {
-                await _sendUsageWarningEmail(businessId, biz.email, biz.name, threshold, newMonthlyUsed, monthlyLimit, newTopupBalance);
-            }
-
-            // Warn when total balance is low (< 30 minutes = 1800 seconds)
-            const totalAvailable = Math.max(0, monthlyLimit - newMonthlyUsed) + newTopupBalance;
-            if (totalAvailable < 1800 && totalAvailable > 0) {
-                const minsLeft = Math.ceil(totalAvailable / 60);
-                console.log(`[BILLING ALERT] Business ${businessId} has only ${minsLeft} min total remaining`);
-                await db.query(
-                    `INSERT INTO notifications (business_id, title, message, type, status, created_at)
-                     VALUES ($1, 'Low Call Minutes Remaining', $2, 'warning', 'unread', NOW())`,
-                    [businessId, `Your Bavio account has only ${minsLeft} minutes remaining. Please buy top-up minutes to avoid interruptions.`]
-                );
-            } else if (totalAvailable <= 0) {
-                await db.query(
-                    `INSERT INTO notifications (business_id, title, message, type, status, created_at)
-                     VALUES ($1, 'Call Minutes Exhausted', 'Your Bavio account call minutes are fully exhausted. Inbound call handling is paused.', 'error', 'unread', NOW())`,
-                    [businessId]
-                );
-            }
-        }
+        return {
+            success: true,
+            alreadyCharged: false,
+            deductedSeconds: secondsToDeduct,
+            monthlyDeduct,
+            topupDeduct,
+            newMonthlyUsed,
+            newTopupBalance
+        };
 
     } catch (err) {
-        console.error('[deductCallSeconds] Error:', err);
-        // Non-fatal: do not throw — call has already ended
+        if (inTransaction) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rollbackErr) {
+                console.error('[BILLING ROLLBACK] Rollback error:', rollbackErr.message);
+            }
+        }
+        console.error('[BILLING CORE ERROR] Atomic deduction transaction aborted:', err.message);
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Handle usage alert thresholds and notifications outside the billing transaction.
+ */
+async function _dispatchUsageAlerts(dbInstance, businessId, biz, monthlyLimit, monthlyUsed, newMonthlyUsed, newTopupBalance) {
+    if (monthlyLimit <= 0) return;
+
+    const usagePct     = (newMonthlyUsed / monthlyLimit) * 100;
+    const prevUsagePct = (monthlyUsed    / monthlyLimit) * 100;
+
+    let threshold = null;
+    if (prevUsagePct < 70  && usagePct >= 70  && usagePct < 90)  threshold = 70;
+    else if (prevUsagePct < 90  && usagePct >= 90  && usagePct < 100) threshold = 90;
+    else if (prevUsagePct < 100 && usagePct >= 100)                    threshold = 100;
+
+    if (threshold !== null) {
+        await _sendUsageWarningEmail(businessId, biz.email, biz.name, threshold, newMonthlyUsed, monthlyLimit, newTopupBalance);
+    }
+
+    // Warn when total balance is low (< 30 minutes = 1800 seconds)
+    const totalAvailable = Math.max(0, monthlyLimit - newMonthlyUsed) + newTopupBalance;
+    if (totalAvailable < 1800 && totalAvailable > 0) {
+        const minsLeft = Math.ceil(totalAvailable / 60);
+        console.log(`[BILLING ALERT] Business ${businessId} has only ${minsLeft} min total remaining`);
+        await dbInstance.query(
+            `INSERT INTO notifications (business_id, title, message, type, status, created_at)
+             VALUES ($1, 'Low Call Minutes Remaining', $2, 'warning', 'unread', NOW())`,
+            [businessId, `Your Bavio account has only ${minsLeft} minutes remaining. Please buy top-up minutes to avoid interruptions.`]
+        );
+    } else if (totalAvailable <= 0) {
+        await dbInstance.query(
+            `INSERT INTO notifications (business_id, title, message, type, status, created_at)
+             VALUES ($1, 'Call Minutes Exhausted', 'Your Bavio account call minutes are fully exhausted. Inbound call handling is paused.', 'error', 'unread', NOW())`,
+            [businessId]
+        );
     }
 }
 

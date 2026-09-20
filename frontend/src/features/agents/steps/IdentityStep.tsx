@@ -78,7 +78,7 @@ export default function IdentityStep({ draft, onChange, onContinue, onCancel }: 
               value={draft.name}
               onChange={e => onChange('name', e.target.value)}
               onBlur={() => setNameTouched(true)}
-              placeholder="e.g. Vikram"
+              placeholder="Ex: John"
               aria-invalid={isNameInvalid}
               autoComplete="off"
             />

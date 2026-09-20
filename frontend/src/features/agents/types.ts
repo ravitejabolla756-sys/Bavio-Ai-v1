@@ -46,7 +46,7 @@ export interface Draft {
 }
 
 export const blankDraft: Draft = {
-  name: 'Vikram',
+  name: '',
   role: 'Receptionist',
   business_type: 'Healthcare',
   description: 'Answers incoming customer calls, schedules appointments, provides basic information, and captures patient details.',

@@ -281,13 +281,94 @@ async function textToSpeech(text, voiceId = 'alloy', language = 'en-IN', outputF
 
 /**
  * Synthesize speech - returns object compatible with callers expecting { audioBase64, audioBuffer }.
+ * Respects Bavio canonical voice architecture:
+ * - Indian supported voices -> Sarvam when configured
+ * - Global voices -> ElevenLabs when configured
+ * - OpenAI TTS as isolated fallback
+ * - Provider details remain strictly hidden from customer UI
  */
 async function synthesizeSpeech(text, language = 'en-IN', voiceId = 'alloy', apiKey = null) {
-  const audioBuffer = await textToSpeech(text, voiceId, language, 'mp3', apiKey);
-  return {
-    audioBuffer,
-    audioBase64: audioBuffer.toString('base64')
-  };
+  const isIndianLang = ['hi-IN', 'hi-en', 'te-IN', 'ta-IN'].includes(language);
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
+
+  // 1. Indian language routing: Sarvam when configured
+  if (isIndianLang && sarvamKey && !sarvamKey.includes('your_')) {
+    try {
+      const targetLang = language === 'hi-en' ? 'hi-IN' : language;
+      const resp = await axios.post(
+        'https://api.sarvam.ai/text-to-speech',
+        {
+          inputs: [text],
+          target_language_code: targetLang,
+          speaker: 'aditi',
+          pitch: 0,
+          pace: 1.05,
+          loudness: 1.5,
+          speech_sample_rate: 8000,
+          enable_preprocessing: true,
+          model: 'bulbul-v3',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'api-subscription-key': sarvamKey,
+          },
+          timeout: 10000,
+        }
+      );
+      const base64Audio = resp.data?.audios?.[0] || resp.data?.audio || '';
+      if (base64Audio) {
+        const audioBuffer = Buffer.from(base64Audio, 'base64');
+        return { audioBuffer, audioBase64: base64Audio };
+      }
+    } catch (sarvamErr) {
+      console.warn('[TTS] Sarvam synthesis failed, attempting fallback:', sarvamErr.message);
+    }
+  }
+
+  // 2. Global voice routing: ElevenLabs when configured
+  if (elevenLabsKey && !elevenLabsKey.includes('your_')) {
+    try {
+      const providerVoiceId = isIndianLang ? 'pNInz6obpgDQGcFmaJgB' : 'EXAVITQu4vr4xnSDxMaL';
+      const modelId = isIndianLang ? 'eleven_multilingual_v2' : 'eleven_flash_v2_5';
+      const resp = await axios.post(
+        `https://api.elevenlabs.io/v1/text-to-speech/${providerVoiceId}`,
+        {
+          text,
+          model_id: modelId,
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+        },
+        {
+          headers: {
+            'xi-api-key': elevenLabsKey,
+            'Content-Type': 'application/json',
+          },
+          responseType: 'arraybuffer',
+          timeout: 10000,
+        }
+      );
+      const audioBuffer = Buffer.from(resp.data);
+      return {
+        audioBuffer,
+        audioBase64: audioBuffer.toString('base64'),
+      };
+    } catch (elErr) {
+      console.warn('[TTS] ElevenLabs synthesis failed, attempting fallback:', elErr.message);
+    }
+  }
+
+  // 3. Fallback to OpenAI TTS if external provider keys unavailable or failed
+  try {
+    const audioBuffer = await textToSpeech(text, voiceId, language, 'mp3', apiKey);
+    return {
+      audioBuffer,
+      audioBase64: audioBuffer.toString('base64'),
+    };
+  } catch (openAiErr) {
+    console.error('[TTS] All speech synthesis options failed:', openAiErr.message);
+    throw openAiErr;
+  }
 }
 
 // Build system prompt per industry

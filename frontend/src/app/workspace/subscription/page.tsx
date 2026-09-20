@@ -54,8 +54,11 @@ export default function WorkspaceSubscription() {
     }
   };
 
+  const isInternalQa = activeProfile.plan_name === "internal_qa_starter" || activeProfile.plan === "internal_qa_starter";
   const planDisplay =
-    activeProfile.plan_name?.toLowerCase() === "starter"
+    isInternalQa
+      ? "Starter — Internal QA"
+      : activeProfile.plan_name?.toLowerCase() === "starter"
       ? "Starter Plan"
       : activeProfile.plan_name?.toLowerCase() === "growth"
       ? "Growth Plan"
@@ -63,7 +66,7 @@ export default function WorkspaceSubscription() {
       ? "Scale Plan"
       : "No Active Plan";
 
-  const activePlanLower = activeProfile.plan_name?.toLowerCase() || "free";
+  const activePlanLower = isInternalQa ? "starter" : (activeProfile.plan_name?.toLowerCase() || "free");
 
   const expiryFormatted = activeProfile.current_period_end
     ? new Date(activeProfile.current_period_end).toLocaleDateString("en-US", {
