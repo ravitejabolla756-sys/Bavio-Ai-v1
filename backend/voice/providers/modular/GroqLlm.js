@@ -13,12 +13,13 @@ const keepAliveAgent = new https.Agent({
 });
 
 class GroqLlm extends LanguageModelProvider {
-  constructor({ apiKey, model = 'llama-3.3-70b-versatile' } = {}) {
+  constructor({ apiKey, model = 'openai/gpt-oss-20b' } = {}) {
     super('GroqLlm');
     if (!apiKey) throw new Error('[GroqLlm] apiKey is required');
     this._apiKey   = apiKey;
     this._model    = model;
     this._sessions = new Map();
+    this._activeControllers = new Map();
   }
 
   async createSession({ systemPrompt, callSid = '' }) {
@@ -43,6 +44,13 @@ class GroqLlm extends LanguageModelProvider {
     let leadData  = null;
     let shouldEnd = false;
 
+    const controller = new AbortController();
+    this._activeControllers.set(sessionId, controller);
+    if (abortSignal) {
+      if (abortSignal.aborted) controller.abort();
+      else abortSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+
     try {
       const response = await axios.post(
         `${GROQ_BASE_URL}/chat/completions`,
@@ -51,6 +59,7 @@ class GroqLlm extends LanguageModelProvider {
           max_tokens : 256,
           temperature: 0.7,
           stream     : true,
+          reasoning_effort: 'low',
           messages,
         },
         {
@@ -60,7 +69,7 @@ class GroqLlm extends LanguageModelProvider {
           },
           responseType: 'stream',
           timeout     : 20000,
-          signal      : abortSignal,
+          signal      : controller.signal,
           httpsAgent  : keepAliveAgent
         }
       );
@@ -73,12 +82,8 @@ class GroqLlm extends LanguageModelProvider {
           reject(new Error('AbortError'));
         };
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            return onAbort();
-          }
-          abortSignal.addEventListener('abort', onAbort);
-        }
+        if (controller.signal.aborted) return onAbort();
+        controller.signal.addEventListener('abort', onAbort, { once: true });
 
         response.data.on('data', (chunk) => {
           buffer += chunk.toString();
@@ -102,22 +107,22 @@ class GroqLlm extends LanguageModelProvider {
         });
 
         response.data.on('end', () => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
+          controller.signal.removeEventListener('abort', onAbort);
           resolve();
         });
         response.data.on('error', (err) => {
-          if (abortSignal) {
-            abortSignal.removeEventListener('abort', onAbort);
-          }
+          controller.signal.removeEventListener('abort', onAbort);
           reject(err);
         });
       });
 
     } catch (err) {
-      console.error(`[GroqLlm] streamResponse error: ${err.message}`);
+      if (err.name !== 'CanceledError' && err.name !== 'AbortError' && err.message !== 'AbortError') {
+        console.error(`[GroqLlm] streamResponse error: ${err.message}`);
+      }
       throw err;
+    } finally {
+      this._activeControllers.delete(sessionId);
     }
 
     if (fullText.includes('[END_CALL]')) {
@@ -143,7 +148,12 @@ class GroqLlm extends LanguageModelProvider {
   }
 
   async cancelResponse(sessionId) {
-    console.warn(`[GroqLlm] cancelResponse(${sessionId}) — streaming cancellation not yet implemented`);
+    const controller = this._activeControllers.get(sessionId);
+    if (controller) {
+      controller.abort();
+      this._activeControllers.delete(sessionId);
+      console.log(`[GroqLlm] Cancelled active response for ${sessionId}`);
+    }
   }
 
   async callTool({ sessionId, toolName, toolArgs }) {
@@ -152,6 +162,7 @@ class GroqLlm extends LanguageModelProvider {
   }
 
   async close(sessionId) {
+    await this.cancelResponse(sessionId);
     this._sessions.delete(sessionId);
   }
 }
