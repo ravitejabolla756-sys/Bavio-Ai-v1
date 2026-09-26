@@ -293,7 +293,14 @@ class WebCallSessionManager {
     switch (type) {
       case 'user:speech_started': {
         const speechStartTime = Date.now();
-        // Barge-in check: If AI is speaking, trigger interruption
+
+        // 1. Abort any active in-flight LLM/TTS generation immediately
+        if (session.turnAbortController) {
+          try { session.turnAbortController.abort(); } catch {}
+        }
+        session.turnAbortController = new AbortController();
+
+        // 2. Barge-in check: If AI is speaking or had audio queued, trigger interruption
         if (session.isAiSpeaking) {
           session.interruptionsCount++;
           session.interruptedTurnsCount++;
@@ -310,16 +317,17 @@ class WebCallSessionManager {
               assistantAudioPlayedBeforeInterruptMs: playedBeforeInterrupt
             }
           });
-
-          // Instruct client to halt audio playback immediately
-          if (session.ws && session.ws.readyState === session.ws.OPEN) {
-            session.ws.send(JSON.stringify({ type: 'assistant:interrupt_ack' }));
-          }
         }
 
-        // Initialize new turn state
+        // 3. Instruct client to halt audio playback and clear audio queue immediately
+        if (session.ws && session.ws.readyState === session.ws.OPEN) {
+          session.ws.send(JSON.stringify({ type: 'assistant:interrupt_ack' }));
+        }
+
+        // 4. Initialize new turn state
         session.turnCounter++;
         const turnId = `turn_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+        session.activeTurnId = turnId;
         session.currentTurn = {
           turnId,
           turnNumber: session.turnCounter,
@@ -343,13 +351,21 @@ class WebCallSessionManager {
         const speechEndTime = Date.now();
         if (!session.currentTurn) {
           session.turnCounter++;
+          const turnId = `turn_${speechEndTime}_${crypto.randomBytes(3).toString('hex')}`;
+          session.activeTurnId = turnId;
           session.currentTurn = {
-            turnId: `turn_${speechEndTime}_${crypto.randomBytes(3).toString('hex')}`,
+            turnId,
             turnNumber: session.turnCounter,
             turnStartedAt: new Date(speechEndTime - 1000),
             userSpeechStartedAt: new Date(speechEndTime - 1000),
             wasInterrupted: false
           };
+        } else {
+          session.activeTurnId = session.currentTurn.turnId;
+        }
+
+        if (!session.turnAbortController || session.turnAbortController.signal.aborted) {
+          session.turnAbortController = new AbortController();
         }
 
         session.currentTurn.userSpeechEndedAt = new Date(speechEndTime);
@@ -491,6 +507,9 @@ class WebCallSessionManager {
 
     // Step 3 & 4: Streaming LLM Generation & Sentence-by-Sentence TTS Synthesis
     const llmStartTime = Date.now();
+    const thisTurnId = turn.turnId;
+    const turnSignal = session.turnAbortController?.signal;
+
     turn.llmStartedAt = new Date(llmStartTime);
     turn.llmProvider = 'openai';
     turn.llmModel = 'gpt-4o-mini';
@@ -506,14 +525,10 @@ class WebCallSessionManager {
     let ttsStartTime = Date.now();
     turn.ttsStartedAt = new Date(ttsStartTime);
 
-    // Queue of pending audio synthesis promises
-    const audioPromises = [];
-
     const handleSentence = async (sentence, isFirst) => {
-      // Check for interruption/barge-in before synthesizing
-      if (session.status === 'completed' || !session.currentTurn) return;
+      // Check for interruption/barge-in or obsolete turn before synthesizing
+      if (session.status === 'completed' || session.activeTurnId !== thisTurnId || turnSignal?.aborted) return;
 
-      const sentenceTtsStart = Date.now();
       try {
         const audioBuffer = await openAIService.textToSpeech(
           sentence,
@@ -521,6 +536,9 @@ class WebCallSessionManager {
           session.assistant?.language || 'en-US',
           'mp3'
         );
+
+        // Check again after async TTS synthesis before sending to client
+        if (session.status === 'completed' || session.activeTurnId !== thisTurnId || turnSignal?.aborted) return;
 
         if (!firstAudioSent) {
           firstAudioSent = true;
@@ -539,7 +557,7 @@ class WebCallSessionManager {
           if (session.ws && session.ws.readyState === session.ws.OPEN) {
             session.ws.send(JSON.stringify({
               type: 'assistant:speech_started',
-              turnId: turn.turnId,
+              turnId: thisTurnId,
               text: sentence,
               telemetry: {
                 timeToFirstAiAudioMs: turn.timeToFirstAiAudioMs,
@@ -552,8 +570,8 @@ class WebCallSessionManager {
             session.ws.send(audioBuffer);
           }
         } else {
-          // Send subsequent audio chunk
-          if (session.ws && session.ws.readyState === session.ws.OPEN) {
+          // Send subsequent audio chunk with turn validation
+          if (session.ws && session.ws.readyState === session.ws.OPEN && session.activeTurnId === thisTurnId && !turnSignal?.aborted) {
             session.ws.send(audioBuffer);
           }
         }
@@ -568,17 +586,23 @@ class WebCallSessionManager {
           systemPrompt,
           history,
           async (sentence, isFirst) => {
+            if (session.activeTurnId !== thisTurnId || turnSignal?.aborted) return;
             if (isFirst) {
               turn.llmFirstTokenAt = new Date();
               turn.llmTimeToFirstTokenMs = Date.now() - llmStartTime;
             }
             await handleSentence(sentence, isFirst);
-          }
+          },
+          null,
+          turnSignal
         );
         assistantResponseText = streamResult.response_text || "I'm here to help. Could you tell me more?";
         turn.llmTimeToFirstTokenMs = streamResult.ttft_ms || (Date.now() - llmStartTime);
         turn.llmCompletedAt = new Date();
         turn.llmTotalLatencyMs = Date.now() - llmStartTime;
+        if (streamResult.wasAborted) {
+          turn.wasInterrupted = true;
+        }
       } else {
         // Fallback non-streaming
         const chatRes = await openAIService.chat(systemPrompt, history, null);
@@ -590,23 +614,27 @@ class WebCallSessionManager {
         await handleSentence(assistantResponseText, true);
       }
     } catch (llmErr) {
-      console.error('[WEBCALL LLM] Chat error:', llmErr.message);
-      turn.llmCompletedAt = new Date();
-      turn.llmTotalLatencyMs = Date.now() - llmStartTime;
-      turn.llmTimeToFirstTokenMs = turn.llmTimeToFirstTokenMs || (Date.now() - llmStartTime);
-      session.errorCount = (session.errorCount || 0) + 1;
-      session.lastErrorCode = llmErr.code || 'LLM_ERROR';
-      session.lastErrorStage = 'llm';
-      await logWebCallEvent({
-        sessionId: session.sessionId,
-        businessId: session.businessId,
-        callSid: session.callSid,
-        turnId: turn.turnId,
-        eventType: 'llm_failed',
-        metadata: { error: llmErr.message, stage: 'llm' }
-      });
-      assistantResponseText = "I apologize, I didn't quite catch that. Could you please repeat?";
-      await handleSentence(assistantResponseText, true);
+      if (turnSignal?.aborted) {
+        turn.wasInterrupted = true;
+      } else {
+        console.error('[WEBCALL LLM] Chat error:', llmErr.message);
+        turn.llmCompletedAt = new Date();
+        turn.llmTotalLatencyMs = Date.now() - llmStartTime;
+        turn.llmTimeToFirstTokenMs = turn.llmTimeToFirstTokenMs || (Date.now() - llmStartTime);
+        session.errorCount = (session.errorCount || 0) + 1;
+        session.lastErrorCode = llmErr.code || 'LLM_ERROR';
+        session.lastErrorStage = 'llm';
+        await logWebCallEvent({
+          sessionId: session.sessionId,
+          businessId: session.businessId,
+          callSid: session.callSid,
+          turnId: turn.turnId,
+          eventType: 'llm_failed',
+          metadata: { error: llmErr.message, stage: 'llm' }
+        });
+        assistantResponseText = "I apologize, I didn't quite catch that. Could you please repeat?";
+        await handleSentence(assistantResponseText, true);
+      }
     }
 
     turn.assistantResponse = assistantResponseText;

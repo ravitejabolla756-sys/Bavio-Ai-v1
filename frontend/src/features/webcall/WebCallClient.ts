@@ -265,9 +265,8 @@ export class WebCallClient {
           console.log('[BAVIO_DIAG] STT_SPEECH_STARTED — browser VAD detected speech');
 
           // Check if user is interrupting AI audio playback (Barge-in)
-          if (this.currentAudioSource) {
-            try { this.currentAudioSource.stop(); } catch {}
-            this.currentAudioSource = null;
+          if (this.isPlayingAudio || this.currentAudioSource || this.audioQueue.length > 0) {
+            this.clearAudioQueue();
             this.logEvent('user_interrupted');
           }
 
@@ -289,6 +288,16 @@ export class WebCallClient {
           if (this.isMuted) return;
           const lastResult = event.results[event.results.length - 1];
           const interimText = lastResult[0].transcript.trim();
+
+          // Real-time barge-in trigger: if interim text is received while AI is speaking, interrupt immediately
+          if (interimText.length > 0 && (this.isPlayingAudio || this.currentAudioSource || this.audioQueue.length > 0)) {
+            this.clearAudioQueue();
+            this.setState('user_speaking');
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+              this.ws.send(JSON.stringify({ type: 'user:speech_started' }));
+            }
+          }
+
           console.log(`[BAVIO_DIAG] STT_RESULT — isFinal=${lastResult.isFinal} text="${interimText.slice(0, 60)}"`);
 
           if (lastResult.isFinal) {

@@ -207,7 +207,7 @@ function cleanSentenceForTts(text) {
  * @param {string} apiKey                - Optional custom API key
  * @returns {Promise<{response_text: string, lead_data: any, should_end: boolean, ttft_ms: number}>}
  */
-async function chatStream(systemPrompt, history = [], onSentence = null, apiKey = null) {
+async function chatStream(systemPrompt, history = [], onSentence = null, apiKey = null, signal = null) {
   const config = getProviderConfig(apiKey);
   if (!config.apiKey) {
     throw new Error(`[${config.providerName} LLM] API key is not configured.`);
@@ -242,12 +242,28 @@ async function chatStream(systemPrompt, history = [], onSentence = null, apiKey 
         'Content-Type': 'application/json'
       },
       responseType: 'stream',
-      timeout: 25000
+      timeout: 25000,
+      signal: signal || undefined
     }
   );
 
   return new Promise((resolve, reject) => {
     let rawSseBuffer = '';
+    let isAborted = false;
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        isAborted = true;
+        try { response.data.destroy(); } catch {}
+        resolve({
+          response_text: fullAccumulatedText.trim(),
+          lead_data: null,
+          should_end: false,
+          ttft_ms: firstTokenTime ? (firstTokenTime - startTime) : (Date.now() - startTime),
+          wasAborted: true
+        });
+      });
+    }
 
     response.data.on('data', async (chunk) => {
       rawSseBuffer += chunk.toString();
