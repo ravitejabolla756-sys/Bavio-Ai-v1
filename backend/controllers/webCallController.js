@@ -296,7 +296,15 @@ async function endWebCallSession(req, res) {
     return res.status(200).json({
       success: true,
       callSid,
+      durationMs: result.durationMs,
       durationSeconds: result.durationSeconds,
+      userTurnCount: result.userTurnCount,
+      turnsCount: result.turnsCount,
+      userSpeechTotalMs: result.userSpeechTotalMs,
+      assistantSpeechTotalMs: result.assistantSpeechTotalMs,
+      interruptionsCount: result.interruptionsCount,
+      avgLatencyMs: result.avgLatencyMs,
+      p95LatencyMs: result.p95LatencyMs,
       percentiles: result.percentiles
     });
   } catch (err) {

@@ -179,6 +179,186 @@ async function chat(systemPrompt, history = [], apiKey = null) {
 }
 
 /**
+ * Clean a single sentence before sending to TTS.
+ */
+function cleanSentenceForTts(text) {
+  if (!text) return '';
+  let cleaned = text.replace(/\[LEAD_CAPTURED\][\s\S]*?(\{[\s\S]*?\})?/gi, '');
+  cleaned = cleaned.replace(/\[END_CALL\]/gi, '');
+  cleaned = cleaned.split('\n').filter(line => {
+    const lower = line.toLowerCase();
+    return !(
+      lower.includes('name:') || lower.includes('phone:') ||
+      lower.includes('intent:') || lower.includes('budget:') ||
+      lower.includes('location:') || lower.includes('not collected') ||
+      lower.includes('[lead_captured]')
+    );
+  }).join(' ').trim();
+  cleaned = cleaned.replace(/\*+/g, '').replace(/#+/g, '').trim();
+  return cleaned;
+}
+
+/**
+ * Stream conversational AI response from LLM, yielding completed natural sentences/clauses.
+ *
+ * @param {string} systemPrompt          - System role instructions
+ * @param {Array<{role,content}>} history - Conversation history
+ * @param {function(string, boolean): Promise<void>} onSentence - Callback (sentenceText, isFirst)
+ * @param {string} apiKey                - Optional custom API key
+ * @returns {Promise<{response_text: string, lead_data: any, should_end: boolean, ttft_ms: number}>}
+ */
+async function chatStream(systemPrompt, history = [], onSentence = null, apiKey = null) {
+  const config = getProviderConfig(apiKey);
+  if (!config.apiKey) {
+    throw new Error(`[${config.providerName} LLM] API key is not configured.`);
+  }
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content?.trim() || '(silence)'
+    }))
+  ];
+
+  const startTime = Date.now();
+  let firstTokenTime = null;
+  let fullAccumulatedText = '';
+  let sentenceBuffer = '';
+  let isFirstSentence = true;
+
+  const response = await axios.post(
+    `${config.baseUrl}/chat/completions`,
+    {
+      model: config.chatModel,
+      max_tokens: 256,
+      temperature: 0.7,
+      stream: true,
+      messages
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'stream',
+      timeout: 25000
+    }
+  );
+
+  return new Promise((resolve, reject) => {
+    let rawSseBuffer = '';
+
+    response.data.on('data', async (chunk) => {
+      rawSseBuffer += chunk.toString();
+      const lines = rawSseBuffer.split('\n');
+      rawSseBuffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const parsed = JSON.parse(trimmed.slice(6));
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              if (!firstTokenTime) {
+                firstTokenTime = Date.now();
+              }
+              fullAccumulatedText += delta;
+              sentenceBuffer += delta;
+
+              // Sentence boundary detection: [.?!;:\n] or [,] if long enough
+              const match = sentenceBuffer.match(/([.?!;:\n]+)|(,\s+)/);
+              if (match && match.index !== undefined) {
+                const boundaryEnd = match.index + match[0].length;
+                const candidate = sentenceBuffer.slice(0, boundaryEnd);
+                const isComma = match[0].includes(',');
+                
+                // Allow comma split only if candidate is long enough (>45 chars) to prevent rapid micro-chunks
+                if (!isComma || candidate.length >= 45) {
+                  const cleaned = cleanSentenceForTts(candidate);
+                  sentenceBuffer = sentenceBuffer.slice(boundaryEnd);
+                  if (cleaned && cleaned.length > 3 && onSentence) {
+                    const first = isFirstSentence;
+                    isFirstSentence = false;
+                    await onSentence(cleaned, first);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            // ignore partial SSE chunks
+          }
+        }
+      }
+    });
+
+    response.data.on('end', async () => {
+      if (sentenceBuffer.trim().length > 0 && onSentence) {
+        const cleaned = cleanSentenceForTts(sentenceBuffer);
+        if (cleaned && cleaned.length > 2) {
+          const first = isFirstSentence;
+          isFirstSentence = false;
+          await onSentence(cleaned, first);
+        }
+      }
+
+      let rawText = fullAccumulatedText;
+      let lead_data = null;
+      if (rawText.includes('[LEAD_CAPTURED]')) {
+        try {
+          const jsonMatch = rawText.match(/\[LEAD_CAPTURED\]\s*(\{[\s\S]*?\})/);
+          if (jsonMatch) {
+            lead_data = JSON.parse(jsonMatch[1]);
+          }
+        } catch (e) {}
+        rawText = rawText.replace(/\[LEAD_CAPTURED\][\s\S]*?(\{[\s\S]*?\})?/g, '').trim();
+      }
+
+      if (lead_data) {
+        const hasRealData = Object.entries(lead_data).some(([, val]) =>
+          val && val !== '...' && val !== 'Unknown' &&
+          !String(val).toLowerCase().includes('not collected') &&
+          String(val).trim() !== ''
+        );
+        if (!hasRealData) lead_data = null;
+      }
+
+      rawText = rawText.split('\n').filter(l => {
+        const low = l.toLowerCase();
+        return !(
+          low.includes('name:') || low.includes('phone:') ||
+          low.includes('intent:') || low.includes('budget:') ||
+          low.includes('location:') || low.includes('not collected') ||
+          low.includes('[lead_captured]')
+        );
+      }).join('\n').trim();
+
+      let should_end = rawText.includes('[END_CALL]');
+      if (should_end) {
+        const isPremature = history.length <= 2 || (rawText.includes('Thank you for calling') && !lead_data);
+        if (isPremature) should_end = false;
+        rawText = rawText.replace('[END_CALL]', '').trim();
+      }
+
+      const ttft = firstTokenTime ? (firstTokenTime - startTime) : (Date.now() - startTime);
+
+      resolve({
+        response_text: rawText.trim(),
+        lead_data,
+        should_end,
+        ttft_ms: ttft
+      });
+    });
+
+    response.data.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+/**
  * Drop-in wrapper compatibility function for controllers that call generateResponse()
  */
 async function generateResponse(messages, systemPrompt, apiKey = null) {
@@ -474,6 +654,7 @@ async function chatCompletion(messages, model = 'gpt-5.4-mini', temperature = 0.
 module.exports = {
   transcribeAudio,
   chat,
+  chatStream,
   chatCompletion,
   generateResponse,
   buildSystemPrompt,

@@ -28,6 +28,9 @@ export class WebCallClient {
 
   private isMuted: boolean = false;
   private currentAudioSource: AudioBufferSourceNode | null = null;
+  private audioQueue: ArrayBuffer[] = [];
+  private isPlayingAudio: boolean = false;
+  private turnCounter: number = 0;
   private startTime: number = 0;
   private pingStartTime: number = 0;
   private rttMs: number = 24;
@@ -157,8 +160,8 @@ export class WebCallClient {
           const msg = JSON.parse(evt.data);
           this.handleServerMessage(msg);
         } else if (evt.data instanceof ArrayBuffer) {
-          // Play binary audio response from assistant
-          await this.playAudioBuffer(evt.data);
+          // Play binary audio response from assistant through ordered audio queue
+          this.enqueueAudioBuffer(evt.data);
         }
       };
 
@@ -194,7 +197,7 @@ export class WebCallClient {
         if (msg.telemetry) {
           this.callbacks.onTurnTelemetry({
             turnId: msg.turnId,
-            turnNumber: 0,
+            turnNumber: this.turnCounter,
             userSpeechDurationMs: 0,
             timeToFirstAiAudioMs: msg.telemetry.timeToFirstAiAudioMs || 0,
             llmLatencyMs: msg.telemetry.llmLatencyMs,
@@ -205,16 +208,17 @@ export class WebCallClient {
         break;
 
       case 'assistant:speech_ended':
-        if (this.state === 'ai_speaking') {
+        // Let audioQueue finish playback naturally before switching state
+        if (this.audioQueue.length === 0 && !this.isPlayingAudio && this.state === 'ai_speaking') {
           this.setState('connected');
         }
         break;
 
       case 'assistant:interrupt_ack':
-        // Halt current audio playback immediately on interruption
-        if (this.currentAudioSource) {
-          try { this.currentAudioSource.stop(); } catch {}
-          this.currentAudioSource = null;
+        // Halt current audio playback and clear queue immediately on interruption
+        this.clearAudioQueue();
+        if (this.state === 'ai_speaking') {
+          this.setState('connected');
         }
         break;
 
@@ -290,8 +294,9 @@ export class WebCallClient {
           if (lastResult.isFinal) {
             const transcript = interimText;
             if (transcript.length > 0) {
-              console.log(`[BAVIO_DIAG] STT_FINAL_TRANSCRIPT — sending to backend: "${transcript.slice(0, 80)}"`);
-              this.logEvent('stt_final_transcript', { charCount: transcript.length });
+              this.turnCounter++;
+              console.log(`[BAVIO_DIAG] STT_FINAL_TRANSCRIPT — turn ${this.turnCounter}: "${transcript.slice(0, 80)}"`);
+              this.logEvent('stt_final_transcript', { charCount: transcript.length, turnNumber: this.turnCounter });
 
               this.callbacks.onTranscript({
                 speaker: 'user',
@@ -346,18 +351,57 @@ export class WebCallClient {
   }
 
   /**
-   * Plays incoming MP3 / WAV audio from backend.
-   * CRITICAL FIX: Resumes suspended AudioContext before playback.
-   * Browser autoplay policy may suspend AudioContext before user interaction.
+   * Enqueues incoming audio chunks from streaming TTS for gapless playback.
+   */
+  private enqueueAudioBuffer(arrayBuffer: ArrayBuffer) {
+    this.audioQueue.push(arrayBuffer);
+    if (!this.isPlayingAudio) {
+      this.playNextAudioFromQueue();
+    }
+  }
+
+  /**
+   * Clears the audio playback queue immediately (e.g. on user barge-in / interruption).
+   */
+  private clearAudioQueue() {
+    this.audioQueue = [];
+    this.isPlayingAudio = false;
+    if (this.currentAudioSource) {
+      try { this.currentAudioSource.stop(); } catch {}
+      this.currentAudioSource = null;
+    }
+  }
+
+  /**
+   * Plays the next available audio chunk from the queue.
+   */
+  private async playNextAudioFromQueue() {
+    if (this.audioQueue.length === 0) {
+      this.isPlayingAudio = false;
+      if (this.state === 'ai_speaking') {
+        this.setState('connected');
+      }
+      return;
+    }
+
+    this.isPlayingAudio = true;
+    const nextChunk = this.audioQueue.shift();
+    if (nextChunk) {
+      await this.playAudioBuffer(nextChunk);
+    }
+  }
+
+  /**
+   * Plays incoming MP3 / WAV audio chunk through Web Audio API.
+   * Resumes suspended AudioContext before playback.
    */
   private async playAudioBuffer(arrayBuffer: ArrayBuffer) {
     if (!this.audioCtx) {
       console.warn('[BAVIO_DIAG] AUDIO_PLAY_FAILED — no AudioContext available');
+      this.isPlayingAudio = false;
       return;
     }
 
-    // CRITICAL FIX: Resume suspended AudioContext
-    // AudioContext starts suspended if created before a user gesture.
     if (this.audioCtx.state === 'suspended') {
       console.warn('[BAVIO_DIAG] AUDIO_CTX_SUSPENDED — attempting resume()');
       try {
@@ -366,35 +410,31 @@ export class WebCallClient {
       } catch (resumeErr: any) {
         console.error('[BAVIO_DIAG] AUDIO_CTX_RESUME_FAILED —', resumeErr.message);
         this.callbacks.onError('Audio playback blocked by browser. Please interact with the page first.');
+        this.isPlayingAudio = false;
         return;
       }
     }
 
-    console.log(`[BAVIO_DIAG] AUDIO_DECODE_START — ${arrayBuffer.byteLength} bytes, audioCtx.state=${this.audioCtx.state}`);
-
     try {
       const decodedBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
-      console.log(`[BAVIO_DIAG] AUDIO_DECODE_SUCCESS — duration=${decodedBuffer.duration.toFixed(2)}s`);
-
       const source = this.audioCtx.createBufferSource();
       source.buffer = decodedBuffer;
       source.connect(this.audioCtx.destination);
       this.currentAudioSource = source;
 
       source.onended = () => {
-        console.log('[BAVIO_DIAG] AUDIO_PLAY_ENDED');
         if (this.currentAudioSource === source) {
           this.currentAudioSource = null;
-          if (this.state === 'ai_speaking') {
-            this.setState('connected');
-          }
+          // Play next chunk in queue seamlessly
+          this.playNextAudioFromQueue();
         }
       };
 
       source.start();
-      console.log('[BAVIO_DIAG] AUDIO_PLAY_STARTED');
     } catch (err: any) {
       console.error('[BAVIO_DIAG] AUDIO_DECODE_FAILED —', err.message, '— bytes:', arrayBuffer.byteLength);
+      this.isPlayingAudio = false;
+      this.playNextAudioFromQueue();
     }
   }
 
@@ -467,14 +507,15 @@ export class WebCallClient {
         });
         if (res.ok) {
           const data = await res.json();
+          const turnCount = data.userTurnCount ?? data.turnsCount ?? this.turnCounter;
           this.callbacks.onCompleted({
             callSid,
-            durationMs: Date.now() - this.startTime,
+            durationMs: data.durationMs || (Date.now() - this.startTime),
             durationSeconds: data.durationSeconds || Math.ceil((Date.now() - this.startTime) / 1000),
-            userSpeechTotalMs: 0,
-            assistantSpeechTotalMs: 0,
-            turnsCount: 0,
-            interruptionsCount: 0,
+            userSpeechTotalMs: data.userSpeechTotalMs || 0,
+            assistantSpeechTotalMs: data.assistantSpeechTotalMs || 0,
+            turnsCount: turnCount,
+            interruptionsCount: data.interruptionsCount || 0,
             percentiles: data.percentiles || { avg: null, p50: null, p75: null, p90: null, p95: null, min: null, max: null }
           });
         }
@@ -489,10 +530,7 @@ export class WebCallClient {
   private cleanup() {
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
     if (this.telemetryInterval) clearInterval(this.telemetryInterval);
-    if (this.currentAudioSource) {
-      try { this.currentAudioSource.stop(); } catch {}
-      this.currentAudioSource = null;
-    }
+    this.clearAudioQueue();
     if (this.recognition) {
       try { this.recognition.stop(); } catch {}
       this.recognition = null;

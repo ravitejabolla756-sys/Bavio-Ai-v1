@@ -172,12 +172,20 @@ export const WebCallModal: React.FC<WebCallModalProps> = ({
           ) : callState === 'completed' && summary ? (
             /* Call Completed Summary Card */
             <div className="flex flex-col items-center justify-center py-6 text-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 flex items-center justify-center">
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                summary.turnsCount > 0
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500'
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-500'
+              }`}>
                 <Phone className="w-7 h-7" />
               </div>
               <div>
                 <h4 className="text-lg font-bold text-ink">WebCall Complete</h4>
-                <p className="text-xs text-ink-muted mt-1">Real-time session metrics have been fully saved.</p>
+                <p className="text-xs text-ink-muted mt-1">
+                  {summary.turnsCount > 0
+                    ? 'Real-time session metrics have been fully saved.'
+                    : 'No conversational turns were recorded.'}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg mt-2 font-mono text-xs">
@@ -187,14 +195,14 @@ export const WebCallModal: React.FC<WebCallModalProps> = ({
                 </div>
                 <div className="p-3 bg-surface-raised/60 rounded-xl border border-line">
                   <div className="text-[10px] text-ink-muted uppercase">Avg Latency</div>
-                  <div className="text-base font-bold mt-0.5 text-emerald-500">
-                    {summary.percentiles.avg ? `${summary.percentiles.avg}ms` : '—'}
+                  <div className={`text-base font-bold mt-0.5 ${summary.turnsCount > 0 && summary.percentiles.avg ? 'text-emerald-500' : 'text-ink-muted'}`}>
+                    {summary.turnsCount > 0 && summary.percentiles.avg ? `${summary.percentiles.avg}ms` : 'N/A'}
                   </div>
                 </div>
                 <div className="p-3 bg-surface-raised/60 rounded-xl border border-line">
                   <div className="text-[10px] text-ink-muted uppercase">P95 Latency</div>
-                  <div className="text-base font-bold mt-0.5">
-                    {summary.percentiles.p95 ? `${summary.percentiles.p95}ms` : '—'}
+                  <div className={`text-base font-bold mt-0.5 ${summary.turnsCount > 0 && summary.percentiles.p95 ? 'text-ink' : 'text-ink-muted'}`}>
+                    {summary.turnsCount > 0 && summary.percentiles.p95 ? `${summary.percentiles.p95}ms` : 'N/A'}
                   </div>
                 </div>
                 <div className="p-3 bg-surface-raised/60 rounded-xl border border-line">

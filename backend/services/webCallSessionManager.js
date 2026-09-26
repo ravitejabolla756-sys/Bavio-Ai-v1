@@ -489,27 +489,111 @@ class WebCallSessionManager {
       metadata: knowledgeMetadata
     });
 
-    // Step 3: LLM Generation (Phase 10)
+    // Step 3 & 4: Streaming LLM Generation & Sentence-by-Sentence TTS Synthesis
     const llmStartTime = Date.now();
     turn.llmStartedAt = new Date(llmStartTime);
     turn.llmProvider = 'openai';
     turn.llmModel = 'gpt-4o-mini';
+    turn.ttsProvider = 'openai';
+    turn.ttsModel = 'tts-1';
+    turn.ttsVoice = session.assistant?.voice || 'alloy';
 
     const systemPrompt = (session.assistant?.system_prompt || 'You are Maya, a helpful AI receptionist.') + knowledgeContext;
     const history = session.conversationHistory.slice(-8);
 
     let assistantResponseText = '';
+    let firstAudioSent = false;
+    let ttsStartTime = Date.now();
+    turn.ttsStartedAt = new Date(ttsStartTime);
+
+    // Queue of pending audio synthesis promises
+    const audioPromises = [];
+
+    const handleSentence = async (sentence, isFirst) => {
+      // Check for interruption/barge-in before synthesizing
+      if (session.status === 'completed' || !session.currentTurn) return;
+
+      const sentenceTtsStart = Date.now();
+      try {
+        const audioBuffer = await openAIService.textToSpeech(
+          sentence,
+          session.assistant?.voice || 'alloy',
+          session.assistant?.language || 'en-US',
+          'mp3'
+        );
+
+        if (!firstAudioSent) {
+          firstAudioSent = true;
+          const firstAudioTime = Date.now();
+          turn.ttsFirstAudioAt = new Date(firstAudioTime);
+          turn.ttsTimeToFirstAudioMs = firstAudioTime - ttsStartTime;
+
+          const userEndedMs = turn.userSpeechEndedAt.getTime();
+          turn.timeToFirstAiAudioMs = Math.max(0, firstAudioTime - userEndedMs);
+          turn.endToEndResponseLatencyMs = Math.max(0, Date.now() - turn.turnStartedAt.getTime());
+
+          session.isAiSpeaking = true;
+          session.aiSpeechStartTime = Date.now();
+
+          // Send speech started event to client
+          if (session.ws && session.ws.readyState === session.ws.OPEN) {
+            session.ws.send(JSON.stringify({
+              type: 'assistant:speech_started',
+              turnId: turn.turnId,
+              text: sentence,
+              telemetry: {
+                timeToFirstAiAudioMs: turn.timeToFirstAiAudioMs,
+                llmLatencyMs: turn.llmTotalLatencyMs || (Date.now() - llmStartTime),
+                ttsLatencyMs: turn.ttsTimeToFirstAudioMs,
+                endToEndMs: turn.endToEndResponseLatencyMs
+              }
+            }));
+            // Send first binary audio chunk immediately
+            session.ws.send(audioBuffer);
+          }
+        } else {
+          // Send subsequent audio chunk
+          if (session.ws && session.ws.readyState === session.ws.OPEN) {
+            session.ws.send(audioBuffer);
+          }
+        }
+      } catch (sentenceTtsErr) {
+        console.error('[WEBCALL TTS STREAM] Sentence synthesis error:', sentenceTtsErr.message);
+      }
+    };
+
     try {
-      const chatRes = await openAIService.chat(systemPrompt, history, null);
-      turn.llmFirstTokenAt = new Date(llmStartTime + 180); // First token estimate
-      turn.llmCompletedAt = new Date();
-      turn.llmTimeToFirstTokenMs = 180;
-      turn.llmTotalLatencyMs = Date.now() - llmStartTime;
-      assistantResponseText = chatRes.response_text || "I'm here to help. Could you tell me more?";
+      if (typeof openAIService.chatStream === 'function') {
+        const streamResult = await openAIService.chatStream(
+          systemPrompt,
+          history,
+          async (sentence, isFirst) => {
+            if (isFirst) {
+              turn.llmFirstTokenAt = new Date();
+              turn.llmTimeToFirstTokenMs = Date.now() - llmStartTime;
+            }
+            await handleSentence(sentence, isFirst);
+          }
+        );
+        assistantResponseText = streamResult.response_text || "I'm here to help. Could you tell me more?";
+        turn.llmTimeToFirstTokenMs = streamResult.ttft_ms || (Date.now() - llmStartTime);
+        turn.llmCompletedAt = new Date();
+        turn.llmTotalLatencyMs = Date.now() - llmStartTime;
+      } else {
+        // Fallback non-streaming
+        const chatRes = await openAIService.chat(systemPrompt, history, null);
+        turn.llmFirstTokenAt = new Date(llmStartTime + 180);
+        turn.llmCompletedAt = new Date();
+        turn.llmTimeToFirstTokenMs = 180;
+        turn.llmTotalLatencyMs = Date.now() - llmStartTime;
+        assistantResponseText = chatRes.response_text || "I'm here to help. Could you tell me more?";
+        await handleSentence(assistantResponseText, true);
+      }
     } catch (llmErr) {
       console.error('[WEBCALL LLM] Chat error:', llmErr.message);
       turn.llmCompletedAt = new Date();
       turn.llmTotalLatencyMs = Date.now() - llmStartTime;
+      turn.llmTimeToFirstTokenMs = turn.llmTimeToFirstTokenMs || (Date.now() - llmStartTime);
       session.errorCount = (session.errorCount || 0) + 1;
       session.lastErrorCode = llmErr.code || 'LLM_ERROR';
       session.lastErrorStage = 'llm';
@@ -522,108 +606,47 @@ class WebCallSessionManager {
         metadata: { error: llmErr.message, stage: 'llm' }
       });
       assistantResponseText = "I apologize, I didn't quite catch that. Could you please repeat?";
+      await handleSentence(assistantResponseText, true);
     }
 
     turn.assistantResponse = assistantResponseText;
     session.conversationHistory.push({ role: 'assistant', content: assistantResponseText });
+
+    turn.ttsCompletedAt = new Date();
+    turn.ttsTotalLatencyMs = Date.now() - ttsStartTime;
+    if (!turn.timeToFirstAiAudioMs) {
+      const userEndedMs = turn.userSpeechEndedAt.getTime();
+      turn.timeToFirstAiAudioMs = Math.max(0, Date.now() - userEndedMs);
+      turn.endToEndResponseLatencyMs = Math.max(0, Date.now() - turn.turnStartedAt.getTime());
+    }
+
+    const audioDurationMs = Math.round(assistantResponseText.length * 60);
+    turn.assistantAudioDurationMs = audioDurationMs;
+    session.assistantSpeechTotalMs += audioDurationMs;
+
+    // Send speech ended signal to client
+    if (session.ws && session.ws.readyState === session.ws.OPEN) {
+      session.ws.send(JSON.stringify({
+        type: 'assistant:speech_ended',
+        turnId: turn.turnId,
+        text: assistantResponseText
+      }));
+    }
 
     await logWebCallEvent({
       sessionId: session.sessionId,
       businessId: session.businessId,
       callSid: session.callSid,
       turnId: turn.turnId,
-      eventType: 'llm_completed',
-      durationMs: turn.llmTotalLatencyMs,
-      metadata: { responseLength: assistantResponseText.length }
+      eventType: 'assistant_audio_completed',
+      durationMs: turn.ttsTotalLatencyMs,
+      metadata: {
+        timeToFirstAiAudioMs: turn.timeToFirstAiAudioMs,
+        endToEndResponseLatencyMs: turn.endToEndResponseLatencyMs
+      }
     });
 
-    // Step 4: TTS Synthesis & Streaming (Phase 4 & Phase 6)
-    const ttsStartTime = Date.now();
-    turn.ttsStartedAt = new Date(ttsStartTime);
-    turn.ttsProvider = 'openai';
-    turn.ttsModel = 'tts-1';
-    turn.ttsVoice = session.assistant?.voice || 'alloy';
-
-    session.isAiSpeaking = true;
-    session.aiSpeechStartTime = Date.now();
-
-    try {
-      const audioBuffer = await openAIService.textToSpeech(
-        assistantResponseText,
-        session.assistant?.voice || 'alloy',
-        session.assistant?.language || 'en-US',
-        'mp3'
-      );
-
-      const ttsFirstAudioTime = Date.now();
-      turn.ttsFirstAudioAt = new Date(ttsFirstAudioTime);
-      turn.ttsCompletedAt = new Date();
-      turn.ttsTimeToFirstAudioMs = ttsFirstAudioTime - ttsStartTime;
-      turn.ttsTotalLatencyMs = Date.now() - ttsStartTime;
-
-      // Phase 6: THE MOST IMPORTANT LATENCY METRIC: USER STOPPED SPEAKING -> USER HEARS FIRST AI AUDIO
-      const userEndedMs = turn.userSpeechEndedAt.getTime();
-      turn.timeToFirstAiAudioMs = Math.max(0, ttsFirstAudioTime - userEndedMs);
-      turn.endToEndResponseLatencyMs = Math.max(0, Date.now() - turn.turnStartedAt.getTime());
-
-      // Estimated audio playback duration
-      const audioDurationMs = Math.round(assistantResponseText.length * 60);
-      turn.assistantAudioDurationMs = audioDurationMs;
-      session.assistantSpeechTotalMs += audioDurationMs;
-
-      // Transmit to client over WebSocket
-      if (session.ws && session.ws.readyState === session.ws.OPEN) {
-        session.ws.send(JSON.stringify({
-          type: 'assistant:speech_started',
-          turnId: turn.turnId,
-          text: assistantResponseText,
-          durationMs: audioDurationMs,
-          telemetry: {
-            timeToFirstAiAudioMs: turn.timeToFirstAiAudioMs,
-            llmLatencyMs: turn.llmTotalLatencyMs,
-            ttsLatencyMs: turn.ttsTotalLatencyMs,
-            endToEndMs: turn.endToEndResponseLatencyMs
-          }
-        }));
-
-        session.ws.send(audioBuffer);
-
-        session.ws.send(JSON.stringify({
-          type: 'assistant:speech_ended',
-          turnId: turn.turnId,
-          text: assistantResponseText
-        }));
-      }
-
-      await logWebCallEvent({
-        sessionId: session.sessionId,
-        businessId: session.businessId,
-        callSid: session.callSid,
-        turnId: turn.turnId,
-        eventType: 'assistant_audio_completed',
-        durationMs: turn.ttsTotalLatencyMs,
-        metadata: {
-          timeToFirstAiAudioMs: turn.timeToFirstAiAudioMs,
-          endToEndResponseLatencyMs: turn.endToEndResponseLatencyMs
-        }
-      });
-    } catch (ttsErr) {
-      console.error('[WEBCALL TTS] Synthesis error:', ttsErr.message);
-      turn.ttsCompletedAt = new Date();
-      session.errorCount = (session.errorCount || 0) + 1;
-      session.lastErrorCode = ttsErr.code || 'TTS_ERROR';
-      session.lastErrorStage = 'tts';
-      await logWebCallEvent({
-        sessionId: session.sessionId,
-        businessId: session.businessId,
-        callSid: session.callSid,
-        turnId: turn.turnId,
-        eventType: 'tts_failed',
-        metadata: { error: ttsErr.message, stage: 'tts' }
-      });
-    } finally {
-      session.isAiSpeaking = false;
-    }
+    session.isAiSpeaking = false;
 
     // Persist Turn into webcall_turns (Phase 5)
     await this.persistTurnRecord(session, turn);
@@ -884,7 +907,20 @@ class WebCallSessionManager {
 
     // Clean up active session
     activeWebCallSessions.delete(callSid);
-    return { success: true, callSid, durationSeconds, percentiles };
+    return {
+      success: true,
+      callSid,
+      durationMs,
+      durationSeconds,
+      userTurnCount,
+      turnsCount: userTurnCount,
+      userSpeechTotalMs: session?.userSpeechTotalMs || 0,
+      assistantSpeechTotalMs: session?.assistantSpeechTotalMs || 0,
+      interruptionsCount: session?.interruptionsCount || 0,
+      avgLatencyMs: percentiles.avg,
+      p95LatencyMs: percentiles.p95,
+      percentiles
+    };
   }
 }
 
