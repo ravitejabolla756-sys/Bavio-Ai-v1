@@ -60,13 +60,25 @@ export function useCTADestination() {
 }
 
 /**
+ * The canonical production auth origin.
+ * bavio.in (apex) is the production host. www.bavio.in must never be used as
+ * the OAuth redirect origin because PKCE code_verifier lives in localStorage
+ * which is origin-scoped — mixing apex and www breaks the exchange.
+ */
+export const PROD_AUTH_ORIGIN = 'https://bavio.in';
+
+/**
  * Resolves the canonical callback URL for Supabase OAuth.
  * Ensures consistent host origin so PKCE code_verifier is not lost
  * due to apex -> www canonical redirects.
+ *
+ * Returns PROD_AUTH_ORIGIN in production (including SSR fallback).
+ * Returns window.location.origin for localhost, Vercel preview, and ngrok.
  */
 export function getCanonicalAuthCallbackUrl(isPopup = false): string {
   if (typeof window === "undefined") {
-    return `https://www.bavio.in/auth/callback${isPopup ? "?oauth_popup=true" : ""}`;
+    // SSR fallback — production server-side render uses the apex domain.
+    return `${PROD_AUTH_ORIGIN}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`;
   }
   const hostname = window.location.hostname;
   const isLocalOrPreview =
@@ -77,7 +89,7 @@ export function getCanonicalAuthCallbackUrl(isPopup = false): string {
     hostname.includes("ngrok-free.dev") ||
     hostname.includes("ngrok.io");
 
-  const origin = isLocalOrPreview ? window.location.origin : "https://www.bavio.in";
+  const origin = isLocalOrPreview ? window.location.origin : PROD_AUTH_ORIGIN;
   return `${origin}/auth/callback${isPopup ? "?oauth_popup=true" : ""}`;
 }
 

@@ -4,7 +4,7 @@ import React, { Component, ErrorInfo, ReactNode, useEffect, useState, useRef, Su
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { setCookie, navigateAfterAuth, sanitizeRedirectPath } from '@/lib/auth-utils';
+import { setCookie, navigateAfterAuth, sanitizeRedirectPath, PROD_AUTH_ORIGIN } from '@/lib/auth-utils';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -182,7 +182,7 @@ function AuthCallback() {
         setStatus('Authentication successful!');
 
         if (isPopup) {
-          const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://www.bavio.in' : window.location.origin;
+          const targetOrigin = window.location.origin.includes('bavio.in') ? PROD_AUTH_ORIGIN : window.location.origin;
           if (window.opener) {
             window.opener.postMessage({ type: 'BAVIO_AUTH_SUCCESS' }, targetOrigin);
           }
@@ -203,7 +203,7 @@ function AuthCallback() {
         setStatus('');
 
         if (isPopup) {
-          const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://www.bavio.in' : window.location.origin;
+          const targetOrigin = window.location.origin.includes('bavio.in') ? PROD_AUTH_ORIGIN : window.location.origin;
           if (window.opener) {
             window.opener.postMessage({ type: 'BAVIO_AUTH_ERROR' }, targetOrigin);
           }
@@ -319,7 +319,7 @@ function AuthCallback() {
         setStatus('');
 
         if (isPopup) {
-          const targetOrigin = window.location.origin.includes('bavio.in') ? 'https://www.bavio.in' : window.location.origin;
+          const targetOrigin = window.location.origin.includes('bavio.in') ? PROD_AUTH_ORIGIN : window.location.origin;
           if (window.opener) {
             window.opener.postMessage({ type: 'BAVIO_AUTH_ERROR' }, targetOrigin);
           }

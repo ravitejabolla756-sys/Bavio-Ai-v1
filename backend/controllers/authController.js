@@ -189,7 +189,7 @@ async function signup(req, res) {
                         full_name: finalName,
                         country: finalCountry
                     },
-                    emailRedirectTo: `${req.headers.origin || 'https://www.bavio.in'}/auth/callback`
+                    emailRedirectTo: `${req.headers.origin || 'https://bavio.in'}/auth/callback`
                 }
             };
 
