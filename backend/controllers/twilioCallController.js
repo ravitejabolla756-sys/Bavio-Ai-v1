@@ -573,6 +573,35 @@ async function handleCallStatus(req, res) {
     const { CallSid, CallStatus, CallDuration } = req.body;
     console.log(`[TWILIO] Status: ${CallSid} → ${CallStatus} (${CallDuration}s)`);
 
+    // Update intermediate call states in database
+    if (CallStatus === 'ringing') {
+      try {
+        await db.query("UPDATE calls SET status = 'ringing', call_status = 'ringing' WHERE call_sid = $1", [CallSid]);
+      } catch (err) {
+        console.error('[TWILIO] Failed to update ringing status:', err.message);
+      }
+      return res.sendStatus(200);
+    }
+
+    if (CallStatus === 'in-progress' || CallStatus === 'in_progress') {
+      try {
+        await db.query("UPDATE calls SET status = 'in_progress', call_status = 'in_progress', started_at = COALESCE(started_at, NOW()) WHERE call_sid = $1", [CallSid]);
+      } catch (err) {
+        console.error('[TWILIO] Failed to update in-progress status:', err.message);
+      }
+      return res.sendStatus(200);
+    }
+
+    if (['failed', 'busy', 'no-answer', 'canceled'].includes(CallStatus)) {
+      try {
+        await db.query("UPDATE calls SET status = 'failed', call_status = 'failed', ended_at = NOW() WHERE call_sid = $1", [CallSid]);
+        await db.query("UPDATE call_sessions SET session_status = 'ended', ended_at = NOW() WHERE call_sid = $1", [CallSid]);
+      } catch (err) {
+        console.error('[TWILIO] Failed to update failed call status:', err.message);
+      }
+      return res.sendStatus(200);
+    }
+
     // Only process final state
     if (CallStatus !== 'completed') return res.sendStatus(200);
 
@@ -1199,7 +1228,77 @@ async function handleSaveLeadTool(req, res) {
   }
 }
 
+
+// ── Outbound Test Call Webhook Handler ─────────────────────────────────────────
+async function handleOutboundTestConnect(req, res) {
+  try {
+    const { CallSid, From, To } = req.body;
+    console.log(`[TWILIO OUTBOUND TEST] Connected: ${From} → ${To} | CallSid: ${CallSid}`);
+
+    let businessId = null;
+    let assistantId = null;
+
+    try {
+      const callRes = await db.query('SELECT * FROM calls WHERE call_sid = $1', [CallSid]);
+      if (callRes.rows.length > 0) {
+        businessId = callRes.rows[0].business_id || callRes.rows[0].user_id;
+        assistantId = callRes.rows[0].assistant_id;
+      }
+    } catch (e) {
+      console.error('[TWILIO OUTBOUND TEST] Call lookup error:', e.message);
+    }
+
+    if (!businessId) {
+      const phoneRes = await db.query(
+        'SELECT business_id, assistant_id FROM phone_numbers WHERE number = $1 OR phone_number = $1',
+        [From]
+      );
+      if (phoneRes.rows.length > 0) {
+        businessId = phoneRes.rows[0].business_id;
+        assistantId = phoneRes.rows[0].assistant_id;
+      }
+    }
+
+    if (businessId) {
+      try {
+        await db.query(
+          `INSERT INTO call_sessions (call_sid, business_id, caller_phone, exotel_number, session_status, started_at)
+           VALUES ($1, $2, $3, $4, 'active', NOW())
+           ON CONFLICT (call_sid) DO UPDATE SET session_status = 'active', started_at = NOW()`,
+          [CallSid, businessId, To, From]
+        );
+      } catch (sessionErr) {
+        console.error('[TWILIO OUTBOUND TEST] Session storage error:', sessionErr.message);
+      }
+    }
+
+    const host = req.headers.host || 'api.bavio.in';
+    const isSsl = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const wsProtocol = isSsl ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${host}/api/call-stream/ws?callSid=${CallSid}`;
+
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Connect>
+    <Stream url="${wsUrl}" />
+  </Connect>
+</Response>`;
+
+    res.type('text/xml');
+    return res.send(twiml);
+  } catch (err) {
+    console.error('[TWILIO OUTBOUND TEST] Error:', err.message);
+    res.type('text/xml');
+    return res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Sorry, we are experiencing technical difficulties. Please try again later.</Say>
+  <Hangup/>
+</Response>`);
+  }
+}
+
 module.exports = {
+  handleOutboundTestConnect,
   handleIncomingCall,
   handleRecording,
   handleCallStatus,

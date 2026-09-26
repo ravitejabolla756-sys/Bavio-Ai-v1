@@ -9,3 +9,10 @@
 @media(prefers-reduced-motion:reduce){.root *{scroll-behavior:auto}}
 .stateBar{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);font-size:13px}.stateBar p{margin:0;flex:1}.stateBar button{margin-left:auto}.errorState{color:#a53629}.errorState p{color:inherit}.confirmation{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:32px;background:color-mix(in srgb,var(--color-canvas,#f7f4ee) 96%,transparent)}.confirmation h3{font-size:20px;margin:0 0 8px}.confirmation p{margin:0}.confirmation .actions{justify-content:flex-start}
 @media(max-width:650px){.stateBar{align-items:flex-start;flex-wrap:wrap;gap:8px 12px}.stateBar p{flex-basis:100%}.stateBar button{margin-left:0}}
+.statusReady{color:#1a7f37!important}
+.statusProcessing{color:#0969da!important}
+.statusFailed{color:#cf222e!important}
+.tabGroup{display:flex;gap:8px;margin-bottom:20px}
+.tabGroup button{min-height:36px;padding:6px 14px;font-size:13px}
+.tabGroup .activeTab{background:#ff6b00;color:#0a0a0a;border-color:transparent;font-weight:600}
+

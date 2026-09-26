@@ -1,0 +1,623 @@
+/* Option 1 — Clean & Simple (Current Style, Enhanced) */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+/* ── Step Header ── */
+.header {
+  margin-bottom: 4px;
+}
+
+.stepKicker {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ca-accent, #FF6B00);
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ca-text-primary, #0A0A0A);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
+}
+
+.subtitle {
+  font-size: 13.5px;
+  color: var(--ca-text-muted, #6E6256);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Subtle Info Callout ── */
+.infoCallout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--ca-bg-surface-raised, #F8F4EF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--ca-text-secondary, #3D2B1A);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.infoIconWrapper {
+  color: #3B82F6;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.infoText {
+  margin: 0;
+  flex: 1;
+}
+
+/* ── Main Call Card ── */
+.card {
+  background: var(--ca-bg-surface, #FFFFFF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  border-radius: 14px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ca-text-primary, #0A0A0A);
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 13px;
+  color: var(--ca-text-muted, #6E6256);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ── Phone Input Wrapper ── */
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ca-text-secondary, #3D2B1A);
+  margin: 0;
+}
+
+/* ── Primary Call Now CTA ── */
+.callButton {
+  width: 100%;
+  background: var(--ca-accent, #FF6B00);
+  border: 1px solid transparent;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 4px rgba(255, 107, 0, 0.2);
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.callButton:hover:not(:disabled) {
+  background: var(--ca-accent-hover, #EA580C);
+  box-shadow: 0 4px 8px rgba(255, 107, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.callButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.underButtonText {
+  font-size: 12px;
+  color: var(--ca-text-muted, #6E6256);
+  text-align: center;
+  margin: -8px 0 0 0;
+  line-height: 1.4;
+}
+
+/* ── Readiness Blocker Box ── */
+.readinessAlert {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #92400E;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.readinessAlert strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.readinessAlert p {
+  margin: 0;
+}
+
+.readinessLink {
+  color: #B45309;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+/* ── Call State In-Progress Container ── */
+.activeCallBox {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--ca-bg-surface-raised, #F8F4EF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.callStateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pulseDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseGreen 1.8s infinite;
+}
+
+.pulseDotOrange {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF6B00;
+  box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  animation: pulseOrange 1.8s infinite;
+}
+
+@keyframes pulseGreen {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulseOrange {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 107, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+  }
+}
+
+.statusBadge {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ca-text-primary, #0A0A0A);
+  letter-spacing: 0.01em;
+}
+
+.liveTimer {
+  font-family: monospace, var(--font-geist-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ca-text-secondary, #3D2B1A);
+  background: var(--ca-bg-surface, #FFFFFF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.callDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--ca-bg-surface, #FFFFFF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  border-radius: 8px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: var(--ca-text-muted, #6E6256);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detailValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ca-text-primary, #0A0A0A);
+}
+
+.hangupButton {
+  background: #EF4444;
+  border: 1px solid #DC2626;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  align-self: flex-end;
+}
+
+.hangupButton:hover {
+  background: #DC2626;
+}
+
+/* ── Call Completed Summary Card ── */
+.completedCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.completedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.completedBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #15803D;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.completedStatsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1px solid #DCFCE7;
+  border-radius: 8px;
+}
+
+.summaryBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid #DCFCE7;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.summaryTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #166534;
+  margin: 0;
+}
+
+.summaryContent {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ca-text-primary, #0A0A0A);
+  margin: 0;
+}
+
+.transcriptDisclosure {
+  border-top: 1px solid #DCFCE7;
+  padding-top: 12px;
+}
+
+.transcriptToggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #15803D;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.transcriptList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.transcriptTurn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.turnAssistant {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  align-self: flex-start;
+  max-width: 90%;
+}
+
+.turnUser {
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  align-self: flex-end;
+  max-width: 90%;
+}
+
+.turnSpeaker {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ca-text-secondary, #3D2B1A);
+}
+
+.secondaryActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.secondaryButton {
+  background: #FFFFFF;
+  border: 1px solid var(--ca-border, #E5E0D8);
+  color: var(--ca-text-primary, #0A0A0A);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.secondaryButton:hover {
+  background: var(--ca-bg-surface-raised, #F8F4EF);
+  border-color: #D4C9BC;
+}
+
+/* ── Error / Provider Unavailable Box ── */
+.errorCard {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #991B1B;
+}
+
+.errorTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorMessage {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  color: #7F1D1D;
+}
+
+/* ── Optional Assigned Number Flow ── */
+.assignedCard {
+  background: var(--ca-bg-surface, #FFFFFF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.assignedLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assignedPromptTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ca-text-secondary, #3D2B1A);
+  margin: 0;
+}
+
+.assignedNumberText {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ca-text-primary, #0A0A0A);
+  letter-spacing: 0.02em;
+  margin: 0;
+  font-family: monospace, var(--font-geist-mono);
+}
+
+.assignedInstructions {
+  font-size: 12px;
+  color: var(--ca-text-muted, #6E6256);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.copyButton {
+  background: var(--ca-bg-surface, #FFFFFF);
+  border: 1px solid var(--ca-border, #E5E0D8);
+  color: var(--ca-text-secondary, #3D2B1A);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.copyButton:hover {
+  background: var(--ca-bg-surface-raised, #F8F4EF);
+  border-color: #D4C9BC;
+  color: var(--ca-text-primary, #0A0A0A);
+}
+
+.copyButtonSuccess {
+  border-color: #10B981;
+  color: #059669;
+  background: #ECFDF5;
+}
+
+/* ── Requirement: Phone Required Card ── */
+.phoneRequiredCard {
+  background: var(--ca-bg-surface-raised, #F8F4EF);
+  border: 1px dashed var(--ca-border, #E5E0D8);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.assignPhoneButton {
+  background: var(--ca-accent, #FF6B00);
+  border: 1px solid transparent;
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.assignPhoneButton:hover {
+  background: var(--ca-accent-hover, #EA580C);
+}
+
+/* ── Responsive adjustments ── */
+@media (max-width: 640px) {
+  .card {
+    padding: 18px 16px;
+  }
+
+  .assignedCard,
+  .phoneRequiredCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .copyButton,
+  .assignPhoneButton {
+    align-self: stretch;
+    justify-content: center;
+  }
+}

@@ -213,6 +213,20 @@ pool.query('SELECT NOW()')
         console.error('❌ Failed to run migration 031:', migErr.message);
       }
 
+      // Run Migration 034: Knowledge Source File Uploads and Searchable Chunks
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const migration034Path = path.join(__dirname, '../sql/034_knowledge_file_sources_and_chunks.sql');
+        if (fs.existsSync(migration034Path)) {
+          const sql = fs.readFileSync(migration034Path, 'utf8');
+          await pool.query(sql);
+          console.log('✅ Migration 034 (Knowledge Files & Chunks) initialized/verified.');
+        }
+      } catch (migErr) {
+        console.error('❌ Failed to run migration 034:', migErr.message);
+      }
+
     } catch (tblErr) {
       console.error('❌ Failed to initialize database tables:', tblErr.message);
     }

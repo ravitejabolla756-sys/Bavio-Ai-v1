@@ -24,13 +24,16 @@
     "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.13.9",
+    "mammoth": "^1.12.3",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^9.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.20.0",
     "twilio": "^5.12.2",
     "uuid": "^13.0.0",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "xlsx": "^0.18.5"
   }
 }

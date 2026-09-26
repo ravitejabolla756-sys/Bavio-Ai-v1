@@ -1,0 +1,262 @@
+.dropzone {
+  border: 2px dashed var(--line, rgba(0, 0, 0, 0.15));
+  border-radius: 12px;
+  background: var(--color-surface, #fffdf9);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  outline: none;
+}
+
+.dropzone:hover,
+.dropzone.dragActive {
+  border-color: #ff6b00;
+  background: color-mix(in srgb, #ff6b00 4%, var(--color-surface, #fffdf9));
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid #167a72;
+  outline-offset: 2px;
+}
+
+.uploadIconWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #ff6b00 12%, transparent);
+  color: #ff6b00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.uploadIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.primaryText {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink, #0a0a0a);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.supportedFormats {
+  font-size: 12px;
+  color: var(--color-ink-secondary, #514b43);
+  margin: 0;
+}
+
+.browseButton {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: #ff6b00;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.browseButton:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.browseButton:active {
+  transform: translateY(0);
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* File list */
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-surface, #fffdf9);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 8px;
+  gap: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.fileItem:hover {
+  border-color: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fileBadge {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-ink, #0a0a0a) 8%, transparent);
+  color: var(--color-ink, #0a0a0a);
+  flex-shrink: 0;
+}
+
+.fileDetails {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink, #0a0a0a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileMeta {
+  font-size: 11px;
+  color: var(--color-ink-secondary, #514b43);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileStatusArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Status Badges */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.statusUploading {
+  color: #c9510c;
+  background: color-mix(in srgb, #ff6b00 12%, transparent);
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.statusProcessing {
+  color: #0969da;
+  background: color-mix(in srgb, #0969da 10%, transparent);
+}
+
+.statusReady {
+  color: #1a7f37;
+  background: color-mix(in srgb, #1a7f37 10%, transparent);
+}
+
+.statusFailed {
+  color: #cf222e;
+  background: color-mix(in srgb, #cf222e 10%, transparent);
+}
+
+.retryBtn {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  color: #cf222e;
+  border: 1px solid #cf222e;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retryBtn:hover {
+  background: #cf222e;
+  color: #fff;
+}
+
+.deleteBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-ink-secondary, #514b43);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.deleteBtn:hover {
+  color: #cf222e;
+  background: color-mix(in srgb, #cf222e 8%, transparent);
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.errorMessage {
+  font-size: 11px;
+  color: #cf222e;
+  margin-top: 4px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

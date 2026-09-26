@@ -63,6 +63,7 @@ export default function Agents() {
   const [saveFailed, setSaveFailed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [discardPrompt, setDiscardPrompt] = useState<PendingLeave | null>(null);
+  const [hasTestCompleted, setHasTestCompleted] = useState(false);
   const modalRef = useRef<HTMLDialogElement>(null);
   const dirty = editing && JSON.stringify(draft) !== JSON.stringify(baseline);
 
@@ -164,6 +165,7 @@ export default function Agents() {
     }
     setSection('identity');
     setEditing(true);
+    setHasTestCompleted(false);
     setSaveMessage('No changes');
     setSaveDetail('');
     setSaveFailed(false);
@@ -237,6 +239,22 @@ export default function Agents() {
     }
   }
 
+  async function saveAndGetAgent(): Promise<Agent | null> {
+    if (!draft.name.trim() || draft.name.length > 120) return null;
+    try {
+      const agent = await persistAgent(selected?.id || null, draft);
+      setSelected(agent);
+      const persisted = draftOf(agent);
+      setDraft(persisted);
+      setBaseline(persisted);
+      clearLocalDraft();
+      setAgents(previous => [agent, ...previous.filter(a => a.id !== agent.id)]);
+      return agent;
+    } catch {
+      return null;
+    }
+  }
+
   function handleCancel() {
     if (!dirty) {
       setEditing(false);
@@ -287,8 +305,11 @@ export default function Agents() {
     if (assigned || draft.phone_number) {
       set.add('deployment');
     }
+    if (hasTestCompleted) {
+      set.add('test');
+    }
     return set;
-  }, [draft, knowledgeCount, assigned]);
+  }, [draft, knowledgeCount, assigned, hasTestCompleted]);
 
   // ─────────────────────────────────────────────────────────────
   // 1. EDITING / CREATE AGENT VIEW (CANONICAL 6-STEP EXPERIENCE)
@@ -352,7 +373,12 @@ export default function Agents() {
                 key={selected?.id || 'new'}
                 draft={draft}
                 voice={selectedVoice}
+                agent={selected}
+                assignedNumber={assignedNumber}
                 enabled={canTest}
+                onNavigateToPhone={() => setSection('deployment')}
+                onSaveAgent={saveAndGetAgent}
+                onTestCompleted={() => setHasTestCompleted(true)}
               />
             ) : (
               <AgentFields
@@ -386,6 +412,7 @@ export default function Agents() {
             voices={voices}
             knowledgeCount={knowledgeCount}
             assignedNumber={assignedNumber}
+            hasTestCompleted={hasTestCompleted}
           />
         </div>
 

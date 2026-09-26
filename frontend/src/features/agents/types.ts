@@ -101,3 +101,38 @@ export const TONE_OPTIONS = [
   'Concise',
   'Helpful',
 ] as const;
+
+export type TestCallStatus =
+  | 'idle'
+  | 'preparing'
+  | 'queued'
+  | 'calling'
+  | 'ringing'
+  | 'in_progress'
+  | 'connected'
+  | 'completed'
+  | 'failed'
+  | 'provider_unavailable';
+
+export interface TestCallTurn {
+  role: 'assistant' | 'user' | string;
+  content: string;
+}
+
+export interface TestCallStatusResponse {
+  success: boolean;
+  callSid: string;
+  status: string;
+  durationSeconds?: number;
+  voice?: string;
+  language?: string;
+  agentName?: string;
+  maskedNumber?: string;
+  fromNumber?: string;
+  toNumber?: string;
+  summary?: string;
+  transcript?: TestCallTurn[];
+  error?: string;
+  message?: string;
+  expectedDelaySeconds?: number;
+}

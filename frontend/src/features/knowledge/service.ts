@@ -4,11 +4,22 @@ import { requireArray, requireRecord, unwrapData } from '@/lib/api-response';
 export interface SourceSummary {
   id: string;
   name: string;
+  original_filename?: string;
+  file_type?: string;
+  file_size?: number;
+  source_type?: string;
+  status?: 'uploading' | 'processing' | 'ready' | 'failed';
+  processing_error?: string;
   word_count?: number;
   created_at: string;
   updated_at?: string;
+  processed_at?: string;
 }
-export interface Source extends SourceSummary { content: string }
+export interface Source extends SourceSummary {
+  content: string;
+  file_path?: string;
+  chunks_count?: number;
+}
 export interface Draft { name: string; content: string }
 export interface SourceAiSummary { summary: string; keyPoints: string[]; topics: string[] }
 export const CONTENT_LIMIT = 500000;
@@ -55,7 +66,32 @@ export async function summarizeSource(id: string): Promise<SourceAiSummary> {
   const topics = value.topics.filter((topic): topic is string => typeof topic === 'string' && Boolean(topic.trim())).map(topic => topic.trim()).slice(0, 8);
   return { summary: value.summary.trim(), keyPoints, topics };
 }
+export async function uploadKnowledgeFiles(files: File[], signal?: AbortSignal): Promise<Source[]> {
+  const formData = new FormData();
+  files.forEach(f => formData.append('files', f));
+  const response = await apiFetch<{ success: boolean; data: Source[] }>('/knowledge-base/upload', {
+    method: 'POST',
+    body: formData,
+    signal,
+  });
+  if (!response || !response.success || !Array.isArray(response.data)) {
+    throw new Error('Upload failed. Please try again.');
+  }
+  return response.data;
+}
+
+export async function retrySource(id: string): Promise<Source> {
+  const response = await apiFetch<{ success: boolean; data: Source }>(`/knowledge-base/${encodeURIComponent(id)}/retry`, {
+    method: 'POST',
+  });
+  if (!response || !response.success || !response.data) {
+    throw new Error('Retry failed. Please try again.');
+  }
+  return response.data;
+}
+
 export function dateLabel(value?: string) {
   if (!value || !Number.isFinite(Date.parse(value))) return 'Date unavailable';
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 }
+

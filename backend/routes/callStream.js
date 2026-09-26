@@ -169,9 +169,19 @@ twilioWss.on('connection', async (ws, request) => {
     };
   } else {
     try {
+      let specificAssistantId = null;
+      try {
+        const cRes = await db.query('SELECT assistant_id FROM calls WHERE call_sid = $1', [callSid]);
+        if (cRes.rows.length > 0 && cRes.rows[0].assistant_id) {
+          specificAssistantId = cRes.rows[0].assistant_id;
+        }
+      } catch {}
+
       const [bizRes, astRes] = await Promise.all([
         db.query('SELECT * FROM businesses WHERE id = $1', [businessId]),
-        db.query('SELECT * FROM assistants WHERE business_id = $1 LIMIT 1', [businessId])
+        specificAssistantId
+          ? db.query('SELECT * FROM assistants WHERE id = $1', [specificAssistantId])
+          : db.query('SELECT * FROM assistants WHERE business_id = $1 LIMIT 1', [businessId])
       ]);
       business = bizRes.rows[0];
       assistant = astRes.rows[0];

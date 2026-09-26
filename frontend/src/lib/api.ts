@@ -385,9 +385,19 @@ export interface KnowledgeDoc {
   id: string;
   business_id: string;
   name: string;
+  original_filename?: string;
   content: string;
+  file_path?: string;
+  file_type?: string;
+  file_size?: number;
+  source_type?: string;
+  status?: 'uploading' | 'processing' | 'ready' | 'failed';
+  processing_error?: string;
   created_at: string;
+  updated_at?: string;
+  processed_at?: string;
   word_count?: number;
+  chunks_count?: number;
 }
 
 export interface SearchResult {
@@ -404,6 +414,20 @@ export const knowledgeBaseApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }).then(value => requireRecord<KnowledgeDoc>(unwrapData(value))),
+
+  upload: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    return apiFetch<{ success: boolean; data: KnowledgeDoc[] }>('/knowledge-base/upload', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  retry: (id: string) =>
+    apiFetch<{ success: boolean; data: KnowledgeDoc }>(`/knowledge-base/${encodeURIComponent(id)}/retry`, {
+      method: 'POST',
+    }),
 
   update: (id: string, data: Partial<KnowledgeDoc>) =>
     apiFetch<KnowledgeDoc>(`/knowledge-base/${id}`, {

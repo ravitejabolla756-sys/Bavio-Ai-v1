@@ -80,7 +80,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const finalHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(rest.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(headers as Record<string, string>),
   };
 

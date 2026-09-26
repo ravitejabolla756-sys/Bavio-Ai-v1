@@ -9,6 +9,7 @@ interface Props {
   voices: Voice[];
   knowledgeCount: number | null;
   assignedNumber?: string;
+  hasTestCompleted?: boolean;
 }
 
 export default function AgentPreviewInspector({
@@ -16,6 +17,7 @@ export default function AgentPreviewInspector({
   voices,
   knowledgeCount,
   assignedNumber,
+  hasTestCompleted = false,
 }: Props) {
   const agentName = draft.name.trim() || 'New agent';
   const initial = (draft.name.trim().charAt(0) || 'A').toUpperCase();
@@ -55,7 +57,7 @@ export default function AgentPreviewInspector({
   const hasKnowledge = Boolean(knowledgeCount && knowledgeCount > 0);
   const hasVoiceAndLanguage = Boolean(draft.language) && Boolean(draft.voice_id) && isVoiceCompatible;
   const hasPhone = Boolean(assignedNumber || draft.phone_number);
-  const hasTest = false; // complete after test run
+  const hasTest = Boolean(hasTestCompleted);
 
   const configuredCount = [hasName, hasInstructions, hasKnowledge, hasVoiceAndLanguage, hasPhone, hasTest].filter(Boolean).length;
 

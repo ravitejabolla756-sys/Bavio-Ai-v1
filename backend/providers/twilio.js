@@ -73,11 +73,17 @@ class TwilioProvider {
 
     async createOutboundCall(data) {
         try {
-            const call = await this.client.calls.create({
+            const callParams = {
                 url: data.webhookUrl,
                 to: data.to,
                 from: data.from
-            });
+            };
+            if (data.statusCallback) {
+                callParams.statusCallback = data.statusCallback;
+                callParams.statusCallbackEvent = data.statusCallbackEvent || ['initiated', 'ringing', 'answered', 'completed'];
+                callParams.statusCallbackMethod = 'POST';
+            }
+            const call = await this.client.calls.create(callParams);
             return call.sid;
         } catch (error) {
             console.error('Twilio createOutboundCall error:', error.message);

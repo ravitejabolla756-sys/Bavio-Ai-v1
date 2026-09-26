@@ -153,3 +153,38 @@ export function clearLocalDraft(): void {
     // Ignore
   }
 }
+
+// ── Real Telephony Test Call Service ──
+export async function initiateTestCall(
+  agentId: string,
+  phoneNumber: string,
+  countryCode: string = 'IN'
+): Promise<import('./types').TestCallStatusResponse> {
+  return apiFetch<import('./types').TestCallStatusResponse>(
+    `/assistants/${encodeURIComponent(agentId)}/test-call`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber, countryCode }),
+    }
+  );
+}
+
+export async function getTestCallStatus(
+  agentId: string,
+  callSid: string
+): Promise<import('./types').TestCallStatusResponse> {
+  return apiFetch<import('./types').TestCallStatusResponse>(
+    `/assistants/${encodeURIComponent(agentId)}/test-call/${encodeURIComponent(callSid)}`
+  );
+}
+
+export async function hangupTestCall(
+  agentId: string,
+  callSid: string
+): Promise<{ success: boolean; message: string }> {
+  return apiFetch<{ success: boolean; message: string }>(
+    `/assistants/${encodeURIComponent(agentId)}/test-call/${encodeURIComponent(callSid)}/hangup`,
+    { method: 'POST' }
+  );
+}
+

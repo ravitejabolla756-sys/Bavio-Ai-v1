@@ -5,7 +5,8 @@ const {
   handleRecording,
   handleCallStatus,
   handleTelephonySync,
-  handleSaveLeadTool
+  handleSaveLeadTool,
+  handleOutboundTestConnect
 } = require('../controllers/twilioCallController');
 
 const { validateTwilioSignature } = require('../middleware/twilioAuth');
@@ -27,5 +28,8 @@ router.post('/telephony-sync', validateTwilioSignature, handleTelephonySync);
 
 // Step 5: Bavio Voice Tool Callback (save lead during call)
 router.post('/save-lead', (req, res, next) => validateTwilioSignature(req, res, next, { strict: true }), handleSaveLeadTool);
+
+// Step 6: Outbound test call connect (MediaStream TwiML)
+router.post('/outbound-test-connect', validateTwilioSignature, handleOutboundTestConnect);
 
 module.exports = router;
