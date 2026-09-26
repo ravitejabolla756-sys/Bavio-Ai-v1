@@ -47,7 +47,6 @@ import {
 import { ToastProvider } from "@/components/ui/Toast";
 import { DashboardErrorBoundary } from "@/components/DashboardErrorBoundary";
 import { isLocalUiPreviewSession } from "@/lib/local-ui-preview";
-import { useSystemStatus } from "@/lib/system-status";
 
 const allNavigationItems = applicationNavigationItems;
 
@@ -73,7 +72,6 @@ export default function DashboardLayout({
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCommand, setActiveCommand] = useState(0);
-  const systemStatus = useSystemStatus();
 
   // 1. Strict Authentication Guard
   useEffect(() => {
@@ -294,16 +292,6 @@ export default function DashboardLayout({
 
         {/* Sidebar Footer info */}
         <div className="p-4 border-t border-line bg-surface-raised/40 flex flex-col gap-3">
-          {/* Heartbeat Status Indicator */}
-          <div className="flex items-center justify-between bg-canvas/45 border border-line rounded-xl px-3 py-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ink-muted opacity-50"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-ink-muted"></span>
-              </span>
-              <span className="text-[10px] font-mono text-ink-secondary truncate">{systemStatus}</span>
-            </div>
-          </div>
 
           {!checklistLoading && !checklistError && !isAllCompleted && (
             <Link
@@ -352,18 +340,10 @@ export default function DashboardLayout({
         {/* TOP BAR SEARCH HEADER */}
         <header className="hidden lg:flex items-center justify-between border-b border-line px-8 py-4 bg-surface/65 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 border-r border-line pr-4">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-ink-secondary">{workspace}</span>
               <span className="text-ink-muted">/</span>
               <span className="text-xs font-semibold text-ink">{isConversations ? "Conversations" : isOverview ? "Overview" : isAgents ? "Agents" : isKnowledge ? "Knowledge" : isPhoneNumbers ? "Phone Numbers" : isLeads ? "Leads" : isActions ? "Actions" : isWorkflows ? "Workflows" : "Application"}</span>
-            </div>
-            
-            {/* Live Metrics / Agent Status */}
-            <div className={isAgents || isKnowledge || isLeads || isActions || isWorkflows ? "hidden" : "flex items-center gap-4 text-[10px] font-mono"}>
-              <div className="flex items-center gap-1.5">
-                <span className={`inline-flex rounded-full h-1.5 w-1.5 ${systemStatus === "Operational" ? "bg-state-success" : systemStatus === "Degraded" ? "bg-saffron" : "bg-ink-muted"}`}></span>
-                <span className="text-ink-secondary">{systemStatus}</span>
-              </div>
             </div>
           </div>
 

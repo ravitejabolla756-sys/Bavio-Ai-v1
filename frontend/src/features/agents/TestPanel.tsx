@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import PhoneInput, { type CountryInfo } from '@/components/ui/PhoneInput';
 import { initiateTestCall, getTestCallStatus, hangupTestCall } from './service';
+import { WebCallModal } from '../webcall/WebCallModal';
 import type { Draft, Voice, Agent, TestCallTurn, TestCallStatus } from './types';
 import s from './test-panel.module.css';
 
@@ -31,6 +32,8 @@ export default function TestPanel({
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryInfo | null>(null);
+  const [webCallModalOpen, setWebCallModalOpen] = useState(false);
+  const currentAgentId = agent?.id || '';
 
   // ── Call Progression State ──
   const [callState, setCallState] = useState<TestCallStatus>('idle');
@@ -454,12 +457,29 @@ export default function TestPanel({
               ☎ Call Now
             </button>
 
+            <button
+              type="button"
+              onClick={() => setWebCallModalOpen(true)}
+              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface-raised/40 hover:bg-surface-raised text-ink text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-saffron/40 shadow-sm"
+              disabled={!readinessCheck.ready}
+            >
+              <span>🎙️ Test in Browser (WebCall)</span>
+            </button>
+
             <p className={s.underButtonText}>
-              The call will connect in about 60 seconds.
+              The phone call will connect in about 60 seconds, or use WebCall for instant in-browser testing.
             </p>
           </form>
         )}
       </div>
+
+      <WebCallModal
+        isOpen={webCallModalOpen}
+        onClose={() => setWebCallModalOpen(false)}
+        agentId={currentAgentId}
+        agentName={draft.name || 'AI Receptionist'}
+        onTestCompleted={onTestCompleted}
+      />
 
       {/* ── Optional Assigned Number Flow ── */}
       {assignedNumber ? (

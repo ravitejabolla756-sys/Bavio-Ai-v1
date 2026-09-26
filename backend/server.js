@@ -126,6 +126,7 @@ app.use('/audio', express.static('/tmp/bavio-audio'));
 const authRoutes = require('./routes/auth');
 const clientsRoutes = require('./routes/clients');
 const assistantsRoutes = require('./routes/assistants');
+const webCallRoutes = require('./routes/webCallRoutes');
 const numbersRoutes = require('./routes/numbers');
 const callsRoutes = require('./routes/calls');
 const usageRoutes = require('./routes/usage');
@@ -157,6 +158,8 @@ app.use('/v1', apiLimiter, v1Routes);
 app.use('/onboarding', onboardingRoutes);
 app.use('/clients', clientsRoutes);
 app.use('/assistants', apiLimiter, assistantsRoutes);
+app.use('/api/webcall', apiLimiter, webCallRoutes);
+app.use('/webcall', apiLimiter, webCallRoutes);
 app.use('/agents', apiLimiter, assistantsRoutes);
 app.use('/api/assistants', apiLimiter, assistantsRoutes);
 app.use('/api/agents', apiLimiter, assistantsRoutes);
@@ -352,8 +355,14 @@ Bavio Team`;
 // ------- WebSocket Server Setup -------
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ noServer: true });
+const webCallWss = new WebSocket.Server({ noServer: true });
 const wsClients = new Map();
 app.set('wsClients', wsClients);
+
+webCallWss.on('connection', async (ws, request, callSid) => {
+  const { webCallSessionManager } = require('./services/webCallSessionManager');
+  await webCallSessionManager.attachWebSocket(callSid, ws);
+});
 
 wss.on('connection', (ws, req, businessId) => {
   console.log(`[WS] Client connected for business ${businessId}`);
@@ -376,6 +385,22 @@ server.on('upgrade', (request, socket, head) => {
       const businessId = match[1];
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request, businessId);
+      });
+    } else if (pathname === '/api/webcall/stream' || pathname === '/webcall/stream') {
+      const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+      const callSid = urlObj.searchParams.get('callSid') || urlObj.searchParams.get('sessionId');
+      const token = urlObj.searchParams.get('token');
+      const webCallController = require('./controllers/webCallController');
+      const tokenPayload = webCallController.verifySessionToken(token);
+
+      if (!callSid) {
+        console.error('[WEBCALL UPGRADE] No callSid provided. Aborting.');
+        socket.destroy();
+        return;
+      }
+
+      webCallWss.handleUpgrade(request, socket, head, (ws) => {
+        webCallWss.emit('connection', ws, request, callSid);
       });
     } else if (pathname === '/api/call-stream/ws') {
       const twilio = require('twilio');

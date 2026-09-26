@@ -534,7 +534,17 @@ async function retryDocument(arg1, arg2) {
 /**
  * Search knowledge chunks with full text search ts_rank and provenance
  */
-async function searchKnowledgeChunks({ businessId, query, limit = 5 }) {
+async function searchKnowledgeChunks(param1, param2, param3 = 5) {
+  let businessId, query, limit;
+  if (typeof param1 === 'object' && param1 !== null && !Array.isArray(param1)) {
+    businessId = param1.businessId;
+    query = param1.query;
+    limit = param1.limit || 5;
+  } else {
+    businessId = param1;
+    query = param2;
+    limit = param3 || 5;
+  }
   if (!query || !query.trim() || !businessId) return [];
 
   const sql = `
