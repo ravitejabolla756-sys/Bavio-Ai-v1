@@ -34,6 +34,7 @@ export default function TestPanel({
   const [selectedCountry, setSelectedCountry] = useState<CountryInfo | null>(null);
   const [activeWebCallAgentId, setActiveWebCallAgentId] = useState<string>(agent?.id || '');
   const [isLaunchingWebCall, setIsLaunchingWebCall] = useState(false);
+  const [webCallModalOpen, setWebCallModalOpen] = useState(false);
 
   useEffect(() => {
     if (agent?.id) {
@@ -41,8 +42,21 @@ export default function TestPanel({
     }
   }, [agent?.id]);
 
+  // ── WebCall Readiness Check (Zero phone requirement) ──
+  const webCallVoice = draft.voice_id || voice?.id || voice?.voice_id;
+  const webCallReady = Boolean(draft.name?.trim() && draft.system_prompt?.trim() && webCallVoice && draft.language);
+  const webCallMessage = !draft.name?.trim()
+    ? 'Add an agent name in Identity to test.'
+    : !draft.system_prompt?.trim()
+    ? 'Complete Instructions before testing.'
+    : !webCallVoice
+    ? 'Select a voice in Voice & language before testing.'
+    : !draft.language
+    ? 'Select a language in Voice & language before testing.'
+    : '';
+
   async function handleLaunchWebCall() {
-    if (isLaunchingWebCall) return;
+    if (isLaunchingWebCall || !webCallReady) return;
     setIsLaunchingWebCall(true);
     setErrorMessage('');
     try {
@@ -58,7 +72,7 @@ export default function TestPanel({
         setActiveWebCallAgentId(targetId);
         setWebCallModalOpen(true);
       } else {
-        setErrorMessage('Please give your assistant a name before starting a WebCall.');
+        setErrorMessage('Please provide an agent name before starting a WebCall.');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to start WebCall.');
@@ -82,7 +96,7 @@ export default function TestPanel({
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ── 1. Readiness Verification Logic ──
+  // ── Telephony Readiness Verification Logic ──
   const readinessCheck = useMemo(() => {
     if (!draft.name?.trim()) {
       return { ready: false, message: 'Add an agent name before testing your agent.' };
@@ -97,7 +111,7 @@ export default function TestPanel({
       return { ready: false, message: 'Select a language in Voice & language before testing your agent.' };
     }
     if (!assignedNumber && !draft.phone_number && !draft.phone_id) {
-      return { ready: false, message: 'Assign a phone number before making a live test call.' };
+      return { ready: false, message: 'Assign a phone number before making a live telephony test call.' };
     }
     return { ready: true, message: '' };
   }, [draft, voice, assignedNumber]);
@@ -278,43 +292,73 @@ export default function TestPanel({
         <span className={s.stepKicker}>Step 6 of 6</span>
         <h1 className={s.title}>Test your AI Receptionist</h1>
         <p className={s.subtitle}>
-          Make a test call to your AI agent and experience how it responds in real time.
+          Start a browser voice session to test this agent in real time, or place an optional telephony test call.
         </p>
       </div>
 
-      {/* ── Subtle Information Callout ── */}
-      <div className={s.infoCallout} role="status">
-        <span className={s.infoIconWrapper} aria-hidden="true">☎</span>
-        <p className={s.infoText}>
-          This will call the assigned number for this agent and you&apos;ll hear the AI response after a short connection time.
-        </p>
-      </div>
-
-      {/* ── Readiness Alert if Incomplete ── */}
-      {!readinessCheck.ready && callState === 'idle' && (
-        <div className={s.readinessAlert} role="alert">
+      {/* ── Primary WebCall Testing Hero Box ── */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.03) 100%)',
+        border: '1px solid rgba(249, 115, 22, 0.3)',
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div>
-            <strong>Setup required before testing</strong>
-            <p>{readinessCheck.message}</p>
-            {(!assignedNumber && !draft.phone_number && !draft.phone_id) && onNavigateToPhone && (
-              <button
-                type="button"
-                className={s.readinessLink}
-                onClick={onNavigateToPhone}
-              >
-                Go to Step 5: Phone assignment →
-              </button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '18px' }}>🎙️</span>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ca-text-primary, #fff)', margin: 0 }}>
+                Instant Browser Voice Session (WebCall)
+              </h2>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--ca-text-muted, #94a3b8)', margin: 0, maxWidth: '520px', lineHeight: '1.5' }}>
+              Start a live, two-way browser voice conversation with <strong>{draft.name || 'this agent'}</strong> using WebRTC. No phone number required.
+            </p>
           </div>
-        </div>
-      )}
 
-      {/* ── Main Call Card ── */}
+          <button
+            type="button"
+            onClick={handleLaunchWebCall}
+            disabled={isLaunchingWebCall || !webCallReady}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              backgroundColor: webCallReady ? '#F97316' : 'rgba(255,255,255,0.1)',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: '13px',
+              borderRadius: '12px',
+              border: 'none',
+              cursor: webCallReady ? 'pointer' : 'not-allowed',
+              opacity: webCallReady ? 1 : 0.6,
+              transition: 'all 0.2s ease',
+              boxShadow: webCallReady ? '0 4px 14px rgba(249, 115, 22, 0.35)' : 'none',
+            }}
+          >
+            <span>{isLaunchingWebCall ? 'Preparing session…' : '🎙️ Start WebCall'}</span>
+          </button>
+        </div>
+
+        {!webCallReady && (
+          <div style={{ fontSize: '12px', color: '#F87171', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>⚠️</span>
+            <span>{webCallMessage}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Secondary Telephony Card ── */}
       <div className={s.card}>
         <div className={s.cardHeader}>
-          <h2 className={s.cardTitle}>Call a number (optional)</h2>
+          <h2 className={s.cardTitle}>Telephony phone call (optional)</h2>
           <p className={s.cardDesc}>
-            Enter your mobile number to receive the call, or use the assigned number.
+            Enter your mobile number to receive a phone call from your assigned number.
           </p>
         </div>
 
@@ -489,17 +533,8 @@ export default function TestPanel({
               ☎ Call Now
             </button>
 
-            <button
-              type="button"
-              onClick={handleLaunchWebCall}
-              disabled={isLaunchingWebCall}
-              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface-raised/40 hover:bg-surface-raised text-ink text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-saffron/40 shadow-sm cursor-pointer disabled:opacity-50"
-            >
-              <span>{isLaunchingWebCall ? 'Preparing WebCall…' : '🎙️ Test in Browser (WebCall)'}</span>
-            </button>
-
             <p className={s.underButtonText}>
-              The phone call will connect in about 60 seconds, or use WebCall for instant in-browser testing.
+              The phone call will connect in about 60 seconds over telephony carrier lines.
             </p>
           </form>
         )}
@@ -514,7 +549,7 @@ export default function TestPanel({
       />
 
       {/* ── Optional Assigned Number Flow ── */}
-      {assignedNumber ? (
+      {assignedNumber && (
         <div className={s.assignedCard}>
           <div className={s.assignedLeft}>
             <h3 className={s.assignedPromptTitle}>Prefer to call the agent yourself?</h3>
@@ -546,25 +581,6 @@ export default function TestPanel({
               </>
             )}
           </button>
-        </div>
-      ) : (
-        <div className={s.phoneRequiredCard}>
-          <div className={s.assignedLeft}>
-            <h3 className={s.assignedPromptTitle}>Phone number required</h3>
-            <p className={s.assignedInstructions}>
-              Assign a phone number to this agent before making a live test call.
-            </p>
-          </div>
-
-          {onNavigateToPhone && (
-            <button
-              type="button"
-              className={s.assignPhoneButton}
-              onClick={onNavigateToPhone}
-            >
-              Assign phone number
-            </button>
-          )}
         </div>
       )}
     </div>

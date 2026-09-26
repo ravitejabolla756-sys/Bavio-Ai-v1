@@ -44,8 +44,10 @@ export default function AgentPreviewInspector({
     ? `${primaryLangLabel} +${selectedLangs.length - 1}`
     : primaryLangLabel;
 
-  const knowledgeDisplay = knowledgeCount !== null ? `${knowledgeCount} sources` : '0 sources';
-  const phoneDisplay = assignedNumber || 'Not assigned';
+  const knowledgeDisplay = knowledgeCount !== null && knowledgeCount > 0 ? `${knowledgeCount} sources` : '0 sources (optional)';
+  const phoneDisplay = draft.channel === 'webcall' 
+    ? 'WebCall only' 
+    : (assignedNumber || 'No number assigned');
 
   // Compute readiness checklist
   const isVoiceCompatible = selectedVoice
@@ -56,10 +58,11 @@ export default function AgentPreviewInspector({
   const hasInstructions = Boolean(draft.system_prompt.trim());
   const hasKnowledge = Boolean(knowledgeCount && knowledgeCount > 0);
   const hasVoiceAndLanguage = Boolean(draft.language) && Boolean(draft.voice_id) && isVoiceCompatible;
-  const hasPhone = Boolean(assignedNumber || draft.phone_number);
+  const hasReachability = Boolean(draft.channel === 'webcall' || assignedNumber || draft.phone_number || draft.channel === 'both');
   const hasTest = Boolean(hasTestCompleted);
 
-  const configuredCount = [hasName, hasInstructions, hasKnowledge, hasVoiceAndLanguage, hasPhone, hasTest].filter(Boolean).length;
+  const configuredCount = [hasName, hasInstructions, hasVoiceAndLanguage, hasReachability, hasTest].filter(Boolean).length;
+  const isWebCallReady = hasName && hasInstructions && hasVoiceAndLanguage;
 
   return (
     <aside className={s.inspectorCard} aria-label="Agent preview">
@@ -68,7 +71,7 @@ export default function AgentPreviewInspector({
         <h3 className={s.inspectorTitle}>Agent preview</h3>
         <span className={s.draftBadge}>
           <span className={s.draftDot} />
-          Draft
+          {isWebCallReady ? 'Ready for WebCall' : 'Draft'}
         </span>
       </div>
 
@@ -131,7 +134,7 @@ export default function AgentPreviewInspector({
             <svg className={s.metadataIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
             </svg>
-            Phone
+            Reachability
           </span>
           <span className={s.metadataValue}>{phoneDisplay}</span>
         </div>
@@ -142,7 +145,7 @@ export default function AgentPreviewInspector({
       {/* Readiness Section */}
       <div className={s.readinessHeader}>
         <span className={s.readinessTitle}>Readiness</span>
-        <span className={s.readinessCount}>{configuredCount} of 6 configured</span>
+        <span className={s.readinessCount}>{configuredCount} of 5 core configured</span>
       </div>
 
       <div className={s.checklistList}>
@@ -164,15 +167,6 @@ export default function AgentPreviewInspector({
           <span>Instructions</span>
         </div>
 
-        <div className={`${s.checklistItem} ${hasKnowledge ? s.checklistItemCompleted : ''}`}>
-          {hasKnowledge ? (
-            <span className={s.checkIconCompleted}>✓</span>
-          ) : (
-            <span className={s.checkIconEmpty} />
-          )}
-          <span>Knowledge</span>
-        </div>
-
         <div className={`${s.checklistItem} ${hasVoiceAndLanguage ? s.checklistItemCompleted : ''}`}>
           {hasVoiceAndLanguage ? (
             <span className={s.checkIconCompleted}>✓</span>
@@ -182,13 +176,13 @@ export default function AgentPreviewInspector({
           <span>Voice &amp; language</span>
         </div>
 
-        <div className={`${s.checklistItem} ${hasPhone ? s.checklistItemCompleted : ''}`}>
-          {hasPhone ? (
+        <div className={`${s.checklistItem} ${hasReachability ? s.checklistItemCompleted : ''}`}>
+          {hasReachability ? (
             <span className={s.checkIconCompleted}>✓</span>
           ) : (
             <span className={s.checkIconEmpty} />
           )}
-          <span>Phone</span>
+          <span>Channels &amp; Phone</span>
         </div>
 
         <div className={`${s.checklistItem} ${hasTest ? s.checklistItemCompleted : ''}`}>
@@ -208,7 +202,7 @@ export default function AgentPreviewInspector({
           <line x1="12" y1="16" x2="12" y2="12" />
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
-        <span>Complete the remaining steps to test and deploy your agent.</span>
+        <span>{isWebCallReady ? 'Ready for browser voice testing in Step 6.' : 'Complete the required identity, instructions, and voice to test.'}</span>
       </div>
     </aside>
   );

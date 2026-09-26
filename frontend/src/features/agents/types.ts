@@ -40,6 +40,7 @@ export interface Draft {
   language: string;
   languages: string[];
   voice_id: string;
+  channel?: 'webcall' | 'phone' | 'both';
   phone_id?: string;
   phone_number?: string;
   is_active: boolean;
@@ -57,6 +58,7 @@ export const blankDraft: Draft = {
   language: 'en-US',
   languages: ['en-US'],
   voice_id: '',
+  channel: 'both',
   phone_id: '',
   phone_number: '',
   is_active: true,
@@ -67,7 +69,7 @@ export const CREATE_AGENT_STEPS = [
   { id: 2, key: 'instructions', label: 'Instructions' },
   { id: 3, key: 'knowledge', label: 'Knowledge' },
   { id: 4, key: 'voice', label: 'Voice & language' },
-  { id: 5, key: 'deployment', label: 'Phone assignment' },
+  { id: 5, key: 'deployment', label: 'Channels & Phone' },
   { id: 6, key: 'test', label: 'Test' },
 ] as const;
 

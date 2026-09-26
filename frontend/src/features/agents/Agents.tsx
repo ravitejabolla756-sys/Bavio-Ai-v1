@@ -302,7 +302,7 @@ export default function Agents() {
     if (draft.voice_id) {
       set.add('voice');
     }
-    if (assigned || draft.phone_number) {
+    if (assigned || draft.phone_number || draft.channel === 'webcall' || draft.channel === 'both') {
       set.add('deployment');
     }
     if (hasTestCompleted) {
@@ -335,7 +335,13 @@ export default function Agents() {
               <span className={sCreate.metaDot}>•</span>
               <span>{languageLabel(draft.language)}</span>
               <span className={sCreate.metaDot}>•</span>
-              <span>{numberError ? 'Assignments unavailable' : assignedNumber || 'No number assigned'}</span>
+              <span>
+                {draft.channel === 'webcall' 
+                  ? 'WebCall only' 
+                  : numberError 
+                  ? 'Assignments unavailable' 
+                  : assignedNumber || 'No number assigned'}
+              </span>
             </div>
 
             <button

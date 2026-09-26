@@ -13,7 +13,7 @@ export const sections = [
   ['instructions', 'Behavior', 'Instructions'],
   ['knowledge', 'Intelligence', 'Knowledge'],
   ['voice', 'Conversation', 'Voice & language'],
-  ['deployment', 'Deploy', 'Phone assignment'],
+  ['deployment', 'Deploy', 'How customers reach this agent'],
   ['test', 'Quality', 'Test'],
 ] as const;
 
@@ -40,7 +40,7 @@ const starterTemplate = 'You are the AI receptionist for [Business]. Your respon
 
 export default function AgentFields(p: Props) {
   const { draft: d, set, onNavigateStep, onCancel } = p;
-  const selectedVoice = p.voiceError || d.voice_id.startsWith('local-preview-') ? '' : d.voice_id;
+  const currentChannel = d.channel || 'both';
 
   if (p.section === 'identity') {
     return (
@@ -136,12 +136,12 @@ export default function AgentFields(p: Props) {
           <div className={s.fieldsGrid}>
             <div className={s.bannerBox}>
               <div>
-                <h3 className={s.bannerTitle}>Workspace knowledge</h3>
+                <h3 className={s.bannerTitle}>Workspace knowledge (Optional)</h3>
                 <p className={s.bannerSubtitle}>
-                  Agents use information stored in your workspace knowledge base.
+                  Agents use information stored in your workspace knowledge base. If empty, the agent follows its system instructions.
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: '12px', color: p.knowledgeCount ? 'var(--ca-badge-draft-text)' : 'var(--ca-text-faint)' }}>
-                  {p.knowledgeCount === null ? 'Knowledge sources unavailable.' : `${p.knowledgeCount} sources available in workspace`}
+                  {p.knowledgeCount === null ? '0 sources (knowledge optional).' : `${p.knowledgeCount} sources available in workspace`}
                 </p>
               </div>
               <Link href="/dashboard/knowledge" className={s.cancelButton} style={{ textDecoration: 'none' }}>
@@ -175,37 +175,120 @@ export default function AgentFields(p: Props) {
       {p.section === 'deployment' && (
         <>
           <div className={s.stepHeader}>
-            <h2 className={s.stepNumberTitle}>5. Phone assignment</h2>
+            <h2 className={s.stepNumberTitle}>5. How customers reach this agent</h2>
             <p className={s.stepDescription}>
-              Assign a phone number to your agent. Numbers are managed directly within your workspace.
+              Choose how your customers connect with this AI agent — via instant browser WebCall, phone telephony, or both.
             </p>
           </div>
 
           <div className={s.fieldsGrid}>
-            <div className={s.bannerBox}>
-              <div>
-                <h3 className={s.bannerTitle}>Assigned phone number</h3>
-                <p className={s.bannerSubtitle}>
-                  {p.creating
-                    ? 'Create the agent first to bind an active inbound line.'
-                    : p.numberError
-                    ? 'Phone assignment unavailable.'
-                    : p.numbers.find(n => n.id === p.assigned)?.number || 'No number assigned'}
-                </p>
-              </div>
-              <Link href="/dashboard/phone-numbers" className={s.cancelButton} style={{ textDecoration: 'none' }}>
-                Manage phone numbers →
-              </Link>
+            {/* Channel Selection Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '8px' }}>
+              <button
+                type="button"
+                onClick={() => set('channel', 'webcall')}
+                style={{
+                  textAlign: 'left',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: currentChannel === 'webcall' ? '2px solid #F97316' : '1px solid var(--ca-border-subtle, rgba(255,255,255,0.1))',
+                  backgroundColor: currentChannel === 'webcall' ? 'rgba(249, 115, 22, 0.08)' : 'var(--ca-surface-card, rgba(255,255,255,0.03))',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>🌐</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ca-text-primary, #fff)', marginBottom: '4px' }}>Website / WebCall</div>
+                <div style={{ fontSize: '12px', color: 'var(--ca-text-muted, #94a3b8)', lineHeight: '1.4' }}>Let customers talk to your AI directly from your website. No phone number required.</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => set('channel', 'phone')}
+                style={{
+                  textAlign: 'left',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: currentChannel === 'phone' ? '2px solid #F97316' : '1px solid var(--ca-border-subtle, rgba(255,255,255,0.1))',
+                  backgroundColor: currentChannel === 'phone' ? 'rgba(249, 115, 22, 0.08)' : 'var(--ca-surface-card, rgba(255,255,255,0.03))',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>📞</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ca-text-primary, #fff)', marginBottom: '4px' }}>Phone number</div>
+                <div style={{ fontSize: '12px', color: 'var(--ca-text-muted, #94a3b8)', lineHeight: '1.4' }}>Use a dedicated business phone number for incoming carrier voice calls.</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => set('channel', 'both')}
+                style={{
+                  textAlign: 'left',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: currentChannel === 'both' ? '2px solid #F97316' : '1px solid var(--ca-border-subtle, rgba(255,255,255,0.1))',
+                  backgroundColor: currentChannel === 'both' ? 'rgba(249, 115, 22, 0.08)' : 'var(--ca-surface-card, rgba(255,255,255,0.03))',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>⚡</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ca-text-primary, #fff)', marginBottom: '4px' }}>Both (WebCall & Phone)</div>
+                <div style={{ fontSize: '12px', color: 'var(--ca-text-muted, #94a3b8)', lineHeight: '1.4' }}>Max reach: talk to website visitors and handle inbound telephone calls.</div>
+              </button>
             </div>
+
+            {/* Phone Assignment Details if Phone/Both is active */}
+            {currentChannel !== 'webcall' ? (
+              <div className={s.bannerBox}>
+                <div>
+                  <h3 className={s.bannerTitle}>Business phone number</h3>
+                  <p className={s.bannerSubtitle}>
+                    {p.creating
+                      ? 'You can assign a phone number now, or skip to test in browser first.'
+                      : p.numberError
+                      ? 'Phone assignment unavailable.'
+                      : p.numbers.find(n => n.id === p.assigned)?.number || 'No number assigned'}
+                  </p>
+                </div>
+                <Link href="/dashboard/phone-numbers" className={s.cancelButton} style={{ textDecoration: 'none' }}>
+                  Manage phone numbers →
+                </Link>
+              </div>
+            ) : (
+              <div className={s.bannerBox}>
+                <div>
+                  <h3 className={s.bannerTitle}>WebCall-Ready Agent</h3>
+                  <p className={s.bannerSubtitle}>
+                    This agent is configured for instant browser voice sessions. You can test it immediately in Step 6 without a phone number.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className={s.bottomActionBar}>
             <button type="button" className={s.cancelButton} onClick={() => onNavigateStep('voice')}>
               ← Back to Voice & language
             </button>
-            <button type="button" className={s.continueButton} onClick={() => onNavigateStep('test')}>
-              Continue to Test →
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {currentChannel !== 'webcall' && !p.assigned && (
+                <button
+                  type="button"
+                  className={s.cancelButton}
+                  onClick={() => {
+                    set('channel', 'webcall');
+                    onNavigateStep('test');
+                  }}
+                >
+                  Skip for WebCall →
+                </button>
+              )}
+              <button type="button" className={s.continueButton} onClick={() => onNavigateStep('test')}>
+                Continue to Test →
+              </button>
+            </div>
           </div>
         </>
       )}
