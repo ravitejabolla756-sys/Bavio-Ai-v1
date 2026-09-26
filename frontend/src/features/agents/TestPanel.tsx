@@ -32,8 +32,40 @@ export default function TestPanel({
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryInfo | null>(null);
-  const [webCallModalOpen, setWebCallModalOpen] = useState(false);
-  const currentAgentId = agent?.id || '';
+  const [activeWebCallAgentId, setActiveWebCallAgentId] = useState<string>(agent?.id || '');
+  const [isLaunchingWebCall, setIsLaunchingWebCall] = useState(false);
+
+  useEffect(() => {
+    if (agent?.id) {
+      setActiveWebCallAgentId(agent.id);
+    }
+  }, [agent?.id]);
+
+  async function handleLaunchWebCall() {
+    if (isLaunchingWebCall) return;
+    setIsLaunchingWebCall(true);
+    setErrorMessage('');
+    try {
+      let targetId = agent?.id || activeWebCallAgentId;
+      if (!targetId && onSaveAgent) {
+        const saved = await onSaveAgent();
+        if (saved && saved.id) {
+          targetId = saved.id;
+          setActiveWebCallAgentId(saved.id);
+        }
+      }
+      if (targetId) {
+        setActiveWebCallAgentId(targetId);
+        setWebCallModalOpen(true);
+      } else {
+        setErrorMessage('Please give your assistant a name before starting a WebCall.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to start WebCall.');
+    } finally {
+      setIsLaunchingWebCall(false);
+    }
+  }
 
   // ── Call Progression State ──
   const [callState, setCallState] = useState<TestCallStatus>('idle');
@@ -459,11 +491,11 @@ export default function TestPanel({
 
             <button
               type="button"
-              onClick={() => setWebCallModalOpen(true)}
-              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface-raised/40 hover:bg-surface-raised text-ink text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-saffron/40 shadow-sm"
-              disabled={!readinessCheck.ready}
+              onClick={handleLaunchWebCall}
+              disabled={isLaunchingWebCall}
+              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface-raised/40 hover:bg-surface-raised text-ink text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-saffron/40 shadow-sm cursor-pointer disabled:opacity-50"
             >
-              <span>🎙️ Test in Browser (WebCall)</span>
+              <span>{isLaunchingWebCall ? 'Preparing WebCall…' : '🎙️ Test in Browser (WebCall)'}</span>
             </button>
 
             <p className={s.underButtonText}>
@@ -476,7 +508,7 @@ export default function TestPanel({
       <WebCallModal
         isOpen={webCallModalOpen}
         onClose={() => setWebCallModalOpen(false)}
-        agentId={currentAgentId}
+        agentId={activeWebCallAgentId || agent?.id || ''}
         agentName={draft.name || 'AI Receptionist'}
         onTestCompleted={onTestCompleted}
       />
