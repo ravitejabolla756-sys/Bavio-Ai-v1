@@ -134,11 +134,18 @@ export class WebCallClient {
       const defaultWsUrl = `${wsProtocol}//${window.location.host}/api/webcall/stream?callSid=${this.callSid}&token=${this.sessionToken}`;
       const finalWsUrl = this.wsUrl || defaultWsUrl;
 
+      console.log('[BAVIO_DIAG] WS_CONNECTING —', finalWsUrl.replace(/token=[^&]+/, 'token=REDACTED'));
+
       const ws = new WebSocket(finalWsUrl);
       this.ws = ws;
       ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
+        console.log('[BAVIO_DIAG] WS_CONNECTED — WebSocket open, audioCtx.state=', this.audioCtx?.state);
+        // Attempt AudioContext resume on WS open (user gesture may have happened by now)
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume().catch(() => {});
+        }
         this.setState('connected');
         this.logEvent('webrtc_connected');
         this.startNetworkTelemetryReporting();
@@ -156,11 +163,14 @@ export class WebCallClient {
       };
 
       ws.onerror = (err) => {
-        console.error('[WebCall WS Error]', err);
+        console.error('[BAVIO_DIAG] WS_ERROR —', err);
+        this.logEvent('ws_error', { type: 'websocket_error' });
       };
 
-      ws.onclose = () => {
+      ws.onclose = (evt) => {
+        console.log('[BAVIO_DIAG] WS_CLOSED — code:', evt.code, 'reason:', evt.reason || 'none');
         if (this.state !== 'completed') {
+          this.logEvent('ws_closed', { code: evt.code, reason: evt.reason });
           this.end('network_disconnect');
         }
       };
@@ -219,86 +229,160 @@ export class WebCallClient {
 
   /**
    * Initializes browser SpeechRecognition for speech boundary and transcript detection.
+   * Includes onend restart loop (Chrome silently kills continuous sessions after ~60s),
+   * onerror handler, and full [BAVIO_DIAG] diagnostic logging.
    */
   private initSpeechRecognition() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.warn('[BAVIO_DIAG] STT_NO_API — Browser does not support SpeechRecognition. User speech will NOT be transcribed.');
+      this.callbacks.onError('Your browser does not support speech recognition. Please use Chrome for WebCall.');
+      return;
+    }
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+    const startRecognition = () => {
+      if (this.state === 'completed' || this.state === 'failed') return;
 
-      recognition.onspeechstart = () => {
-        if (this.isMuted) return;
-        this.isUserSpeaking = true;
-        this.userSpeechStartTime = Date.now();
-        this.setState('user_speaking');
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        this.recognition = recognition;
 
-        // Check if user is interrupting AI audio playback (Barge-in)
-        if (this.currentAudioSource) {
-          try { this.currentAudioSource.stop(); } catch {}
-          this.currentAudioSource = null;
-          this.logEvent('user_interrupted');
-        }
+        console.log('[BAVIO_DIAG] STT_SESSION_STARTED — recognition.start() called');
+        this.logEvent('stt_session_started', { engine: 'browser_web_speech_api' });
 
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ type: 'user:speech_started' }));
-        }
-      };
+        recognition.onspeechstart = () => {
+          if (this.isMuted) return;
+          this.isUserSpeaking = true;
+          this.userSpeechStartTime = Date.now();
+          this.setState('user_speaking');
+          console.log('[BAVIO_DIAG] STT_SPEECH_STARTED — browser VAD detected speech');
 
-      recognition.onspeechend = () => {
-        if (this.isMuted) return;
-        this.isUserSpeaking = false;
-        if (this.state === 'user_speaking') {
-          this.setState('connected');
-        }
-      };
+          // Check if user is interrupting AI audio playback (Barge-in)
+          if (this.currentAudioSource) {
+            try { this.currentAudioSource.stop(); } catch {}
+            this.currentAudioSource = null;
+            this.logEvent('user_interrupted');
+          }
 
-      recognition.onresult = (event: any) => {
-        if (this.isMuted) return;
-        const lastResult = event.results[event.results.length - 1];
-        if (lastResult.isFinal) {
-          const transcript = lastResult[0].transcript.trim();
-          if (transcript.length > 0) {
-            this.callbacks.onTranscript({
-              speaker: 'user',
-              text: transcript,
-              time: this.getElapsedFormatted()
-            });
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'user:speech_started' }));
+          }
+        };
 
-            // Send speech ended with transcript to backend
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              this.ws.send(JSON.stringify({
-                type: 'user:speech_ended',
-                payload: { transcript }
-              }));
+        recognition.onspeechend = () => {
+          if (this.isMuted) return;
+          this.isUserSpeaking = false;
+          console.log('[BAVIO_DIAG] STT_SPEECH_ENDED — browser VAD silence detected');
+          if (this.state === 'user_speaking') {
+            this.setState('connected');
+          }
+        };
+
+        recognition.onresult = (event: any) => {
+          if (this.isMuted) return;
+          const lastResult = event.results[event.results.length - 1];
+          const interimText = lastResult[0].transcript.trim();
+          console.log(`[BAVIO_DIAG] STT_RESULT — isFinal=${lastResult.isFinal} text="${interimText.slice(0, 60)}"`);
+
+          if (lastResult.isFinal) {
+            const transcript = interimText;
+            if (transcript.length > 0) {
+              console.log(`[BAVIO_DIAG] STT_FINAL_TRANSCRIPT — sending to backend: "${transcript.slice(0, 80)}"`);
+              this.logEvent('stt_final_transcript', { charCount: transcript.length });
+
+              this.callbacks.onTranscript({
+                speaker: 'user',
+                text: transcript,
+                time: this.getElapsedFormatted()
+              });
+
+              // Send speech ended with transcript to backend
+              if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                console.log('[BAVIO_DIAG] WS_SEND — user:speech_ended with transcript');
+                this.ws.send(JSON.stringify({
+                  type: 'user:speech_ended',
+                  payload: { transcript }
+                }));
+              } else {
+                console.warn('[BAVIO_DIAG] WS_SEND_FAILED — WebSocket not open, transcript lost. State:', this.ws?.readyState);
+              }
             }
           }
-        }
-      };
+        };
 
-      recognition.start();
-      this.recognition = recognition;
-    } catch (e) {
-      console.warn('[WebCall] Speech recognition fallback:', e);
-    }
+        // CRITICAL FIX: Chrome's continuous SpeechRecognition silently stops after ~60s.
+        // Without this onend restart, all user speech after the first session dies is ignored.
+        recognition.onend = () => {
+          console.log('[BAVIO_DIAG] STT_SESSION_ENDED — recognition.onend fired');
+          this.logEvent('stt_session_ended');
+          if (this.state !== 'completed' && this.state !== 'failed') {
+            console.log('[BAVIO_DIAG] STT_SESSION_RESTARTING — auto-restarting recognition');
+            // Small delay to avoid rapid restart loops on transient errors
+            setTimeout(() => startRecognition(), 300);
+          }
+        };
+
+        // CRITICAL FIX: Handle recognition errors explicitly
+        recognition.onerror = (event: any) => {
+          console.error('[BAVIO_DIAG] STT_ERROR —', event.error, event.message || '');
+          this.logEvent('stt_error', { error: event.error });
+          // 'no-speech' is normal — do not escalate to user
+          if (event.error === 'aborted' || event.error === 'audio-capture') {
+            console.warn('[BAVIO_DIAG] STT_CRITICAL_ERROR — microphone may be unavailable:', event.error);
+          }
+          // onend will fire after onerror and handle restart
+        };
+
+        recognition.start();
+      } catch (e: any) {
+        console.error('[BAVIO_DIAG] STT_START_FAILED —', e.message);
+      }
+    };
+
+    startRecognition();
   }
 
   /**
    * Plays incoming MP3 / WAV audio from backend.
+   * CRITICAL FIX: Resumes suspended AudioContext before playback.
+   * Browser autoplay policy may suspend AudioContext before user interaction.
    */
   private async playAudioBuffer(arrayBuffer: ArrayBuffer) {
-    if (!this.audioCtx) return;
+    if (!this.audioCtx) {
+      console.warn('[BAVIO_DIAG] AUDIO_PLAY_FAILED — no AudioContext available');
+      return;
+    }
+
+    // CRITICAL FIX: Resume suspended AudioContext
+    // AudioContext starts suspended if created before a user gesture.
+    if (this.audioCtx.state === 'suspended') {
+      console.warn('[BAVIO_DIAG] AUDIO_CTX_SUSPENDED — attempting resume()');
+      try {
+        await this.audioCtx.resume();
+        console.log('[BAVIO_DIAG] AUDIO_CTX_RESUMED — state:', this.audioCtx.state);
+      } catch (resumeErr: any) {
+        console.error('[BAVIO_DIAG] AUDIO_CTX_RESUME_FAILED —', resumeErr.message);
+        this.callbacks.onError('Audio playback blocked by browser. Please interact with the page first.');
+        return;
+      }
+    }
+
+    console.log(`[BAVIO_DIAG] AUDIO_DECODE_START — ${arrayBuffer.byteLength} bytes, audioCtx.state=${this.audioCtx.state}`);
+
     try {
       const decodedBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+      console.log(`[BAVIO_DIAG] AUDIO_DECODE_SUCCESS — duration=${decodedBuffer.duration.toFixed(2)}s`);
+
       const source = this.audioCtx.createBufferSource();
       source.buffer = decodedBuffer;
       source.connect(this.audioCtx.destination);
       this.currentAudioSource = source;
 
       source.onended = () => {
+        console.log('[BAVIO_DIAG] AUDIO_PLAY_ENDED');
         if (this.currentAudioSource === source) {
           this.currentAudioSource = null;
           if (this.state === 'ai_speaking') {
@@ -308,8 +392,9 @@ export class WebCallClient {
       };
 
       source.start();
-    } catch (err) {
-      console.error('[WebCall Audio Decode Error]', err);
+      console.log('[BAVIO_DIAG] AUDIO_PLAY_STARTED');
+    } catch (err: any) {
+      console.error('[BAVIO_DIAG] AUDIO_DECODE_FAILED —', err.message, '— bytes:', arrayBuffer.byteLength);
     }
   }
 
