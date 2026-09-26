@@ -69,3 +69,5 @@ frontend/capture-*.js
 frontend/capture-*.cjs
 frontend/verify-restored-website.js
 supabase/
+.vercel
+.env*.local
