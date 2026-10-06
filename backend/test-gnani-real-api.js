@@ -224,17 +224,16 @@ async function runGnaniRealApiVerification() {
   // TEST 1: GNANI TIMBRE v2.5 TTS (Tamil Speech Synthesis)
   // Official Endpoint: POST https://api.vachana.ai/api/v1/tts/inference
   // Official Auth: X-API-Key-ID: GNANI_API_KEY
-  // Schema: model: timbre-v2.5, language: ta-IN, voice: Brinda, audio_config
+  // Schema: text, voice, model: timbre-v2.5, language: ta-IN, speed: 1.0, audio_config
   // --------------------------------------------------------------------------
   console.log('--- [1/3] Testing Gnani Timbre v2.5 (Text-to-Speech) ---');
   const ttsEndpoint = `${activeBaseUrl}/api/v1/tts/inference`;
-  const ttsPath = safeUrlPath(ttsEndpoint);
   const ttsModel = process.env.GNANI_TTS_MODEL || 'timbre-v2.5';
   const tamilPrompt = 'வணக்கம்! பாவியோ கிராம உதவி மையத்திற்கு வரவேற்கிறோம்.';
 
   if (!hasKey) {
     console.log(`[SKIP] Gnani Timbre v2.5 TTS`);
-    console.log(`       Endpoint: ${ttsPath}`);
+    console.log(`       Endpoint: ${ttsEndpoint}`);
     console.log(`       Model: ${ttsModel}`);
     console.log(`       Reason: Valid GNANI_API_KEY required.\n`);
     summary.timbreTts = { status: 'SKIPPED_NO_KEY', verified: false, category: 'SKIPPED' };
@@ -244,10 +243,11 @@ async function runGnaniRealApiVerification() {
       const response = await axios.post(
         ttsEndpoint,
         {
+          text: tamilPrompt,
+          voice: 'Brinda',
           model: ttsModel,
           language: 'ta-IN',
-          voice: 'Brinda',
-          text: tamilPrompt,
+          speed: 1.0,
           audio_config: {
             sample_rate: 8000,
             num_channels: 1,
@@ -303,7 +303,7 @@ async function runGnaniRealApiVerification() {
 
         console.log(`[PASS] Gnani Timbre v2.5 TTS`);
         console.log(`       Provider: gnani_timbre_v2.5`);
-        console.log(`       Endpoint: ${ttsPath}`);
+        console.log(`       Endpoint: ${ttsEndpoint}`);
         console.log(`       Model: ${ttsModel}`);
         console.log(`       Language: ta-IN (Tamil BCP-47)`);
         console.log(`       Voice: Brinda`);
@@ -321,7 +321,7 @@ async function runGnaniRealApiVerification() {
           latencyMs
         };
         console.log(`[FAIL] Gnani Timbre v2.5 TTS`);
-        console.log(`       Endpoint: ${ttsPath}`);
+        console.log(`       Endpoint: ${ttsEndpoint}`);
         console.log(`       HTTP Status: ${httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms`);
         console.log(`       Error: Response contained empty audio payload (0 bytes)\n`);
@@ -343,7 +343,7 @@ async function runGnaniRealApiVerification() {
 
       console.log(`[FAIL] Gnani Timbre v2.5 TTS`);
       console.log(`       Provider: gnani_timbre_v2.5`);
-      console.log(`       Endpoint: ${ttsPath}`);
+      console.log(`       Endpoint: ${ttsEndpoint}`);
       console.log(`       Model: ${ttsModel}`);
       console.log(`       Status Category: [${classification.category}] ${classification.label}`);
       console.log(`       HTTP Status: ${classification.httpStatus}`);
@@ -356,17 +356,17 @@ async function runGnaniRealApiVerification() {
   // TEST 2: GNANI PRISMA v2.5 STT (Speech-to-Text)
   // Official Endpoint: POST https://api.vachana.ai/stt/v3
   // Official Auth: X-API-Key-ID: GNANI_API_KEY
-  // Fields: audio_file, language_code, preferred_language, format, itn_native_numerals
+  // Accepted REST Model Identifier: vachana-audio-intelligence-v2
+  // Fields: audio_file, model, language_code, preferred_language, format, itn_native_numerals
   // Rate Limit Guard: Stop immediately if HTTP 429; do NOT hammer or retry
   // --------------------------------------------------------------------------
   console.log('--- [2/3] Testing Gnani Prisma v2.5 (Speech-to-Text) ---');
   const sttEndpoint = `${activeBaseUrl}/stt/v3`;
-  const sttPath = safeUrlPath(sttEndpoint);
-  const sttModel = process.env.GNANI_STT_MODEL || 'prisma-2.5';
+  const sttModel = process.env.GNANI_STT_MODEL || 'vachana-audio-intelligence-v2';
 
   if (!hasKey) {
     console.log(`[SKIP] Gnani Prisma v2.5 STT`);
-    console.log(`       Endpoint: ${sttPath}`);
+    console.log(`       Endpoint: ${sttEndpoint}`);
     console.log(`       Model: ${sttModel}`);
     console.log(`       Reason: Valid GNANI_API_KEY required.\n`);
     summary.prismaStt = { status: 'SKIPPED_NO_KEY', verified: false, category: 'SKIPPED' };
@@ -379,6 +379,7 @@ async function runGnaniRealApiVerification() {
         filename: 'audio.wav',
         contentType: 'audio/wav'
       });
+      form.append('model', sttModel);
       form.append('language_code', 'ta-IN');
       form.append('preferred_language', 'ta-IN');
       form.append('format', 'wav');
@@ -409,7 +410,8 @@ async function runGnaniRealApiVerification() {
 
         console.log(`[PASS] Gnani Prisma v2.5 STT`);
         console.log(`       Provider: gnani_prisma_v2.5`);
-        console.log(`       Endpoint: ${sttPath}`);
+        console.log(`       Endpoint: ${sttEndpoint}`);
+        console.log(`       Model: ${sttModel}`);
         console.log(`       Language: ta-IN (Tamil)`);
         console.log(`       HTTP Status: ${httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms`);
@@ -424,7 +426,7 @@ async function runGnaniRealApiVerification() {
           latencyMs
         };
         console.log(`[FAIL] Gnani Prisma v2.5 STT`);
-        console.log(`       Endpoint: ${sttPath}`);
+        console.log(`       Endpoint: ${sttEndpoint}`);
         console.log(`       HTTP Status: ${httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms\n`);
       }
@@ -446,7 +448,8 @@ async function runGnaniRealApiVerification() {
       if (classification.category === 'RATE_LIMITED') {
         console.log(`[RATE_LIMITED] Gnani Prisma v2.5 STT`);
         console.log(`       Provider: gnani_prisma_v2.5`);
-        console.log(`       Endpoint: ${sttPath}`);
+        console.log(`       Endpoint: ${sttEndpoint}`);
+        console.log(`       Model: ${sttModel}`);
         console.log(`       HTTP Status: 429 Rate limit exceeded`);
         console.log(`       Action: Stopping further calls immediately. Will NOT hammer or retry this API.`);
         console.log(`       Note: The API endpoint and authentication were reached, but the account quota/rate limit is active.`);
@@ -454,7 +457,8 @@ async function runGnaniRealApiVerification() {
       } else {
         console.log(`[FAIL] Gnani Prisma v2.5 STT`);
         console.log(`       Provider: gnani_prisma_v2.5`);
-        console.log(`       Endpoint: ${sttPath}`);
+        console.log(`       Endpoint: ${sttEndpoint}`);
+        console.log(`       Model: ${sttModel}`);
         console.log(`       Status Category: [${classification.category}] ${classification.label}`);
         console.log(`       HTTP Status: ${classification.httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms`);

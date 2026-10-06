@@ -122,6 +122,7 @@ async function transcribeWithPrisma(audioBuffer, {
         filename: 'audio.wav',
         contentType: encoding === 'mulaw' ? 'audio/basic' : 'audio/wav'
       });
+      form.append('model', process.env.GNANI_STT_MODEL || 'vachana-audio-intelligence-v2');
       form.append('language_code', langCode);
       form.append('preferred_language', langCode);
       form.append('format', encoding === 'mulaw' ? 'mulaw' : 'wav');
@@ -178,12 +179,13 @@ async function transcribeWithPrisma(audioBuffer, {
  * 2. GNANI TIMBRE v2.5 — Text-to-Speech (TTS)
  * Official endpoint: POST https://api.vachana.ai/api/v1/tts/inference
  * Authentication: X-API-Key-ID: <GNANI_API_KEY>
- * Schema: model ("timbre-v2.5"), language (BCP-47 e.g. "ta-IN"), voice ("Brinda"), text, audio_config
+ * Schema: model ("timbre-v2.5"), language (BCP-47 e.g. "ta-IN"), voice ("Brinda"), speed (1.0), text, audio_config
  */
 async function synthesizeWithTimbre(text, {
   language = 'hi-IN',
   voice = null,
   voiceGender = 'female',
+  speed = 1.0,
   sampleRate = 8000,
   outputFormat = 'mulaw_8000',
   apiKey = null
@@ -204,10 +206,11 @@ async function synthesizeWithTimbre(text, {
       const response = await axios.post(
         `${baseUrl}/api/v1/tts/inference`,
         {
+          text: text.trim(),
+          voice: selectedVoice,
           model,
           language: langCode,
-          voice: selectedVoice,
-          text: text.trim(),
+          speed,
           audio_config: {
             sample_rate: sampleRate || 8000,
             num_channels: 1,
