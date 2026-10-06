@@ -4,104 +4,149 @@ const axios = require('axios');
 const FormData = require('form-data');
 
 /**
- * gnaniService.js — Core Client for Gnani AI Models
+ * gnaniService.js — Core Client for Gnani AI Models (Vachana Platform)
  * 
- * Target Models:
- * 1. Gnani Prisma v2.5 (Speech-to-Text / ASR)
- * 2. Gnani Evon v3.3 (Reasoning / Indian Language LLM)
- * 3. Gnani Timbre v2.5 (Text-to-Speech / TTS)
+ * Official Platform: Vachana by Gnani AI
+ * Primary Host: https://api.vachana.ai
  * 
- * Supports:
- * - Languages: Tamil (ta-IN / tam), Telugu (te-IN / tel), Hindi (hi-IN / hin), Indian English (en-IN / eng)
- * - Telephony Audio: 8kHz G.711 mu-law / 16kHz PCM
- * - Streaming & Chunked synthesis
- * - Telemetry & Latency Profiling
+ * Models:
+ * 1. Gnani Prisma v2.5 (Speech-to-Text / STT): POST /stt/v3
+ * 2. Gnani Timbre v2.5 (Text-to-Speech / TTS): POST /v1/tts/inference
+ * 3. Gnani Evon v3.3 (Reasoning LLM): Open-weight 30B MoE foundation model (Hugging Face / Self-hosted)
+ * 
+ * Authentication:
+ * Header: X-API-Key-ID: <GNANI_API_KEY>
+ * Header: Authorization: Bearer <GNANI_API_KEY>
  */
 
-const GNANI_API_KEY = process.env.GNANI_API_KEY || '';
-const GNANI_BASE_URL = process.env.GNANI_BASE_URL || 'https://api.gnani.ai/v2';
+const GNANI_API_KEY = process.env.GNANI_API_KEY || process.env.GNANI_PRISMA_KEY || '';
+
+// Resolve Base URL: default to official active API host 'https://api.vachana.ai'
+function getBaseUrl() {
+  const configured = (process.env.GNANI_BASE_URL || '').trim();
+  if (configured && !configured.includes('api.gnani.ai')) {
+    return configured.replace(/\/+$/, '');
+  }
+  // api.gnani.ai has no active DNS record; Vachana is Gnani's speech API host
+  return 'https://api.vachana.ai';
+}
+
 const GNANI_EVON_ENDPOINT = process.env.GNANI_EVON_ENDPOINT || '';
 
 // Standard ISO / BCP-47 to Gnani language code mappings
-const LANGUAGE_MAP = {
-  'ta': 'tam',
-  'ta-in': 'tam',
-  'tamil': 'tam',
-  'te': 'tel',
-  'te-in': 'tel',
-  'telugu': 'tel',
-  'hi': 'hin',
-  'hi-in': 'hin',
-  'hindi': 'hin',
-  'en': 'eng',
-  'en-in': 'eng',
-  'en-us': 'eng',
-  'english': 'eng'
+const LANGUAGE_MAP_SHORT = {
+  'ta': 'ta',
+  'ta-in': 'ta',
+  'tamil': 'ta',
+  'te': 'te',
+  'te-in': 'te',
+  'telugu': 'te',
+  'hi': 'hi',
+  'hi-in': 'hi',
+  'hindi': 'hi',
+  'en': 'en',
+  'en-in': 'en',
+  'en-us': 'en',
+  'english': 'en'
 };
 
-function normalizeLanguageCode(lang = 'hi-IN') {
+const LANGUAGE_MAP_FULL = {
+  'ta': 'ta-IN',
+  'ta-in': 'ta-IN',
+  'tamil': 'ta-IN',
+  'te': 'te-IN',
+  'te-in': 'te-IN',
+  'telugu': 'te-IN',
+  'hi': 'hi-IN',
+  'hi-in': 'hi-IN',
+  'hindi': 'hi-IN',
+  'en': 'en-IN',
+  'en-in': 'en-IN',
+  'en-us': 'en-IN',
+  'english': 'en-IN'
+};
+
+const DEFAULT_VOICES = {
+  'ta': 'Brinda',
+  'te': 'Brinda',
+  'hi': 'Nalini',
+  'en': 'Brinda'
+};
+
+function normalizeLanguageCodeShort(lang = 'hi-IN') {
   const normalized = (lang || '').toLowerCase().trim();
-  return LANGUAGE_MAP[normalized] || 'hin';
+  return LANGUAGE_MAP_SHORT[normalized] || 'hi';
+}
+
+function normalizeLanguageCodeFull(lang = 'hi-IN') {
+  const normalized = (lang || '').toLowerCase().trim();
+  return LANGUAGE_MAP_FULL[normalized] || 'hi-IN';
 }
 
 /**
  * 1. GNANI PRISMA v2.5 — Speech-to-Text (ASR)
- * Transcribes telephony / streaming audio buffers into text with Indian dialect support.
+ * Official endpoint: POST https://api.vachana.ai/stt/v3
  */
 async function transcribeWithPrisma(audioBuffer, {
   language = 'hi-IN',
-  encoding = 'mulaw',
+  encoding = 'wav',
   sampleRate = 8000,
   apiKey = null
 } = {}) {
-  const key = apiKey || GNANI_API_KEY || process.env.GNANI_PRISMA_KEY;
-  const langCode = normalizeLanguageCode(language);
+  const key = apiKey || GNANI_API_KEY;
+  const langCode = normalizeLanguageCodeFull(language);
+  const baseUrl = getBaseUrl();
   const startTime = Date.now();
 
   if (!audioBuffer || audioBuffer.length === 0) {
     throw new Error('[Gnani Prisma] Cannot transcribe empty audio buffer');
   }
 
-  // If Gnani API key is configured, call Gnani Prisma endpoint
   if (key && !key.startsWith('your_') && !key.startsWith('mock_')) {
     try {
       const form = new FormData();
-      form.append('audio', audioBuffer, {
+      form.append('audio_file', audioBuffer, {
         filename: 'audio.wav',
         contentType: encoding === 'mulaw' ? 'audio/basic' : 'audio/wav'
       });
-      form.append('language', langCode);
-      form.append('model', process.env.GNANI_PRISMA_MODEL || 'prisma-v2.5');
-      form.append('encoding', encoding);
-      form.append('sample_rate', String(sampleRate));
+      form.append('language_code', langCode);
+      form.append('model', process.env.GNANI_STT_MODEL || 'prisma-2.5');
 
-      const response = await axios.post(`${GNANI_BASE_URL}/asr/transcribe`, form, {
+      const response = await axios.post(`${baseUrl}/stt/v3`, form, {
         headers: {
+          'X-API-Key-ID': key,
+          'x-api-key-id': key,
           'Authorization': `Bearer ${key}`,
-          'x-gnani-api-key': key,
           ...form.getHeaders()
         },
-        timeout: 10000
+        timeout: 15000
       });
 
       const latencyMs = Date.now() - startTime;
-      const transcript = response.data?.transcript || response.data?.text || '';
+      const data = response.data || {};
+      const transcript = (
+        data.transcript ||
+        data.text ||
+        data.result?.transcript ||
+        data.result?.text ||
+        ''
+      ).trim();
 
       return {
-        transcript: transcript.trim(),
+        transcript,
         language: langCode,
-        confidence: response.data?.confidence || 0.95,
+        confidence: data.confidence || 0.95,
         latencyMs,
-        provider: 'gnani_prisma_v2.5'
+        provider: 'gnani_prisma_v2.5',
+        httpStatus: response.status
       };
     } catch (err) {
-      console.warn(`[Gnani Prisma] Live API call failed (${err.message}). Checking fallback/resilience.`);
-      // If error occurs, propagate or handle gracefully
-      throw new Error(`Gnani Prisma STT Error: ${err.response?.data?.message || err.message}`);
+      const status = err.response?.status;
+      const errDetail = err.response?.data?.detail?.message || err.response?.data?.message || err.message;
+      throw new Error(`Gnani Prisma STT Error (HTTP ${status || 'ERR'}): ${errDetail}`);
     }
   }
 
-  // Fallback for development/simulated environment with high fidelity
   const latencyMs = Date.now() - startTime;
   return {
     transcript: '',
@@ -114,8 +159,106 @@ async function transcribeWithPrisma(audioBuffer, {
 }
 
 /**
- * 2. GNANI EVON v3.3 — LLM Reasoning Engine
- * Reasoning model specifically optimized for Indian regional languages and context.
+ * 2. GNANI TIMBRE v2.5 — Text-to-Speech (TTS)
+ * Official endpoint: POST https://api.vachana.ai/v1/tts/inference
+ */
+async function synthesizeWithTimbre(text, {
+  language = 'hi-IN',
+  voice = null,
+  voiceGender = 'female',
+  sampleRate = 8000,
+  outputFormat = 'mulaw_8000',
+  apiKey = null
+} = {}) {
+  const key = apiKey || GNANI_API_KEY;
+  const langShort = normalizeLanguageCodeShort(language);
+  const selectedVoice = voice || DEFAULT_VOICES[langShort] || 'Brinda';
+  const model = process.env.GNANI_TTS_MODEL || 'timbre-2.5';
+  const baseUrl = getBaseUrl();
+  const startTime = Date.now();
+
+  if (!text || !text.trim()) {
+    throw new Error('[Gnani Timbre] Cannot synthesize empty text');
+  }
+
+  if (key && !key.startsWith('your_') && !key.startsWith('mock_')) {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/v1/tts/inference`,
+        {
+          model,
+          language: langShort,
+          voice: selectedVoice,
+          sample_rate: sampleRate,
+          text: text.trim()
+        },
+        {
+          headers: {
+            'X-API-Key-ID': key,
+            'x-api-key-id': key,
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          responseType: 'arraybuffer',
+          timeout: 15000
+        }
+      );
+
+      const latencyMs = Date.now() - startTime;
+      let audioBuffer;
+
+      // Check if response is raw binary or JSON with base64 audio
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        try {
+          const json = JSON.parse(response.data.toString());
+          const base64Audio = json.audio || json.audio_content || json.data || '';
+          audioBuffer = Buffer.from(base64Audio, 'base64');
+        } catch {
+          audioBuffer = Buffer.from(response.data);
+        }
+      } else {
+        audioBuffer = Buffer.from(response.data);
+      }
+
+      return {
+        audioBuffer,
+        audioBase64: audioBuffer.toString('base64'),
+        format: outputFormat,
+        latencyMs,
+        provider: 'gnani_timbre_v2.5',
+        httpStatus: response.status
+      };
+    } catch (err) {
+      const status = err.response?.status;
+      let errDetail = err.message;
+      if (err.response?.data) {
+        try {
+          const parsed = JSON.parse(err.response.data.toString());
+          errDetail = parsed.detail?.message || parsed.message || err.message;
+        } catch {
+          errDetail = err.response.data.toString() || err.message;
+        }
+      }
+      throw new Error(`Gnani Timbre TTS Error (HTTP ${status || 'ERR'}): ${errDetail}`);
+    }
+  }
+
+  const latencyMs = Date.now() - startTime;
+  return {
+    audioBuffer: Buffer.alloc(0),
+    audioBase64: '',
+    format: outputFormat,
+    latencyMs,
+    provider: 'gnani_timbre_v2.5',
+    isSimulation: true
+  };
+}
+
+/**
+ * 3. GNANI EVON v3.3 — Reasoning Engine
+ * Official Availability: Open-weight 30B MoE foundation model (gnani/gnani-evon-v3.3-30B-A3B on Hugging Face).
+ * Requires self-hosting on GPU instance (e.g. AWS EC2 g5 instance with vLLM) or private Plexus deployment.
  */
 async function generateEvonCompletion(messages, {
   systemPrompt = '',
@@ -126,11 +269,10 @@ async function generateEvonCompletion(messages, {
   stream = false,
   onChunk = null
 } = {}) {
-  const key = apiKey || GNANI_API_KEY || process.env.GNANI_EVON_KEY;
+  const key = apiKey || GNANI_API_KEY;
   const startTime = Date.now();
   let firstTokenTime = null;
 
-  // Build grounded prompt with RAG context
   let finalSystemPrompt = systemPrompt;
   if (retrievedContext) {
     finalSystemPrompt += `\n\n=== VERIFIED KNOWLEDGE BASE CONTEXT (STRICT GROUNDING) ===\n${retrievedContext}\n\nINSTRUCTION: You must answer based ONLY on the verified context above. If the exact answer is not in the context, explicitly say in the caller's language that verified information is not currently available at this helpline. Never make up scheme details.`;
@@ -141,13 +283,11 @@ async function generateEvonCompletion(messages, {
     ...messages
   ];
 
-  // If a self-hosted Evon endpoint or Gnani hosted endpoint is available:
-  const endpoint = GNANI_EVON_ENDPOINT || `${GNANI_BASE_URL}/llm/chat/completions`;
-
-  if (key && !key.startsWith('your_') && !key.startsWith('mock_')) {
+  // If a dedicated self-hosted Evon endpoint is configured in environment:
+  if (GNANI_EVON_ENDPOINT && GNANI_EVON_ENDPOINT.trim().length > 0) {
     try {
       const response = await axios.post(
-        endpoint,
+        GNANI_EVON_ENDPOINT,
         {
           model: process.env.GNANI_EVON_MODEL || 'gnani-evon-v3.3',
           messages: promptMessages,
@@ -158,7 +298,6 @@ async function generateEvonCompletion(messages, {
         {
           headers: {
             'Authorization': `Bearer ${key}`,
-            'x-gnani-api-key': key,
             'Content-Type': 'application/json'
           },
           responseType: stream ? 'stream' : 'json',
@@ -209,94 +348,50 @@ async function generateEvonCompletion(messages, {
         totalLatencyMs
       };
     } catch (err) {
-      console.warn(`[Gnani Evon] Primary LLM call failed (${err.message}).`);
       throw new Error(`Gnani Evon LLM Error: ${err.response?.data?.message || err.message}`);
     }
   }
 
-  // Resilient fallback execution for local/demo orchestration
+  // When GNANI_EVON_ENDPOINT is not configured:
   const totalLatencyMs = Date.now() - startTime;
   return {
     text: '',
     provider: 'gnani_evon_v3.3',
     ttftMs: totalLatencyMs,
     totalLatencyMs,
-    isSimulation: true
+    isSimulation: true,
+    note: 'Evon v3.3 is an open-weight foundation model requiring self-hosted GPU endpoint'
   };
 }
 
-/**
- * 3. GNANI TIMBRE v2.5 — Text-to-Speech (TTS)
- * Generates natural Indian regional speech in G.711 mu-law 8kHz for telephony.
- */
-async function synthesizeWithTimbre(text, {
-  language = 'hi-IN',
-  voiceGender = 'female',
-  outputFormat = 'mulaw_8000',
-  apiKey = null
-} = {}) {
-  const key = apiKey || GNANI_API_KEY || process.env.GNANI_TIMBRE_KEY;
-  const langCode = normalizeLanguageCode(language);
-  const startTime = Date.now();
+const LANGUAGE_MAP_ISO3 = {
+  'ta': 'tam',
+  'ta-in': 'tam',
+  'tamil': 'tam',
+  'te': 'tel',
+  'te-in': 'tel',
+  'telugu': 'tel',
+  'hi': 'hin',
+  'hi-in': 'hin',
+  'hindi': 'hin',
+  'en': 'eng',
+  'en-in': 'eng',
+  'en-us': 'eng',
+  'english': 'eng'
+};
 
-  if (!text || !text.trim()) {
-    throw new Error('[Gnani Timbre] Cannot synthesize empty text');
-  }
-
-  if (key && !key.startsWith('your_') && !key.startsWith('mock_')) {
-    try {
-      const response = await axios.post(
-        `${GNANI_BASE_URL}/tts/synthesize`,
-        {
-          text: text.trim(),
-          language: langCode,
-          model: process.env.GNANI_TIMBRE_MODEL || 'timbre-v2.5',
-          gender: voiceGender,
-          format: outputFormat.includes('mulaw') ? 'mulaw' : 'wav',
-          sample_rate: 8000
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${key}`,
-            'x-gnani-api-key': key,
-            'Content-Type': 'application/json'
-          },
-          responseType: 'arraybuffer',
-          timeout: 10000
-        }
-      );
-
-      const audioBuffer = Buffer.from(response.data);
-      const latencyMs = Date.now() - startTime;
-
-      return {
-        audioBuffer,
-        audioBase64: audioBuffer.toString('base64'),
-        format: outputFormat,
-        latencyMs,
-        provider: 'gnani_timbre_v2.5'
-      };
-    } catch (err) {
-      console.warn(`[Gnani Timbre] Live TTS API failed (${err.message}).`);
-      throw new Error(`Gnani Timbre TTS Error: ${err.response?.data?.message || err.message}`);
-    }
-  }
-
-  const latencyMs = Date.now() - startTime;
-  return {
-    audioBuffer: Buffer.alloc(0),
-    audioBase64: '',
-    format: outputFormat,
-    latencyMs,
-    provider: 'gnani_timbre_v2.5',
-    isSimulation: true
-  };
+function normalizeLanguageCode(lang = 'hi-IN') {
+  const normalized = (lang || '').toLowerCase().trim();
+  return LANGUAGE_MAP_ISO3[normalized] || 'hin';
 }
 
 module.exports = {
   transcribeWithPrisma,
-  generateEvonCompletion,
   synthesizeWithTimbre,
+  generateEvonCompletion,
   normalizeLanguageCode,
-  LANGUAGE_MAP
+  normalizeLanguageCodeShort,
+  normalizeLanguageCodeFull,
+  getBaseUrl,
+  DEFAULT_VOICES
 };
