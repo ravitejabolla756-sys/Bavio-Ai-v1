@@ -412,7 +412,9 @@ async function runGnaniRealApiVerification() {
         console.log(`       Provider: gnani_prisma_v2.5`);
         console.log(`       Endpoint: ${sttEndpoint}`);
         console.log(`       Model: ${sttModel}`);
+        console.log(`       Format: transcribe`);
         console.log(`       Language: ta-IN (Tamil)`);
+        console.log(`       itn_native_numerals: true`);
         console.log(`       HTTP Status: ${httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms`);
         console.log(`       Returned Transcript: "${transcript}"`);
@@ -427,6 +429,8 @@ async function runGnaniRealApiVerification() {
         };
         console.log(`[FAIL] Gnani Prisma v2.5 STT`);
         console.log(`       Endpoint: ${sttEndpoint}`);
+        console.log(`       Model: ${sttModel}`);
+        console.log(`       Format: transcribe`);
         console.log(`       HTTP Status: ${httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms\n`);
       }
@@ -450,6 +454,7 @@ async function runGnaniRealApiVerification() {
         console.log(`       Provider: gnani_prisma_v2.5`);
         console.log(`       Endpoint: ${sttEndpoint}`);
         console.log(`       Model: ${sttModel}`);
+        console.log(`       Format: transcribe`);
         console.log(`       HTTP Status: 429 Rate limit exceeded`);
         console.log(`       Action: Stopping further calls immediately. Will NOT hammer or retry this API.`);
         console.log(`       Note: The API endpoint and authentication were reached, but the account quota/rate limit is active.`);
@@ -459,6 +464,7 @@ async function runGnaniRealApiVerification() {
         console.log(`       Provider: gnani_prisma_v2.5`);
         console.log(`       Endpoint: ${sttEndpoint}`);
         console.log(`       Model: ${sttModel}`);
+        console.log(`       Format: transcribe`);
         console.log(`       Status Category: [${classification.category}] ${classification.label}`);
         console.log(`       HTTP Status: ${classification.httpStatus}`);
         console.log(`       Actual Latency: ${latencyMs} ms`);
