@@ -6,14 +6,12 @@
 
 const PROVIDER_CURRENT  = 'current_openai';
 const PROVIDER_MODULAR  = 'modular_v1';
-const VALID_PROVIDERS   = [PROVIDER_CURRENT, PROVIDER_MODULAR];
-const VALID_LLM_BACKENDS = ['cerebras', 'groq', 'openai'];
+const PROVIDER_GRAMA    = 'gnani_grama_v1';
+const VALID_PROVIDERS   = [PROVIDER_CURRENT, PROVIDER_MODULAR, PROVIDER_GRAMA];
+const VALID_LLM_BACKENDS = ['cerebras', 'groq', 'openai', 'gnani_evon'];
 
 function buildConfig() {
   const provider = (process.env.VOICE_STACK_PROVIDER || PROVIDER_CURRENT).trim().toLowerCase();
-  if (!VALID_PROVIDERS.includes(provider)) {
-    throw new Error(`[VoiceConfig] Invalid VOICE_STACK_PROVIDER "${provider}".`);
-  }
 
   const rolloutPercent = Number(process.env.VOICE_STACK_ROLLOUT_PERCENT ?? 0);
   const allowedBusinessIds = new Set(
@@ -56,26 +54,23 @@ function buildConfig() {
     get hasKey() { return !!this._apiKey; },
   };
 
+  const gnani = {
+    _apiKey   : process.env.GNANI_API_KEY     || null,
+    sttModel  : process.env.GNANI_STT_MODEL   || 'prisma-v2.5',
+    llmModel  : process.env.GNANI_LLM_MODEL   || 'gnani-evon-v3.3',
+    ttsModel  : process.env.GNANI_TTS_MODEL   || 'timbre-v2.5',
+    get hasKey() { return !!this._apiKey; },
+  };
+
+  const exotel = {
+    _apiKey     : process.env.EXOTEL_API_KEY      || null,
+    _apiToken   : process.env.EXOTEL_API_TOKEN    || null,
+    accountSid  : process.env.EXOTEL_ACCOUNT_SID  || null,
+    subdomain   : process.env.EXOTEL_SUBDOMAIN    || 'api.exotel.com',
+    get hasKey() { return !!(this._apiKey && this._apiToken && this.accountSid); },
+  };
+
   const region = process.env.VOICE_WORKER_REGION || 'us-east-1';
-
-  // For the isolated voice worker, require keys if modular_v1 configuration is present
-  const missing = [];
-  if (!deepgram._apiKey)                                        missing.push('DEEPGRAM_API_KEY');
-  if (!elevenlabs._apiKey)                                      missing.push('ELEVENLABS_API_KEY');
-  if ((primaryLlm === 'cerebras' || fallbackLlm === 'cerebras') && !cerebras._apiKey)
-    missing.push('CEREBRAS_API_KEY');
-  if ((primaryLlm === 'groq'     || fallbackLlm === 'groq')     && !groq._apiKey)
-    missing.push('GROQ_API_KEY');
-  if ((primaryLlm === 'openai'   || fallbackLlm === 'openai')   && !openai._apiKey)
-    missing.push('OPENAI_API_KEY');
-
-  const uniqueMissing = [...new Set(missing)];
-  if (uniqueMissing.length > 0) {
-    console.warn(
-      `[VoiceConfig] WARNING: Voice worker configuration is missing the following environment variables: ` +
-      `${uniqueMissing.join(', ')}. Calls requesting these services will fail at runtime.`
-    );
-  }
 
   return Object.freeze({
     provider,
@@ -90,9 +85,12 @@ function buildConfig() {
     elevenlabs  : Object.freeze({ modelId: elevenlabs.modelId, hasKey: elevenlabs.hasKey, _apiKey: elevenlabs._apiKey }),
     groq        : Object.freeze({ model: groq.model,         hasKey: groq.hasKey,         _apiKey: groq._apiKey }),
     openai      : Object.freeze({ model: openai.model,       hasKey: openai.hasKey,       _apiKey: openai._apiKey }),
+    gnani       : Object.freeze({ sttModel: gnani.sttModel,  llmModel: gnani.llmModel,   ttsModel: gnani.ttsModel, hasKey: gnani.hasKey, _apiKey: gnani._apiKey }),
+    exotel      : Object.freeze({ accountSid: exotel.accountSid, subdomain: exotel.subdomain, hasKey: exotel.hasKey, _apiKey: exotel._apiKey, _apiToken: exotel._apiToken }),
 
     PROVIDER_CURRENT,
     PROVIDER_MODULAR,
+    PROVIDER_GRAMA,
   });
 }
 
@@ -103,10 +101,10 @@ function getVoiceConfig() {
     _config = buildConfig();
     console.log(
       `[VoiceConfig] Voice Worker Configuration initialized successfully. ` +
-      `primaryLlm=${_config.primaryLlm} fallbackLlm=${_config.fallbackLlm} region=${_config.region}`
+      `provider=${_config.provider} primaryLlm=${_config.primaryLlm} region=${_config.region}`
     );
   }
   return _config;
 }
 
-module.exports = { getVoiceConfig, PROVIDER_CURRENT, PROVIDER_MODULAR };
+module.exports = { getVoiceConfig, PROVIDER_CURRENT, PROVIDER_MODULAR, PROVIDER_GRAMA };

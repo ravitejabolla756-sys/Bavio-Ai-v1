@@ -2,17 +2,10 @@
 
 /**
  * voice/index.js — barrel export for the Bavio voice abstraction layer
- *
- * Import from here, not from individual provider files, so that internal
- * module layout can change without updating every call site.
- *
- * Example:
- *   const { selectVoiceStack, getVoiceConfig } = require('./voice');
- *   const { DeepgramStt, ElevenLabsTts }       = require('./voice');
  */
 
 // ── Configuration ─────────────────────────────────────────────────────────────
-const { getVoiceConfig, PROVIDER_CURRENT, PROVIDER_MODULAR } = require('./config/voiceConfig');
+const { getVoiceConfig, PROVIDER_CURRENT, PROVIDER_MODULAR, PROVIDER_GRAMA } = require('./config/voiceConfig');
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 const SpeechToTextProvider  = require('./providers/interfaces/SpeechToTextProvider');
@@ -23,7 +16,7 @@ const TelephonyProvider     = require('./providers/interfaces/TelephonyProvider'
 const VoiceWorkerSession    = require('./providers/interfaces/VoiceWorkerSession');
 const VoiceCatalogProvider  = require('./providers/interfaces/VoiceCatalogProvider');
 
-// ── Current-stack adapters ────────────────────────────────────────────────────
+// ── Current-stack adapters (OpenAI / Twilio) ──────────────────────────────────
 const CurrentOpenAIStt      = require('./providers/current/CurrentOpenAIStt');
 const CurrentOpenAILlm      = require('./providers/current/CurrentOpenAILlm');
 const CurrentOpenAITts      = require('./providers/current/CurrentOpenAITts');
@@ -38,11 +31,18 @@ const SarvamStt      = require('./providers/modular/SarvamStt');
 const SarvamLlm      = require('./providers/modular/SarvamLlm');
 const SarvamTts      = require('./providers/modular/SarvamTts');
 
+// ── Gnani AI & Exotel Providers (Bavio Grama Stack) ───────────────────────────
+const GnaniPrismaStt = require('./providers/gnani/GnaniPrismaStt');
+const GnaniEvonLlm   = require('./providers/gnani/GnaniEvonLlm');
+const GnaniTimbreTts = require('./providers/gnani/GnaniTimbreTts');
+const ExotelTelephony = require('./providers/exotel/ExotelTelephony');
+
 // ── Routing ───────────────────────────────────────────────────────────────────
 const { selectVoiceStack, isAllowlisted, getStackSummary } = require('./routing/voiceStackRouter');
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 const ModularVoiceSession = require('./sessions/ModularVoiceSession');
+const GramaVoiceSession   = require('./sessions/GramaVoiceSession');
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 const DefaultVoiceCatalog = require('./catalog/DefaultVoiceCatalog');
@@ -52,6 +52,7 @@ module.exports = {
   getVoiceConfig,
   PROVIDER_CURRENT,
   PROVIDER_MODULAR,
+  PROVIDER_GRAMA,
 
   // Interfaces
   SpeechToTextProvider,
@@ -77,6 +78,12 @@ module.exports = {
   SarvamLlm,
   SarvamTts,
 
+  // Gnani & Exotel providers
+  GnaniPrismaStt,
+  GnaniEvonLlm,
+  GnaniTimbreTts,
+  ExotelTelephony,
+
   // Routing
   selectVoiceStack,
   isAllowlisted,
@@ -84,6 +91,7 @@ module.exports = {
 
   // Sessions
   ModularVoiceSession,
+  GramaVoiceSession,
 
   // Catalog
   DefaultVoiceCatalog,

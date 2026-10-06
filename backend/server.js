@@ -147,11 +147,14 @@ const webhookRoutes = require('./routes/webhook');
 const integrationsRoutes = require('./routes/integrations');
 const pricingRoutes = require('./routes/pricing');
 const userRoutes = require('./routes/user');
+const exotelRoutes = require('./routes/exotelRoutes');
 
 const v1Routes = require('./routes/v1');
 
 app.use('/auth', authRoutes);
 app.use('/calls/twilio', twilioRoutes);
+app.use('/calls/exotel', exotelRoutes);
+app.use('/api/calls/exotel', exotelRoutes);
 
 app.use('/v1', apiLimiter, v1Routes);
 
