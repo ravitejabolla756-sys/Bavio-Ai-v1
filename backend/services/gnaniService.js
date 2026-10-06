@@ -11,12 +11,11 @@ const FormData = require('form-data');
  * 
  * Models:
  * 1. Gnani Prisma v2.5 (Speech-to-Text / STT): POST /stt/v3
- * 2. Gnani Timbre v2.5 (Text-to-Speech / TTS): POST /v1/tts/inference
+ * 2. Gnani Timbre v2.5 (Text-to-Speech / TTS): POST /api/v1/tts/inference
  * 3. Gnani Evon v3.3 (Reasoning LLM): Open-weight 30B MoE foundation model (Hugging Face / Self-hosted)
  * 
  * Authentication:
  * Header: X-API-Key-ID: <GNANI_API_KEY>
- * Header: Authorization: Bearer <GNANI_API_KEY>
  */
 
 const GNANI_API_KEY = process.env.GNANI_API_KEY || process.env.GNANI_PRISMA_KEY || '';
@@ -27,7 +26,7 @@ function getBaseUrl() {
   if (configured && !configured.includes('api.gnani.ai')) {
     return configured.replace(/\/+$/, '');
   }
-  // api.gnani.ai has no active DNS record; Vachana is Gnani's speech API host
+  // api.gnani.ai has no active DNS record; api.vachana.ai is Gnani's speech API host
   return 'https://api.vachana.ai';
 }
 
@@ -63,13 +62,25 @@ const LANGUAGE_MAP_FULL = {
   'en': 'en-IN',
   'en-in': 'en-IN',
   'en-us': 'en-IN',
-  'english': 'en-IN'
+  'english': 'en-IN',
+  'kn': 'kn-IN',
+  'kannada': 'kn-IN',
+  'mr': 'mr-IN',
+  'marathi': 'mr-IN',
+  'bn': 'bn-IN',
+  'bengali': 'bn-IN',
+  'gu': 'gu-IN',
+  'gujarati': 'gu-IN'
 };
 
 const DEFAULT_VOICES = {
+  'ta-IN': 'Brinda',
   'ta': 'Brinda',
+  'te-IN': 'Brinda',
   'te': 'Brinda',
+  'hi-IN': 'Nalini',
   'hi': 'Nalini',
+  'en-IN': 'Brinda',
   'en': 'Brinda'
 };
 
@@ -86,6 +97,8 @@ function normalizeLanguageCodeFull(lang = 'hi-IN') {
 /**
  * 1. GNANI PRISMA v2.5 — Speech-to-Text (ASR)
  * Official endpoint: POST https://api.vachana.ai/stt/v3
+ * Authentication: X-API-Key-ID: <GNANI_API_KEY>
+ * Multipart fields: audio_file, language_code, preferred_language, format, itn_native_numerals
  */
 async function transcribeWithPrisma(audioBuffer, {
   language = 'hi-IN',
@@ -110,13 +123,13 @@ async function transcribeWithPrisma(audioBuffer, {
         contentType: encoding === 'mulaw' ? 'audio/basic' : 'audio/wav'
       });
       form.append('language_code', langCode);
-      form.append('model', process.env.GNANI_STT_MODEL || 'prisma-2.5');
+      form.append('preferred_language', langCode);
+      form.append('format', encoding === 'mulaw' ? 'mulaw' : 'wav');
+      form.append('itn_native_numerals', 'true');
 
       const response = await axios.post(`${baseUrl}/stt/v3`, form, {
         headers: {
           'X-API-Key-ID': key,
-          'x-api-key-id': key,
-          'Authorization': `Bearer ${key}`,
           ...form.getHeaders()
         },
         timeout: 15000
@@ -143,6 +156,9 @@ async function transcribeWithPrisma(audioBuffer, {
     } catch (err) {
       const status = err.response?.status;
       const errDetail = err.response?.data?.detail?.message || err.response?.data?.message || err.message;
+      if (status === 429) {
+        throw new Error(`Gnani Prisma STT Error (HTTP 429 RATE_LIMITED): Rate limit exceeded on Gnani account`);
+      }
       throw new Error(`Gnani Prisma STT Error (HTTP ${status || 'ERR'}): ${errDetail}`);
     }
   }
@@ -160,7 +176,9 @@ async function transcribeWithPrisma(audioBuffer, {
 
 /**
  * 2. GNANI TIMBRE v2.5 — Text-to-Speech (TTS)
- * Official endpoint: POST https://api.vachana.ai/v1/tts/inference
+ * Official endpoint: POST https://api.vachana.ai/api/v1/tts/inference
+ * Authentication: X-API-Key-ID: <GNANI_API_KEY>
+ * Schema: model ("timbre-v2.5"), language (BCP-47 e.g. "ta-IN"), voice ("Brinda"), text, audio_config
  */
 async function synthesizeWithTimbre(text, {
   language = 'hi-IN',
@@ -171,9 +189,9 @@ async function synthesizeWithTimbre(text, {
   apiKey = null
 } = {}) {
   const key = apiKey || GNANI_API_KEY;
-  const langShort = normalizeLanguageCodeShort(language);
-  const selectedVoice = voice || DEFAULT_VOICES[langShort] || 'Brinda';
-  const model = process.env.GNANI_TTS_MODEL || 'timbre-2.5';
+  const langCode = normalizeLanguageCodeFull(language);
+  const selectedVoice = voice || DEFAULT_VOICES[langCode] || DEFAULT_VOICES[normalizeLanguageCodeShort(language)] || 'Brinda';
+  const model = process.env.GNANI_TTS_MODEL || 'timbre-v2.5';
   const baseUrl = getBaseUrl();
   const startTime = Date.now();
 
@@ -184,19 +202,23 @@ async function synthesizeWithTimbre(text, {
   if (key && !key.startsWith('your_') && !key.startsWith('mock_')) {
     try {
       const response = await axios.post(
-        `${baseUrl}/v1/tts/inference`,
+        `${baseUrl}/api/v1/tts/inference`,
         {
           model,
-          language: langShort,
+          language: langCode,
           voice: selectedVoice,
-          sample_rate: sampleRate,
-          text: text.trim()
+          text: text.trim(),
+          audio_config: {
+            sample_rate: sampleRate || 8000,
+            num_channels: 1,
+            sample_width: 2,
+            encoding: 'linear_pcm',
+            container: 'wav'
+          }
         },
         {
           headers: {
             'X-API-Key-ID': key,
-            'x-api-key-id': key,
-            'Authorization': `Bearer ${key}`,
             'Content-Type': 'application/json'
           },
           responseType: 'arraybuffer',
@@ -221,6 +243,10 @@ async function synthesizeWithTimbre(text, {
         audioBuffer = Buffer.from(response.data);
       }
 
+      if (!audioBuffer || audioBuffer.length === 0) {
+        throw new Error('Received empty audio payload from Gnani Timbre');
+      }
+
       return {
         audioBuffer,
         audioBase64: audioBuffer.toString('base64'),
@@ -239,6 +265,9 @@ async function synthesizeWithTimbre(text, {
         } catch {
           errDetail = err.response.data.toString() || err.message;
         }
+      }
+      if (status === 429) {
+        throw new Error(`Gnani Timbre TTS Error (HTTP 429 RATE_LIMITED): Rate limit exceeded on Gnani account`);
       }
       throw new Error(`Gnani Timbre TTS Error (HTTP ${status || 'ERR'}): ${errDetail}`);
     }
