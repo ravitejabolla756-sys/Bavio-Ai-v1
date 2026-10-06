@@ -357,7 +357,7 @@ async function runGnaniRealApiVerification() {
   // Official Endpoint: POST https://api.vachana.ai/stt/v3
   // Official Auth: X-API-Key-ID: GNANI_API_KEY
   // Accepted REST Model Identifier: vachana-audio-intelligence-v2
-  // Fields: audio_file, model, language_code, preferred_language, format, itn_native_numerals
+  // Fields: audio_file, model, language_code, preferred_language, format (transcribe), itn_native_numerals
   // Rate Limit Guard: Stop immediately if HTTP 429; do NOT hammer or retry
   // --------------------------------------------------------------------------
   console.log('--- [2/3] Testing Gnani Prisma v2.5 (Speech-to-Text) ---');
@@ -382,7 +382,7 @@ async function runGnaniRealApiVerification() {
       form.append('model', sttModel);
       form.append('language_code', 'ta-IN');
       form.append('preferred_language', 'ta-IN');
-      form.append('format', 'wav');
+      form.append('format', 'transcribe');
       form.append('itn_native_numerals', 'true');
 
       const response = await axios.post(sttEndpoint, form, {

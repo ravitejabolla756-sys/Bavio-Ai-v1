@@ -98,7 +98,7 @@ function normalizeLanguageCodeFull(lang = 'hi-IN') {
  * 1. GNANI PRISMA v2.5 — Speech-to-Text (ASR)
  * Official endpoint: POST https://api.vachana.ai/stt/v3
  * Authentication: X-API-Key-ID: <GNANI_API_KEY>
- * Multipart fields: audio_file, language_code, preferred_language, format, itn_native_numerals
+ * Multipart fields: audio_file, model, language_code, preferred_language, format (transcribe), itn_native_numerals
  */
 async function transcribeWithPrisma(audioBuffer, {
   language = 'hi-IN',
@@ -125,7 +125,7 @@ async function transcribeWithPrisma(audioBuffer, {
       form.append('model', process.env.GNANI_STT_MODEL || 'vachana-audio-intelligence-v2');
       form.append('language_code', langCode);
       form.append('preferred_language', langCode);
-      form.append('format', encoding === 'mulaw' ? 'mulaw' : 'wav');
+      form.append('format', 'transcribe');
       form.append('itn_native_numerals', 'true');
 
       const response = await axios.post(`${baseUrl}/stt/v3`, form, {
